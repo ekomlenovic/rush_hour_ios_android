@@ -92,6 +92,8 @@ interface GameState {
 
   /** Audio Enabled state */
   isMusicEnabled: boolean;
+  /** Haptics Enabled state */
+  isHapticsEnabled: boolean;
 
   // Actions
   loadLevel: (level: Level, savedState?: { vehicles: Vehicle[]; moveCount: number; history: Vehicle[][] }) => void;
@@ -109,6 +111,7 @@ interface GameState {
 
   purgeCustomLevels: (baseLevelCount: number) => void;
   toggleMusicEnabled: () => void;
+  toggleHapticsEnabled: () => void;
   setGenerationState: (state: Partial<GenerationState>) => void;
   saveDailyState: (vehicles: Vehicle[], moveCount: number, history: Vehicle[][]) => void;
   cancelGeneration: () => void;
@@ -135,6 +138,7 @@ export const useGameStore = create<GameState>()(
   dailyLevelDate: null,
   dailyChallengeSaveState: null,
   isMusicEnabled: true,
+  isHapticsEnabled: true,
   generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
 
   loadLevel: (level: Level, savedState?: { vehicles: Vehicle[]; moveCount: number; history: Vehicle[][] }) => {
@@ -235,7 +239,9 @@ export const useGameStore = create<GameState>()(
 
     if (newAchievements.length !== achievements.length) {
       set({ achievements: newAchievements });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (get().isHapticsEnabled) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
     }
   },
 
@@ -304,6 +310,10 @@ export const useGameStore = create<GameState>()(
     const { isMusicEnabled } = get();
     set({ isMusicEnabled: !isMusicEnabled });
   },
+  toggleHapticsEnabled: () => {
+    const { isHapticsEnabled } = get();
+    set({ isHapticsEnabled: !isHapticsEnabled });
+  },
 
   setGenerationState: (state) => set((s) => ({ generationState: { ...s.generationState, ...state } })),
 
@@ -355,6 +365,7 @@ export const useGameStore = create<GameState>()(
     dailyLevelDate: state.dailyLevelDate,
     dailyChallengeSaveState: state.dailyChallengeSaveState,
     isMusicEnabled: state.isMusicEnabled,
+    isHapticsEnabled: state.isHapticsEnabled,
     generationState: state.generationState,
   }),
 }));

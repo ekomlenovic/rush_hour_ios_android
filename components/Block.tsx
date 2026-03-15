@@ -10,7 +10,7 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import { haptics, Haptics } from '@/utils/haptics';
 import { Vehicle } from '@/store/gameStore';
 
 interface BlockProps {
@@ -86,14 +86,14 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
 
   const triggerMoveHaptic = useCallback(() => {
     if (vehicle.length >= 3) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } else {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   }, [vehicle.length]);
 
   const triggerCollisionHaptic = useCallback(() => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
   }, []);
 
   const handleMoveEndSync = useCallback(

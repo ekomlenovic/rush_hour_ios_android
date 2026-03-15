@@ -1,15 +1,24 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, ScrollView, Dimensions, Modal, ActivityIndicator, Switch, InteractionManager, Alert } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Pressable, ScrollView, Dimensions, Modal, ActivityIndicator, Switch, InteractionManager, Alert, Linking, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
+import { haptics, Haptics } from '@/utils/haptics';
 import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
 import { useAudio } from '@/context/AudioProvider';
 import { DIFFICULTY_LEVELS, generateLevel } from '@/utils/generator';
 
 const { width } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const GENERATION_TIME_MAP: Record<string, number> = {
+  'EASY': 1000,
+  'NORMAL': 3000,
+  'HARD': 15000,
+  'EXPERT': 500000,
+  'MASTER': 1200000,
+};
 
 // Candy crush style path generator (Bottom to Top)
 const generatePathPoints = (count: number, screenHeight: number) => {
@@ -49,35 +58,35 @@ interface LevelNodeProps {
   index: number;
 }
 
-const LevelNode = React.memo(({ 
-  point, 
-  levelData, 
-  isUnlocked, 
-  isCurrent, 
-  isCustom, 
-  isPadlockNode, 
-  stars, 
-  onPress, 
-  colors, 
-  isDark, 
-  index 
+const LevelNode = React.memo(({
+  point,
+  levelData,
+  isUnlocked,
+  isCurrent,
+  isCustom,
+  isPadlockNode,
+  stars,
+  onPress,
+  colors,
+  isDark,
+  index
 }: LevelNodeProps) => {
   const getCustomColor = () => {
-    if (!levelData) return '#8B5CF6'; 
-    if (levelData.minMoves < 14) return '#10B981'; 
-    if (levelData.minMoves < 23) return '#F59E0B'; 
-    return '#EF4444'; 
+    if (!levelData) return '#8B5CF6';
+    if (levelData.minMoves < 14) return '#10B981';
+    if (levelData.minMoves < 23) return '#F59E0B';
+    return '#EF4444';
   };
 
   let carColor = colors.locked;
   if (isPadlockNode) {
     carColor = colors.locked;
   } else if (isCurrent) {
-    carColor = '#EF4444'; 
+    carColor = '#EF4444';
   } else if (isCustom) {
     carColor = getCustomColor();
   } else {
-    carColor = '#5A4FE0'; 
+    carColor = '#5A4FE0';
   }
 
   const nodeOpacity = (isUnlocked || isPadlockNode) ? 1 : 0.4;
@@ -136,7 +145,7 @@ export default function MapScreen() {
   const isDark = colorScheme === 'dark';
   const router = useRouter();
 
-  const { maxUnlockedLevel, lastPlayedLevelId, progress, generatedLevels, generationState, setGenerationState, cancelGeneration, hardReset, purgeCustomLevels } = useGameStore();
+  const { maxUnlockedLevel, lastPlayedLevelId, progress, generatedLevels, generationState, setGenerationState, cancelGeneration, hardReset, purgeCustomLevels, isHapticsEnabled, toggleHapticsEnabled } = useGameStore();
   const { toggleMusic, isPlaying: isMusicEnabled } = useAudio();
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -146,6 +155,7 @@ export default function MapScreen() {
   const [genDifficulty, setGenDifficulty] = useState<keyof typeof DIFFICULTY_LEVELS>('NORMAL');
   const [genGridSize, setGenGridSize] = useState<number>(6);
   const [scrollY, setScrollY] = useState(0); // Will be updated in useMemo or effect
+  const [settingsScrolledToBottom, setSettingsScrolledToBottom] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
   // Convenience derived values from the store
@@ -162,7 +172,7 @@ export default function MapScreen() {
   const pathLength = levels.length + 1;
 
   const screenHeight = Dimensions.get('window').height;
-  
+
   // Memoize path points and total height to avoid expensive recalculated arrays
   const { points: pathPoints, totalHeight } = useMemo(() => {
     return generatePathPoints(pathLength, screenHeight);
@@ -185,8 +195,7 @@ export default function MapScreen() {
 
   // Custom Generator Logic
   const handleGenerateCustomLevels = async () => {
-    // Safer defaults for mobile: 0.8s for EASY, 2.2s for NORMAL
-    const baseTimePerLevel = genDifficulty === 'EASY' ? 800 : 2200;
+    const baseTimePerLevel = GENERATION_TIME_MAP[genDifficulty] || 2000;
     const initialEst = Math.ceil(((genAmount * baseTimePerLevel) + (genAmount * 150)) / 1000);
 
     setGenerationState({
@@ -237,12 +246,12 @@ export default function MapScreen() {
       }
 
       setGenerationState({ isRunning: false, shouldCancel: false, estimatedRemainingSeconds: 0 });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }, 100);
   };
 
   const handleResetLevels = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     purgeCustomLevels(sampleLevels.length);
   };
 
@@ -258,7 +267,7 @@ export default function MapScreen() {
           onPress: () => {
             hardReset();
             setSettingsVisible(false);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           }
         }
       ]
@@ -274,6 +283,11 @@ export default function MapScreen() {
   }, []);
 
   useEffect(() => {
+    // Reset generation state on mount to prevent stuck "Canceling..." state
+    setGenerationState({ isRunning: false, shouldCancel: false, estimatedRemainingSeconds: 0 });
+  }, []);
+
+  useEffect(() => {
     // If levels change (generation), we might need to adjust, 
     // but the initial "teleport" is solved by contentOffset.
   }, [lastPlayedLevelId, maxUnlockedLevel]);
@@ -286,10 +300,10 @@ export default function MapScreen() {
   const handleLevelPress = (levelId: number, isUnlocked: boolean, isCustom: boolean) => {
     // Custom generated levels are ALWAYS accessible regardless of progression lock
     if (!isUnlocked && !isCustom) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push(`/game?levelId=${levelId}`);
   };
 
@@ -324,77 +338,77 @@ export default function MapScreen() {
           <>
             {/* Since React Native SVG can be tricky to set up quickly without rendering issues,
             we will use a simpler pure-View based path generation for the connections. */}
-        {pathPoints.map((point, index) => {
-          if (index === pathPoints.length - 1) return null;
-          const nextPoint = pathPoints[index + 1];
+            {pathPoints.map((point, index) => {
+              if (index === pathPoints.length - 1) return null;
+              const nextPoint = pathPoints[index + 1];
 
-          // Only render the line if at least one point is visible
-          if (!isVisible(point.y) && !isVisible(nextPoint.y)) return null;
+              // Only render the line if at least one point is visible
+              if (!isVisible(point.y) && !isVisible(nextPoint.y)) return null;
 
-          const isUnlockedLine = maxUnlockedLevel > point.id;
+              const isUnlockedLine = maxUnlockedLevel > point.id;
 
-          // Calculate angle and distance for the line segment
-          const dx = nextPoint.x - point.x;
-          const dy = nextPoint.y - point.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+              // Calculate angle and distance for the line segment
+              const dx = nextPoint.x - point.x;
+              const dy = nextPoint.y - point.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              const angle = Math.atan2(dy, dx) * (180 / Math.PI);
 
-          return (
-            <View
-              key={`line-${point.id}`}
-              style={{
-                position: 'absolute',
-                left: point.x,
-                top: point.y,
-                width: distance,
-                height: 8,
-                backgroundColor: isUnlockedLine ? colors.accent : colors.line,
-                borderRadius: 4,
-                transform: [
-                  { translateX: 0 },
-                  { translateY: -4 }, // Center the line
-                  { rotate: `${angle}deg` },
-                  { translateX: distance / 2 - distance / 2 }, // Reset origin (React Native transforms are from center by default)
-                ],
-                // Quick fix for transform origin in React Native
-                transformOrigin: 'left',
-                zIndex: 1,
-              }}
-            />
-          );
-        })}
+              return (
+                <View
+                  key={`line-${point.id}`}
+                  style={{
+                    position: 'absolute',
+                    left: point.x,
+                    top: point.y,
+                    width: distance,
+                    height: 8,
+                    backgroundColor: isUnlockedLine ? colors.accent : colors.line,
+                    borderRadius: 4,
+                    transform: [
+                      { translateX: 0 },
+                      { translateY: -4 }, // Center the line
+                      { rotate: `${angle}deg` },
+                      { translateX: distance / 2 - distance / 2 }, // Reset origin (React Native transforms are from center by default)
+                    ],
+                    // Quick fix for transform origin in React Native
+                    transformOrigin: 'left',
+                    zIndex: 1,
+                  }}
+                />
+              );
+            })}
 
-        {/* Draw Nodes */}
-        {pathPoints.map((point, index) => {
-          if (!isVisible(point.y)) return null;
+            {/* Draw Nodes */}
+            {pathPoints.map((point, index) => {
+              if (!isVisible(point.y)) return null;
 
-          const isPadlockNode = index === levels.length;
-          const levelData = isPadlockNode ? null : levels[index];
+              const isPadlockNode = index === levels.length;
+              const levelData = isPadlockNode ? null : levels[index];
 
-          const isUnlocked = point.id <= maxUnlockedLevel;
-          const isCurrent = point.id === maxUnlockedLevel;
-          const isCustom = !isPadlockNode && point.id > sampleLevels.length;
+              const isUnlocked = point.id <= maxUnlockedLevel;
+              const isCurrent = point.id === maxUnlockedLevel;
+              const isCustom = !isPadlockNode && point.id > sampleLevels.length;
 
-          const levelProgress = progress.find(p => p.levelId === point.id);
-          const stars = levelProgress?.stars || 0;
+              const levelProgress = progress.find(p => p.levelId === point.id);
+              const stars = levelProgress?.stars || 0;
 
-          return (
-            <LevelNode
-              key={`node-${point.id}`}
-              point={point}
-              levelData={levelData}
-              isUnlocked={isUnlocked}
-              isCurrent={isCurrent}
-              isCustom={isCustom}
-              isPadlockNode={isPadlockNode}
-              stars={stars}
-              onPress={handleLevelPress}
-              colors={colors}
-              isDark={isDark}
-              index={index}
-            />
-          );
-        })}
+              return (
+                <LevelNode
+                  key={`node-${point.id}`}
+                  point={point}
+                  levelData={levelData}
+                  isUnlocked={isUnlocked}
+                  isCurrent={isCurrent}
+                  isCustom={isCustom}
+                  isPadlockNode={isPadlockNode}
+                  stars={stars}
+                  onPress={handleLevelPress}
+                  colors={colors}
+                  isDark={isDark}
+                  index={index}
+                />
+              );
+            })}
           </>
         )}
       </ScrollView>
@@ -410,109 +424,155 @@ export default function MapScreen() {
               </Pressable>
             </View>
 
-            {/* Music Toggle */}
-            <View style={styles.settingRow}>
-              <View>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>Background Music</Text>
-                <Text style={[styles.settingSub, { color: colors.sub }]}>Whispers of the Verdant Stream</Text>
+            <ScrollView 
+              showsVerticalScrollIndicator={true} 
+              indicatorStyle={isDark ? 'white' : 'black'}
+              contentContainerStyle={{ paddingBottom: 60 }}
+              onScroll={(e) => {
+                const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
+                const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+                setSettingsScrolledToBottom(isCloseToBottom);
+              }}
+              scrollEventThrottle={16}
+            >
+              {/* Music Toggle */}
+              <View style={styles.settingRow}>
+                <View>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>Background Music</Text>
+                  <Text style={[styles.settingSub, { color: colors.sub }]}>Whispers of the Verdant Stream</Text>
+                </View>
+                <Switch
+                  value={isMusicEnabled}
+                  onValueChange={toggleMusic}
+                  trackColor={{ false: '#767577', true: colors.accent }}
+                />
               </View>
-              <Switch
-                value={isMusicEnabled}
-                onValueChange={toggleMusic}
-                trackColor={{ false: '#767577', true: colors.accent }}
-              />
-            </View>
 
-            <View style={[styles.divider, { backgroundColor: colors.sub }]} />
-
-            {/* Generator Setttings */}
-            <Text style={[styles.sectionTitle, { color: colors.accent }]}>Level Generator</Text>
-
-            <View style={styles.settingBlock}>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>Difficulty: {genDifficulty}</Text>
-              <View style={styles.buttonSegmentGroup}>
-                {(['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER'] as const).map(diff => (
-                  <Pressable
-                    key={diff}
-                    onPress={() => {
-                      setGenDifficulty(diff);
-                      setGenGridSize(DIFFICULTY_LEVELS[diff].gridSize);
-                    }}
-                    style={[styles.segmentBtn, genDifficulty === diff && { backgroundColor: colors.accent }]}
-                  >
-                    <Text style={[styles.segmentText, { color: genDifficulty === diff ? '#FFF' : colors.text }]}>
-                      {diff}
-                    </Text>
-                  </Pressable>
-                ))}
+              <View style={styles.settingRow}>
+                <View>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>Haptic Feedback</Text>
+                  <Text style={[styles.settingSub, { color: colors.sub }]}>Vibrate on interactions</Text>
+                </View>
+                <Switch
+                  value={isHapticsEnabled}
+                  onValueChange={() => {
+                    toggleHapticsEnabled();
+                    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  trackColor={{ false: '#767577', true: colors.accent }}
+                />
               </View>
-            </View>
 
-            <View style={styles.settingBlock}>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>Grid Size: {genGridSize}x{genGridSize}</Text>
-              <View style={styles.buttonSegmentGroup}>
-                {[6, 7, 8].map(size => (
-                  <Pressable
-                    key={size}
-                    onPress={() => setGenGridSize(size)}
-                    style={[styles.segmentBtn, genGridSize === size && { backgroundColor: colors.accent }]}
-                  >
-                    <Text style={[styles.segmentText, { color: genGridSize === size ? '#FFF' : colors.text }]}>
-                      {size}x{size}
-                    </Text>
-                  </Pressable>
-                ))}
+              <View style={[styles.divider, { backgroundColor: colors.sub }]} />
+
+              {/* Generator Setttings */}
+              <Text style={[styles.sectionTitle, { color: colors.accent }]}>Level Generator</Text>
+
+              <Text style={[styles.settingSub, { color: '#F59E0B', marginBottom: 16, fontWeight: '600' }]}>
+                ⚠️ Note: Complex level generation (Expert/Master) can be resource-intensive on mobile devices.
+              </Text>
+
+              <View style={styles.settingBlock}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Difficulty: {genDifficulty}</Text>
+                <View style={styles.buttonSegmentGroup}>
+                  {(['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER'] as const).map(diff => (
+                    <Pressable
+                      key={diff}
+                      onPress={() => {
+                        setGenDifficulty(diff);
+                        setGenGridSize(DIFFICULTY_LEVELS[diff].gridSize);
+                      }}
+                      style={[styles.segmentBtn, genDifficulty === diff && { backgroundColor: colors.accent }]}
+                    >
+                      <Text style={[styles.segmentText, { color: genDifficulty === diff ? '#FFF' : colors.text }]}>
+                        {diff}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
               </View>
-            </View>
 
-
-
-            <View style={styles.settingBlock}>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>Amount to create: {genAmount}</Text>
-              <View style={styles.buttonSegmentGroup}>
-                {[1, 5, 10, 20].map(amt => (
-                  <Pressable
-                    key={amt}
-                    onPress={() => setGenAmount(amt)}
-                    style={[styles.segmentBtn, genAmount === amt && { backgroundColor: colors.accent }]}
-                  >
-                    <Text style={[styles.segmentText, { color: genAmount === amt ? '#FFF' : colors.text }]}>
-                      {amt}
-                    </Text>
-                  </Pressable>
-                ))}
+              <View style={styles.settingBlock}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Grid Size: {genGridSize}x{genGridSize}</Text>
+                <View style={styles.buttonSegmentGroup}>
+                  {[6, 7, 8].map(size => (
+                    <Pressable
+                      key={size}
+                      onPress={() => setGenGridSize(size)}
+                      style={[styles.segmentBtn, genGridSize === size && { backgroundColor: colors.accent }]}
+                    >
+                      <Text style={[styles.segmentText, { color: genGridSize === size ? '#FFF' : colors.text }]}>
+                        {size}x{size}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
               </View>
-            </View>
 
-            {/* Generation Actions */}
-            <View style={{ marginTop: 24, gap: 12 }}>
-              <Pressable
-                style={[styles.mainBtn, { backgroundColor: colors.accent, opacity: isGenerating ? 0.5 : 1 }]}
-                onPress={handleGenerateCustomLevels}
-                disabled={isGenerating}
-              >
-                <Text style={styles.mainBtnText}>
-                  {isGenerating ? '⏳ Generation in Progress...' : `Generate ${genAmount} Levels (~${genDifficulty === 'EASY' ? Math.ceil(genAmount * 1.0) : Math.ceil(genAmount * 2.4)}s)`}
-                </Text>
-              </Pressable>
 
-              {!isGenerating && generatedLevels.length > 0 && (
+
+              <View style={styles.settingBlock}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Amount to create: {genAmount}</Text>
+                <View style={styles.buttonSegmentGroup}>
+                  {[1, 5, 10, 20].map(amt => (
+                    <Pressable
+                      key={amt}
+                      onPress={() => setGenAmount(amt)}
+                      style={[styles.segmentBtn, genAmount === amt && { backgroundColor: colors.accent }]}
+                    >
+                      <Text style={[styles.segmentText, { color: genAmount === amt ? '#FFF' : colors.text }]}>
+                        {amt}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              {/* Generation Actions */}
+              <View style={{ marginTop: 24, gap: 12 }}>
                 <Pressable
-                  style={[styles.resetBtn, { borderColor: '#EF4444' }]}
-                  onPress={handleResetLevels}
+                  style={[styles.mainBtn, { backgroundColor: colors.accent, opacity: isGenerating ? 0.5 : 1 }]}
+                  onPress={handleGenerateCustomLevels}
+                  disabled={isGenerating}
                 >
-                  <Text style={[styles.resetBtnText, { color: '#EF4444' }]}>Reset Custom Levels</Text>
+                  <Text style={styles.mainBtnText}>
+                    {isGenerating ? '⏳ Generation in Progress...' : `Generate ${genAmount} Levels (~${Math.ceil((genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000)}s)`}
+                  </Text>
                 </Pressable>
-              )}
 
-              <Pressable
-                style={[styles.resetBtn, { borderColor: colors.sub, borderStyle: 'dotted', marginTop: 12 }]}
-                onPress={handleHardReset}
-              >
-                <Text style={[styles.resetBtnText, { color: colors.sub }]}>🔥 Hard Reset Progress</Text>
-              </Pressable>
-            </View>
+                {!isGenerating && generatedLevels.length > 0 && (
+                  <Pressable
+                    style={[styles.resetBtn, { borderColor: '#EF4444' }]}
+                    onPress={handleResetLevels}
+                  >
+                    <Text style={[styles.resetBtnText, { color: '#EF4444' }]}>Reset Custom Levels</Text>
+                  </Pressable>
+                )}
 
+                <View style={[styles.divider, { backgroundColor: colors.sub, marginVertical: 12 }]} />
+
+                <Text style={[styles.sectionTitle, { color: colors.accent, marginBottom: 8 }]}>Community & Levels</Text>
+                <Pressable
+                  style={[styles.mainBtn, { backgroundColor: '#24292e', marginBottom: 12 }]}
+                  onPress={() => Linking.openURL('https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?title=Request:%20New%20Complex%20Levels&body=I%20would%20like%20to%20see%20more%20high-difficulty%20levels%21')}
+                >
+                  <Text style={styles.mainBtnText}>Request New Levels on GitHub</Text>
+                </Pressable>
+
+                <Pressable
+                  style={[styles.resetBtn, { borderColor: colors.sub, borderStyle: 'dotted', marginTop: 12 }]}
+                  onPress={handleHardReset}
+                >
+                  <Text style={[styles.resetBtnText, { color: colors.sub }]}>Hard Reset Progress</Text>
+                </Pressable>
+              </View>
+            </ScrollView>
+
+            {!settingsScrolledToBottom && (
+              <Animated.View entering={FadeInDown} style={styles.scrollHint}>
+                <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 12 }}>Scroll for more content ↓</Text>
+              </Animated.View>
+            )}
           </View>
         </View>
       </Modal>
@@ -685,6 +745,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 20,
+    maxHeight: '90%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -806,6 +867,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
+  },
+  scrollHint: {
+    position: 'absolute',
+    bottom: 24,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    pointerEvents: 'none',
   },
 });
 
