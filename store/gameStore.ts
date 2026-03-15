@@ -33,6 +33,10 @@ export interface Level {
   exitCol: number;
   /** Minimum number of moves to solve (computed by BFS solver) */
   minMoves: number;
+  /** Timestamp of creation/last modification */
+  updatedAt: number;
+  /** Whether the level is marked as a favorite */
+  isFavorite?: boolean;
 }
 
 
@@ -104,6 +108,7 @@ interface GameState {
   addImportedLevel: (level: Level) => void;
   saveCreatedLevel: (level: Level) => void;
   deleteCustomLevel: (id: number, type: 'imported' | 'created') => void;
+  toggleFavorite: (id: number, type: 'imported' | 'created') => void;
 
   purgeCustomLevels: (baseLevelCount: number) => void;
   toggleMusicEnabled: () => void;
@@ -250,19 +255,34 @@ export const useGameStore = create<GameState>()(
     const { importedLevels } = get();
     // Use a unique ID if it conflicts, or just push if it's new
     if (!importedLevels.find(l => l.id === level.id)) {
-      set({ importedLevels: [...importedLevels, level] });
+      set({ importedLevels: [...importedLevels, { ...level, updatedAt: level.updatedAt || Date.now() }] });
     }
   },
 
   saveCreatedLevel: (level: Level) => {
     const { createdLevels } = get();
     const index = createdLevels.findIndex(l => l.id === level.id);
+    const updatedLevel = { ...level, updatedAt: Date.now() };
     if (index !== -1) {
       const updated = [...createdLevels];
-      updated[index] = level;
+      updated[index] = updatedLevel;
       set({ createdLevels: updated });
     } else {
-      set({ createdLevels: [...createdLevels, level] });
+      set({ createdLevels: [...createdLevels, updatedLevel] });
+    }
+  },
+
+  toggleFavorite: (id: number, type: 'imported' | 'created') => {
+    if (type === 'imported') {
+      const updated = get().importedLevels.map(l => 
+        l.id === id ? { ...l, isFavorite: !l.isFavorite } : l
+      );
+      set({ importedLevels: updated });
+    } else {
+      const updated = get().createdLevels.map(l => 
+        l.id === id ? { ...l, isFavorite: !l.isFavorite } : l
+      );
+      set({ createdLevels: updated });
     }
   },
 
