@@ -96,13 +96,31 @@ export default function HomeScreen() {
         <AnimatedPressable
           entering={FadeInDown.delay(900).springify()}
           style={[styles.linkButton]}
+          onPress={() => router.push('/custom-levels')}
+        >
+          <Text style={[styles.linkText, { color: colors.accent }]}>My Levels</Text>
+        </AnimatedPressable>
+
+        <AnimatedPressable
+          entering={FadeInDown.delay(1000).springify()}
+          style={[styles.linkButton]}
+          onPress={() => router.push('/creator')}
+        >
+          <Text style={[styles.linkText, { color: colors.accent }]}>Level Creator</Text>
+        </AnimatedPressable>
+      </View>
+
+      <View style={[styles.footerLinks, { marginTop: -10 }]}>
+        <AnimatedPressable
+          entering={FadeInDown.delay(1100).springify()}
+          style={[styles.linkButton]}
           onPress={() => router.push('/tutorial')}
         >
           <Text style={[styles.linkText, { color: colors.sub }]}>How to Play?</Text>
         </AnimatedPressable>
 
         <AnimatedPressable
-          entering={FadeInDown.delay(1000).springify()}
+          entering={FadeInDown.delay(1200).springify()}
           style={[styles.linkButton]}
           onPress={() => router.push('/stats')}
         >

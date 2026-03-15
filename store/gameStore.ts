@@ -70,6 +70,10 @@ interface GameState {
   lastPlayedLevelId: number | null;
   /** Infinite Map: Dynamically generated levels that are saved locally */
   generatedLevels: Level[];
+  /** Imported levels from others via QR/link */
+  importedLevels: Level[];
+  /** Levels created by the user */
+  createdLevels: Level[];
 
   /** Periodic/Daily progress: keyed by date string (YYYY-MM-DD) */
   dailyChallengeProgress: Record<string, { completed: boolean; score: number; stars: number }>;
@@ -97,6 +101,9 @@ interface GameState {
   completeDailyChallenge: (dateKey: string, score: number, stars: number) => void;
   checkAchievements: () => void;
   addGeneratedLevel: (level: Level) => void;
+  addImportedLevel: (level: Level) => void;
+  saveCreatedLevel: (level: Level) => void;
+  deleteCustomLevel: (id: number, type: 'imported' | 'created') => void;
 
   purgeCustomLevels: (baseLevelCount: number) => void;
   toggleMusicEnabled: () => void;
@@ -117,6 +124,8 @@ export const useGameStore = create<GameState>()(
   maxUnlockedLevel: 1,
   lastPlayedLevelId: null,
   generatedLevels: [],
+  importedLevels: [],
+  createdLevels: [],
   dailyChallengeProgress: {},
   achievements: [],
   currentDailyLevel: null,
@@ -237,6 +246,34 @@ export const useGameStore = create<GameState>()(
     }
   },
 
+  addImportedLevel: (level: Level) => {
+    const { importedLevels } = get();
+    // Use a unique ID if it conflicts, or just push if it's new
+    if (!importedLevels.find(l => l.id === level.id)) {
+      set({ importedLevels: [...importedLevels, level] });
+    }
+  },
+
+  saveCreatedLevel: (level: Level) => {
+    const { createdLevels } = get();
+    const index = createdLevels.findIndex(l => l.id === level.id);
+    if (index !== -1) {
+      const updated = [...createdLevels];
+      updated[index] = level;
+      set({ createdLevels: updated });
+    } else {
+      set({ createdLevels: [...createdLevels, level] });
+    }
+  },
+
+  deleteCustomLevel: (id: number, type: 'imported' | 'created') => {
+    if (type === 'imported') {
+      set({ importedLevels: get().importedLevels.filter(l => l.id !== id) });
+    } else {
+      set({ createdLevels: get().createdLevels.filter(l => l.id !== id) });
+    }
+  },
+
   purgeCustomLevels: (baseLevelCount: number) => {
     const { progress, maxUnlockedLevel } = get();
     // Keep only progress for base levels
@@ -269,6 +306,8 @@ export const useGameStore = create<GameState>()(
       maxUnlockedLevel: 1,
       lastPlayedLevelId: null,
       generatedLevels: [],
+      importedLevels: [],
+      createdLevels: [],
       currentLevel: null,
       vehicles: [],
       moveCount: 0,
@@ -285,6 +324,8 @@ export const useGameStore = create<GameState>()(
     maxUnlockedLevel: state.maxUnlockedLevel,
     lastPlayedLevelId: state.lastPlayedLevelId,
     generatedLevels: state.generatedLevels,
+    importedLevels: state.importedLevels,
+    createdLevels: state.createdLevels,
     dailyChallengeProgress: state.dailyChallengeProgress,
     achievements: state.achievements,
     currentDailyLevel: state.currentDailyLevel,

@@ -27,8 +27,8 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
   const boardSize = screenWidth - BOARD_PADDING * 2;
   const cellSize = boardSize / gridSize;
 
-  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
-  const boardBg = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.02)';
+  const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
+  const boardBg = isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)';
   const exitColor = '#EF4444';
 
   // Calculate bounds for all vehicles at once
@@ -118,7 +118,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
       />
 
       {/* Vehicles */}
-      {vehicles.map((v) => {
+      {cellSize > 0 && !isNaN(cellSize) && vehicles.map((v) => {
         const b = vehicleBounds.find(vb => vb.id === v.id)?.bounds || { min: 0, max: gridSize };
         return (
           <Block
@@ -129,8 +129,8 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
             cellSize={cellSize}
             onMoveEnd={onMoveEnd}
             isHinted={hintVehicleId === v.id}
-            min={b.min}
-            max={b.max}
+            min={b.min || 0}
+            max={b.max || gridSize}
             disabled={disabled}
           />
         );
