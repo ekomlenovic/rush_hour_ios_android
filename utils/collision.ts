@@ -98,10 +98,10 @@ export function checkWin(
   if (!target) return false;
 
   if (target.orientation === 'horizontal') {
-    // Target needs to fully pass the exit column
-    return target.row === exitRow && target.col + target.length > exitCol;
+    // Target needs to touch the exit boundary (gridSize)
+    return target.row === exitRow && target.col + target.length >= gridSize;
   } else {
-    // Target needs to fully pass the exit row
-    return target.col === exitCol && target.row + target.length > exitRow;
+    // Target needs to touch the exit boundary (gridSize)
+    return target.col === exitCol && target.row + target.length >= gridSize;
   }
 }
