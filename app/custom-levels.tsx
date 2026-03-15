@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, FlatList, Alert, Share } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Pressable, FlatList, Alert, Share, Clipboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useGameStore } from '@/store/gameStore';
@@ -33,9 +33,9 @@ export default function CustomLevelsScreen() {
             "Are you sure you want to delete this level?",
             [
                 { text: "Cancel", style: "cancel" },
-                { 
-                    text: "Delete", 
-                    style: "destructive", 
+                {
+                    text: "Delete",
+                    style: "destructive",
                     onPress: () => {
                         deleteCustomLevel(id, activeTab === 'favorites' ? (createdLevels.some(l => l.id === id) ? 'created' : 'imported') : activeTab);
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -61,11 +61,18 @@ export default function CustomLevelsScreen() {
         }
     };
 
+    const handlePaste = async () => {
+        const text = await Clipboard.getString();
+        if (text) {
+            setImportUrl(text);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+    };
+
     const handleShare = async (item: any) => {
         try {
             const url = getShareUrl(item);
             await Share.share({
-                message: `Check out this Rush Hour level I made/found!`,
                 url: url,
             });
         } catch (error) {
@@ -76,7 +83,7 @@ export default function CustomLevelsScreen() {
     const renderItem = ({ item, index }: { item: any, index: number }) => {
         const type = createdLevels.find(l => l.id === item.id) ? 'created' : 'imported';
         return (
-            <Animated.View 
+            <Animated.View
                 entering={FadeInDown.delay(index * 100).springify()}
                 style={[styles.levelCard, { backgroundColor: colors.card }]}
             >
@@ -85,31 +92,31 @@ export default function CustomLevelsScreen() {
                     <Text style={[styles.levelSub, { color: colors.sub }]}>{item.vehicles.length} vehicles • {item.minMoves} min moves</Text>
                 </View>
                 <View style={styles.actions}>
-                    <Pressable 
+                    <Pressable
                         onPress={() => toggleFavorite(item.id, type)}
                         style={[styles.iconBtn]}
                     >
                         <Text style={{ fontSize: 20, color: item.isFavorite ? colors.star : colors.sub }}>{item.isFavorite ? '★' : '☆'}</Text>
                     </Pressable>
-                    <Pressable 
+                    <Pressable
                         onPress={() => handleShare(item)}
                         style={[styles.iconBtn]}
                     >
                         <Text style={{ fontSize: 18, color: colors.accent }}>🔗</Text>
                     </Pressable>
-                    <Pressable 
+                    <Pressable
                         onPress={() => router.push(`/game?levelId=${item.id}`)}
                         style={[styles.actionBtn, { backgroundColor: colors.accent }]}
                     >
                         <Text style={styles.actionText}>Play</Text>
                     </Pressable>
-                    <Pressable 
+                    <Pressable
                         onPress={() => router.push(`/creator?levelId=${item.id}`)}
                         style={[styles.actionBtn, { backgroundColor: colors.sub }]}
                     >
                         <Text style={styles.actionText}>Edit</Text>
                     </Pressable>
-                    <Pressable 
+                    <Pressable
                         onPress={() => handleDelete(item.id)}
                         style={[styles.actionBtn, { backgroundColor: colors.danger }]}
                     >
@@ -131,19 +138,19 @@ export default function CustomLevelsScreen() {
             </View>
 
             <View style={styles.tabs}>
-                <Pressable 
+                <Pressable
                     onPress={() => setActiveTab('created')}
                     style={[styles.tab, activeTab === 'created' && { borderBottomColor: colors.accent, borderBottomWidth: 3 }]}
                 >
                     <Text style={[styles.tabText, { color: activeTab === 'created' ? colors.text : colors.sub }]}>Created</Text>
                 </Pressable>
-                <Pressable 
+                <Pressable
                     onPress={() => setActiveTab('imported')}
                     style={[styles.tab, activeTab === 'imported' && { borderBottomColor: colors.accent, borderBottomWidth: 3 }]}
                 >
                     <Text style={[styles.tabText, { color: activeTab === 'imported' ? colors.text : colors.sub }]}>Imported</Text>
                 </Pressable>
-                <Pressable 
+                <Pressable
                     onPress={() => setActiveTab('favorites')}
                     style={[styles.tab, activeTab === 'favorites' && { borderBottomColor: colors.accent, borderBottomWidth: 3 }]}
                 >
@@ -153,14 +160,22 @@ export default function CustomLevelsScreen() {
 
             {activeTab === 'imported' && (
                 <View style={[styles.importSection, { backgroundColor: colors.card }]}>
-                    <TextInput
-                        style={[styles.input, { color: colors.text, borderColor: colors.sub + '44' }]}
-                        placeholder="Paste level link here..."
-                        placeholderTextColor={colors.sub}
-                        value={importUrl}
-                        onChangeText={setImportUrl}
-                    />
-                    <Pressable 
+                    <View style={styles.inputContainer}>
+                        <TextInput
+                            style={[styles.input, { color: colors.text, borderColor: colors.sub + '22' }]}
+                            placeholder="Level link or code..."
+                            placeholderTextColor={colors.sub}
+                            value={importUrl}
+                            onChangeText={setImportUrl}
+                        />
+                        <Pressable
+                            onPress={handlePaste}
+                            style={[styles.pasteBtn, { backgroundColor: colors.sub + '22' }]}
+                        >
+                            <Text style={[styles.pasteBtnText, { color: colors.accent }]}>Paste</Text>
+                        </Pressable>
+                    </View>
+                    <Pressable
                         onPress={handleManualImport}
                         style={[styles.importBtn, { backgroundColor: colors.accent }]}
                     >
@@ -180,7 +195,7 @@ export default function CustomLevelsScreen() {
                             {activeTab === 'created' ? "You haven't created any levels yet." : activeTab === 'imported' ? "No imported levels found." : "No favorite levels yet."}
                         </Text>
                         {activeTab === 'created' && (
-                            <Pressable 
+                            <Pressable
                                 onPress={() => router.push('/creator')}
                                 style={[styles.createBtn, { backgroundColor: colors.accent }]}
                             >
@@ -196,11 +211,11 @@ export default function CustomLevelsScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    header: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        justifyContent: 'space-between', 
-        paddingTop: 60, 
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingTop: 60,
         paddingHorizontal: 20,
         marginBottom: 20
     },
@@ -211,11 +226,11 @@ const styles = StyleSheet.create({
     tab: { flex: 1, alignItems: 'center', paddingVertical: 12 },
     tabText: { fontSize: 16, fontWeight: '700' },
     listContent: { paddingHorizontal: 20, paddingBottom: 40 },
-    levelCard: { 
-        flexDirection: 'row', 
-        padding: 16, 
-        borderRadius: 16, 
-        marginBottom: 12, 
+    levelCard: {
+        flexDirection: 'row',
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 12,
         alignItems: 'center',
         justifyContent: 'space-between'
     },
@@ -230,23 +245,53 @@ const styles = StyleSheet.create({
     emptyText: { fontSize: 16, marginBottom: 20 },
     createBtn: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16 },
     createBtnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
-    importSection: { 
-        flexDirection: 'row', 
-        marginHorizontal: 20, 
-        marginBottom: 20, 
-        padding: 12, 
-        borderRadius: 16, 
-        gap: 10,
-        alignItems: 'center'
+    importSection: {
+        marginHorizontal: 20,
+        marginBottom: 20,
+        padding: 16,
+        borderRadius: 20,
+        gap: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
     },
-    input: { 
-        flex: 1, 
-        height: 44, 
-        borderWidth: 1, 
-        borderRadius: 10, 
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    input: {
+        flex: 1,
+        height: 50,
+        borderWidth: 1.5,
+        borderRadius: 14,
+        paddingHorizontal: 16,
+        fontSize: 15,
+        backgroundColor: 'rgba(0,0,0,0.02)',
+    },
+    pasteBtn: {
         paddingHorizontal: 12,
-        fontSize: 14
+        height: 50,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    importBtn: { paddingHorizontal: 16, height: 44, borderRadius: 10, justifyContent: 'center' },
-    importBtnText: { color: '#FFF', fontWeight: '700' }
+    pasteBtnText: {
+        fontWeight: '700',
+        fontSize: 14,
+    },
+    importBtn: {
+        width: '100%',
+        height: 50,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#6C63FF',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+    },
+    importBtnText: { color: '#FFF', fontWeight: '800', fontSize: 16 }
 });

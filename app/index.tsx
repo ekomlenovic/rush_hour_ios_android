@@ -16,9 +16,9 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
-  const { maxUnlockedLevel, dailyChallengeProgress, isMusicEnabled, toggleMusicEnabled, hardReset } = useGameStore();
-
-  const { toggleMusic } = useAudio();
+  const { maxUnlockedLevel, dailyChallengeProgress, hardReset } = useGameStore();
+  
+  const { toggleMusic, isPlaying: isMusicEnabled } = useAudio();
   const [isSettingsVisible, setSettingsVisible] = useState(false);
 
   const handleHardReset = () => {
@@ -148,13 +148,12 @@ export default function HomeScreen() {
 
             <View style={styles.settingRow}>
               <View>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>Game Music</Text>
-                <Text style={[styles.settingSub, { color: colors.sub }]}>Toggle background melody</Text>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Background Music</Text>
+                <Text style={[styles.settingSub, { color: colors.sub }]}>Smooth melody during gameplay</Text>
               </View>
               <Switch
                 value={isMusicEnabled}
                 onValueChange={() => {
-                  toggleMusicEnabled();
                   toggleMusic();
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}

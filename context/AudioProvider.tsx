@@ -49,7 +49,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 
       // Soft Loop Logic: Fade out at end, fade in at start
       if (isEnabled && duration > 0) {
-        const FADE_DURATION = 3; // 3 seconds fade for maximum smoothness
+        const FADE_DURATION = 3; 
         if (currentTime < FADE_DURATION) {
           finalGoal = (currentTime / FADE_DURATION) * baseGoal;
         } else if (currentTime > duration - FADE_DURATION) {
@@ -58,19 +58,19 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Smoothly interpolate volume
-      const step = 0.01; // Small step for very smooth transition
-      if (player.volume < finalGoal) {
-        player.volume = Math.min(finalGoal, player.volume + step);
-        if (player.volume > 0 && isEnabled && !player.playing) {
-          player.play();
-        }
-      } else if (player.volume > finalGoal) {
-        player.volume = Math.max(finalGoal, player.volume - step);
-        // If we were fading out for a toggle off
-        if (player.volume <= 0.01 && !isEnabled && player.playing) {
-          player.pause();
-        }
-      } else if (player.volume <= 0 && !isEnabled && player.playing) {
+      const step = 0.02; 
+      const currentVol = player.volume;
+      
+      const newVol = Math.abs(currentVol - finalGoal) < step 
+        ? finalGoal 
+        : (currentVol < finalGoal ? currentVol + step : currentVol - step);
+      
+      player.volume = newVol;
+
+      // Handle play/pause with safety checks
+      if (isEnabled && player.volume > 0 && !player.playing) {
+        player.play();
+      } else if (!isEnabled && player.playing && player.volume <= 0.01) {
         player.pause();
       }
     }, 50);
