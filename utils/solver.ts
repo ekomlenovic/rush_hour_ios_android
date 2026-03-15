@@ -74,7 +74,7 @@ export function solvePuzzle(
   };
 
   // Check if initial state is already winning
-  if (targetIdx !== -1 && initialPos[targetIdx] + len[targetIdx] >= exitCol) {
+  if (targetIdx !== -1 && initialPos[targetIdx] + len[targetIdx] >= gridSize) {
     return { solvable: true, minMoves: 0, moves: [] };
   }
 
@@ -102,6 +102,7 @@ export function solvePuzzle(
 
     for (let vi = 0; vi < n; vi++) {
       const curP = pos[vi];
+      const exitCoord = isHoriz[vi] ? exitCol : exitRow;
 
       // Try sliding in both directions
       const directions = [-1, 1];
@@ -134,7 +135,8 @@ export function solvePuzzle(
             visited.set(nextKey, { parentKey: curKey, move });
             depthAtKey.set(nextKey, depth + 1);
 
-            if (vi === targetIdx && np + len[vi] >= exitCol) {
+            const winThreshold = isHoriz[vi] ? gridSize : gridSize; // Always the edge
+            if (vi === targetIdx && np + len[vi] >= winThreshold) {
               finalKey = nextKey;
               break;
             }

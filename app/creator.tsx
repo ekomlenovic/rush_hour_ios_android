@@ -235,7 +235,7 @@ export default function LevelCreatorScreen() {
     }
     const isImported = params.levelId && importedLevels.some(l => l.id === parseInt(params.levelId));
     const newId = isImported ? Date.now() : (params.levelId ? parseInt(params.levelId) : Date.now());
-    const newLevel: Level = { id: newId, gridSize: GRID_SIZE, vehicles, exitRow, exitCol: 5, minMoves, updatedAt: Date.now() };
+    const newLevel: Level = { id: newId, gridSize: GRID_SIZE, vehicles, exitRow, exitCol: GRID_SIZE, minMoves, updatedAt: Date.now() };
     saveCreatedLevel(newLevel);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Alert.alert('Saved!', isImported ? 'Saved as a new level.' : 'Level updated.', [
