@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, useColorScheme, Pressable, ActivityIndicator, I
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp, ZoomIn, FadeIn, FadeOut } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
+import { haptics, Haptics } from '@/utils/haptics';
 import Board from '@/components/Board';
 import { useGameStore } from '@/store/gameStore';
 import { checkWin } from '@/utils/collision';
@@ -64,7 +64,7 @@ export default function GameScreen() {
     if (!currentLevel) return;
     const url = getShareUrl(currentLevel);
     Clipboard.setString(url);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Alert.alert("Copied!", "Link copied to clipboard.");
   };
 
@@ -175,7 +175,7 @@ export default function GameScreen() {
     const updatedMoveCount = useGameStore.getState().moveCount;
     if (currentLevel && checkWin(updatedVehicles, currentLevel.exitRow, currentLevel.exitCol, currentLevel.gridSize)) {
       setWon(true);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       // Calculate and save score
       const minMoves = computedMinMoves ?? currentLevel.minMoves;
@@ -203,7 +203,7 @@ export default function GameScreen() {
     undo();
     setHintVehicleId(null);
     setHintRemainingMoves(null);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [undo]);
 
   const handleReset = useCallback(() => {
@@ -211,7 +211,7 @@ export default function GameScreen() {
     setWon(false);
     setHintVehicleId(null);
     setHintRemainingMoves(null);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }, [resetLevel]);
 
   const handleHint = useCallback(async () => {
@@ -230,7 +230,7 @@ export default function GameScreen() {
         setHintRemainingMoves(result.minMoves);
         const hintMove = result.moves[0];
         setHintVehicleId(hintMove.vehicleId);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
         // Auto-clear hint highlight after 8 seconds
         setTimeout(() => {
@@ -238,11 +238,11 @@ export default function GameScreen() {
           setHintRemainingMoves(null);
         }, 8000);
       } else {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       }
     } catch (error) {
       console.error("Hint calculation failed:", error);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsHintLoading(false);
     }

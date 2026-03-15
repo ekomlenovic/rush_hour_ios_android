@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, useColorScheme, Pressable, FlatList, Alert, Sha
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useGameStore } from '@/store/gameStore';
-import * as Haptics from 'expo-haptics';
+import { haptics, Haptics } from '@/utils/haptics';
 import { deserializeLevel, getShareUrl } from '@/utils/sharing';
 import { TextInput } from 'react-native';
 
@@ -38,7 +38,7 @@ export default function CustomLevelsScreen() {
                     style: "destructive",
                     onPress: () => {
                         deleteCustomLevel(id, activeTab === 'favorites' ? (createdLevels.some(l => l.id === id) ? 'created' : 'imported') : activeTab);
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     }
                 }
             ]
@@ -56,7 +56,7 @@ export default function CustomLevelsScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             Alert.alert("Success", "Level imported successfully!");
         } else {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             Alert.alert("Error", "Invalid level URL or code.");
         }
     };
@@ -65,7 +65,7 @@ export default function CustomLevelsScreen() {
         const text = await Clipboard.getString();
         if (text) {
             setImportUrl(text);
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
     };
 

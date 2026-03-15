@@ -10,7 +10,7 @@ import Animated, {
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useGameStore, Vehicle, Level } from '@/store/gameStore';
 import { validateLevel } from '@/utils/solver';
-import * as Haptics from 'expo-haptics';
+import { haptics, Haptics } from '@/utils/haptics';
 
 const SNAP = (val: number) => {
   'worklet';
@@ -162,7 +162,7 @@ export default function LevelCreatorScreen() {
       }
       return v;
     }));
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
   // When grid size changes, ensure target car is correctly positioned
@@ -179,7 +179,7 @@ export default function LevelCreatorScreen() {
             col: Math.min(v.col, newSize - (v.orientation === 'horizontal' ? v.length : 1))
           }
     ));
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
   // ── Helpers ──
@@ -266,7 +266,7 @@ export default function LevelCreatorScreen() {
       }
       return next;
     });
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [exitCol, exitRow, gridSize]);
 
   const pivotVehicle = useCallback((id: string) => {
@@ -294,10 +294,10 @@ export default function LevelCreatorScreen() {
       const nc = Math.min(v.col, maxCol);
       
       if (!hasCollision(nr, nc, newOrient, v.length, id)) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         return prev.map(item => item.id === id ? { ...item, orientation: newOrient, row: nr, col: nc } : item);
       } else {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         return prev;
       }
     });
@@ -313,7 +313,7 @@ export default function LevelCreatorScreen() {
     const { row, col } = screenToGrid(screenX, screenY, template.orientation, template.length);
 
     if (hasCollision(row, col, template.orientation, template.length)) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
     setVehicles(prev => [...prev, {
@@ -321,13 +321,13 @@ export default function LevelCreatorScreen() {
       length: template.length, orientation: template.orientation,
       isTarget: false, color: template.color,
     }]);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [screenToGrid, hasCollision, boardSize, cellSize]);
 
   const removeVehicle = useCallback((id: string) => {
     if (id === 'target') return;
     setVehicles(prev => prev.filter(v => v.id !== id));
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }, []);
 
   // ── Actions ──
@@ -350,7 +350,7 @@ export default function LevelCreatorScreen() {
     const newId = isImported ? Date.now() : (params.levelId ? parseInt(params.levelId) : Date.now());
     const newLevel: Level = { id: newId, gridSize, vehicles, exitRow, exitCol, minMoves, updatedAt: Date.now() };
     saveCreatedLevel(newLevel);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Alert.alert('Saved!', isImported ? 'Saved as a new level.' : 'Level updated.', [
       { text: 'OK', onPress: () => router.back() },
     ]);

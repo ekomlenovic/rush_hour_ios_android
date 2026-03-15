@@ -7,7 +7,7 @@ import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated'
 import { BlurView } from 'expo-blur';
 import { useGameStore } from '@/store/gameStore';
 import { useAudio } from '@/context/AudioProvider';
-import * as Haptics from 'expo-haptics';
+import { haptics, Haptics } from '@/utils/haptics';
 
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -16,8 +16,8 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
-  const { maxUnlockedLevel, dailyChallengeProgress, hardReset } = useGameStore();
-  
+  const { maxUnlockedLevel, dailyChallengeProgress, hardReset, isHapticsEnabled, toggleHapticsEnabled } = useGameStore();
+
   const { toggleMusic, isPlaying: isMusicEnabled } = useAudio();
   const [isSettingsVisible, setSettingsVisible] = useState(false);
 
@@ -33,7 +33,7 @@ export default function HomeScreen() {
           onPress: () => {
             hardReset();
             setSettingsVisible(false);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           }
         }
       ]
@@ -79,7 +79,7 @@ export default function HomeScreen() {
       <AnimatedPressable
         entering={FadeInDown.delay(750).springify()}
         style={[
-          styles.secondaryButton, 
+          styles.secondaryButton,
           { borderColor: dailyStatus?.completed ? colors.success : colors.accent, borderWidth: 2 }
         ]}
         onPress={() => {
@@ -123,11 +123,11 @@ export default function HomeScreen() {
 
       {/* Settings Button */}
       <Animated.View entering={FadeIn.delay(1200)} style={styles.headerRight}>
-        <Pressable 
+        <Pressable
           onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setSettingsVisible(true);
-          }} 
+          }}
           style={[styles.settingsButton, { backgroundColor: colors.card }]}
         >
           <Text style={{ fontSize: 24 }}>⚙️</Text>
@@ -155,7 +155,22 @@ export default function HomeScreen() {
                 value={isMusicEnabled}
                 onValueChange={() => {
                   toggleMusic();
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                trackColor={{ false: '#767577', true: colors.accent }}
+              />
+            </View>
+
+            <View style={styles.settingRow}>
+              <View>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Haptic Feedback</Text>
+                <Text style={[styles.settingSub, { color: colors.sub }]}>Vibrate on interactions</Text>
+              </View>
+              <Switch
+                value={isHapticsEnabled}
+                onValueChange={() => {
+                  toggleHapticsEnabled();
+                  haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
                 trackColor={{ false: '#767577', true: colors.accent }}
               />
@@ -168,7 +183,7 @@ export default function HomeScreen() {
               style={[styles.resetBtn, { borderColor: colors.sub, borderStyle: 'dotted', marginBottom: 24 }]}
               onPress={handleHardReset}
             >
-              <Text style={[styles.resetBtnText, { color: colors.sub }]}>🔥 Hard Reset Progress</Text>
+              <Text style={[styles.resetBtnText, { color: colors.sub }]}>Hard Reset Progress</Text>
             </Pressable>
 
             <Pressable
