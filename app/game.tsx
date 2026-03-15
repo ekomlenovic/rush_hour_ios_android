@@ -9,7 +9,7 @@ import { useGameStore } from '@/store/gameStore';
 import { checkWin } from '@/utils/collision';
 import { sampleLevels } from '@/data/sampleLevels';
 import { getHint, solvePuzzle, Move } from '@/utils/solver';
-import { generateLevel, DIFFICULTY_LEVELS } from '@/utils/generator';
+import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel } from '@/utils/generator';
 
 export default function GameScreen() {
   const colorScheme = useColorScheme();
@@ -35,6 +35,9 @@ export default function GameScreen() {
   const [computedMinMoves, setComputedMinMoves] = useState<number | null>(null);
   const [hintRemainingMoves, setHintRemainingMoves] = useState<number | null>(null);
 
+  const currentDailyLevel = useGameStore(s => s.currentDailyLevel);
+  const dailyLevelDate = useGameStore(s => s.dailyLevelDate);
+
   // Load the level and compute the real minMoves via BFS
   useEffect(() => {
     setLoading(true);
@@ -44,27 +47,43 @@ export default function GameScreen() {
     // CRITICAL: Stop any background generation to free up main thread for gameplay
     cancelGeneration();
 
-    // Using InteractionManager ensures the screen transition finishes first
     const task = InteractionManager.runAfterInteractions(() => {
-      // Add a small artificial delay so the transition feels purposeful and smooth
       setTimeout(() => {
-        const id = Number(params.levelId) || 1;
+        const idParam = params.levelId;
+        const dateParam = (params as any).date;
+        const id = Number(idParam);
 
-        // 1. Try to find it in the pre-baked JSON
-        let level = sampleLevels.find((l) => l.id === id);
+        let level: any = null;
 
-        // 2. Try to find it in the generated Zustand memory cache
-        if (!level) {
-          level = generatedLevels.find((l) => l.id === id);
-        }
+        if (idParam === 'daily' && dateParam) {
+          // Use cache if available and date matches
+          if (currentDailyLevel && dailyLevelDate === dateParam) {
+            level = currentDailyLevel;
+          } else {
+            level = generateDailyLevel(dateParam);
+            if (level) {
+              useGameStore.setState({ 
+                currentDailyLevel: level, 
+                dailyLevelDate: dateParam 
+              });
+            }
+          }
+        } else {
+          // 1. Try to find it in the pre-baked JSON
+          level = sampleLevels.find((l) => l.id === id);
+          
+          // 2. Try to find it in the generated Zustand memory cache
+          if (!level) {
+            level = generatedLevels.find((l) => l.id === id);
+          }
 
-        // 3. Fallback: Generate it right now (Infinite Map support)
-        if (!level) {
-          const difficulty = id <= 5 ? DIFFICULTY_LEVELS.EASY : DIFFICULTY_LEVELS.NORMAL;
-          level = generateLevel(id, difficulty) || sampleLevels[0];
-          // Save it so we don't regenerate it if they restart the level
-          if (level.id !== sampleLevels[0].id) {
-            addGeneratedLevel(level);
+          // 3. Fallback: Generate it right now (Infinite Map support)
+          if (!level) {
+            const difficulty = id <= 5 ? DIFFICULTY_LEVELS.EASY : DIFFICULTY_LEVELS.NORMAL;
+            level = generateLevel(id || 1, difficulty) || sampleLevels[0];
+            if (level.id !== sampleLevels[0].id) {
+              addGeneratedLevel(level);
+            }
           }
         }
 
@@ -72,15 +91,20 @@ export default function GameScreen() {
           loadLevel(level);
           setComputedMinMoves(level.minMoves > 0 ? level.minMoves : null);
         }
+
         setLoading(false);
       }, 300);
     });
 
     return () => task.cancel();
-  }, [params.levelId]);
+  }, [params.levelId, (params as any).date]);
+
+
+  const isDailyCompleted = !!(params.levelId === 'daily' && (params as any).date && useGameStore.getState().dailyChallengeProgress[(params as any).date]?.completed);
 
   const handleMoveEnd = useCallback((vehicleId: string, newRow: number, newCol: number) => {
-    if (won) return;
+    if (won || isDailyCompleted) return;
+
     setHintVehicleId(null); // Clear hint highlight on any move
     setHintRemainingMoves(null);
     moveVehicle(vehicleId, newRow, newCol);
@@ -96,9 +120,17 @@ export default function GameScreen() {
       const minMoves = computedMinMoves ?? currentLevel.minMoves;
       const score = calculateScore(updatedMoveCount, minMoves);
       const stars = updatedMoveCount <= minMoves ? 3 : updatedMoveCount <= minMoves + 3 ? 2 : 1;
-      completeLevel(currentLevel.id, score, stars);
+      
+      const idParam = params.levelId;
+      const dateParam = (params as any).date;
+
+      if (idParam === 'daily' && dateParam) {
+        useGameStore.getState().completeDailyChallenge(dateParam, score, stars);
+      } else {
+        completeLevel(currentLevel.id, score, stars);
+      }
     }
-  }, [won, moveVehicle, currentLevel, computedMinMoves, completeLevel]);
+  }, [won, moveVehicle, currentLevel, computedMinMoves, completeLevel, params.levelId, (params as any).date]);
 
   const handleUndo = useCallback(() => {
     undo();
@@ -170,7 +202,7 @@ export default function GameScreen() {
           <Text style={[styles.backText, { color: colors.sub }]}>← Map</Text>
         </Pressable>
         <Text style={[styles.levelTitle, { color: colors.text }]}>
-          Level {currentLevel.id}
+          {params.levelId === 'daily' ? `Daily Challenge` : `Level ${currentLevel.id}`}
         </Text>
         <View style={{ width: 60 }} />
       </Animated.View>
@@ -198,7 +230,10 @@ export default function GameScreen() {
       </Animated.View>
 
       {/* Board */}
-      <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.boardWrapper}>
+      <Animated.View 
+        entering={FadeInDown.delay(300).springify()} 
+        style={[styles.boardWrapper, isDailyCompleted && { opacity: 0.7 }]}
+      >
         <Board
           gridSize={currentLevel.gridSize}
           vehicles={vehicles}
@@ -206,6 +241,7 @@ export default function GameScreen() {
           exitCol={currentLevel.exitCol}
           onMoveEnd={handleMoveEnd}
           hintVehicleId={hintVehicleId}
+          disabled={isDailyCompleted}
         />
       </Animated.View>
 
@@ -233,19 +269,22 @@ export default function GameScreen() {
         </Animated.View>
       )}
 
-      {/* Action buttons */}
-      <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.actions}>
-        <Pressable onPress={handleUndo} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
-          <Text style={[styles.actionText, { color: colors.text }]}>↩ Undo</Text>
-        </Pressable>
-        <Pressable onPress={handleHint} style={[styles.actionBtn, { backgroundColor: colors.hint + '22' }]}>
-          <Text style={[styles.actionText, { color: colors.hint }]}>💡 Hint</Text>
-        </Pressable>
-        <Pressable onPress={handleReset} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
-          <Text style={[styles.actionText, { color: colors.text }]}>↻ Reset</Text>
-        </Pressable>
-      </Animated.View>
+      {/* Action buttons - Hidden for daily challenge or if won */}
+      {params.levelId !== 'daily' && !won && (
+        <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.actions}>
+          <Pressable onPress={handleUndo} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
+            <Text style={[styles.actionText, { color: colors.text }]}>↩ Undo</Text>
+          </Pressable>
+          <Pressable onPress={handleHint} style={[styles.actionBtn, { backgroundColor: colors.hint + '22' }]}>
+            <Text style={[styles.actionText, { color: colors.hint }]}>💡 Hint</Text>
+          </Pressable>
+          <Pressable onPress={handleReset} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
+            <Text style={[styles.actionText, { color: colors.text }]}>↻ Reset</Text>
+          </Pressable>
+        </Animated.View>
+      )}
     </View>
+
   );
 }
 

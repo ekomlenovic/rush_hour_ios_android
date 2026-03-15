@@ -19,6 +19,8 @@ export interface Vehicle {
   color: string;
 }
 
+
+
 /** Describes a level */
 export interface Level {
   id: number;
@@ -32,6 +34,8 @@ export interface Level {
   /** Minimum number of moves to solve (computed by BFS solver) */
   minMoves: number;
 }
+
+
 
 /** Player progress for a specific level */
 export interface LevelProgress {
@@ -67,8 +71,19 @@ interface GameState {
   /** Infinite Map: Dynamically generated levels that are saved locally */
   generatedLevels: Level[];
 
+  /** Periodic/Daily progress: keyed by date string (YYYY-MM-DD) */
+  dailyChallengeProgress: Record<string, { completed: boolean; score: number; stars: number }>;
+
+  /** List of unlocked achievement IDs */
+  achievements: string[];
+
+  /** Daily challenge state for caching */
+  currentDailyLevel: Level | null;
+  dailyLevelDate: string | null;
+
   /** Background generation state (persists across screen navigation) */
   generationState: GenerationState;
+
 
   /** Audio Enabled state */
   isMusicEnabled: boolean;
@@ -79,13 +94,17 @@ interface GameState {
   undo: () => void;
   resetLevel: () => void;
   completeLevel: (levelId: number, score: number, stars: number) => void;
+  completeDailyChallenge: (dateKey: string, score: number, stars: number) => void;
+  checkAchievements: () => void;
   addGeneratedLevel: (level: Level) => void;
+
   purgeCustomLevels: (baseLevelCount: number) => void;
   toggleMusicEnabled: () => void;
   setGenerationState: (state: Partial<GenerationState>) => void;
   cancelGeneration: () => void;
   hardReset: () => void;
 }
+
 
 export const useGameStore = create<GameState>()(
   persist(
@@ -98,6 +117,10 @@ export const useGameStore = create<GameState>()(
   maxUnlockedLevel: 1,
   lastPlayedLevelId: null,
   generatedLevels: [],
+  dailyChallengeProgress: {},
+  achievements: [],
+  currentDailyLevel: null,
+  dailyLevelDate: null,
   isMusicEnabled: true,
   generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
 
@@ -107,14 +130,15 @@ export const useGameStore = create<GameState>()(
       vehicles: level.vehicles.map((v) => ({ ...v })),
       moveCount: 0,
       history: [],
-      lastPlayedLevelId: level.id,
+      lastPlayedLevelId: level.id === 999999 ? get().lastPlayedLevelId : level.id,
     });
   },
 
+
   moveVehicle: (vehicleId: string, newRow: number, newCol: number) => {
     const { vehicles, history, moveCount } = get();
-    // Save current state to history for undo
     const snapshot = vehicles.map((v) => ({ ...v }));
+    
     const updated = vehicles.map((v) =>
       v.id === vehicleId ? { ...v, row: newRow, col: newCol } : v
     );
@@ -124,6 +148,8 @@ export const useGameStore = create<GameState>()(
       history: [...history, snapshot],
     });
   },
+
+
 
   undo: () => {
     const { history, moveCount } = get();
@@ -164,6 +190,43 @@ export const useGameStore = create<GameState>()(
       progress: updatedProgress,
       maxUnlockedLevel: Math.max(maxUnlockedLevel, levelId + 1),
     });
+    get().checkAchievements();
+  },
+
+  completeDailyChallenge: (dateKey: string, score: number, stars: number) => {
+    const { dailyChallengeProgress } = get();
+    const existing = dailyChallengeProgress[dateKey];
+    
+    set({
+      dailyChallengeProgress: {
+        ...dailyChallengeProgress,
+        [dateKey]: {
+          completed: true,
+          score: Math.max(existing?.score || 0, score),
+          stars: Math.max(existing?.stars || 0, stars),
+        }
+      }
+    });
+    get().checkAchievements();
+  },
+
+  checkAchievements: () => {
+    const { progress, dailyChallengeProgress, achievements } = get();
+    const newAchievements: string[] = [...achievements];
+    
+    const completedCount = progress.filter(p => p.completed).length;
+    const perfectCount = progress.filter(p => p.stars === 3).length;
+    const dailyCount = Object.values(dailyChallengeProgress).filter(p => p.completed).length;
+
+    if (completedCount >= 5 && !achievements.includes('novice')) newAchievements.push('novice');
+    if (completedCount >= 50 && !achievements.includes('expert')) newAchievements.push('expert');
+    if (perfectCount >= 10 && !achievements.includes('perfectionist')) newAchievements.push('perfectionist');
+    if (dailyCount >= 1 && !achievements.includes('daily_winner')) newAchievements.push('daily_winner');
+
+    if (newAchievements.length !== achievements.length) {
+      set({ achievements: newAchievements });
+      // Logic for achievement notification could be added here
+    }
   },
 
   addGeneratedLevel: (level: Level) => {
@@ -211,6 +274,7 @@ export const useGameStore = create<GameState>()(
       moveCount: 0,
       history: [],
       generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
+      dailyChallengeProgress: {},
     });
   },
 }), {
@@ -221,6 +285,10 @@ export const useGameStore = create<GameState>()(
     maxUnlockedLevel: state.maxUnlockedLevel,
     lastPlayedLevelId: state.lastPlayedLevelId,
     generatedLevels: state.generatedLevels,
+    dailyChallengeProgress: state.dailyChallengeProgress,
+    achievements: state.achievements,
+    currentDailyLevel: state.currentDailyLevel,
+    dailyLevelDate: state.dailyLevelDate,
     isMusicEnabled: state.isMusicEnabled,
   }),
 }));

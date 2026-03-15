@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, StyleSheet, useColorScheme } from 'react-native';
+import { View, StyleSheet, useColorScheme, Text } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -22,7 +22,9 @@ interface BlockProps {
   isHinted?: boolean;
   min: number;
   max: number;
+  disabled?: boolean;
 }
+
 
 const SPRING_CONFIG = {
   damping: 15,
@@ -36,7 +38,8 @@ const BOUNCE_SPRING = {
   mass: 0.5,
 };
 
-function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max }: BlockProps) {
+function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, disabled = false }: BlockProps) {
+
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -171,7 +174,9 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max }: B
   const shadowColor = vehicle.isTarget ? '#EF4444' : vehicle.color;
 
   return (
-    <GestureDetector gesture={panGesture}>
+    <GestureDetector gesture={panGesture.enabled(!disabled)}>
+
+
       <Animated.View
         style={[
           styles.block,
@@ -223,6 +228,8 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max }: B
           ]}
         />
       </Animated.View>
+
+
     </GestureDetector>
   );
 }
@@ -255,6 +262,8 @@ const styles = StyleSheet.create({
   },
 });
 
+
+
 // Custom comparison function for Block memoization
 function areBlocksEqual(prevProps: BlockProps, nextProps: BlockProps) {
   return (
@@ -267,7 +276,8 @@ function areBlocksEqual(prevProps: BlockProps, nextProps: BlockProps) {
     prevProps.isHinted === nextProps.isHinted &&
     prevProps.onMoveEnd === nextProps.onMoveEnd &&
     prevProps.min === nextProps.min &&
-    prevProps.max === nextProps.max
+    prevProps.max === nextProps.max &&
+    prevProps.disabled === nextProps.disabled
   );
 }
 

@@ -22,17 +22,70 @@ const COLORS = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SEEDED RNG (Linear Congruential Generator)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Creates a simple pseudo-random number generator from a string seed.
+ */
+function createPRNG(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+  }
+  // If h is 0, the LCG will stay at 0. Force it to something else.
+  if (h === 0) h = 1;
+  
+  return function() {
+    h = Math.imul(16807, h) | 0;
+    // We want a positive float between 0 and 1
+    const res = (h & 0x7fffffff) / 0x7fffffff;
+    return res;
+  };
+}
+
+
+let currentRNG = Math.random;
+
+function seededRandom() {
+  return currentRNG();
+}
+
+/**
+ * Wraps generation with a specific seed to ensure deterministic results.
+ */
+export function generateDailyLevel(dateStr: string): Level | null {
+  const prng = createPRNG(dateStr);
+  const oldRNG = currentRNG;
+  currentRNG = prng;
+  
+  // Use a fixed difficulty for Daily Challenge (e.g., between NORMAL and HARD)
+  const difficulty = DIFFICULTY_LEVELS.NORMAL; 
+  // Custom ID for daily: lets use a large offset
+  const dailyId = 999999;
+  
+  try {
+    const level = generateLevel(dailyId, difficulty);
+    return level;
+  } finally {
+    currentRNG = oldRNG;
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
 // UTILITIES
 // ─────────────────────────────────────────────────────────────────────────────
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(seededRandom() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }
+
 
 function clamp(val: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, val));
@@ -103,17 +156,18 @@ export function generateLevel(id: number, config: DifficultyConfig): Level | nul
     const pathCols = shuffle([2, 3, 4, 5]);
     const minBlock = clamp(Math.floor(minMovesRequired / 5), 1, 4);
     const maxBlock = clamp(Math.ceil(maxMovesRequired / 4), minBlock, 4);
-    const numBlock = minBlock + Math.floor(Math.random() * (maxBlock - minBlock + 1));
+    const numBlock = minBlock + Math.floor(seededRandom() * (maxBlock - minBlock + 1));
+
 
     for (let b = 0; b < numBlock; b++) {
       const col = pathCols[b];
       for (let p = 0; p < 25; p++) {
-        const length = Math.random() > 0.4 ? 2 : 3;
+        const length = seededRandom() > 0.4 ? 2 : 3;
         const minRow = Math.max(0, targetRow - length + 1);
         const maxRow = Math.min(gridSize - length, targetRow);
         if (minRow > maxRow) continue;
 
-        const row = minRow + Math.floor(Math.random() * (maxRow - minRow + 1));
+        const row = minRow + Math.floor(seededRandom() * (maxRow - minRow + 1));
         if (canPlace(vehicles, row, col, length, 'vertical', gridSize)) {
           vehicles.push({
             id: `blocker_${b}`,
@@ -127,15 +181,15 @@ export function generateLevel(id: number, config: DifficultyConfig): Level | nul
       }
     }
 
-    const targetCount = minVehicles + Math.floor(Math.random() * (maxVehicles - minVehicles + 1));
+    const targetCount = minVehicles + Math.floor(seededRandom() * (maxVehicles - minVehicles + 1));
     let stalls = 0;
     while (vehicles.length < targetCount + 1 && stalls < 6) {
       let placed = false;
       for (let p = 0; p < 40; p++) {
-        const orientation: 'horizontal' | 'vertical' = Math.random() > 0.5 ? 'horizontal' : 'vertical';
-        const length = Math.random() > 0.3 ? 2 : 3;
-        const row = Math.floor(Math.random() * gridSize);
-        const col = Math.floor(Math.random() * gridSize);
+        const orientation: 'horizontal' | 'vertical' = seededRandom() > 0.5 ? 'horizontal' : 'vertical';
+        const length = seededRandom() > 0.3 ? 2 : 3;
+        const row = Math.floor(seededRandom() * gridSize);
+        const col = Math.floor(seededRandom() * gridSize);
 
         if (orientation === 'horizontal' && row === targetRow) continue;
 
@@ -165,7 +219,10 @@ export function generateLevel(id: number, config: DifficultyConfig): Level | nul
         exitCol,
         minMoves: moves,
       };
+
+
     }
+
   }
 
   return null;
