@@ -88,16 +88,16 @@ interface GameState {
   /** Daily challenge state for caching */
   currentDailyLevel: Level | null;
   dailyLevelDate: string | null;
-
-  /** Background generation state (persists across screen navigation) */
   generationState: GenerationState;
 
+  /** Daily challenge saved state (to prevent reset on leave) */
+  dailyChallengeSaveState: { vehicles: Vehicle[]; moveCount: number; history: Vehicle[][] } | null;
 
   /** Audio Enabled state */
   isMusicEnabled: boolean;
 
   // Actions
-  loadLevel: (level: Level) => void;
+  loadLevel: (level: Level, savedState?: { vehicles: Vehicle[]; moveCount: number; history: Vehicle[][] }) => void;
   moveVehicle: (vehicleId: string, newRow: number, newCol: number) => void;
   undo: () => void;
   resetLevel: () => void;
@@ -113,6 +113,7 @@ interface GameState {
   purgeCustomLevels: (baseLevelCount: number) => void;
   toggleMusicEnabled: () => void;
   setGenerationState: (state: Partial<GenerationState>) => void;
+  saveDailyState: (vehicles: Vehicle[], moveCount: number, history: Vehicle[][]) => void;
   cancelGeneration: () => void;
   hardReset: () => void;
 }
@@ -135,15 +136,16 @@ export const useGameStore = create<GameState>()(
   achievements: [],
   currentDailyLevel: null,
   dailyLevelDate: null,
+  dailyChallengeSaveState: null,
   isMusicEnabled: true,
   generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
 
-  loadLevel: (level: Level) => {
+  loadLevel: (level: Level, savedState?: { vehicles: Vehicle[]; moveCount: number; history: Vehicle[][] }) => {
     set({
       currentLevel: level,
-      vehicles: level.vehicles.map((v) => ({ ...v })),
-      moveCount: 0,
-      history: [],
+      vehicles: savedState ? savedState.vehicles : level.vehicles.map((v) => ({ ...v })),
+      moveCount: savedState ? savedState.moveCount : 0,
+      history: savedState ? savedState.history : [],
       lastPlayedLevelId: level.id === 999999 ? get().lastPlayedLevelId : level.id,
     });
   },
@@ -219,7 +221,8 @@ export const useGameStore = create<GameState>()(
           score: Math.max(existing?.score || 0, score),
           stars: Math.max(existing?.stars || 0, stars),
         }
-      }
+      },
+      dailyChallengeSaveState: null // Clear saved state when completed
     });
     get().checkAchievements();
   },
@@ -315,6 +318,16 @@ export const useGameStore = create<GameState>()(
 
   setGenerationState: (state) => set((s) => ({ generationState: { ...s.generationState, ...state } })),
 
+  saveDailyState: (vehicles, moveCount, history) => {
+    set({ 
+        dailyChallengeSaveState: { 
+            vehicles: vehicles.map(v => ({ ...v })), 
+            moveCount, 
+            history: history.map(h => h.map(v => ({ ...v }))) 
+        } 
+    });
+  },
+
   cancelGeneration: () => {
     const current = get().generationState;
     set({ generationState: { ...current, shouldCancel: true } });
@@ -334,6 +347,7 @@ export const useGameStore = create<GameState>()(
       history: [],
       generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
       dailyChallengeProgress: {},
+      dailyChallengeSaveState: null,
     });
   },
 }), {
@@ -350,6 +364,8 @@ export const useGameStore = create<GameState>()(
     achievements: state.achievements,
     currentDailyLevel: state.currentDailyLevel,
     dailyLevelDate: state.dailyLevelDate,
+    dailyChallengeSaveState: state.dailyChallengeSaveState,
     isMusicEnabled: state.isMusicEnabled,
+    generationState: state.generationState,
   }),
 }));
