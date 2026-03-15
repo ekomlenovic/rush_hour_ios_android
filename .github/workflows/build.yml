@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      build_android:
+        description: 'Build Android APK?'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   prepare:
@@ -95,6 +101,7 @@ jobs:
   build-android:
     name: Build Android
     needs: prepare
+    if: github.event.inputs.build_android == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -148,7 +155,7 @@ jobs:
 
   release:
     name: Create Release
-    needs: [prepare, build-ios, build-android]
+    needs: [prepare, build-ios] # Android is optional, so we don't 'need' it to start release logic
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -161,15 +168,20 @@ jobs:
         with:
           name: ios-build
 
-      - name: Download Android Build
+      - name: Download Android Build (Optional)
         uses: actions/download-artifact@v4
         with:
           name: android-build
+        continue-on-error: true
 
       - name: Rename binaries
         run: |
-          mv app-release.apk rush-hours.apk
-          # IPA is already named correctly from build-ios
+          if [ -f "app-release.apk" ]; then
+            mv app-release.apk rush-hours.apk
+            echo "HAS_APK=true" >> $GITHUB_ENV
+          else
+            echo "HAS_APK=false" >> $GITHUB_ENV
+          fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -192,13 +204,20 @@ jobs:
             rush-hours.apk
           draft: false
           prerelease: false
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update Update Sources & Push Changes
         run: |
           IPA_SIZE=$(stat -c%s rush-hours-unsigned.ipa)
-          APK_SIZE=$(stat -c%s rush-hours.apk)
+          
+          if [ "${{ env.HAS_APK }}" = "true" ]; then
+            APK_SIZE=$(stat -c%s rush-hours.apk)
+          else
+            APK_SIZE=0
+          fi
+
           VERSION="${{ needs.prepare.outputs.version }}"
           TAG_NAME="v${VERSION}-b${{ github.run_number }}"
           BASE_URL="https://github.com/${{ github.repository }}/releases/download/${TAG_NAME}"
@@ -235,7 +254,10 @@ jobs:
             androidApp.buildVersion = '${{ github.run_number }}';
             androidApp.versionDate = '${DATE}';
             androidApp.downloadURL = '${APK_URL}';
-            androidApp.size = parseInt('${APK_SIZE}');
+            const newApkSize = parseInt('${APK_SIZE}');
+            if (newApkSize > 0) {
+              androidApp.size = newApkSize;
+            }
             fs.writeFileSync('android-source.json', JSON.stringify(androidSource, null, 2));
           "
           
