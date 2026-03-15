@@ -119,13 +119,6 @@ export default function HomeScreen() {
           <Text style={[styles.linkText, { color: colors.sub }]}>How to Play?</Text>
         </AnimatedPressable>
 
-        <AnimatedPressable
-          entering={FadeInDown.delay(1200).springify()}
-          style={[styles.linkButton]}
-          onPress={() => router.push('/stats')}
-        >
-          <Text style={[styles.linkText, { color: colors.sub }]}>My Stats</Text>
-        </AnimatedPressable>
       </View>
 
       {/* Settings Button */}

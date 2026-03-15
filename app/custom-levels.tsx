@@ -1,26 +1,31 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, FlatList, Alert } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Pressable, FlatList, Alert, Share } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useGameStore } from '@/store/gameStore';
 import * as Haptics from 'expo-haptics';
-import { deserializeLevel } from '@/utils/sharing';
+import { deserializeLevel, getShareUrl } from '@/utils/sharing';
 import { TextInput } from 'react-native';
 
 export default function CustomLevelsScreen() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const router = useRouter();
-    const { createdLevels, importedLevels, deleteCustomLevel, loadLevel, addImportedLevel } = useGameStore();
-
-    const [activeTab, setActiveTab] = useState<'created' | 'imported'>('created');
+    const { createdLevels, importedLevels, deleteCustomLevel, toggleFavorite } = useGameStore();
+    const [activeTab, setActiveTab] = useState<'created' | 'imported' | 'favorites'>('created');
     const [importUrl, setImportUrl] = useState('');
 
     const colors = isDark
-        ? { bg: '#0F0F1A', text: '#FFFFFF', sub: '#8E8EA0', accent: '#6C63FF', card: 'rgba(255,255,255,0.06)', danger: '#EF4444' }
-        : { bg: '#F5F5FA', text: '#1A1A2E', sub: '#6B6B80', accent: '#5A4FE0', card: 'rgba(0,0,0,0.04)', danger: '#EF4444' };
+        ? { bg: '#0F0F1A', text: '#FFFFFF', sub: '#8E8EA0', accent: '#6C63FF', card: 'rgba(255,255,255,0.06)', danger: '#EF4444', star: '#FFD700' }
+        : { bg: '#F5F5FA', text: '#1A1A2E', sub: '#6B6B80', accent: '#5A4FE0', card: 'rgba(0,0,0,0.04)', danger: '#EF4444', star: '#FFB800' };
 
-    const data = activeTab === 'created' ? createdLevels : importedLevels;
+    const sortedCreated = [...createdLevels].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    const sortedImported = [...importedLevels].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    const favoriteLevels = [...createdLevels, ...importedLevels]
+        .filter(l => l.isFavorite)
+        .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+    const data = activeTab === 'created' ? sortedCreated : activeTab === 'imported' ? sortedImported : favoriteLevels;
 
     const handleDelete = (id: number) => {
         Alert.alert(
@@ -32,7 +37,7 @@ export default function CustomLevelsScreen() {
                     text: "Delete", 
                     style: "destructive", 
                     onPress: () => {
-                        deleteCustomLevel(id, activeTab);
+                        deleteCustomLevel(id, activeTab === 'favorites' ? (createdLevels.some(l => l.id === id) ? 'created' : 'imported') : activeTab);
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     }
                 }
@@ -45,6 +50,7 @@ export default function CustomLevelsScreen() {
         const trimmedUrl = importUrl.trim();
         const level = deserializeLevel(trimmedUrl, Date.now());
         if (level) {
+            const { addImportedLevel } = useGameStore.getState();
             addImportedLevel(level);
             setImportUrl('');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -55,37 +61,64 @@ export default function CustomLevelsScreen() {
         }
     };
 
-    const renderItem = ({ item, index }: { item: any, index: number }) => (
-        <Animated.View 
-            entering={FadeInDown.delay(index * 100).springify()}
-            style={[styles.levelCard, { backgroundColor: colors.card }]}
-        >
-            <View style={styles.levelInfo}>
-                <Text style={[styles.levelTitle, { color: colors.text }]}>Level #{item.id}</Text>
-                <Text style={[styles.levelSub, { color: colors.sub }]}>{item.vehicles.length} vehicles • {item.minMoves} min moves</Text>
-            </View>
-            <View style={styles.actions}>
-                <Pressable 
-                    onPress={() => router.push(`/game?levelId=${item.id}`)}
-                    style={[styles.actionBtn, { backgroundColor: colors.accent }]}
-                >
-                    <Text style={styles.actionText}>Play</Text>
-                </Pressable>
-                <Pressable 
-                    onPress={() => router.push(`/creator?levelId=${item.id}`)}
-                    style={[styles.actionBtn, { backgroundColor: colors.sub }]}
-                >
-                    <Text style={styles.actionText}>Edit</Text>
-                </Pressable>
-                <Pressable 
-                    onPress={() => handleDelete(item.id)}
-                    style={[styles.actionBtn, { backgroundColor: colors.danger }]}
-                >
-                    <Text style={styles.actionText}>✕</Text>
-                </Pressable>
-            </View>
-        </Animated.View>
-    );
+    const handleShare = async (item: any) => {
+        try {
+            const url = getShareUrl(item);
+            await Share.share({
+                message: `Check out this Rush Hour level I made/found!`,
+                url: url,
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const renderItem = ({ item, index }: { item: any, index: number }) => {
+        const type = createdLevels.find(l => l.id === item.id) ? 'created' : 'imported';
+        return (
+            <Animated.View 
+                entering={FadeInDown.delay(index * 100).springify()}
+                style={[styles.levelCard, { backgroundColor: colors.card }]}
+            >
+                <View style={styles.levelInfo}>
+                    <Text style={[styles.levelTitle, { color: colors.text }]}>Level #{item.id}</Text>
+                    <Text style={[styles.levelSub, { color: colors.sub }]}>{item.vehicles.length} vehicles • {item.minMoves} min moves</Text>
+                </View>
+                <View style={styles.actions}>
+                    <Pressable 
+                        onPress={() => toggleFavorite(item.id, type)}
+                        style={[styles.iconBtn]}
+                    >
+                        <Text style={{ fontSize: 20, color: item.isFavorite ? colors.star : colors.sub }}>{item.isFavorite ? '★' : '☆'}</Text>
+                    </Pressable>
+                    <Pressable 
+                        onPress={() => handleShare(item)}
+                        style={[styles.iconBtn]}
+                    >
+                        <Text style={{ fontSize: 18, color: colors.accent }}>🔗</Text>
+                    </Pressable>
+                    <Pressable 
+                        onPress={() => router.push(`/game?levelId=${item.id}`)}
+                        style={[styles.actionBtn, { backgroundColor: colors.accent }]}
+                    >
+                        <Text style={styles.actionText}>Play</Text>
+                    </Pressable>
+                    <Pressable 
+                        onPress={() => router.push(`/creator?levelId=${item.id}`)}
+                        style={[styles.actionBtn, { backgroundColor: colors.sub }]}
+                    >
+                        <Text style={styles.actionText}>Edit</Text>
+                    </Pressable>
+                    <Pressable 
+                        onPress={() => handleDelete(item.id)}
+                        style={[styles.actionBtn, { backgroundColor: colors.danger }]}
+                    >
+                        <Text style={styles.actionText}>✕</Text>
+                    </Pressable>
+                </View>
+            </Animated.View>
+        );
+    };
 
     return (
         <View style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -109,6 +142,12 @@ export default function CustomLevelsScreen() {
                     style={[styles.tab, activeTab === 'imported' && { borderBottomColor: colors.accent, borderBottomWidth: 3 }]}
                 >
                     <Text style={[styles.tabText, { color: activeTab === 'imported' ? colors.text : colors.sub }]}>Imported</Text>
+                </Pressable>
+                <Pressable 
+                    onPress={() => setActiveTab('favorites')}
+                    style={[styles.tab, activeTab === 'favorites' && { borderBottomColor: colors.accent, borderBottomWidth: 3 }]}
+                >
+                    <Text style={[styles.tabText, { color: activeTab === 'favorites' ? colors.text : colors.sub }]}>Favorites</Text>
                 </Pressable>
             </View>
 
@@ -138,7 +177,7 @@ export default function CustomLevelsScreen() {
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
                         <Text style={[styles.emptyText, { color: colors.sub }]}>
-                            {activeTab === 'created' ? "You haven't created any levels yet." : "No imported levels found."}
+                            {activeTab === 'created' ? "You haven't created any levels yet." : activeTab === 'imported' ? "No imported levels found." : "No favorite levels yet."}
                         </Text>
                         {activeTab === 'created' && (
                             <Pressable 
@@ -183,9 +222,10 @@ const styles = StyleSheet.create({
     levelInfo: { flex: 1 },
     levelTitle: { fontSize: 18, fontWeight: '700', marginBottom: 4 },
     levelSub: { fontSize: 14 },
-    actions: { flexDirection: 'row', gap: 8 },
-    actionBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
-    actionText: { color: '#FFF', fontWeight: '700' },
+    actions: { flexDirection: 'row', gap: 6, alignItems: 'center' },
+    actionBtn: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10 },
+    iconBtn: { padding: 4 },
+    actionText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
     emptyState: { alignItems: 'center', marginTop: 100 },
     emptyText: { fontSize: 16, marginBottom: 20 },
     createBtn: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16 },
