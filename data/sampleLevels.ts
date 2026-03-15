@@ -11475,6 +11475,124 @@ export const sampleLevels: Level[] = [
       }
     ],
     "updatedAt": 1773600768657
+  },
+  {
+    "id": 96,
+    "gridSize": 6,
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 50,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 0,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 2,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      }
+    ],
+    "updatedAt": 1773600768657
   }
 ]
   ;
