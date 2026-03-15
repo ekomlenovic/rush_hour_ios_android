@@ -43,6 +43,7 @@ export default function GameScreen() {
   const [hintVehicleId, setHintVehicleId] = useState<string | null>(null);
   const [computedMinMoves, setComputedMinMoves] = useState<number | null>(null);
   const [hintRemainingMoves, setHintRemainingMoves] = useState<number | null>(null);
+  const [isHintLoading, setIsHintLoading] = useState(false);
 
   const [isShareVisible, setShareVisible] = useState(false);
 
@@ -120,11 +121,16 @@ export default function GameScreen() {
           }
 
           // 4. Fallback: Generate it right now (Infinite Map support)
-          // Only for small IDs (1-1000) - large IDs should be in customs
-          if (!level && id > 0 && id <= 1000) {
-            const difficulty = id <= 5 ? DIFFICULTY_LEVELS.EASY : DIFFICULTY_LEVELS.NORMAL;
+          // Adjust difficulty based on level ID range
+          if (!level && id > 0 && id <= 2000) {
+            let difficulty = DIFFICULTY_LEVELS.EASY;
+            if (id > 1500) difficulty = DIFFICULTY_LEVELS.MASTER;
+            else if (id > 800) difficulty = DIFFICULTY_LEVELS.EXPERT;
+            else if (id > 400) difficulty = DIFFICULTY_LEVELS.HARD;
+            else if (id > 100) difficulty = DIFFICULTY_LEVELS.NORMAL;
+
             level = generateLevel(id || 1, difficulty) || sampleLevels[0];
-            if (level.id !== sampleLevels[0].id) {
+            if (level && level.id !== sampleLevels[0].id) {
               addGeneratedLevel(level);
             }
           }
@@ -209,30 +215,38 @@ export default function GameScreen() {
   }, [resetLevel]);
 
   const handleHint = useCallback(async () => {
-    if (!currentLevel || won) return;
+    if (!currentLevel || won || isHintLoading) return;
 
-    const result = await solvePuzzleAsync(
-      vehicles,
-      currentLevel.gridSize,
-      currentLevel.exitRow,
-      currentLevel.exitCol
-    );
+    setIsHintLoading(true);
+    try {
+      const result = await solvePuzzleAsync(
+        vehicles,
+        currentLevel.gridSize,
+        currentLevel.exitRow,
+        currentLevel.exitCol
+      );
 
-    if (result.minMoves > 0 && result.moves.length > 0) {
-      setHintRemainingMoves(result.minMoves);
-      const hintMove = result.moves[0];
-      setHintVehicleId(hintMove.vehicleId);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (result.minMoves > 0 && result.moves.length > 0) {
+        setHintRemainingMoves(result.minMoves);
+        const hintMove = result.moves[0];
+        setHintVehicleId(hintMove.vehicleId);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      // Auto-clear hint highlight after 8 seconds
-      setTimeout(() => {
-        setHintVehicleId(null);
-        setHintRemainingMoves(null);
-      }, 8000);
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        // Auto-clear hint highlight after 8 seconds
+        setTimeout(() => {
+          setHintVehicleId(null);
+          setHintRemainingMoves(null);
+        }, 8000);
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      }
+    } catch (error) {
+      console.error("Hint calculation failed:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsHintLoading(false);
     }
-  }, [vehicles, currentLevel, won]);
+  }, [vehicles, currentLevel, won, isHintLoading]);
 
   const minMoves = computedMinMoves ?? currentLevel?.minMoves ?? 0;
   const score = calculateScore(moveCount, minMoves);
@@ -338,8 +352,16 @@ export default function GameScreen() {
           <Pressable onPress={handleUndo} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
             <Text style={[styles.actionText, { color: colors.text }]}>↩ Undo</Text>
           </Pressable>
-          <Pressable onPress={handleHint} style={[styles.actionBtn, { backgroundColor: colors.hint + '22' }]}>
-            <Text style={[styles.actionText, { color: colors.hint }]}>💡 Hint</Text>
+          <Pressable 
+            onPress={handleHint} 
+            style={[styles.actionBtn, { backgroundColor: colors.hint + '22' }]}
+            disabled={isHintLoading}
+          >
+            {isHintLoading ? (
+              <ActivityIndicator size="small" color={colors.hint} />
+            ) : (
+              <Text style={[styles.actionText, { color: colors.hint }]}>💡 Hint</Text>
+            )}
           </Pressable>
           <Pressable onPress={handleReset} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
             <Text style={[styles.actionText, { color: colors.text }]}>↻ Reset</Text>

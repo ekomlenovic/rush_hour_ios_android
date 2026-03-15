@@ -7,60 +7,57 @@ import { Level } from '@/store/gameStore';
 export const sampleLevels: Level[] = [
   {
     "id": 1,
-    "gridSize": 7,
-    "exitRow": 255,
-    "exitCol": 5,
-    "minMoves": 6,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 5,
-        "col": 5,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 0,
+        "id": "blocker_0",
+        "row": 2,
         "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 0,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 2,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
         "id": "v3",
-        "row": 5,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 4,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v4",
-        "row": 2,
+        "row": 0,
         "col": 0,
-        "length": 3,
-        "orientation": "horizontal",
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 1,
-        "col": 4,
+        "row": 0,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -68,8 +65,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 3,
-        "col": 5,
+        "row": 1,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -77,63 +74,62 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 3,
-        "col": 4,
+        "row": 1,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       }
     ],
-    "updatedAt": 1773600740857
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 6
   },
   {
     "id": 2,
-    "gridSize": 7,
-    "exitRow": 5,
-    "exitCol": 255,
-    "minMoves": 6,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 5,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 0,
         "col": 3,
-        "length": 2,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 5,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
         "id": "v3",
-        "row": 4,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 5,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v4",
-        "row": 1,
-        "col": 2,
+        "row": 4,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -141,63 +137,71 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 3,
+        "row": 0,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
       }
     ],
-    "updatedAt": 1773600741643
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 6
   },
   {
     "id": 3,
     "gridSize": 6,
-    "exitRow": 2,
-    "exitCol": 255,
-    "minMoves": 6,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
-        "col": 3,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
-        "col": 1,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
+        "id": "blocker_2",
+        "row": 1,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 1,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 2,
-        "col": 2,
+        "row": 0,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -205,9 +209,9 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 0,
-        "col": 4,
-        "length": 2,
+        "row": 5,
+        "col": 2,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
@@ -215,208 +219,133 @@ export const sampleLevels: Level[] = [
       {
         "id": "v6",
         "row": 3,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
+        "col": 1,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 1,
-        "col": 0,
+        "row": 0,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       }
     ],
-    "updatedAt": 1773600740978
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 7
   },
   {
     "id": 4,
     "gridSize": 6,
-    "exitRow": 6,
-    "exitCol": 5,
-    "minMoves": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
-        "col": 5,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 3,
-        "length": 2,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 0,
+        "col": 5,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
+        "id": "blocker_2",
         "row": 2,
         "col": 3,
-        "length": 3,
-        "orientation": "horizontal",
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 5,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
+        "row": 1,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 4,
-        "col": 4,
+        "row": 5,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
-      },
-      {
-        "id": "v6",
-        "row": 2,
-        "col": 0,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F97316"
       }
     ],
-    "updatedAt": 1773600740985
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 6
   },
   {
     "id": 5,
     "gridSize": 6,
-    "exitRow": 6,
-    "exitCol": 1,
-    "minMoves": 6,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": true,
-        "color": "#EF4444"
-      },
-      {
-        "id": "v1",
-        "row": 1,
-        "col": 3,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v2",
-        "row": 4,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 5,
         "col": 0,
         "length": 2,
         "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 0,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
-        "id": "v5",
-        "row": 4,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#8B5CF6"
-      }
-    ],
-    "updatedAt": 1773600741076
-  },
-  {
-    "id": 6,
-    "gridSize": 7,
-    "exitRow": 5,
-    "exitCol": 255,
-    "minMoves": 12,
-    "vehicles": [
-      {
-        "id": "target",
-        "row": 5,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
+        "id": "blocker_0",
+        "row": 2,
         "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
-        "color": "#10B981"
+        "color": "#F59E0B"
       },
       {
         "id": "v2",
-        "row": 3,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 5,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
         "id": "v3",
-        "row": 3,
-        "col": 5,
-        "length": 2,
+        "row": 0,
+        "col": 4,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v4",
-        "row": 5,
-        "col": 1,
+        "row": 3,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -424,18 +353,18 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 1,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 5,
-        "col": 2,
-        "length": 2,
+        "row": 3,
+        "col": 1,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
@@ -443,80 +372,133 @@ export const sampleLevels: Level[] = [
       {
         "id": "v7",
         "row": 0,
-        "col": 4,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 2,
-        "col": 6,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 1,
-        "col": 1,
+        "col": 2,
         "length": 2,
         "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      }
+    ],
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 6
+  },
+  {
+    "id": 6,
+    "gridSize": 6,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "blocker_0",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
-        "id": "v10",
-        "row": 3,
-        "col": 3,
+        "id": "blocker_1",
+        "row": 1,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "blocker_2",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v4",
+        "row": 4,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 0,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#10B981"
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 1,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
       }
     ],
-    "updatedAt": 1773600741331
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 7
   },
   {
     "id": 7,
     "gridSize": 6,
-    "exitRow": 6,
-    "exitCol": 4,
-    "minMoves": 16,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 2,
-        "col": 1,
-        "length": 2,
+        "id": "blocker_0",
+        "row": 0,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 5,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
+        "id": "v3",
         "row": 3,
         "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 5,
-        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -524,9 +506,9 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v4",
-        "row": 2,
-        "col": 3,
-        "length": 3,
+        "row": 1,
+        "col": 1,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#06B6D4"
@@ -534,7 +516,7 @@ export const sampleLevels: Level[] = [
       {
         "id": "v5",
         "row": 5,
-        "col": 2,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -542,108 +524,89 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 3,
+        "row": 1,
         "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
         "row": 4,
-        "col": 1,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 0,
-        "col": 1,
+        "row": 5,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 1,
-        "col": 0,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
+        "color": "#14B8A6"
       }
     ],
-    "updatedAt": 1773600741675
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 7
   },
   {
     "id": 8,
     "gridSize": 6,
-    "exitRow": 3,
-    "exitCol": 255,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 3,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
-        "col": 3,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
-        "color": "#10B981"
+        "color": "#F59E0B"
       },
       {
         "id": "v2",
-        "row": 1,
+        "row": 0,
         "col": 2,
         "length": 3,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
         "id": "v3",
-        "row": 2,
-        "col": 2,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v4",
-        "row": 0,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 5,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 5,
-        "col": 2,
+        "row": 0,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -651,7 +614,7 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 0,
+        "row": 3,
         "col": 0,
         "length": 3,
         "orientation": "horizontal",
@@ -660,8 +623,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 2,
-        "col": 3,
+        "row": 4,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -670,70 +633,51 @@ export const sampleLevels: Level[] = [
       {
         "id": "v8",
         "row": 2,
-        "col": 0,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 2,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 2,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600741959
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 7
   },
   {
     "id": 9,
     "gridSize": 6,
-    "exitRow": 6,
-    "exitCol": 0,
-    "minMoves": 17,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
+        "row": 2,
         "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 1,
-        "col": 2,
-        "length": 2,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 0,
+        "col": 5,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 3,
+        "id": "blocker_2",
+        "row": 2,
         "col": 2,
         "length": 2,
         "orientation": "vertical",
@@ -741,26 +685,17 @@ export const sampleLevels: Level[] = [
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 0,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 2,
-        "col": 4,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 2,
+        "row": 4,
         "col": 0,
         "length": 2,
         "orientation": "horizontal",
@@ -769,8 +704,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 0,
-        "col": 3,
+        "row": 1,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -778,108 +713,71 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 0,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 5,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 2,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 0,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
         "row": 5,
         "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#3B82F6"
+        "color": "#64748B"
       }
     ],
-    "updatedAt": 1773600741122
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 6
   },
   {
     "id": 10,
     "gridSize": 6,
-    "exitRow": 255,
-    "exitCol": 3,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 3,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 1,
-        "col": 3,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 0,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
+        "id": "blocker_2",
         "row": 2,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 2,
+        "id": "v4",
+        "row": 0,
         "col": 1,
         "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 1,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 5,
-        "col": 0,
+        "row": 4,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -887,10 +785,10 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 0,
-        "col": 3,
+        "row": 4,
+        "col": 1,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
@@ -899,87 +797,77 @@ export const sampleLevels: Level[] = [
         "row": 3,
         "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 0,
-        "col": 1,
+        "row": 3,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 0,
-        "col": 5,
-        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#F59E0B"
+        "color": "#14B8A6"
       }
     ],
-    "updatedAt": 1773600741149
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 6
   },
   {
     "id": 11,
     "gridSize": 6,
-    "exitRow": 0,
-    "exitCol": 255,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
-        "col": 3,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 1,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 4,
-        "col": 1,
-        "length": 2,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 4,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
+        "id": "v4",
         "row": 0,
         "col": 2,
         "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 2,
-        "col": 2,
-        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 3,
-        "col": 3,
+        "row": 4,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -987,118 +875,81 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 0,
-        "col": 1,
+        "row": 4,
+        "col": 3,
         "length": 3,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
         "row": 3,
-        "col": 5,
-        "length": 3,
+        "col": 2,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 2,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 1,
-        "col": 3,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 5,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600741088
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 7
   },
   {
     "id": 12,
     "gridSize": 6,
-    "exitRow": 255,
-    "exitCol": 1,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 3,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 0,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
-        "color": "#10B981"
+        "color": "#F59E0B"
       },
       {
         "id": "v2",
-        "row": 2,
-        "col": 1,
-        "length": 2,
+        "row": 4,
+        "col": 2,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
         "id": "v3",
-        "row": 5,
-        "col": 1,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v4",
-        "row": 3,
-        "col": 0,
-        "length": 3,
+        "row": 2,
+        "col": 4,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 0,
-        "col": 4,
-        "length": 3,
+        "row": 4,
+        "col": 5,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
@@ -1106,7 +957,7 @@ export const sampleLevels: Level[] = [
       {
         "id": "v6",
         "row": 1,
-        "col": 3,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -1114,49 +965,21 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 3,
-        "col": 3,
+        "row": 5,
+        "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 1,
-        "col": 5,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 1,
-        "col": 0,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600741224
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 6
   },
   {
     "id": 13,
     "gridSize": 6,
-    "exitRow": 2,
-    "exitCol": 6,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
@@ -1168,26 +991,26 @@ export const sampleLevels: Level[] = [
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 0,
-        "col": 0,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 1,
-        "col": 5,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
         "id": "v3",
-        "row": 4,
+        "row": 1,
         "col": 3,
         "length": 2,
         "orientation": "vertical",
@@ -1196,8 +1019,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v4",
-        "row": 4,
-        "col": 4,
+        "row": 1,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -1206,8 +1029,8 @@ export const sampleLevels: Level[] = [
       {
         "id": "v5",
         "row": 0,
-        "col": 2,
-        "length": 3,
+        "col": 3,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
@@ -1215,98 +1038,70 @@ export const sampleLevels: Level[] = [
       {
         "id": "v6",
         "row": 4,
-        "col": 0,
-        "length": 3,
+        "col": 2,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 1,
+        "row": 4,
         "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 5,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 3,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 3,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600740879
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 6
   },
   {
     "id": 14,
     "gridSize": 6,
-    "exitRow": 5,
-    "exitCol": 6,
-    "minMoves": 16,
     "vehicles": [
       {
         "id": "target",
-        "row": 5,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 1,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 4,
-        "col": 4,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 4,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 3,
-        "col": 3,
+        "row": 0,
+        "col": 2,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -1314,8 +1109,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 3,
-        "col": 0,
+        "row": 4,
+        "col": 1,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -1323,99 +1118,80 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 2,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 1,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 1,
+        "row": 4,
         "col": 3,
-        "length": 3,
-        "orientation": "horizontal",
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 2,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 1,
-        "col": 2,
+        "row": 0,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 0,
-        "col": 1,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
+        "color": "#14B8A6"
       }
     ],
-    "updatedAt": 1773600740928
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 6
   },
   {
     "id": 15,
     "gridSize": 6,
-    "exitRow": 2,
-    "exitCol": 255,
-    "minMoves": 16,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
-        "col": 4,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
+        "id": "blocker_0",
+        "row": 0,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 0,
-        "col": 1,
-        "length": 3,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 4,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 4,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 5,
-        "col": 3,
+        "row": 4,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -1423,89 +1199,70 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 3,
+        "row": 3,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 0,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 5,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 2,
-        "col": 0,
+        "row": 0,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 5,
-        "col": 0,
+        "row": 4,
+        "col": 2,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 4,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 3,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600741080
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 11
   },
   {
     "id": 16,
     "gridSize": 6,
-    "exitRow": 3,
-    "exitCol": 6,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 3,
-        "col": 2,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 5,
-        "length": 2,
+        "id": "blocker_0",
+        "row": 0,
+        "col": 4,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#10B981"
+        "color": "#F59E0B"
       },
       {
         "id": "v2",
-        "row": 2,
+        "row": 5,
         "col": 4,
         "length": 2,
         "orientation": "horizontal",
@@ -1514,26 +1271,26 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v3",
-        "row": 5,
-        "col": 3,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v4",
         "row": 1,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 4,
-        "col": 2,
+        "row": 3,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -1541,7 +1298,7 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 0,
+        "row": 4,
         "col": 3,
         "length": 2,
         "orientation": "horizontal",
@@ -1550,216 +1307,133 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 3,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 1,
+        "row": 5,
         "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 0,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 0,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 2,
-        "col": 1,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
+        "color": "#64748B"
       }
     ],
-    "updatedAt": 1773600741061
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 7
   },
   {
     "id": 17,
     "gridSize": 6,
-    "exitRow": 2,
-    "exitCol": 255,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
-        "col": 3,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 3,
-        "length": 2,
+        "id": "blocker_0",
+        "row": 0,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 0,
+        "col": 2,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 4,
-        "col": 0,
-        "length": 2,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 4,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 1,
-        "col": 0,
+        "id": "v4",
+        "row": 5,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 2,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 3,
-        "col": 1,
+        "row": 1,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 0,
-        "col": 3,
+        "row": 4,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
-      },
-      {
-        "id": "v7",
-        "row": 0,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 3,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 5,
-        "col": 3,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 2,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600741085
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 7
   },
   {
     "id": 18,
     "gridSize": 6,
-    "exitRow": 255,
-    "exitCol": 2,
-    "minMoves": 14,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 2,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 0,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 0,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 0,
-        "col": 1,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 2,
+        "row": 5,
         "col": 3,
         "length": 2,
         "orientation": "horizontal",
@@ -1769,7 +1443,7 @@ export const sampleLevels: Level[] = [
       {
         "id": "v5",
         "row": 3,
-        "col": 3,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -1778,16 +1452,16 @@ export const sampleLevels: Level[] = [
       {
         "id": "v6",
         "row": 2,
-        "col": 1,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 0,
-        "col": 4,
+        "row": 4,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -1795,53 +1469,43 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 1,
-        "col": 1,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 3,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 4,
+        "row": 0,
         "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
-        "color": "#10B981"
+        "color": "#14B8A6"
       }
     ],
-    "updatedAt": 1773600740927
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 6
   },
   {
     "id": 19,
     "gridSize": 6,
-    "exitRow": 6,
-    "exitCol": 2,
-    "minMoves": 13,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
-        "col": 2,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
         "col": 4,
         "length": 2,
         "orientation": "vertical",
@@ -1849,36 +1513,27 @@ export const sampleLevels: Level[] = [
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 5,
-        "col": 0,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
         "id": "v3",
         "row": 3,
-        "col": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v4",
-        "row": 1,
-        "col": 0,
+        "row": 3,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 4,
-        "col": 3,
+        "row": 3,
+        "col": 1,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -1886,180 +1541,115 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 2,
-        "col": 4,
+        "row": 4,
+        "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 2,
-        "col": 0,
+        "row": 5,
+        "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 2,
+        "row": 1,
         "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 4,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 0,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600741112
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 7
   },
   {
     "id": 20,
     "gridSize": 6,
-    "exitRow": 2,
-    "exitCol": 255,
-    "minMoves": 13,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
-        "col": 3,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 1,
-        "col": 1,
-        "length": 2,
+        "id": "blocker_0",
+        "row": 0,
+        "col": 5,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#10B981"
+        "color": "#F59E0B"
       },
       {
         "id": "v2",
-        "row": 1,
-        "col": 0,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
         "id": "v3",
-        "row": 0,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 4,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v4",
-        "row": 5,
-        "col": 0,
+        "row": 1,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 0,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 1,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F97316"
-      },
-      {
-        "id": "v7",
-        "row": 2,
-        "col": 5,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 5,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
         "row": 4,
         "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 4,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 3,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
+        "color": "#F97316"
       }
     ],
-    "updatedAt": 1773600741273
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 6
   },
   {
     "id": 21,
-    "gridSize": 7,
-    "exitRow": 5,
-    "exitCol": 7,
-    "minMoves": 12,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 5,
+        "row": 2,
         "col": 0,
         "length": 2,
         "orientation": "horizontal",
@@ -2067,36 +1657,36 @@ export const sampleLevels: Level[] = [
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 2,
-        "length": 2,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 5,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#10B981"
+        "color": "#F59E0B"
       },
       {
         "id": "v2",
-        "row": 3,
+        "row": 1,
         "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
         "id": "v3",
-        "row": 3,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 5,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v4",
-        "row": 5,
-        "col": 5,
+        "row": 2,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -2104,8 +1694,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 5,
+        "row": 0,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -2113,191 +1703,162 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 1,
-        "col": 3,
+        "row": 4,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 4,
-        "col": 3,
+        "row": 1,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 5,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
         "row": 1,
-        "col": 1,
+        "col": 2,
         "length": 3,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 0,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 0,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
+        "color": "#14B8A6"
       }
     ],
-    "updatedAt": 1773600744953
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 10
   },
   {
     "id": 22,
     "gridSize": 6,
-    "exitRow": 1,
-    "exitCol": 255,
-    "minMoves": 15,
     "vehicles": [
       {
         "id": "target",
-        "row": 1,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 5,
+        "id": "blocker_0",
+        "row": 0,
         "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 4,
-        "col": 1,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 2,
-        "col": 3,
+        "id": "v4",
+        "row": 3,
+        "col": 1,
         "length": 2,
         "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 5,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 5,
+        "row": 1,
+        "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 3,
-        "col": 0,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
         "row": 0,
-        "col": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 2,
-        "col": 0,
+        "row": 0,
+        "col": 5,
         "length": 3,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       }
     ],
-    "updatedAt": 1773600745919
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 6
   },
   {
     "id": 23,
     "gridSize": 6,
-    "exitRow": 6,
-    "exitCol": 2,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
-        "col": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 5,
-        "col": 4,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 1,
+        "id": "v3",
+        "row": 5,
         "col": 3,
         "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 4,
-        "col": 2,
-        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#EC4899"
@@ -2305,7 +1866,7 @@ export const sampleLevels: Level[] = [
       {
         "id": "v4",
         "row": 3,
-        "col": 5,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -2313,26 +1874,26 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 5,
-        "col": 2,
+        "row": 0,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 0,
+        "row": 1,
         "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 2,
-        "col": 4,
+        "row": 4,
+        "col": 2,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -2341,79 +1902,60 @@ export const sampleLevels: Level[] = [
       {
         "id": "v8",
         "row": 2,
-        "col": 0,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 3,
-        "col": 1,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600745978
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 6
   },
   {
     "id": 24,
     "gridSize": 6,
-    "exitRow": 1,
-    "exitCol": 6,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 1,
-        "col": 2,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
-        "col": 1,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 5,
+        "id": "blocker_2",
+        "row": 2,
         "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 0,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 5,
+        "row": 1,
         "col": 4,
         "length": 2,
         "orientation": "horizontal",
@@ -2422,17 +1964,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 0,
-        "col": 5,
+        "row": 3,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -2440,9 +1982,9 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 3,
-        "col": 0,
-        "length": 2,
+        "row": 4,
+        "col": 1,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
@@ -2455,75 +1997,47 @@ export const sampleLevels: Level[] = [
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 2,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 4,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 1,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600741280
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 12
   },
   {
     "id": 25,
     "gridSize": 6,
-    "exitRow": 255,
-    "exitCol": 1,
-    "minMoves": 20,
     "vehicles": [
       {
         "id": "target",
-        "row": 3,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 0,
-        "col": 3,
-        "length": 3,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 4,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 0,
-        "col": 0,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
         "id": "v3",
-        "row": 1,
-        "col": 4,
+        "row": 0,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -2531,16 +2045,16 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v4",
-        "row": 3,
-        "col": 2,
+        "row": 0,
+        "col": 1,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 5,
+        "row": 4,
         "col": 1,
         "length": 3,
         "orientation": "horizontal",
@@ -2549,7 +2063,7 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 4,
+        "row": 1,
         "col": 4,
         "length": 2,
         "orientation": "horizontal",
@@ -2559,116 +2073,106 @@ export const sampleLevels: Level[] = [
       {
         "id": "v7",
         "row": 0,
-        "col": 2,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 2,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
+        "row": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 1,
-        "col": 5,
-        "length": 3,
+        "row": 3,
+        "col": 0,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 0,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600741373
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 12
   },
   {
     "id": 26,
-    "gridSize": 7,
-    "exitRow": 5,
-    "exitCol": 7,
-    "minMoves": 14,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 5,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 5,
+        "id": "blocker_0",
+        "row": 0,
+        "col": 4,
         "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 2,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 2,
-        "col": 5,
-        "length": 2,
-        "orientation": "horizontal",
+        "id": "blocker_2",
+        "row": 0,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 1,
-        "col": 4,
+        "id": "blocker_3",
+        "row": 2,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 0,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 2,
+        "row": 4,
         "col": 1,
-        "length": 3,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 3,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 1,
-        "col": 1,
+        "row": 4,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -2677,106 +2181,78 @@ export const sampleLevels: Level[] = [
       {
         "id": "v8",
         "row": 5,
-        "col": 6,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 4,
-        "col": 4,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 1,
         "col": 3,
         "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 6,
-        "col": 0,
-        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#3B82F6"
+        "color": "#14B8A6"
       }
     ],
-    "updatedAt": 1773600742700
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 13
   },
   {
     "id": 27,
     "gridSize": 6,
-    "exitRow": 4,
-    "exitCol": 255,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 3,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
-        "col": 0,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 4,
-        "col": 2,
-        "length": 2,
+        "id": "blocker_2",
+        "row": 0,
+        "col": 3,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 0,
-        "col": 1,
+        "id": "blocker_3",
+        "row": 1,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 3,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 2,
+        "row": 0,
         "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 1,
+        "row": 0,
         "col": 1,
         "length": 2,
         "orientation": "vertical",
@@ -2785,17 +2261,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 1,
-        "col": 4,
+        "row": 5,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 3,
-        "col": 2,
+        "row": 5,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -2803,7 +2279,7 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 3,
+        "row": 0,
         "col": 4,
         "length": 2,
         "orientation": "horizontal",
@@ -2812,199 +2288,89 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v10",
-        "row": 2,
-        "col": 0,
+        "row": 4,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600742801
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 12
   },
   {
     "id": 28,
     "gridSize": 6,
-    "exitRow": 3,
-    "exitCol": 6,
-    "minMoves": 13,
     "vehicles": [
       {
         "id": "target",
-        "row": 3,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 5,
+        "id": "blocker_0",
+        "row": 1,
         "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 2,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 1,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 2,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
-        "id": "v5",
-        "row": 3,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#8B5CF6"
-      },
-      {
-        "id": "v6",
-        "row": 4,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F97316"
-      },
-      {
-        "id": "v7",
+        "id": "blocker_2",
         "row": 2,
         "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#64748B"
+        "color": "#3B82F6"
       },
       {
-        "id": "v8",
-        "row": 2,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
+        "id": "blocker_3",
         "row": 0,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 4,
-        "col": 0,
+        "col": 4,
         "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      }
-    ],
-    "updatedAt": 1773600742957
-  },
-  {
-    "id": 29,
-    "gridSize": 7,
-    "exitRow": 7,
-    "exitCol": 5,
-    "minMoves": 12,
-    "vehicles": [
-      {
-        "id": "target",
-        "row": 1,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": true,
-        "color": "#EF4444"
-      },
-      {
-        "id": "v1",
-        "row": 5,
-        "col": 5,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v2",
-        "row": 1,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 1,
-        "col": 1,
-        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 5,
-        "col": 3,
+        "id": "v5",
+        "row": 4,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
-        "id": "v5",
-        "row": 3,
-        "col": 0,
-        "length": 3,
-        "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 4,
-        "col": 1,
+        "row": 3,
+        "col": 0,
         "length": 3,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 5,
-        "col": 2,
+        "row": 0,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -3012,34 +2378,34 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 3,
-        "col": 4,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 1,
-        "col": 0,
+        "row": 5,
+        "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
         "row": 4,
-        "col": 3,
-        "length": 3,
+        "col": 1,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 6,
+        "row": 5,
         "col": 4,
         "length": 2,
         "orientation": "horizontal",
@@ -3047,26 +2413,151 @@ export const sampleLevels: Level[] = [
         "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600744462
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 12
+  },
+  {
+    "id": 29,
+    "gridSize": 6,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "blocker_0",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v3",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 1,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 5,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 0,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 1,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      }
+    ],
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 10
   },
   {
     "id": 30,
     "gridSize": 6,
-    "exitRow": 6,
-    "exitCol": 3,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 1,
-        "col": 3,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
         "row": 2,
         "col": 5,
         "length": 2,
@@ -3075,18 +2566,9 @@ export const sampleLevels: Level[] = [
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 3,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
         "id": "v3",
-        "row": 1,
-        "col": 1,
+        "row": 5,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -3094,19 +2576,19 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v4",
-        "row": 5,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
         "row": 0,
-        "col": 5,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
@@ -3115,14 +2597,14 @@ export const sampleLevels: Level[] = [
         "row": 4,
         "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
         "row": 0,
-        "col": 2,
+        "col": 0,
         "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
@@ -3130,8 +2612,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 4,
-        "col": 4,
+        "row": 1,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -3139,8 +2621,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 3,
-        "col": 2,
+        "row": 4,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -3149,71 +2631,61 @@ export const sampleLevels: Level[] = [
       {
         "id": "v10",
         "row": 2,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 0,
-        "col": 0,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#3B82F6"
+        "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600744605
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 14
   },
   {
     "id": 31,
     "gridSize": 6,
-    "exitRow": 6,
-    "exitCol": 0,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": true,
-        "color": "#EF4444"
-      },
-      {
-        "id": "v1",
         "row": 2,
         "col": 0,
         "length": 2,
         "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "blocker_0",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
         "id": "v3",
-        "row": 4,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v4",
-        "row": 2,
-        "col": 2,
+        "row": 3,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -3221,17 +2693,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 4,
-        "col": 5,
+        "row": 0,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 2,
-        "col": 5,
+        "row": 0,
+        "col": 1,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -3239,17 +2711,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 3,
-        "col": 0,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 1,
-        "col": 3,
+        "row": 4,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -3257,8 +2729,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 2,
-        "col": 4,
+        "row": 0,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -3267,79 +2739,69 @@ export const sampleLevels: Level[] = [
       {
         "id": "v10",
         "row": 0,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 5,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600744736
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 10
   },
   {
     "id": 32,
     "gridSize": 6,
-    "exitRow": 2,
-    "exitCol": 255,
-    "minMoves": 15,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
-        "col": 4,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 1,
-        "col": 0,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 2,
         "length": 3,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 2,
-        "col": 0,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 4,
-        "col": 0,
-        "length": 2,
+        "id": "blocker_3",
+        "row": 0,
+        "col": 3,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 4,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 3,
+        "row": 0,
         "col": 4,
         "length": 2,
         "orientation": "vertical",
@@ -3348,8 +2810,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 1,
-        "col": 3,
+        "row": 0,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -3357,17 +2819,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 0,
-        "col": 5,
+        "row": 5,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 2,
-        "col": 3,
+        "row": 3,
+        "col": 1,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -3375,81 +2837,62 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 0,
-        "col": 0,
+        "row": 4,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 0,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 2,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600745096
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 15
   },
   {
     "id": 33,
     "gridSize": 6,
-    "exitRow": 3,
-    "exitCol": 255,
-    "minMoves": 16,
     "vehicles": [
       {
         "id": "target",
-        "row": 3,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 2,
-        "col": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 1,
-        "col": 2,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 5,
         "length": 3,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 5,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
         "row": 3,
-        "col": 3,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -3457,43 +2900,43 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 3,
-        "col": 0,
+        "row": 1,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 2,
-        "col": 2,
+        "row": 5,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 5,
-        "col": 0,
+        "row": 2,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 3,
-        "col": 1,
+        "row": 0,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 2,
+        "row": 5,
         "col": 3,
         "length": 2,
         "orientation": "horizontal",
@@ -3502,63 +2945,71 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v10",
-        "row": 4,
-        "col": 5,
+        "row": 0,
+        "col": 1,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600745262
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 12
   },
   {
     "id": 34,
     "gridSize": 6,
-    "exitRow": 6,
-    "exitCol": 0,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
+        "row": 2,
         "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 1,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
+        "id": "blocker_0",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
+        "id": "blocker_2",
         "row": 2,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 2,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 4,
-        "col": 2,
+        "row": 1,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -3567,25 +3018,25 @@ export const sampleLevels: Level[] = [
       {
         "id": "v5",
         "row": 5,
-        "col": 0,
-        "length": 2,
+        "col": 2,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
+        "row": 3,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 3,
-        "col": 4,
+        "row": 4,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -3593,8 +3044,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 5,
-        "col": 2,
+        "row": 3,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -3611,190 +3062,161 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v10",
-        "row": 1,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 0,
-        "col": 2,
+        "row": 4,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#3B82F6"
+        "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600745498
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 10
   },
   {
     "id": 35,
     "gridSize": 6,
-    "exitRow": 255,
-    "exitCol": 5,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 5,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
-        "col": 1,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 0,
-        "col": 1,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 3,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 1,
-        "col": 4,
+        "row": 4,
+        "col": 1,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 1,
-        "col": 2,
+        "row": 4,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 3,
-        "col": 4,
-        "length": 2,
+        "row": 5,
+        "col": 2,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 2,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 2,
-        "col": 3,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 0,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 5,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 0,
+        "row": 3,
         "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
-        "color": "#3B82F6"
+        "color": "#F59E0B"
       }
     ],
-    "updatedAt": 1773600746337
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 14
   },
   {
     "id": 36,
     "gridSize": 6,
-    "exitRow": 6,
-    "exitCol": 3,
-    "minMoves": 14,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
-        "col": 3,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 2,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 0,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 2,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
         "id": "v3",
-        "row": 5,
-        "col": 1,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v4",
-        "row": 0,
-        "col": 0,
+        "row": 5,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -3802,8 +3224,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 3,
-        "col": 0,
+        "row": 4,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -3811,18 +3233,18 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 2,
-        "col": 5,
+        "row": 0,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 4,
-        "col": 2,
-        "length": 3,
+        "row": 3,
+        "col": 4,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
@@ -3830,89 +3252,88 @@ export const sampleLevels: Level[] = [
       {
         "id": "v8",
         "row": 2,
-        "col": 1,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 1,
-        "col": 0,
+        "row": 4,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
         "row": 3,
-        "col": 1,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600741224
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 10
   },
   {
     "id": 37,
     "gridSize": 6,
-    "exitRow": 3,
-    "exitCol": 255,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 3,
-        "col": 3,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 1,
-        "col": 1,
+        "col": 5,
         "length": 3,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 5,
+        "id": "blocker_2",
+        "row": 1,
         "col": 3,
-        "length": 3,
-        "orientation": "horizontal",
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
+        "id": "blocker_3",
         "row": 2,
-        "col": 1,
+        "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 3,
-        "col": 2,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
         "row": 0,
-        "col": 0,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -3920,8 +3341,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 1,
-        "col": 5,
+        "row": 4,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -3929,17 +3350,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 0,
-        "col": 3,
+        "row": 4,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 0,
-        "col": 1,
+        "row": 5,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -3947,17 +3368,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 3,
-        "col": 5,
+        "row": 1,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 3,
-        "col": 1,
+        "row": 4,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -3965,54 +3386,53 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v11",
-        "row": 2,
-        "col": 0,
+        "row": 0,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600741735
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 10
   },
   {
     "id": 38,
     "gridSize": 6,
-    "exitRow": 6,
-    "exitCol": 1,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 1,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 5,
-        "col": 0,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 2,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
         "id": "v3",
-        "row": 4,
-        "col": 0,
+        "row": 5,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -4020,26 +3440,26 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v4",
-        "row": 5,
-        "col": 2,
+        "row": 0,
+        "col": 1,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 0,
-        "col": 3,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
         "row": 0,
-        "col": 2,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -4048,7 +3468,7 @@ export const sampleLevels: Level[] = [
       {
         "id": "v7",
         "row": 4,
-        "col": 5,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -4056,10 +3476,10 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 4,
-        "col": 2,
+        "row": 1,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
@@ -4067,42 +3487,50 @@ export const sampleLevels: Level[] = [
         "id": "v9",
         "row": 3,
         "col": 0,
-        "length": 3,
-        "orientation": "horizontal",
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 3,
+        "row": 0,
         "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 1,
-        "col": 3,
-        "length": 3,
+        "row": 3,
+        "col": 5,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 5,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
       }
     ],
-    "updatedAt": 1773600742822
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 15
   },
   {
     "id": 39,
     "gridSize": 6,
-    "exitRow": 3,
-    "exitCol": 6,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 3,
+        "row": 2,
         "col": 0,
         "length": 2,
         "orientation": "horizontal",
@@ -4110,72 +3538,72 @@ export const sampleLevels: Level[] = [
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
         "row": 2,
         "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 4,
-        "col": 2,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
+        "id": "blocker_3",
         "row": 1,
-        "col": 4,
+        "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 5,
+        "id": "v5",
+        "row": 4,
         "col": 3,
         "length": 2,
         "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
-        "id": "v5",
-        "row": 3,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 2,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 5,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 0,
-        "col": 2,
+        "row": 4,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 5,
-        "col": 1,
+        "row": 0,
+        "col": 2,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -4184,71 +3612,88 @@ export const sampleLevels: Level[] = [
       {
         "id": "v9",
         "row": 0,
-        "col": 3,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
         "row": 3,
-        "col": 5,
-        "length": 3,
+        "col": 0,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 5,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 1,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
       }
     ],
-    "updatedAt": 1773600742906
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 10
   },
   {
     "id": 40,
     "gridSize": 6,
-    "exitRow": 0,
-    "exitCol": 255,
-    "minMoves": 12,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
-        "col": 5,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
+        "id": "v3",
         "row": 3,
-        "col": 4,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 0,
-        "col": 2,
-        "length": 3,
-        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v4",
-        "row": 2,
-        "col": 0,
+        "row": 1,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -4256,8 +3701,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 0,
-        "col": 0,
+        "row": 4,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -4265,17 +3710,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 1,
-        "col": 3,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 0,
-        "col": 1,
+        "row": 1,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -4283,81 +3728,89 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 5,
-        "col": 0,
+        "row": 4,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 5,
-        "col": 3,
+        "row": 0,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 4,
-        "col": 1,
-        "length": 2,
+        "row": 0,
+        "col": 2,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 3,
-        "col": 0,
+        "row": 1,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
       }
     ],
-    "updatedAt": 1773600743512
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 12
   },
   {
     "id": 41,
     "gridSize": 6,
-    "exitRow": 6,
-    "exitCol": 4,
-    "minMoves": 24,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 1,
-        "col": 2,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 4,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
         "id": "v3",
-        "row": 0,
-        "col": 2,
+        "row": 3,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -4366,7 +3819,7 @@ export const sampleLevels: Level[] = [
       {
         "id": "v4",
         "row": 4,
-        "col": 0,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -4374,17 +3827,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 4,
-        "col": 1,
+        "row": 0,
+        "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 2,
-        "col": 3,
+        "row": 1,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -4392,35 +3845,35 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 4,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 5,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 5,
-        "col": 4,
+        "row": 4,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 0,
-        "col": 1,
-        "length": 3,
+        "row": 4,
+        "col": 5,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 1,
-        "col": 0,
+        "row": 2,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -4428,8 +3881,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v11",
-        "row": 5,
-        "col": 1,
+        "row": 0,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -4437,63 +3890,62 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v12",
-        "row": 2,
-        "col": 5,
+        "row": 4,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#EC4899"
       }
     ],
-    "updatedAt": 1773600747050
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 11
   },
   {
     "id": 42,
-    "gridSize": 7,
-    "exitRow": 5,
-    "exitCol": 7,
-    "minMoves": 21,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 5,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 0,
-        "col": 2,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
+        "id": "blocker_2",
         "row": 2,
         "col": 5,
-        "length": 3,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 1,
-        "col": 3,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 0,
-        "col": 1,
+        "row": 3,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -4501,17 +3953,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 6,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 5,
-        "col": 5,
+        "row": 0,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -4519,8 +3971,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 2,
-        "col": 2,
+        "row": 3,
+        "col": 1,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -4528,17 +3980,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 4,
-        "col": 3,
+        "row": 5,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 1,
-        "col": 5,
+        "row": 5,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -4546,99 +3998,71 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v10",
-        "row": 5,
-        "col": 6,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 2,
-        "col": 4,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
         "row": 0,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 5,
         "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600836991
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 13
   },
   {
     "id": 43,
-    "gridSize": 7,
-    "exitRow": 4,
-    "exitCol": 255,
-    "minMoves": 24,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 5,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 5,
-        "col": 5,
-        "length": 2,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 3,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 3,
-        "col": 5,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 4,
-        "col": 0,
-        "length": 3,
+        "id": "blocker_3",
+        "row": 2,
+        "col": 5,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 5,
-        "col": 6,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 2,
-        "col": 2,
+        "row": 4,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -4646,17 +4070,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 3,
-        "col": 4,
+        "row": 5,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 5,
-        "col": 1,
+        "row": 1,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -4665,25 +4089,25 @@ export const sampleLevels: Level[] = [
       {
         "id": "v8",
         "row": 1,
-        "col": 1,
-        "length": 3,
+        "col": 0,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 0,
-        "col": 4,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 2,
-        "col": 0,
+        "row": 0,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -4691,71 +4115,52 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v11",
-        "row": 5,
-        "col": 3,
+        "row": 0,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 2,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 3,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600757060
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 11
   },
   {
     "id": 44,
-    "gridSize": 7,
-    "exitRow": 4,
-    "exitCol": 7,
-    "minMoves": 22,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 5,
-        "col": 5,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 0,
-        "col": 6,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
         "id": "v3",
-        "row": 5,
+        "row": 4,
         "col": 3,
         "length": 2,
         "orientation": "vertical",
@@ -4764,17 +4169,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v4",
-        "row": 2,
-        "col": 3,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 4,
+        "row": 3,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -4782,17 +4187,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 3,
-        "col": 5,
+        "row": 0,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 4,
-        "col": 4,
+        "row": 1,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -4800,8 +4205,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 3,
-        "col": 1,
+        "row": 5,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -4809,99 +4214,71 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 0,
-        "col": 4,
+        "row": 4,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 1,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 5,
+        "row": 0,
         "col": 1,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 6,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 1,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600778238
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 11
   },
   {
     "id": 45,
-    "gridSize": 7,
-    "exitRow": 0,
-    "exitCol": 7,
-    "minMoves": 20,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
-        "col": 2,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
+        "row": 1,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
         "row": 2,
-        "col": 4,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 0,
-        "col": 6,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 3,
-        "col": 5,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
         "row": 1,
-        "col": 0,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -4909,19 +4286,19 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 0,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 4,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 2,
-        "col": 2,
+        "row": 5,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
@@ -4936,127 +4313,90 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 4,
-        "col": 4,
-        "length": 3,
+        "row": 5,
+        "col": 1,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 4,
+        "row": 0,
         "col": 2,
-        "length": 2,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 1,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 2,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 3,
-        "col": 0,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 3,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600755919
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 11
   },
   {
     "id": 46,
     "gridSize": 6,
-    "exitRow": 255,
-    "exitCol": 0,
-    "minMoves": 20,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
+        "row": 2,
         "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 1,
-        "col": 2,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 2,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
+        "id": "blocker_2",
+        "row": 0,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 3,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
+        "id": "blocker_3",
+        "row": 2,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 1,
-        "col": 3,
+        "id": "v5",
+        "row": 4,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
-        "id": "v5",
-        "row": 0,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
         "row": 4,
-        "col": 2,
-        "length": 3,
+        "col": 0,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
@@ -5064,7 +4404,7 @@ export const sampleLevels: Level[] = [
       {
         "id": "v7",
         "row": 0,
-        "col": 0,
+        "col": 2,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -5072,117 +4412,89 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 1,
+        "row": 5,
         "col": 0,
-        "length": 2,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 0,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 2,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 3,
+        "row": 1,
         "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 1,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
+        "color": "#F59E0B"
       }
     ],
-    "updatedAt": 1773600781308
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 11
   },
   {
     "id": 47,
     "gridSize": 6,
-    "exitRow": 4,
-    "exitCol": 255,
-    "minMoves": 20,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 2,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v2",
-        "row": 3,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
+        "id": "blocker_0",
         "row": 1,
         "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 0,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v3",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v4",
-        "row": 4,
-        "col": 0,
-        "length": 2,
+        "row": 1,
+        "col": 5,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 0,
+        "row": 4,
+        "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 0,
-        "col": 1,
+        "row": 3,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -5190,18 +4502,18 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 1,
+        "row": 5,
         "col": 0,
-        "length": 3,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 1,
-        "col": 5,
-        "length": 3,
+        "row": 3,
+        "col": 1,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
@@ -5209,7 +4521,7 @@ export const sampleLevels: Level[] = [
       {
         "id": "v9",
         "row": 3,
-        "col": 1,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -5218,61 +4530,60 @@ export const sampleLevels: Level[] = [
       {
         "id": "v10",
         "row": 4,
-        "col": 2,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
         "row": 5,
-        "col": 3,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600782229
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 11
   },
   {
     "id": 48,
     "gridSize": 6,
-    "exitRow": 2,
-    "exitCol": 255,
-    "minMoves": 30,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
-        "col": 4,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
         "row": 0,
-        "col": 3,
+        "col": 2,
         "length": 3,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 2,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
         "id": "v3",
-        "row": 3,
+        "row": 1,
         "col": 0,
         "length": 2,
         "orientation": "horizontal",
@@ -5281,17 +4592,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v4",
-        "row": 4,
+        "row": 3,
         "col": 0,
-        "length": 3,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 0,
-        "col": 1,
+        "row": 5,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -5299,8 +4610,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 3,
-        "col": 3,
+        "row": 4,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -5308,18 +4619,18 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 1,
-        "col": 4,
+        "row": 0,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 1,
+        "row": 4,
         "col": 2,
-        "length": 2,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
@@ -5327,72 +4638,53 @@ export const sampleLevels: Level[] = [
       {
         "id": "v9",
         "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 5,
-        "col": 2,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 4,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
+        "color": "#F59E0B"
       }
     ],
-    "updatedAt": 1773600741517
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 13
   },
   {
     "id": 49,
     "gridSize": 6,
-    "exitRow": 255,
-    "exitCol": 4,
-    "minMoves": 21,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
+        "id": "blocker_0",
+        "row": 0,
         "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 3,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
         "id": "v3",
-        "row": 0,
-        "col": 4,
-        "length": 2,
+        "row": 5,
+        "col": 3,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#EC4899"
@@ -5400,15 +4692,15 @@ export const sampleLevels: Level[] = [
       {
         "id": "v4",
         "row": 1,
-        "col": 4,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 1,
+        "row": 4,
         "col": 1,
         "length": 2,
         "orientation": "horizontal",
@@ -5417,17 +4709,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 4,
-        "col": 5,
+        "row": 0,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 5,
-        "col": 1,
+        "row": 0,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -5435,126 +4727,116 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 4,
-        "col": 1,
+        "row": 1,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 2,
-        "col": 2,
+        "row": 3,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 0,
-        "col": 0,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 1,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 0,
-        "col": 2,
+        "row": 3,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#EC4899"
+        "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600745439
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 10
   },
   {
     "id": 50,
-    "gridSize": 7,
-    "exitRow": 2,
-    "exitCol": 7,
-    "minMoves": 20,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
-        "col": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
         "row": 1,
-        "col": 1,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 3,
-        "col": 1,
-        "length": 2,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 2,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 4,
-        "col": 3,
-        "length": 3,
+        "id": "blocker_3",
+        "row": 1,
+        "col": 5,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 2,
-        "col": 4,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
       },
       {
         "id": "v5",
         "row": 4,
         "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 3,
-        "col": 6,
+        "row": 0,
+        "col": 2,
         "length": 3,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
         "row": 5,
-        "col": 4,
+        "col": 2,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -5562,8 +4844,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 3,
-        "col": 2,
+        "row": 5,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -5571,8 +4853,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 1,
-        "col": 5,
+        "row": 4,
+        "col": 1,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -5581,80 +4863,70 @@ export const sampleLevels: Level[] = [
       {
         "id": "v10",
         "row": 1,
-        "col": 6,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 1,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 0,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
       }
     ],
-    "updatedAt": 1773600771115
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 10
   },
   {
     "id": 51,
-    "gridSize": 7,
-    "exitRow": 255,
-    "exitCol": 1,
-    "minMoves": 21,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 5,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 2,
-        "col": 1,
-        "length": 3,
-        "orientation": "horizontal",
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 3,
-        "col": 2,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 4,
-        "col": 2,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 2,
-        "col": 4,
+        "row": 0,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -5662,17 +4934,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 5,
+        "row": 0,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 6,
-        "col": 3,
+        "row": 0,
+        "col": 2,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -5690,7 +4962,7 @@ export const sampleLevels: Level[] = [
       {
         "id": "v8",
         "row": 3,
-        "col": 6,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -5698,135 +4970,98 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 0,
+        "row": 3,
         "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 6,
-        "col": 5,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 0,
-        "col": 6,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#F59E0B"
       }
     ],
-    "updatedAt": 1773600828750
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 10
   },
   {
     "id": 52,
-    "gridSize": 7,
-    "exitRow": 255,
-    "exitCol": 2,
-    "minMoves": 20,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 2,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 1,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 2,
-        "col": 6,
-        "length": 3,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 3,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 2,
-        "col": 3,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 0,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 5,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 3,
-        "col": 4,
+        "row": 0,
+        "col": 1,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 0,
-        "col": 2,
-        "length": 3,
+        "row": 4,
+        "col": 4,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 1,
-        "col": 1,
-        "length": 3,
+        "row": 4,
+        "col": 2,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 1,
-        "col": 4,
+        "row": 2,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -5834,99 +5069,71 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 5,
-        "col": 0,
+        "row": 0,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
         "row": 0,
-        "col": 6,
+        "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 5,
-        "col": 6,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 5,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 4,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600795703
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 11
   },
   {
     "id": 53,
     "gridSize": 6,
-    "exitRow": 6,
-    "exitCol": 5,
-    "minMoves": 20,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
-        "col": 5,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 3,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 2,
         "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 0,
+        "col": 4,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 2,
-        "col": 0,
+        "id": "v3",
+        "row": 4,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 5,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v4",
-        "row": 2,
-        "col": 1,
+        "row": 3,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -5934,16 +5141,16 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 3,
-        "col": 4,
+        "row": 1,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 2,
+        "row": 4,
         "col": 4,
         "length": 2,
         "orientation": "horizontal",
@@ -5952,152 +5159,43 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 3,
-        "col": 2,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 5,
-        "col": 3,
+        "row": 0,
+        "col": 1,
         "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 0,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 1,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
       }
     ],
-    "updatedAt": 1773600802028
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 11
   },
   {
     "id": 54,
-    "gridSize": 7,
-    "exitRow": 255,
-    "exitCol": 1,
-    "minMoves": 20,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 5,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v2",
-        "row": 2,
-        "col": 1,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 4,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 2,
-        "col": 6,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
-        "id": "v5",
+        "id": "blocker_0",
         "row": 1,
-        "col": 0,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#8B5CF6"
-      },
-      {
-        "id": "v6",
-        "row": 1,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F97316"
-      },
-      {
-        "id": "v7",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 0,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 4,
         "col": 4,
         "length": 2,
         "orientation": "vertical",
@@ -6105,135 +5203,89 @@ export const sampleLevels: Level[] = [
         "color": "#F59E0B"
       },
       {
-        "id": "v10",
-        "row": 0,
-        "col": 3,
+        "id": "blocker_1",
+        "row": 1,
+        "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v11",
-        "row": 3,
-        "col": 0,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v12",
-        "row": 6,
-        "col": 4,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 5,
+        "id": "blocker_3",
+        "row": 2,
         "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#EC4899"
+      },
+      {
+        "id": "v5",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
       }
     ],
-    "updatedAt": 1773600797198
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 14
   },
   {
     "id": 55,
-    "gridSize": 7,
-    "exitRow": 0,
-    "exitCol": 255,
-    "minMoves": 22,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 2,
-        "col": 0,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v2",
-        "row": 1,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 5,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
-        "id": "v5",
-        "row": 0,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#8B5CF6"
-      },
-      {
-        "id": "v6",
-        "row": 3,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F97316"
-      },
-      {
-        "id": "v7",
-        "row": 4,
-        "col": 3,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 3,
-        "col": 3,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 0,
         "col": 3,
         "length": 2,
         "orientation": "vertical",
@@ -6241,54 +5293,80 @@ export const sampleLevels: Level[] = [
         "color": "#F59E0B"
       },
       {
-        "id": "v10",
-        "row": 2,
-        "col": 1,
+        "id": "blocker_1",
+        "row": 1,
+        "col": 2,
         "length": 3,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v11",
-        "row": 0,
-        "col": 6,
-        "length": 3,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 4,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v12",
+        "id": "blocker_3",
         "row": 0,
-        "col": 1,
-        "length": 2,
+        "col": 5,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v13",
+        "id": "v5",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 3,
+        "col": 1,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
         "row": 5,
-        "col": 0,
+        "col": 2,
         "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#14B8A6"
       }
     ],
-    "updatedAt": 1773600763785
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 11
   },
   {
     "id": 56,
-    "gridSize": 7,
-    "exitRow": 5,
-    "exitCol": 7,
-    "minMoves": 26,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 5,
+        "row": 2,
         "col": 0,
         "length": 2,
         "orientation": "horizontal",
@@ -6296,172 +5374,135 @@ export const sampleLevels: Level[] = [
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 2,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v2",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 4,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 3,
-        "col": 4,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
-        "id": "v5",
-        "row": 4,
         "col": 5,
         "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#8B5CF6"
-      },
-      {
-        "id": "v6",
-        "row": 5,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F97316"
-      },
-      {
-        "id": "v7",
-        "row": 1,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 1,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 1,
-        "col": 5,
-        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
-        "id": "v10",
-        "row": 0,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
+        "id": "blocker_1",
+        "row": 1,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v11",
-        "row": 2,
-        "col": 1,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v12",
-        "row": 0,
+        "id": "v4",
+        "row": 3,
         "col": 1,
-        "length": 2,
-        "orientation": "vertical",
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
-        "color": "#EC4899"
+        "color": "#06B6D4"
       },
       {
-        "id": "v13",
-        "row": 6,
+        "id": "v5",
+        "row": 0,
         "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
       }
     ],
-    "updatedAt": 1773600881969
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 11
   },
   {
     "id": 57,
-    "gridSize": 7,
-    "exitRow": 5,
-    "exitCol": 7,
-    "minMoves": 22,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 5,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 2,
         "col": 4,
-        "length": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 2,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
+        "id": "blocker_2",
+        "row": 2,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 5,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 0,
-        "col": 1,
+        "row": 4,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -6469,8 +5510,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 5,
-        "col": 4,
+        "row": 0,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -6479,88 +5520,51 @@ export const sampleLevels: Level[] = [
       {
         "id": "v6",
         "row": 0,
-        "col": 2,
-        "length": 2,
+        "col": 0,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 3,
+        "row": 4,
         "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 1,
-        "col": 3,
-        "length": 3,
+        "row": 3,
+        "col": 2,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 4,
-        "col": 5,
+        "row": 5,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 2,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 2,
-        "col": 5,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 3,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 1,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600773817
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 15
   },
   {
     "id": 58,
-    "gridSize": 7,
-    "exitRow": 5,
-    "exitCol": 7,
-    "minMoves": 24,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 5,
+        "row": 2,
         "col": 0,
         "length": 2,
         "orientation": "horizontal",
@@ -6568,45 +5572,45 @@ export const sampleLevels: Level[] = [
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 5,
+        "id": "blocker_0",
+        "row": 0,
         "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 3,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
+        "id": "blocker_2",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
+        "id": "blocker_3",
         "row": 1,
-        "col": 1,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 3,
-        "col": 5,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 5,
-        "col": 6,
+        "row": 0,
+        "col": 1,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -6614,36 +5618,36 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 1,
-        "col": 5,
+        "row": 4,
+        "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
         "row": 5,
-        "col": 4,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 4,
-        "col": 2,
+        "row": 3,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 2,
-        "col": 2,
-        "length": 3,
+        "row": 0,
+        "col": 3,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
@@ -6659,44 +5663,25 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v11",
-        "row": 2,
-        "col": 6,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 0,
-        "col": 1,
+        "row": 3,
+        "col": 2,
         "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 0,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600823048
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 12
   },
   {
     "id": 59,
-    "gridSize": 7,
-    "exitRow": 0,
-    "exitCol": 7,
-    "minMoves": 21,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
+        "row": 2,
         "col": 0,
         "length": 2,
         "orientation": "horizontal",
@@ -6704,54 +5689,54 @@ export const sampleLevels: Level[] = [
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 1,
-        "col": 1,
+        "id": "blocker_0",
+        "row": 0,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
+        "id": "blocker_2",
         "row": 2,
-        "col": 6,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 4,
-        "col": 5,
-        "length": 3,
+        "id": "blocker_3",
+        "row": 2,
+        "col": 3,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 1,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 4,
-        "col": 0,
-        "length": 2,
+        "row": 5,
+        "col": 1,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 6,
-        "col": 3,
+        "row": 4,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -6760,7 +5745,7 @@ export const sampleLevels: Level[] = [
       {
         "id": "v7",
         "row": 0,
-        "col": 6,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -6768,108 +5753,98 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 0,
+        "row": 4,
         "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 2,
-        "col": 3,
-        "length": 3,
+        "row": 0,
+        "col": 2,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 3,
-        "col": 2,
+        "row": 5,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
         "row": 3,
-        "col": 3,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
         "id": "v12",
-        "row": 6,
+        "row": 0,
         "col": 1,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 5,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600814386
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 13
   },
   {
     "id": 60,
-    "gridSize": 7,
-    "exitRow": 3,
-    "exitCol": 7,
-    "minMoves": 22,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 3,
-        "col": 2,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
-        "col": 4,
-        "length": 3,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 5,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 2,
-        "col": 4,
-        "length": 2,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 3,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 3,
-        "col": 6,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 5,
-        "col": 5,
+        "row": 4,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -6877,8 +5852,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 0,
-        "col": 2,
+        "row": 4,
+        "col": 1,
         "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
@@ -6886,26 +5861,26 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 2,
-        "col": 5,
+        "row": 0,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
         "row": 0,
-        "col": 1,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 2,
-        "col": 1,
+        "row": 3,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -6913,117 +5888,98 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 5,
-        "col": 1,
+        "row": 1,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 3,
+        "row": 5,
         "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 1,
+        "row": 5,
         "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 6,
-        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 0,
-        "col": 6,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600741755
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 16
   },
   {
     "id": 61,
-    "gridSize": 7,
-    "exitRow": 255,
-    "exitCol": 3,
-    "minMoves": 24,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 3,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 5,
-        "col": 4,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 3,
         "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 2,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 0,
-        "col": 2,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 1,
-        "col": 1,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 2,
-        "col": 2,
+        "row": 0,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 1,
-        "col": 4,
-        "length": 3,
+        "row": 4,
+        "col": 1,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 3,
-        "col": 6,
+        "row": 0,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -7031,8 +5987,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 3,
-        "col": 4,
+        "row": 4,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -7040,134 +5996,106 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 5,
-        "col": 0,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 2,
-        "col": 5,
+        "row": 4,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 2,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 4,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 5,
-        "col": 6,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
         "row": 0,
         "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600759577
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 16
   },
   {
     "id": 62,
-    "gridSize": 7,
-    "exitRow": 0,
-    "exitCol": 255,
-    "minMoves": 21,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 1,
-        "col": 2,
-        "length": 2,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 0,
+        "col": 4,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 0,
-        "col": 1,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 5,
-        "col": 1,
+        "id": "blocker_3",
+        "row": 1,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 1,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 4,
-        "col": 1,
-        "length": 3,
+        "row": 5,
+        "col": 2,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 1,
-        "col": 0,
+        "row": 4,
+        "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 2,
+        "row": 4,
         "col": 1,
         "length": 2,
         "orientation": "vertical",
@@ -7176,35 +6104,35 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 3,
+        "row": 4,
         "col": 4,
-        "length": 3,
-        "orientation": "vertical",
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 0,
-        "col": 6,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 4,
-        "col": 6,
+        "row": 0,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 6,
-        "col": 5,
+        "row": 0,
+        "col": 2,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -7212,8 +6140,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v12",
-        "row": 2,
-        "col": 3,
+        "row": 1,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -7221,81 +6149,89 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v13",
-        "row": 3,
-        "col": 5,
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 5,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#8B5CF6"
       }
     ],
-    "updatedAt": 1773600788837
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 15
   },
   {
     "id": 63,
     "gridSize": 6,
-    "exitRow": 6,
-    "exitCol": 4,
-    "minMoves": 20,
     "vehicles": [
       {
         "id": "target",
-        "row": 1,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 5,
-        "col": 4,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
+        "id": "blocker_2",
         "row": 2,
-        "col": 3,
-        "length": 3,
+        "col": 4,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 3,
-        "col": 2,
+        "id": "blocker_3",
+        "row": 1,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 4,
-        "col": 4,
-        "length": 2,
+        "row": 1,
+        "col": 0,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 1,
-        "col": 1,
+        "row": 0,
+        "col": 3,
         "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
@@ -7303,17 +6239,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 3,
+        "row": 4,
         "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 5,
-        "col": 2,
+        "row": 4,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -7321,72 +6257,89 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 2,
-        "col": 0,
+        "row": 4,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600744714
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 18
   },
   {
     "id": 64,
     "gridSize": 6,
-    "exitRow": 1,
-    "exitCol": 6,
-    "minMoves": 21,
     "vehicles": [
       {
         "id": "target",
-        "row": 1,
-        "col": 2,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 0,
-        "col": 5,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 4,
         "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 2,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 3,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
+        "id": "blocker_2",
+        "row": 0,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 5,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
         "row": 0,
-        "col": 4,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 2,
+        "row": 1,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -7394,34 +6347,34 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 4,
-        "col": 0,
-        "length": 3,
+        "row": 5,
+        "col": 4,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 1,
-        "col": 0,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 5,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 2,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 4,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 1,
+        "row": 0,
         "col": 1,
         "length": 2,
         "orientation": "vertical",
@@ -7430,90 +6383,71 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v10",
-        "row": 0,
+        "row": 3,
         "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 2,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 0,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
       }
     ],
-    "updatedAt": 1773600741435
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 19
   },
   {
     "id": 65,
     "gridSize": 6,
-    "exitRow": 4,
-    "exitCol": 255,
-    "minMoves": 23,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 3,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
+        "row": 2,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
         "row": 1,
-        "col": 4,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 4,
-        "col": 2,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 5,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 3,
-        "col": 2,
+        "row": 1,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 1,
+        "row": 0,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -7521,26 +6455,26 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 0,
+        "row": 3,
         "col": 1,
-        "length": 2,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 1,
-        "col": 0,
-        "length": 3,
+        "row": 4,
+        "col": 3,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 2,
-        "col": 2,
+        "row": 0,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -7549,88 +6483,87 @@ export const sampleLevels: Level[] = [
       {
         "id": "v9",
         "row": 0,
-        "col": 3,
-        "length": 3,
-        "orientation": "horizontal",
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 1,
-        "col": 2,
+        "row": 4,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
         "row": 5,
-        "col": 4,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600741381
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 15
   },
   {
     "id": 66,
-    "gridSize": 7,
-    "exitRow": 255,
-    "exitCol": 4,
-    "minMoves": 26,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 3,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 1,
+        "id": "blocker_0",
+        "row": 2,
         "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
+        "id": "blocker_2",
+        "row": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 3,
-        "col": 5,
+        "id": "blocker_3",
+        "row": 1,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 0,
-        "col": 3,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 2,
+        "row": 0,
         "col": 1,
         "length": 2,
         "orientation": "vertical",
@@ -7639,17 +6572,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 0,
+        "row": 5,
         "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 1,
-        "col": 3,
+        "row": 3,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -7658,15 +6591,15 @@ export const sampleLevels: Level[] = [
       {
         "id": "v8",
         "row": 0,
-        "col": 2,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 6,
+        "row": 4,
         "col": 2,
         "length": 2,
         "orientation": "horizontal",
@@ -7675,53 +6608,34 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v10",
-        "row": 2,
-        "col": 2,
+        "row": 3,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
         "row": 5,
-        "col": 1,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 5,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 2,
-        "col": 4,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600878116
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 16
   },
   {
     "id": 67,
-    "gridSize": 7,
-    "exitRow": 1,
-    "exitCol": 7,
-    "minMoves": 25,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 1,
+        "row": 2,
         "col": 0,
         "length": 2,
         "orientation": "horizontal",
@@ -7729,54 +6643,54 @@ export const sampleLevels: Level[] = [
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
-        "col": 1,
-        "length": 3,
-        "orientation": "horizontal",
+        "id": "blocker_0",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 2,
-        "col": 4,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 1,
-        "col": 3,
+        "id": "blocker_3",
+        "row": 2,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 2,
-        "col": 5,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 3,
-        "col": 5,
+        "row": 0,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 2,
-        "col": 0,
+        "row": 4,
+        "col": 1,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -7784,17 +6698,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 5,
+        "row": 0,
         "col": 3,
-        "length": 3,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 0,
-        "col": 5,
+        "row": 4,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -7802,17 +6716,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 5,
-        "col": 2,
+        "row": 3,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 3,
-        "col": 2,
+        "row": 5,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -7820,81 +6734,80 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v11",
-        "row": 1,
-        "col": 2,
+        "row": 4,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
         "id": "v12",
-        "row": 0,
-        "col": 0,
-        "length": 3,
+        "row": 1,
+        "col": 1,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#EC4899"
       }
     ],
-    "updatedAt": 1773600872406
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 16
   },
   {
     "id": 68,
     "gridSize": 6,
-    "exitRow": 2,
-    "exitCol": 255,
-    "minMoves": 20,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
-        "col": 4,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 2,
-        "col": 1,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 5,
         "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 0,
+        "id": "blocker_2",
+        "row": 1,
         "col": 2,
         "length": 3,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 5,
+        "id": "v4",
+        "row": 3,
         "col": 1,
         "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 5,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
         "row": 2,
-        "col": 2,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -7902,107 +6815,97 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 1,
+        "row": 0,
         "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
         "row": 4,
-        "col": 5,
+        "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 0,
+        "row": 5,
         "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
         "row": 0,
-        "col": 1,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 4,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
         "row": 3,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 4,
         "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#EC4899"
+        "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600768231
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 17
   },
   {
     "id": 69,
-    "gridSize": 7,
-    "exitRow": 7,
-    "exitCol": 3,
-    "minMoves": 22,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
-        "col": 3,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 0,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 2,
+        "id": "blocker_2",
+        "row": 1,
         "col": 4,
-        "length": 2,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 5,
+        "id": "blocker_3",
+        "row": 2,
         "col": 2,
         "length": 2,
         "orientation": "vertical",
@@ -8010,27 +6913,18 @@ export const sampleLevels: Level[] = [
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 4,
+        "id": "v5",
+        "row": 0,
         "col": 1,
         "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
-        "id": "v5",
-        "row": 3,
-        "col": 2,
-        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 5,
-        "col": 5,
+        "row": 1,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -8038,8 +6932,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 2,
-        "col": 0,
+        "row": 5,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -8047,8 +6941,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 3,
-        "col": 5,
+        "row": 4,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -8056,161 +6950,142 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 4,
-        "col": 4,
+        "row": 3,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 0,
-        "col": 4,
-        "length": 3,
+        "row": 5,
+        "col": 1,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 5,
-        "col": 1,
+        "row": 0,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 1,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 4,
-        "col": 0,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600788426
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 16
   },
   {
     "id": 70,
     "gridSize": 6,
-    "exitRow": 4,
-    "exitCol": 255,
-    "minMoves": 20,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 3,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
-        "col": 2,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 4,
         "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 0,
+        "col": 3,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 5,
-        "col": 0,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 3,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 2,
-        "col": 0,
+        "row": 4,
+        "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
-        "row": 0,
-        "col": 4,
+        "row": 3,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
         "row": 0,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
         "row": 3,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 0,
-        "col": 0,
+        "row": 4,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 0,
-        "col": 3,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 5,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 2,
-        "col": 5,
+        "row": 1,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 0,
+        "row": 1,
         "col": 5,
         "length": 2,
         "orientation": "vertical",
@@ -8219,107 +7094,34 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v12",
-        "row": 1,
-        "col": 1,
+        "row": 4,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       }
     ],
-    "updatedAt": 1773600773671
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 24
   },
   {
     "id": 71,
-    "gridSize": 7,
-    "exitRow": 7,
-    "exitCol": 0,
-    "minMoves": 21,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
         "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 1,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v2",
-        "row": 2,
-        "col": 6,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 4,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 6,
-        "col": 0,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
-        "id": "v5",
-        "row": 2,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#8B5CF6"
-      },
-      {
-        "id": "v6",
-        "row": 6,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#F97316"
-      },
-      {
-        "id": "v7",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 3,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 4,
         "col": 2,
         "length": 2,
         "orientation": "vertical",
@@ -8327,91 +7129,27 @@ export const sampleLevels: Level[] = [
         "color": "#F59E0B"
       },
       {
-        "id": "v10",
+        "id": "blocker_1",
         "row": 1,
-        "col": 4,
+        "col": 3,
         "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v11",
-        "row": 1,
-        "col": 5,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 5,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
+        "id": "blocker_2",
         "row": 2,
         "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#06B6D4"
-      }
-    ],
-    "updatedAt": 1773600806421
-  },
-  {
-    "id": 72,
-    "gridSize": 7,
-    "exitRow": 4,
-    "exitCol": 7,
-    "minMoves": 26,
-    "vehicles": [
-      {
-        "id": "target",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": true,
-        "color": "#EF4444"
-      },
-      {
-        "id": "v1",
-        "row": 3,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v2",
-        "row": 1,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
         "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 3,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
       },
       {
         "id": "v4",
-        "row": 2,
-        "col": 2,
+        "row": 4,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -8420,7 +7158,7 @@ export const sampleLevels: Level[] = [
       {
         "id": "v5",
         "row": 3,
-        "col": 6,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -8429,124 +7167,240 @@ export const sampleLevels: Level[] = [
       {
         "id": "v6",
         "row": 4,
-        "col": 3,
-        "length": 3,
+        "col": 0,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 6,
-        "col": 4,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 5,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 2,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 2,
-        "col": 4,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 1,
-        "col": 0,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 5,
-        "col": 5,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
         "row": 0,
         "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 5,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 5,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
       }
     ],
-    "updatedAt": 1773600791155
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 18
+  },
+  {
+    "id": 72,
+    "gridSize": 6,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "blocker_0",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "blocker_2",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "blocker_3",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      }
+    ],
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 18
   },
   {
     "id": 73,
     "gridSize": 6,
-    "exitRow": 255,
-    "exitCol": 2,
-    "minMoves": 20,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 2,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
+        "id": "blocker_0",
+        "row": 2,
         "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
-        "color": "#10B981"
+        "color": "#F59E0B"
       },
       {
-        "id": "v2",
-        "row": 3,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 2,
+        "id": "blocker_1",
+        "row": 1,
         "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#EC4899"
+        "color": "#10B981"
+      },
+      {
+        "id": "blocker_2",
+        "row": 1,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
       },
       {
         "id": "v4",
-        "row": 0,
+        "row": 1,
         "col": 1,
         "length": 2,
         "orientation": "horizontal",
@@ -8555,9 +7409,9 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 0,
-        "length": 2,
+        "row": 5,
+        "col": 2,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
@@ -8565,16 +7419,16 @@ export const sampleLevels: Level[] = [
       {
         "id": "v6",
         "row": 4,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 5,
-        "col": 0,
+        "row": 3,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -8582,7 +7436,7 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 0,
+        "row": 4,
         "col": 0,
         "length": 2,
         "orientation": "vertical",
@@ -8592,98 +7446,88 @@ export const sampleLevels: Level[] = [
       {
         "id": "v9",
         "row": 0,
-        "col": 4,
-        "length": 2,
+        "col": 1,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 0,
-        "col": 3,
+        "row": 4,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 2,
-        "col": 5,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600777235
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 15
   },
   {
     "id": 74,
     "gridSize": 6,
-    "exitRow": 255,
-    "exitCol": 4,
-    "minMoves": 20,
     "vehicles": [
       {
         "id": "target",
-        "row": 3,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
-        "col": 2,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 3,
         "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 5,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
+        "id": "blocker_2",
         "row": 2,
-        "col": 2,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
+        "id": "blocker_3",
         "row": 1,
-        "col": 0,
-        "length": 3,
-        "orientation": "horizontal",
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 3,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
         "row": 0,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 2,
-        "col": 3,
+        "row": 1,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -8691,8 +7535,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 0,
-        "col": 1,
+        "row": 5,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -8700,90 +7544,89 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 4,
-        "col": 0,
+        "row": 3,
+        "col": 1,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 2,
-        "col": 1,
+        "row": 4,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 2,
-        "col": 0,
+        "row": 4,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600775499
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 18
   },
   {
     "id": 75,
-    "gridSize": 7,
-    "exitRow": 255,
-    "exitCol": 3,
-    "minMoves": 20,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 3,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 2,
-        "col": 4,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 6,
-        "col": 1,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 2,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 5,
-        "col": 1,
+        "row": 0,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#06B6D4"
       },
       {
         "id": "v5",
         "row": 2,
-        "col": 6,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -8791,8 +7634,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 3,
-        "col": 2,
+        "row": 5,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -8800,9 +7643,9 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 0,
-        "col": 1,
-        "length": 3,
+        "row": 4,
+        "col": 2,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
@@ -8810,26 +7653,26 @@ export const sampleLevels: Level[] = [
       {
         "id": "v8",
         "row": 3,
-        "col": 4,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 4,
-        "col": 6,
-        "length": 3,
+        "row": 0,
+        "col": 1,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 6,
+        "row": 0,
         "col": 3,
-        "length": 3,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
@@ -8837,79 +7680,60 @@ export const sampleLevels: Level[] = [
       {
         "id": "v11",
         "row": 4,
-        "col": 4,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 0,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600756352
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 19
   },
   {
     "id": 76,
     "gridSize": 6,
-    "exitRow": 2,
-    "exitCol": 6,
-    "minMoves": 20,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
-        "col": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 2,
-        "col": 4,
-        "length": 3,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 5,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 3,
-        "col": 2,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 3,
         "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 1,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 5,
+        "row": 3,
         "col": 4,
         "length": 2,
         "orientation": "horizontal",
@@ -8918,17 +7742,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 5,
+        "row": 0,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 4,
-        "col": 0,
+        "row": 0,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -8936,18 +7760,18 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 2,
-        "col": 0,
-        "length": 2,
+        "row": 3,
+        "col": 2,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 4,
-        "col": 3,
-        "length": 2,
+        "row": 3,
+        "col": 1,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
@@ -8957,14 +7781,14 @@ export const sampleLevels: Level[] = [
         "row": 0,
         "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 4,
-        "col": 1,
+        "row": 0,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -8972,81 +7796,71 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v11",
-        "row": 0,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 0,
-        "col": 2,
+        "row": 5,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#EC4899"
+        "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600743370
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 16
   },
   {
     "id": 77,
-    "gridSize": 7,
-    "exitRow": 7,
-    "exitCol": 5,
-    "minMoves": 30,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 1,
-        "col": 5,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
+        "id": "blocker_0",
+        "row": 1,
         "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 4,
+        "id": "blocker_2",
+        "row": 1,
         "col": 4,
-        "length": 3,
-        "orientation": "horizontal",
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 3,
-        "col": 4,
+        "id": "blocker_3",
+        "row": 0,
+        "col": 5,
         "length": 3,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 5,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
         "row": 0,
-        "col": 2,
+        "col": 1,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -9054,44 +7868,44 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 2,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 6,
-        "col": 1,
+        "row": 3,
+        "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 4,
+        "row": 5,
         "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 4,
+        "row": 3,
         "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 5,
-        "col": 4,
+        "row": 0,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -9099,107 +7913,97 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v11",
-        "row": 1,
+        "row": 4,
         "col": 0,
-        "length": 3,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
         "id": "v12",
-        "row": 0,
-        "col": 6,
+        "row": 3,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 0,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600747093
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 22
   },
   {
     "id": 78,
-    "gridSize": 7,
-    "exitRow": 4,
-    "exitCol": 255,
-    "minMoves": 20,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 5,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 0,
+        "id": "blocker_0",
+        "row": 2,
         "col": 4,
-        "length": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 2,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 3,
-        "col": 2,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 1,
-        "col": 1,
-        "length": 3,
-        "orientation": "horizontal",
+        "id": "blocker_3",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 6,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
         "row": 5,
-        "col": 1,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 0,
-        "col": 2,
+        "row": 4,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 4,
+        "row": 0,
         "col": 3,
         "length": 2,
         "orientation": "vertical",
@@ -9208,44 +8012,44 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 2,
-        "col": 1,
-        "length": 3,
+        "row": 0,
+        "col": 0,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 2,
-        "col": 3,
+        "row": 3,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 5,
-        "col": 4,
+        "row": 4,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 1,
-        "col": 0,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
         "id": "v12",
-        "row": 5,
-        "col": 6,
+        "row": 3,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -9253,81 +8057,80 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v13",
-        "row": 2,
-        "col": 5,
+        "row": 0,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600807789
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 18
   },
   {
     "id": 79,
-    "gridSize": 7,
-    "exitRow": 3,
-    "exitCol": 7,
-    "minMoves": 20,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 3,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 2,
-        "col": 6,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 4,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
+        "id": "blocker_2",
+        "row": 0,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 5,
-        "col": 0,
+        "id": "blocker_3",
+        "row": 2,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 4,
-        "col": 5,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
         "row": 0,
-        "col": 6,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
         "row": 1,
-        "col": 3,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -9335,35 +8138,35 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 6,
-        "col": 5,
+        "row": 0,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 2,
-        "col": 3,
+        "row": 5,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 3,
-        "col": 4,
+        "row": 4,
+        "col": 1,
         "length": 3,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 1,
-        "col": 1,
+        "row": 3,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -9374,78 +8177,68 @@ export const sampleLevels: Level[] = [
         "row": 5,
         "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
         "id": "v12",
         "row": 0,
-        "col": 0,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 6,
-        "col": 1,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#EC4899"
       }
     ],
-    "updatedAt": 1773600762193
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 19
   },
   {
     "id": 80,
     "gridSize": 6,
-    "exitRow": 255,
-    "exitCol": 1,
-    "minMoves": 20,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 1,
-        "col": 5,
+        "col": 4,
         "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 3,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 3,
-        "col": 0,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 1,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 1,
-        "col": 0,
+        "row": 4,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -9453,8 +8246,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 0,
-        "col": 3,
+        "row": 1,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -9462,89 +8255,88 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 5,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 0,
-        "col": 4,
+        "row": 4,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 2,
+        "row": 4,
         "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 4,
-        "col": 5,
+        "row": 3,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 2,
-        "col": 4,
+        "row": 4,
+        "col": 1,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
       }
     ],
-    "updatedAt": 1773600762278
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 16
   },
   {
     "id": 81,
-    "gridSize": 7,
-    "exitRow": 255,
-    "exitCol": 5,
-    "minMoves": 20,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 5,
+        "row": 2,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
+        "row": 2,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
         "row": 1,
-        "col": 3,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 5,
+        "id": "blocker_2",
+        "row": 1,
         "col": 3,
         "length": 2,
         "orientation": "vertical",
@@ -9552,18 +8344,9 @@ export const sampleLevels: Level[] = [
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 3,
-        "col": 5,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 1,
-        "col": 4,
+        "row": 4,
+        "col": 2,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -9571,271 +8354,215 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 2,
-        "col": 0,
+        "row": 3,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 4,
-        "col": 0,
+        "row": 0,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 0,
-        "col": 5,
+        "row": 4,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 2,
-        "col": 5,
-        "length": 2,
+        "row": 0,
+        "col": 0,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 3,
-        "col": 1,
-        "length": 3,
-        "orientation": "horizontal",
+        "row": 0,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 2,
-        "col": 4,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 1,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 4,
+        "row": 5,
         "col": 2,
         "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 6,
-        "col": 0,
-        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600795009
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 15
   },
   {
     "id": 82,
-    "gridSize": 7,
-    "exitRow": 4,
-    "exitCol": 255,
-    "minMoves": 22,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 0,
-        "col": 2,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 4,
         "length": 3,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 3,
-        "col": 0,
-        "length": 3,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 2,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 0,
-        "col": 5,
-        "length": 3,
+        "id": "blocker_3",
+        "row": 2,
+        "col": 3,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 4,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 2,
+        "row": 5,
         "col": 2,
-        "length": 2,
-        "orientation": "vertical",
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 6,
-        "col": 0,
+        "row": 3,
+        "col": 1,
         "length": 3,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 6,
-        "col": 5,
+        "row": 0,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 4,
-        "col": 2,
+        "row": 0,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 1,
-        "col": 2,
-        "length": 3,
+        "row": 0,
+        "col": 4,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 3,
-        "col": 5,
+        "row": 4,
+        "col": 2,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 3,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 1,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600888143
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 16
   },
   {
     "id": 83,
-    "gridSize": 7,
-    "exitRow": 5,
-    "exitCol": 255,
-    "minMoves": 20,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 5,
-        "col": 5,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 5,
-        "col": 2,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 3,
-        "col": 4,
-        "length": 3,
-        "orientation": "horizontal",
+        "id": "blocker_2",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 1,
-        "col": 2,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
         "id": "v4",
-        "row": 2,
-        "col": 3,
+        "row": 4,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -9843,43 +8570,43 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v5",
-        "row": 4,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 5,
-        "col": 4,
+        "row": 4,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
         "row": 0,
-        "col": 6,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 4,
-        "col": 4,
+        "row": 1,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 4,
+        "row": 3,
         "col": 0,
         "length": 2,
         "orientation": "vertical",
@@ -9888,108 +8615,89 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v10",
-        "row": 2,
-        "col": 1,
+        "row": 1,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 1,
-        "col": 4,
+        "row": 5,
+        "col": 2,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 1,
-        "col": 0,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 2,
-        "col": 5,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600875715
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 18
   },
   {
     "id": 84,
-    "gridSize": 7,
-    "exitRow": 2,
-    "exitCol": 255,
-    "minMoves": 21,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
-        "col": 5,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
-        "col": 2,
+        "id": "blocker_0",
+        "row": 0,
+        "col": 5,
         "length": 3,
-        "orientation": "horizontal",
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 6,
-        "col": 1,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 4,
-        "col": 1,
+        "id": "blocker_3",
+        "row": 1,
+        "col": 3,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 2,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 0,
-        "col": 6,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 3,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 0,
-        "col": 4,
+        "row": 3,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -9998,7 +8706,7 @@ export const sampleLevels: Level[] = [
       {
         "id": "v7",
         "row": 0,
-        "col": 3,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -10006,8 +8714,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 0,
-        "col": 0,
+        "row": 4,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -10015,108 +8723,80 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 1,
-        "col": 2,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 3,
-        "col": 6,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 1,
-        "col": 0,
+        "row": 0,
+        "col": 2,
         "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v12",
-        "row": 2,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 6,
-        "col": 3,
-        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#10B981"
       }
     ],
-    "updatedAt": 1773600749917
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 18
   },
   {
     "id": 85,
-    "gridSize": 7,
-    "exitRow": 3,
-    "exitCol": 7,
-    "minMoves": 20,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 3,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 1,
-        "col": 6,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 6,
-        "col": 4,
-        "length": 3,
-        "orientation": "horizontal",
+        "id": "blocker_2",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 4,
-        "col": 1,
+        "id": "blocker_3",
+        "row": 2,
+        "col": 4,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 3,
-        "col": 6,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 0,
-        "col": 3,
+        "row": 3,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -10124,44 +8804,44 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
-        "row": 3,
+        "row": 4,
         "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 4,
-        "col": 4,
+        "row": 5,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 2,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 0,
+        "row": 3,
         "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
         "row": 1,
-        "col": 4,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -10169,8 +8849,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v11",
-        "row": 2,
-        "col": 1,
+        "row": 0,
+        "col": 4,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -10178,116 +8858,34 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v12",
-        "row": 6,
-        "col": 0,
-        "length": 2,
+        "row": 5,
+        "col": 3,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 2,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600752921
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 25
   },
   {
     "id": 86,
     "gridSize": 6,
-    "exitRow": 1,
-    "exitCol": 6,
-    "minMoves": 20,
     "vehicles": [
       {
         "id": "target",
-        "row": 1,
-        "col": 2,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v2",
-        "row": 2,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 0,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 4,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
-        "id": "v5",
-        "row": 3,
-        "col": 2,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#8B5CF6"
-      },
-      {
-        "id": "v6",
+        "id": "blocker_0",
         "row": 1,
-        "col": 5,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F97316"
-      },
-      {
-        "id": "v7",
-        "row": 5,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 3,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 2,
         "col": 3,
         "length": 2,
         "orientation": "vertical",
@@ -10295,16 +8893,16 @@ export const sampleLevels: Level[] = [
         "color": "#F59E0B"
       },
       {
-        "id": "v10",
-        "row": 0,
-        "col": 1,
-        "length": 3,
-        "orientation": "horizontal",
+        "id": "blocker_1",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v11",
+        "id": "blocker_2",
         "row": 1,
         "col": 4,
         "length": 2,
@@ -10313,35 +8911,124 @@ export const sampleLevels: Level[] = [
         "color": "#3B82F6"
       },
       {
-        "id": "v12",
-        "row": 5,
-        "col": 4,
+        "id": "blocker_3",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v5",
+        "row": 4,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 1,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
         "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600765315
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 25
   },
   {
     "id": 87,
-    "gridSize": 7,
-    "exitRow": 3,
-    "exitCol": 7,
-    "minMoves": 22,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 3,
-        "col": 1,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
         "row": 2,
         "col": 5,
         "length": 2,
@@ -10350,54 +9037,45 @@ export const sampleLevels: Level[] = [
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 2,
-        "col": 4,
-        "length": 3,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 3,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 5,
+        "id": "blocker_3",
+        "row": 2,
         "col": 4,
-        "length": 3,
-        "orientation": "horizontal",
+        "length": 2,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 1,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 3,
+        "row": 4,
         "col": 0,
         "length": 3,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 0,
-        "col": 3,
+        "row": 1,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 3,
-        "col": 6,
+        "row": 0,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -10405,8 +9083,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 0,
-        "col": 4,
+        "row": 4,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -10414,126 +9092,116 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v9",
-        "row": 4,
-        "col": 1,
-        "length": 3,
-        "orientation": "vertical",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 4,
-        "col": 2,
+        "row": 0,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 1,
-        "col": 0,
+        "row": 5,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
         "id": "v12",
-        "row": 6,
-        "col": 4,
+        "row": 4,
+        "col": 3,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 2,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600784333
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 25
   },
   {
     "id": 88,
-    "gridSize": 7,
-    "exitRow": 2,
-    "exitCol": 255,
-    "minMoves": 20,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
-        "col": 5,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 5,
-        "col": 2,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 4,
-        "col": 5,
-        "length": 3,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 3,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 0,
-        "col": 3,
+        "id": "blocker_3",
+        "row": 1,
+        "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 2,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 3,
+        "row": 4,
         "col": 5,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 2,
+        "row": 4,
         "col": 2,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 4,
-        "col": 2,
+        "row": 3,
+        "col": 1,
         "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
@@ -10541,8 +9209,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 0,
-        "col": 1,
+        "row": 5,
+        "col": 2,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -10551,25 +9219,25 @@ export const sampleLevels: Level[] = [
       {
         "id": "v9",
         "row": 0,
-        "col": 5,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
         "id": "v10",
-        "row": 3,
-        "col": 1,
+        "row": 0,
+        "col": 3,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 2,
-        "col": 4,
+        "row": 4,
+        "col": 1,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -10577,35 +9245,25 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v12",
-        "row": 1,
-        "col": 1,
+        "row": 4,
+        "col": 0,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 5,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600924298
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 31
   },
   {
     "id": 89,
-    "gridSize": 7,
-    "exitRow": 1,
-    "exitCol": 7,
-    "minMoves": 20,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 1,
+        "row": 2,
         "col": 0,
         "length": 2,
         "orientation": "horizontal",
@@ -10613,89 +9271,17 @@ export const sampleLevels: Level[] = [
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 0,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v2",
-        "row": 5,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 5,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
-        "id": "v5",
-        "row": 2,
-        "col": 5,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#8B5CF6"
-      },
-      {
-        "id": "v6",
+        "id": "blocker_0",
         "row": 2,
         "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#F97316"
-      },
-      {
-        "id": "v7",
-        "row": 3,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 3,
-        "col": 0,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 1,
-        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
-        "id": "v10",
-        "row": 3,
+        "id": "blocker_1",
+        "row": 2,
         "col": 4,
         "length": 2,
         "orientation": "vertical",
@@ -10703,99 +9289,161 @@ export const sampleLevels: Level[] = [
         "color": "#10B981"
       },
       {
-        "id": "v11",
-        "row": 3,
-        "col": 3,
-        "length": 3,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 5,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v12",
+        "id": "blocker_3",
         "row": 0,
-        "col": 1,
-        "length": 2,
-        "orientation": "horizontal",
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v13",
-        "row": 0,
-        "col": 3,
+        "id": "v5",
+        "row": 3,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 5,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 0,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 5,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
       }
     ],
-    "updatedAt": 1773600761297
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 31
   },
   {
     "id": 90,
     "gridSize": 6,
-    "exitRow": 4,
-    "exitCol": 255,
-    "minMoves": 23,
     "vehicles": [
       {
         "id": "target",
-        "row": 4,
-        "col": 3,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 0,
+        "id": "blocker_0",
+        "row": 1,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 1,
-        "col": 1,
+        "id": "blocker_2",
+        "row": 2,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 0,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 4,
-        "col": 2,
+        "id": "blocker_3",
+        "row": 1,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
-        "color": "#06B6D4"
+        "color": "#EC4899"
       },
       {
         "id": "v5",
         "row": 3,
         "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 3,
+        "row": 4,
         "col": 2,
         "length": 2,
         "orientation": "horizontal",
@@ -10804,25 +9452,25 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
-        "row": 2,
-        "col": 1,
+        "row": 3,
+        "col": 0,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 0,
-        "col": 5,
+        "row": 1,
+        "col": 0,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 2,
+        "row": 5,
         "col": 4,
         "length": 2,
         "orientation": "horizontal",
@@ -10831,44 +9479,43 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v10",
-        "row": 0,
+        "row": 5,
         "col": 0,
-        "length": 2,
-        "orientation": "vertical",
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 1,
-        "col": 3,
+        "row": 4,
+        "col": 4,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
         "id": "v12",
-        "row": 3,
-        "col": 4,
-        "length": 2,
+        "row": 0,
+        "col": 2,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#EC4899"
       }
     ],
-    "updatedAt": 1773600743204
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 26
   },
   {
     "id": 91,
-    "gridSize": 7,
-    "exitRow": 0,
-    "exitCol": 7,
-    "minMoves": 23,
+    "gridSize": 6,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
+        "row": 2,
         "col": 0,
         "length": 2,
         "orientation": "horizontal",
@@ -10876,26 +9523,35 @@ export const sampleLevels: Level[] = [
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 4,
-        "col": 4,
+        "id": "blocker_0",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 6,
+        "id": "blocker_2",
+        "row": 1,
         "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 2,
+        "id": "blocker_3",
+        "row": 1,
         "col": 4,
         "length": 2,
         "orientation": "vertical",
@@ -10903,36 +9559,27 @@ export const sampleLevels: Level[] = [
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 2,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 0,
-        "col": 4,
-        "length": 2,
-        "orientation": "vertical",
+        "row": 4,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 4,
+        "row": 1,
         "col": 1,
-        "length": 3,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#F97316"
       },
       {
         "id": "v7",
-        "row": 5,
-        "col": 6,
+        "row": 4,
+        "col": 4,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -10940,17 +9587,17 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 6,
+        "row": 3,
         "col": 0,
-        "length": 3,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 2,
-        "col": 1,
+        "row": 3,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -10958,18 +9605,18 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v10",
-        "row": 2,
-        "col": 5,
+        "row": 3,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 3,
-        "col": 2,
-        "length": 2,
+        "row": 5,
+        "col": 1,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#3B82F6"
@@ -10977,15 +9624,15 @@ export const sampleLevels: Level[] = [
       {
         "id": "v12",
         "row": 0,
-        "col": 3,
+        "col": 1,
         "length": 2,
-        "orientation": "vertical",
+        "orientation": "horizontal",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
         "id": "v13",
-        "row": 3,
+        "row": 0,
         "col": 0,
         "length": 2,
         "orientation": "vertical",
@@ -10993,218 +9640,99 @@ export const sampleLevels: Level[] = [
         "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600755825
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 25
   },
   {
     "id": 92,
     "gridSize": 6,
-    "exitRow": 2,
-    "exitCol": 255,
-    "minMoves": 20,
     "vehicles": [
       {
         "id": "target",
         "row": 2,
-        "col": 4,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
-        "row": 3,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v2",
+        "id": "blocker_0",
         "row": 1,
         "col": 3,
         "length": 2,
         "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 0,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 3,
-        "col": 2,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
-        "id": "v5",
-        "row": 1,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#8B5CF6"
-      },
-      {
-        "id": "v6",
-        "row": 3,
-        "col": 5,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F97316"
-      },
-      {
-        "id": "v7",
-        "row": 3,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 0,
-        "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 0,
-        "col": 4,
-        "length": 2,
-        "orientation": "horizontal",
         "isTarget": false,
         "color": "#F59E0B"
       },
       {
-        "id": "v10",
-        "row": 1,
-        "col": 2,
-        "length": 2,
+        "id": "blocker_1",
+        "row": 2,
+        "col": 4,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v11",
-        "row": 5,
-        "col": 2,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#3B82F6"
-      }
-    ],
-    "updatedAt": 1773600758553
-  },
-  {
-    "id": 93,
-    "gridSize": 6,
-    "exitRow": 1,
-    "exitCol": 255,
-    "minMoves": 24,
-    "vehicles": [
-      {
-        "id": "target",
-        "row": 1,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": true,
-        "color": "#EF4444"
-      },
-      {
-        "id": "v1",
-        "row": 5,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v2",
+        "id": "blocker_2",
         "row": 2,
-        "col": 4,
+        "col": 2,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 0,
-        "col": 2,
-        "length": 3,
+        "id": "blocker_3",
+        "row": 1,
+        "col": 5,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 3,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 3,
-        "col": 4,
-        "length": 2,
+        "row": 0,
+        "col": 2,
+        "length": 3,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#8B5CF6"
       },
       {
         "id": "v6",
-        "row": 1,
-        "col": 0,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F97316"
-      },
-      {
-        "id": "v7",
         "row": 5,
         "col": 2,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
         "color": "#64748B"
       },
       {
         "id": "v8",
-        "row": 4,
-        "col": 5,
-        "length": 2,
+        "row": 3,
+        "col": 0,
+        "length": 3,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#14B8A6"
       },
       {
         "id": "v9",
-        "row": 0,
-        "col": 0,
+        "row": 1,
+        "col": 1,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
@@ -11214,133 +9742,15 @@ export const sampleLevels: Level[] = [
         "id": "v10",
         "row": 4,
         "col": 2,
-        "length": 3,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
       },
       {
         "id": "v11",
-        "row": 2,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      }
-    ],
-    "updatedAt": 1773600762330
-  },
-  {
-    "id": 94,
-    "gridSize": 7,
-    "exitRow": 7,
-    "exitCol": 1,
-    "minMoves": 27,
-    "vehicles": [
-      {
-        "id": "target",
-        "row": 2,
+        "row": 4,
         "col": 1,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": true,
-        "color": "#EF4444"
-      },
-      {
-        "id": "v1",
-        "row": 4,
-        "col": 4,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v2",
-        "row": 2,
-        "col": 6,
-        "length": 3,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#3B82F6"
-      },
-      {
-        "id": "v3",
-        "row": 3,
-        "col": 3,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#EC4899"
-      },
-      {
-        "id": "v4",
-        "row": 4,
-        "col": 3,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
-        "id": "v5",
-        "row": 4,
-        "col": 0,
-        "length": 2,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#8B5CF6"
-      },
-      {
-        "id": "v6",
-        "row": 3,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#F97316"
-      },
-      {
-        "id": "v7",
-        "row": 6,
-        "col": 1,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#64748B"
-      },
-      {
-        "id": "v8",
-        "row": 2,
-        "col": 3,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#14B8A6"
-      },
-      {
-        "id": "v9",
-        "row": 5,
-        "col": 0,
-        "length": 3,
-        "orientation": "horizontal",
-        "isTarget": false,
-        "color": "#F59E0B"
-      },
-      {
-        "id": "v10",
-        "row": 5,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#10B981"
-      },
-      {
-        "id": "v11",
-        "row": 1,
-        "col": 2,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -11348,62 +9758,61 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v12",
-        "row": 3,
-        "col": 2,
+        "row": 4,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#EC4899"
-      },
-      {
-        "id": "v13",
-        "row": 5,
-        "col": 6,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600794160
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 25
   },
   {
-    "id": 95,
+    "id": 93,
     "gridSize": 6,
-    "exitRow": 0,
-    "exitCol": 255,
-    "minMoves": 20,
     "vehicles": [
       {
         "id": "target",
-        "row": 0,
-        "col": 4,
+        "row": 2,
+        "col": 0,
         "length": 2,
         "orientation": "horizontal",
         "isTarget": true,
         "color": "#EF4444"
       },
       {
-        "id": "v1",
+        "id": "blocker_0",
         "row": 1,
-        "col": 0,
-        "length": 3,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 5,
+        "length": 2,
         "orientation": "vertical",
         "isTarget": false,
         "color": "#10B981"
       },
       {
-        "id": "v2",
-        "row": 3,
-        "col": 1,
+        "id": "blocker_2",
+        "row": 1,
+        "col": 3,
         "length": 2,
-        "orientation": "horizontal",
+        "orientation": "vertical",
         "isTarget": false,
         "color": "#3B82F6"
       },
       {
-        "id": "v3",
-        "row": 0,
+        "id": "blocker_3",
+        "row": 1,
         "col": 2,
         "length": 2,
         "orientation": "vertical",
@@ -11411,18 +9820,9 @@ export const sampleLevels: Level[] = [
         "color": "#EC4899"
       },
       {
-        "id": "v4",
-        "row": 4,
-        "col": 5,
-        "length": 2,
-        "orientation": "vertical",
-        "isTarget": false,
-        "color": "#06B6D4"
-      },
-      {
         "id": "v5",
-        "row": 0,
-        "col": 3,
+        "row": 3,
+        "col": 1,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -11430,8 +9830,395 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v6",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 5,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      }
+    ],
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 25
+  },
+  {
+    "id": 94,
+    "gridSize": 6,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "blocker_0",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "blocker_2",
+        "row": 0,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "blocker_3",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 5,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
         "row": 1,
         "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 3,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      }
+    ],
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 26
+  },
+  {
+    "id": 95,
+    "gridSize": 6,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "blocker_0",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "blocker_2",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "blocker_3",
+        "row": 2,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 1,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      }
+    ],
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 25
+  },
+  {
+    "id": 96,
+    "gridSize": 6,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "blocker_0",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "blocker_2",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "blocker_3",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v5",
+        "row": 5,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -11439,7 +10226,520 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v7",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
         "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 5,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 1,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      }
+    ],
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 27
+  },
+  {
+    "id": 97,
+    "gridSize": 6,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "blocker_0",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 0,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "blocker_2",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "blocker_3",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v5",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 4,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 3,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 1,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      }
+    ],
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 29
+  },
+  {
+    "id": 98,
+    "gridSize": 6,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "blocker_0",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "blocker_2",
+        "row": 2,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "blocker_3",
+        "row": 2,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v5",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      }
+    ],
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 25
+  },
+  {
+    "id": 99,
+    "gridSize": 6,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "blocker_0",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "blocker_2",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "blocker_3",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v5",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      }
+    ],
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 26
+  },
+  {
+    "id": 100,
+    "gridSize": 6,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "blocker_0",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "blocker_1",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "blocker_2",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "blocker_3",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v5",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
         "col": 4,
         "length": 2,
         "orientation": "horizontal",
@@ -11448,8 +10748,8 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v8",
-        "row": 3,
-        "col": 3,
+        "row": 0,
+        "col": 5,
         "length": 2,
         "orientation": "vertical",
         "isTarget": false,
@@ -11466,15 +10766,43 @@ export const sampleLevels: Level[] = [
       },
       {
         "id": "v10",
-        "row": 2,
+        "row": 4,
         "col": 2,
-        "length": 3,
+        "length": 2,
         "orientation": "horizontal",
         "isTarget": false,
         "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 5,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 1,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
       }
     ],
-    "updatedAt": 1773600768657
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 29
   }
-]
-  ;
+];

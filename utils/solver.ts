@@ -74,8 +74,27 @@ export function solvePuzzle(
     return false;
   };
 
+  // Normalize 255 to -1
+  const exR = exitRow === 255 ? -1 : exitRow;
+  const exC = exitCol === 255 ? -1 : exitCol;
+
+  const isWinState = (pos: Uint8Array): boolean => {
+    if (targetIdx === -1) return false;
+    const p = pos[targetIdx];
+    if (isHoriz[targetIdx]) {
+      if (fixed[targetIdx] !== exR) return false;
+      if (exC >= gridSize) return p + len[targetIdx] >= gridSize;
+      if (exC < 0) return p <= 0;
+    } else {
+      if (fixed[targetIdx] !== exC) return false;
+      if (exR >= gridSize) return p + len[targetIdx] >= gridSize;
+      if (exR < 0) return p <= 0;
+    }
+    return false;
+  };
+
   // Check if initial state is already winning
-  if (targetIdx !== -1 && initialPos[targetIdx] + len[targetIdx] >= gridSize) {
+  if (isWinState(initialPos)) {
     return { solvable: true, minMoves: 0, moves: [] };
   }
 
@@ -103,7 +122,6 @@ export function solvePuzzle(
 
     for (let vi = 0; vi < n; vi++) {
       const curP = pos[vi];
-      const exitCoord = isHoriz[vi] ? exitCol : exitRow;
 
       // Try sliding in both directions
       const directions = [-1, 1];
@@ -136,8 +154,7 @@ export function solvePuzzle(
             visited.set(nextKey, { parentKey: curKey, move });
             depthAtKey.set(nextKey, depth + 1);
 
-            const winThreshold = isHoriz[vi] ? gridSize : gridSize; // Always the edge
-            if (vi === targetIdx && np + len[vi] >= winThreshold) {
+            if (isWinState(nextPos)) {
               finalKey = nextKey;
               break;
             }

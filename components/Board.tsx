@@ -89,37 +89,41 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
       {/* Grid lines */}
       {gridLines}
 
-      {/* Exit indicator */}
+      {/* Exit indicator and glow */}
+      {(() => {
+        const isRight = exitCol >= gridSize && exitCol !== 255;
+        const isLeft = exitCol === 255 || exitCol < 0;
+        const isBottom = exitRow >= gridSize && exitRow !== 255;
+        const isTop = exitRow === 255 || exitRow < 0;
 
-      <View
-        style={[
-          styles.exitIndicator,
-          {
-            top: exitRow * cellSize + cellSize * 0.2,
-            left: boardSize - 3,
-            height: cellSize * 0.6,
-            backgroundColor: exitColor,
-          },
-        ]}
-      />
+        let indicatorStyle: any = {};
+        let glowStyle: any = {};
 
-      {/* Exit glow */}
-      <View
-        style={{
-          position: 'absolute',
-          top: exitRow * cellSize,
-          right: -8,
-          width: 16,
-          height: cellSize,
-          backgroundColor: exitColor,
-          opacity: 0.15,
-          borderRadius: 8,
-        }}
-      />
+        if (isRight) {
+          indicatorStyle = { top: exitRow * cellSize + cellSize * 0.2, right: 0, width: 6, height: cellSize * 0.6, borderRadius: 3 };
+          glowStyle = { top: exitRow * cellSize, right: -8, width: 16, height: cellSize, opacity: 0.15, borderRadius: 8 };
+        } else if (isLeft) {
+          indicatorStyle = { top: exitRow * cellSize + cellSize * 0.2, left: 0, width: 6, height: cellSize * 0.6, borderRadius: 3 };
+          glowStyle = { top: exitRow * cellSize, left: -8, width: 16, height: cellSize, opacity: 0.15, borderRadius: 8 };
+        } else if (isBottom) {
+          indicatorStyle = { left: exitCol * cellSize + cellSize * 0.2, bottom: 0, height: 6, width: cellSize * 0.6, borderRadius: 3 };
+          glowStyle = { left: exitCol * cellSize, bottom: -8, height: 16, width: cellSize, opacity: 0.15, borderRadius: 8 };
+        } else if (isTop) {
+          indicatorStyle = { left: exitCol * cellSize + cellSize * 0.2, top: 0, height: 6, width: cellSize * 0.6, borderRadius: 3 };
+          glowStyle = { left: exitCol * cellSize, top: -8, height: 16, width: cellSize, opacity: 0.15, borderRadius: 8 };
+        }
+
+        return (
+          <>
+            <View style={[styles.exitIndicator, { backgroundColor: exitColor, ...indicatorStyle }]} />
+            <View style={{ position: 'absolute', backgroundColor: exitColor, ...glowStyle }} />
+          </>
+        );
+      })()}
 
       {/* Vehicles */}
       {cellSize > 0 && !isNaN(cellSize) && vehicles.map((v) => {
-        const b = vehicleBounds.find(vb => vb.id === v.id)?.bounds || { min: 0, max: gridSize };
+        const b = vehicleBounds.find(vb => vb.id === v.id)?.bounds || { min: 0, max: gridSize - v.length };
         return (
           <Block
             key={v.id}
@@ -129,8 +133,8 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
             cellSize={cellSize}
             onMoveEnd={onMoveEnd}
             isHinted={hintVehicleId === v.id}
-            min={b.min || 0}
-            max={b.max || gridSize}
+            min={b.min}
+            max={b.max}
             disabled={disabled}
           />
         );

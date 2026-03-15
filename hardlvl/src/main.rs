@@ -1,13 +1,26 @@
 // ─────────────────────────────────────────────────────────────────────────────
-//  Rush Hour – Level Generator (Ultra-Optimized + Evolutionary Hill Climbing)
+//  Rush Hour – Level Generator
+//
+//  Format JSON : { exitRow, exitCol } où (exitRow, exitCol) est la case
+//  hors-grille par laquelle la voiture cible sort.
+//
+//  Règles de cohérence exit ↔ voiture cible :
+//    - exit sur bord droit  (exitCol == gs)     → cible horizontale, cible.fixed == exitRow
+//    - exit sur bord gauche (exitCol == -1 → 255) → cible horizontale, cible.fixed == exitRow
+//    - exit sur bord bas    (exitRow == gs)     → cible verticale,   cible.fixed == exitCol
+//    - exit sur bord haut   (exitRow == -1 → 255) → cible verticale, cible.fixed == exitCol
+//
+//  Optimisations : bitboard u64, VecDeque BFS, FxHashSet réutilisé,
+//                  max_bfs_states (abandon board insoluble), par_iter 1-level/cœur,
+//                  écriture incrémentale JSON.
 // ─────────────────────────────────────────────────────────────────────────────
 
 use std::{
-    sync::{
-        atomic::{AtomicU32, Ordering},
-        Arc,
-    },
-    time::Instant,
+    collections::VecDeque,
+    io::{BufWriter, Write},
+    fs::File,
+    sync::atomic::{AtomicU32, Ordering},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use clap::Parser;
@@ -22,21 +35,56 @@ type StateArray = [u8; MAX_VEHICLES];
 // ── CLI ───────────────────────────────────────────────────────────────────────
 
 #[derive(Parser, Debug)]
-#[command(name = "rush_hour_gen", about = "Evolutionary Rush Hour generator")]
+#[command(name = "rush_hour_gen")]
 struct Cli {
-    #[arg(long, default_value_t = 0)]
-    hard: u32,
-    #[arg(long, default_value_t = 0)]
-    expert: u32,
-    #[arg(long, default_value_t = 1)]
-    start_id: u32,
-    #[arg(short, long, default_value = "levels.json")]
-    output: String,
-    /// Nombre de redémarrages (restarts) si l'évolution se bloque
-    #[arg(long, default_value_t = 50_000)]
-    max_restarts: u32,
-    #[arg(long, default_value_t = 0)]
-    threads: usize,
+    #[arg(long, default_value_t = 0)]  easy:   u32,
+    #[arg(long, default_value_t = 0)]  normal: u32,
+    #[arg(long, default_value_t = 0)]  hard:   u32,
+    #[arg(long, default_value_t = 0)]  expert: u32,
+    #[arg(long, default_value_t = 0)]  master: u32,
+    #[arg(long, default_value_t = 1)]  start_id: u32,
+    #[arg(short, long, default_value = "levels.json")] output: String,
+    #[arg(long, default_value_t = 50_000)] max_restarts: u32,
+    #[arg(long, default_value_t = 0)]  threads: usize,
+    /// Max états BFS avant d'abandonner un board insoluble (ex: 300000)
+    #[arg(long, default_value_t = 300_000)] max_bfs_states: usize,
+}
+
+// ── Exit ──────────────────────────────────────────────────────────────────────
+
+/// La sortie est décrite par la case hors-grille où sort la voiture cible.
+/// On stocke aussi quel bord est concerné pour la logique BFS/génération.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ExitSide { Right, Left, Bottom, Top }
+
+impl ExitSide {
+    fn random(rng: &mut SmallRng) -> Self {
+        match rng.gen_range(0..4u8) {
+            0 => ExitSide::Right,
+            1 => ExitSide::Left,
+            2 => ExitSide::Bottom,
+            _ => ExitSide::Top,
+        }
+    }
+
+    /// La voiture cible est horizontale pour Left/Right, verticale pour Top/Bottom.
+    fn target_horizontal(self) -> bool {
+        matches!(self, ExitSide::Right | ExitSide::Left)
+    }
+
+    /// Calcule (exitRow, exitCol) = case hors-grille selon le bord et la position fixe.
+    ///
+    /// `fixed` est :
+    ///   - la ligne de la voiture cible pour Left/Right
+    ///   - la colonne de la voiture cible pour Top/Bottom
+    fn exit_cell(self, fixed: u8, gs: u8) -> (u8, u8) {
+        match self {
+            ExitSide::Right  => (fixed, gs),       // col == gs (hors droite)
+            ExitSide::Left   => (fixed, 255),      // col == 255 repr. -1 (hors gauche)
+            ExitSide::Bottom => (gs,    fixed),    // row == gs (hors bas)
+            ExitSide::Top    => (255,   fixed),    // row == 255 repr. -1 (hors haut)
+        }
+    }
 }
 
 // ── Data model ────────────────────────────────────────────────────────────────
@@ -44,77 +92,62 @@ struct Cli {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Vehicle {
-    id: String,
-    row: u8,
-    col: u8,
-    length: u8,
+    id:          String,
+    row:         u8,
+    col:         u8,
+    length:      u8,
     orientation: String,
-    is_target: bool,
-    color: String,
+    is_target:   bool,
+    color:       String,
 }
 
+/// Format JSON identique à l'original : exitRow + exitCol
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Level {
-    id: u32,
-    grid_size: u8,
-    exit_row: u8,
-    exit_col: u8,
-    min_moves: u32,
-    vehicles: Vec<Vehicle>,
+    id:         u32,
+    grid_size:  u8,
+    exit_row:   u8,   // ligne hors-grille (255 = -1 pour bord haut)
+    exit_col:   u8,   // colonne hors-grille (255 = -1 pour bord gauche)
+    min_moves:  u32,
+    vehicles:   Vec<Vehicle>,
+    updated_at: u64,
 }
 
 #[derive(Debug, Clone, Copy)]
 struct DifficultyConfig {
-    grid_size: u8,
+    grid_size:    u8,
     min_vehicles: usize,
     max_vehicles: usize,
-    min_moves: u32,
-    max_moves: u32,
+    min_moves:    u32,
+    max_moves:    u32,
 }
 
-// ── NOUVELLES CONFIGURATIONS BASSÉES SUR TES DONNÉES ──────────────────────────
-
-const HARD: DifficultyConfig = DifficultyConfig {
-    grid_size: 6,
-    min_vehicles: 10,
-    max_vehicles: 14,
-    min_moves: 20,
-    max_moves: 35,
-};
-
-const EXPERT: DifficultyConfig = DifficultyConfig {
-    grid_size: 6,
-    min_vehicles: 12,
-    max_vehicles: 16,
-    min_moves: 35,
-    max_moves: 50,
-};
-
-
-
-
-const COLORS: &[&str] = &[
-    "#F59E0B", "#10B981", "#3B82F6", "#EC4899", "#06B6D4", "#8B5CF6", "#F97316", "#64748B", "#14B8A6",
-];
+#[derive(Debug, Clone, Copy)]
+struct Task {
+    id:         u32,
+    cfg:        DifficultyConfig,
+    label:      &'static str,
+    idx:        u32,
+    count:      u32,
+    exit_side:  ExitSide,
+    max_states: usize,
+}
 
 // ── Internal Board Representation ─────────────────────────────────────────────
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct VehicleData {
-    pos: u8, // col if horiz, row if vert
-    fixed: u8, // row if horiz, col if vert
-    length: u8,
+    pos:        u8,   // col si horizontal, row si vertical
+    fixed:      u8,   // row si horizontal, col si vertical
+    length:     u8,
     horizontal: bool,
 }
 
-// Vérifie si une configuration de véhicules est valide (pas de chevauchement ni hors limites)
 fn is_valid_board(vehicles: &[VehicleData], gs: u8) -> bool {
     let mut grid = [[false; 10]; 10];
     for v in vehicles {
-        if v.pos + v.length > gs || v.fixed >= gs {
-            return false;
-        }
+        if v.pos + v.length > gs || v.fixed >= gs { return false; }
         for i in 0..v.length {
             let (r, c) = if v.horizontal {
                 (v.fixed as usize, (v.pos + i) as usize)
@@ -128,120 +161,165 @@ fn is_valid_board(vehicles: &[VehicleData], gs: u8) -> bool {
     true
 }
 
+// ── Bitboard ──────────────────────────────────────────────────────────────────
+
+#[inline(always)]
+fn build_bitboard(
+    pos:      &StateArray,
+    is_horiz: &[bool; MAX_VEHICLES],
+    fixed:    &[u8;   MAX_VEHICLES],
+    lengths:  &[u8;   MAX_VEHICLES],
+    n:        usize,
+    gs:       u8,
+) -> u64 {
+    let mut board: u64 = 0;
+    for i in 0..n {
+        for k in 0..lengths[i] {
+            let (r, c) = if is_horiz[i] { (fixed[i], pos[i] + k) } else { (pos[i] + k, fixed[i]) };
+            board |= 1u64 << (r * gs + c);
+        }
+    }
+    board
+}
+
+#[inline(always)]
+fn clear_vehicle_bits(
+    board:    u64,
+    pos:      &StateArray,
+    is_horiz: &[bool; MAX_VEHICLES],
+    fixed:    &[u8;   MAX_VEHICLES],
+    lengths:  &[u8;   MAX_VEHICLES],
+    skip:     usize,
+    gs:       u8,
+) -> u64 {
+    let mut b = board;
+    for k in 0..lengths[skip] {
+        let (r, c) = if is_horiz[skip] { (fixed[skip], pos[skip] + k) } else { (pos[skip] + k, fixed[skip]) };
+        b &= !(1u64 << (r * gs + c));
+    }
+    b
+}
+
+#[inline(always)]
+fn bit_set(board: u64, r: u8, c: u8, gs: u8) -> bool {
+    board & (1u64 << (r * gs + c)) != 0
+}
+
 // ── BFS ───────────────────────────────────────────────────────────────────────
 
-// OPTIMISATION MAJEURE: Sur une grille 6x6, la position (pos) va au max de 0 à 4.
-// 3 bits suffisent pour stocker un chiffre de 0 à 7. 
-// Pour 20 voitures max: 20 * 3 bits = 60 bits. On passe tout en u64 au lieu de u128 !
 const BITS: u32 = 3;
 
 #[inline(always)]
 fn encode_state(positions: &StateArray, n: usize) -> u64 {
     let mut key: u64 = 0;
-    for i in 0..n {
-        key |= (positions[i] as u64) << (i as u32 * BITS);
-    }
+    for i in 0..n { key |= (positions[i] as u64) << (i as u32 * BITS); }
     key
 }
 
-#[inline(always)]
-fn cell_occupied(
-    pos: &StateArray,
-    is_horiz: &[bool; MAX_VEHICLES],
-    fixed: &[u8; MAX_VEHICLES],
-    lengths: &[u8; MAX_VEHICLES],
-    n: usize,
-    row: u8,
-    col: u8,
-    skip: usize,
-) -> bool {
-    for i in 0..n {
-        if i == skip { continue; }
-        if is_horiz[i] {
-            if fixed[i] == row && col >= pos[i] && col < pos[i] + lengths[i] { return true; }
-        } else {
-            if fixed[i] == col && row >= pos[i] && row < pos[i] + lengths[i] { return true; }
-        }
-    }
-    false
-}
-
+/// Conditions de victoire pour la voiture cible (vi == 0) :
+///
+///   ExitSide::Right  : cible horizontale, dernier bout atteint >= gs-1
+///   ExitSide::Left   : cible horizontale, pos == 0 (peut encore reculer hors gauche)
+///   ExitSide::Bottom : cible verticale,   dernier bout atteint >= gs-1
+///   ExitSide::Top    : cible verticale,   pos == 0
+///
+/// Abandon anticipé si visited.len() >= max_states → board insoluble / trop dur.
 fn bfs(
-    n: usize,
-    is_horiz: &[bool; MAX_VEHICLES],
-    fixed: &[u8; MAX_VEHICLES],
-    lengths: &[u8; MAX_VEHICLES],
-    grid_size: u8,
-    exit_col: u8,
-    init_positions: &StateArray,
-    depth_limit: u32,
+    n:          usize,
+    is_horiz:   &[bool; MAX_VEHICLES],
+    fixed:      &[u8;   MAX_VEHICLES],
+    lengths:    &[u8;   MAX_VEHICLES],
+    gs:         u8,
+    init:       &StateArray,
+    depth_lim:  u32,
+    exit_side:  ExitSide,
+    max_states: usize,
+    visited:    &mut FxHashSet<u64>,
 ) -> u32 {
-    let init_key = encode_state(init_positions, n);
-    // Utilisation de u64 : plus rapide à hacher, moins de RAM allouée.
-    let mut visited: FxHashSet<u64> = FxHashSet::with_capacity_and_hasher(1 << 15, Default::default());
-    visited.insert(init_key);
+    visited.clear();
+    visited.insert(encode_state(init, n));
 
-    let mut queue: Vec<(StateArray, u32)> = Vec::with_capacity(1 << 15);
-    queue.push((*init_positions, 0));
-    let mut head = 0usize;
+    let mut queue: VecDeque<(StateArray, u32)> = VecDeque::with_capacity(1 << 14);
+    queue.push_back((*init, 0));
 
-    while head < queue.len() {
-        let (pos, depth) = queue[head];
-        head += 1;
+    while let Some((pos, depth)) = queue.pop_front() {
+        if depth >= depth_lim { continue; }
 
-        if depth >= depth_limit { continue; }
+        let full = build_bitboard(&pos, is_horiz, fixed, lengths, n, gs);
 
         for vi in 0..n {
-            let cur = pos[vi];
+            let cur  = pos[vi];
             let vlen = lengths[vi];
+            let wo   = clear_vehicle_bits(full, &pos, is_horiz, fixed, lengths, vi, gs);
 
             if is_horiz[vi] {
                 let row = fixed[vi];
-                // Slide LEFT
+
+                // ← gauche
                 let mut nc = cur as i16 - 1;
                 while nc >= 0 {
-                    if cell_occupied(&pos, is_horiz, fixed, lengths, n, row, nc as u8, vi) { break; }
-                    let mut next = pos;
-                    next[vi] = nc as u8;
-                    let key = encode_state(&next, n);
-                    if visited.insert(key) { queue.push((next, depth + 1)); }
-                    nc -= 1;
-                }
-                // Slide RIGHT
-                let mut nc = cur + 1;
-                while (nc + vlen - 1) < grid_size {
-                    let tip = nc + vlen - 1;
-                    if cell_occupied(&pos, is_horiz, fixed, lengths, n, row, tip, vi) { break; }
-                    let mut next = pos;
-                    next[vi] = nc;
+                    if bit_set(wo, row, nc as u8, gs) { break; }
+                    let mut next = pos; next[vi] = nc as u8;
                     let key = encode_state(&next, n);
                     if visited.insert(key) {
-                        if vi == 0 && tip >= exit_col { return depth + 1; }
-                        queue.push((next, depth + 1));
+                        if vi == 0 && exit_side == ExitSide::Left && nc == 0 {
+                            return depth + 1;
+                        }
+                        if visited.len() >= max_states { return u32::MAX; }
+                        queue.push_back((next, depth + 1));
+                    }
+                    nc -= 1;
+                }
+
+                // → droite
+                let mut nc = cur + 1;
+                while nc + vlen - 1 < gs {
+                    let tip = nc + vlen - 1;
+                    if bit_set(wo, row, tip, gs) { break; }
+                    let mut next = pos; next[vi] = nc;
+                    let key = encode_state(&next, n);
+                    if visited.insert(key) {
+                        if vi == 0 && exit_side == ExitSide::Right && tip >= gs - 1 {
+                            return depth + 1;
+                        }
+                        if visited.len() >= max_states { return u32::MAX; }
+                        queue.push_back((next, depth + 1));
                     }
                     nc += 1;
                 }
             } else {
                 let col = fixed[vi];
-                // Slide UP
+
+                // ↑ haut
                 let mut nr = cur as i16 - 1;
                 while nr >= 0 {
-                    if cell_occupied(&pos, is_horiz, fixed, lengths, n, nr as u8, col, vi) { break; }
-                    let mut next = pos;
-                    next[vi] = nr as u8;
+                    if bit_set(wo, nr as u8, col, gs) { break; }
+                    let mut next = pos; next[vi] = nr as u8;
                     let key = encode_state(&next, n);
-                    if visited.insert(key) { queue.push((next, depth + 1)); }
+                    if visited.insert(key) {
+                        if vi == 0 && exit_side == ExitSide::Top && nr == 0 {
+                            return depth + 1;
+                        }
+                        if visited.len() >= max_states { return u32::MAX; }
+                        queue.push_back((next, depth + 1));
+                    }
                     nr -= 1;
                 }
-                // Slide DOWN
+
+                // ↓ bas
                 let mut nr = cur + 1;
-                while (nr + vlen - 1) < grid_size {
+                while nr + vlen - 1 < gs {
                     let tip = nr + vlen - 1;
-                    if cell_occupied(&pos, is_horiz, fixed, lengths, n, tip, col, vi) { break; }
-                    let mut next = pos;
-                    next[vi] = nr;
+                    if bit_set(wo, tip, col, gs) { break; }
+                    let mut next = pos; next[vi] = nr;
                     let key = encode_state(&next, n);
-                    if visited.insert(key) { queue.push((next, depth + 1)); }
+                    if visited.insert(key) {
+                        if vi == 0 && exit_side == ExitSide::Bottom && tip >= gs - 1 {
+                            return depth + 1;
+                        }
+                        if visited.len() >= max_states { return u32::MAX; }
+                        queue.push_back((next, depth + 1));
+                    }
                     nr += 1;
                 }
             }
@@ -250,200 +328,282 @@ fn bfs(
     u32::MAX
 }
 
-fn solve_board(vehicles: &[VehicleData], gs: u8, max_moves: u32) -> u32 {
+fn solve_board(
+    vehicles:   &[VehicleData],
+    gs:         u8,
+    max_moves:  u32,
+    exit_side:  ExitSide,
+    max_states: usize,
+    visited:    &mut FxHashSet<u64>,
+) -> u32 {
     let n = vehicles.len();
     let mut is_horiz = [false; MAX_VEHICLES];
-    let mut fixed = [0; MAX_VEHICLES];
-    let mut lengths = [0; MAX_VEHICLES];
-    let mut init_pos = [0; MAX_VEHICLES];
-
+    let mut fixed    = [0u8;   MAX_VEHICLES];
+    let mut lengths  = [0u8;   MAX_VEHICLES];
+    let mut init_pos = [0u8;   MAX_VEHICLES];
     for (i, v) in vehicles.iter().enumerate() {
         is_horiz[i] = v.horizontal;
-        fixed[i] = v.fixed;
-        lengths[i] = v.length;
+        fixed[i]    = v.fixed;
+        lengths[i]  = v.length;
         init_pos[i] = v.pos;
     }
-
-    bfs(n, &is_horiz, &fixed, &lengths, gs, gs - 1, &init_pos, max_moves)
+    bfs(n, &is_horiz, &fixed, &lengths, gs, &init_pos, max_moves, exit_side, max_states, visited)
 }
 
-// ── Evolutionary Algorithm (Hill Climbing) ────────────────────────────────────
+// ── Génération du board ───────────────────────────────────────────────────────
 
-fn random_board(cfg: DifficultyConfig, rng: &mut SmallRng) -> Vec<VehicleData> {
-    let mut vehicles = Vec::new();
-    let target_row = (cfg.grid_size / 2 - 1) as u8;
-    
-    // 1. Voiture cible (toujours index 0)
-    vehicles.push(VehicleData {
-        pos: rng.gen_range(0..=(cfg.grid_size - 3)), // La longueur 2 nécessite -3 pour la position
-        fixed: target_row,
-        length: 2,
-        horizontal: true,
-    });
+/// Génère un board aléatoire valide.
+///
+/// La voiture cible (index 0) est :
+///   - horizontale et sur `target_fixed` (= ligne) pour Left/Right
+///   - verticale   et sur `target_fixed` (= colonne) pour Top/Bottom
+///
+/// `target_fixed` est tiré aléatoirement et FIXÉ pour toute la vie du board :
+/// il détermine sur quelle ligne/colonne la sortie sera placée.
+fn random_board(cfg: DifficultyConfig, exit_side: ExitSide, rng: &mut SmallRng) -> (Vec<VehicleData>, u8) {
+    let horizontal = exit_side.target_horizontal();
+    // La case de sortie est alignée sur target_fixed (ligne ou colonne selon le bord)
+    let target_fixed = rng.gen_range(0..cfg.grid_size);
 
-    // 2. Remplissage aléatoire
+    // Restrict target_pos to the opposite side of the board relative to the exit
+    let target_pos = match exit_side {
+        ExitSide::Right | ExitSide::Bottom => rng.gen_range(0..=(cfg.grid_size / 2 - 1)),
+        ExitSide::Left | ExitSide::Top     => rng.gen_range((cfg.grid_size / 2)..=(cfg.grid_size - 2)),
+    };
+
+    let target = VehicleData { pos: target_pos, fixed: target_fixed, length: 2, horizontal };
+    let mut vehicles = vec![target];
+
     let target_count = rng.gen_range(cfg.min_vehicles..=cfg.max_vehicles);
     let mut attempts = 0;
-    while vehicles.len() < target_count && attempts < 100 {
+
+    while vehicles.len() < target_count && attempts < 200 {
         let length = if rng.gen_bool(0.3) { 3 } else { 2 };
-        let horizontal = rng.gen_bool(0.5);
-        let pos = rng.gen_range(0..=(cfg.grid_size - length));
-        let fixed = rng.gen_range(0..cfg.grid_size);
+        let horiz  = rng.gen_bool(0.5);
+        let pos    = rng.gen_range(0..=(cfg.grid_size - length));
+        let fixed  = rng.gen_range(0..cfg.grid_size);
 
-        // Ne pas bloquer trivialement la ligne de sortie avec une voiture horizontale
-        if horizontal && fixed == target_row && pos > vehicles[0].pos {
-            attempts += 1; continue;
-        }
-
-        let new_v = VehicleData { pos, fixed, length, horizontal };
-        vehicles.push(new_v);
-        
-        if !is_valid_board(&vehicles, cfg.grid_size) {
-            vehicles.pop(); // Revert
-        }
+        let v = VehicleData { pos, fixed, length, horizontal: horiz };
+        vehicles.push(v);
+        if !is_valid_board(&vehicles, cfg.grid_size) { vehicles.pop(); }
         attempts += 1;
     }
-    vehicles
+
+    (vehicles, target_fixed)
 }
 
 fn mutate(board: &[VehicleData], cfg: DifficultyConfig, rng: &mut SmallRng) -> Option<Vec<VehicleData>> {
-    let mut new_board = board.to_vec();
-    let action = rng.gen_range(0..3);
-
-    match action {
-        0 => { // Déplacer/Modifier une voiture existante
-            if new_board.len() > 1 {
-                let idx = rng.gen_range(1..new_board.len());
-                let length = if rng.gen_bool(0.2) { 3 } else { 2 };
-                let horizontal = rng.gen_bool(0.5);
-                new_board[idx] = VehicleData {
-                    pos: rng.gen_range(0..=(cfg.grid_size - length)),
-                    fixed: rng.gen_range(0..cfg.grid_size),
-                    length,
-                    horizontal,
-                };
-            }
+    let mut nb = board.to_vec();
+    match rng.gen_range(0..3u8) {
+        0 if nb.len() > 1 => {
+            let idx    = rng.gen_range(1..nb.len());
+            let length = if rng.gen_bool(0.2) { 3 } else { 2 };
+            nb[idx] = VehicleData {
+                pos:        rng.gen_range(0..=(cfg.grid_size - length)),
+                fixed:      rng.gen_range(0..cfg.grid_size),
+                length,
+                horizontal: rng.gen_bool(0.5),
+            };
         }
-        1 => { // Ajouter une voiture
-            if new_board.len() < cfg.max_vehicles {
-                let length = if rng.gen_bool(0.3) { 3 } else { 2 };
-                let horizontal = rng.gen_bool(0.5);
-                new_board.push(VehicleData {
-                    pos: rng.gen_range(0..=(cfg.grid_size - length)),
-                    fixed: rng.gen_range(0..cfg.grid_size),
-                    length,
-                    horizontal,
-                });
-            }
+        1 if nb.len() < cfg.max_vehicles => {
+            let length = if rng.gen_bool(0.3) { 3 } else { 2 };
+            nb.push(VehicleData {
+                pos:        rng.gen_range(0..=(cfg.grid_size - length)),
+                fixed:      rng.gen_range(0..cfg.grid_size),
+                length,
+                horizontal: rng.gen_bool(0.5),
+            });
         }
-        2 => { // Supprimer une voiture
-            if new_board.len() > cfg.min_vehicles {
-                let idx = rng.gen_range(1..new_board.len());
-                new_board.remove(idx);
-            }
-        }
+        2 if nb.len() > cfg.min_vehicles => { nb.remove(rng.gen_range(1..nb.len())); }
         _ => {}
     }
-
-    if is_valid_board(&new_board, cfg.grid_size) { Some(new_board) } else { None }
+    if is_valid_board(&nb, cfg.grid_size) { Some(nb) } else { None }
 }
 
-fn generate_evolutionary(level_id: u32, cfg: DifficultyConfig, max_restarts: u32) -> Option<(Level, u32)> {
-    let attempts = Arc::new(AtomicU32::new(0));
+fn board_to_level(
+    id:        u32,
+    board:     &[VehicleData],
+    moves:     u32,
+    gs:        u8,
+    exit_side: ExitSide,
+    // target_fixed : ligne (Left/Right) ou colonne (Top/Bottom) de la voiture cible
+    target_fixed: u8,
+) -> Level {
+    let colors = [
+        "#F59E0B","#10B981","#3B82F6","#EC4899","#06B6D4",
+        "#8B5CF6","#F97316","#64748B","#14B8A6",
+    ];
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as u64;
 
-    let result = (0..max_restarts).into_par_iter().find_map_any(|attempt_idx| {
-        attempts.fetch_add(1, Ordering::Relaxed);
-        let mut rng = SmallRng::seed_from_u64(rand::random::<u64>() ^ attempt_idx as u64);
-        
-        // Point de départ
-        let mut current_board = random_board(cfg, &mut rng);
-        let mut current_score = solve_board(&current_board, cfg.grid_size, cfg.max_moves);
-        if current_score == u32::MAX { current_score = 0; }
+    // (exitRow, exitCol) = case hors-grille par laquelle sort la cible
+    let (exit_row, exit_col) = exit_side.exit_cell(target_fixed, gs);
 
-        let max_mutations = 2000; // Mutations par restart
-        let mut stuck_counter = 0;
+    Level {
+        id,
+        grid_size:  gs,
+        exit_row,
+        exit_col,
+        min_moves:  moves,
+        updated_at: now,
+        vehicles:   board.iter().enumerate().map(|(i, v)| Vehicle {
+            id:          if i == 0 { "target".into() } else { format!("v{i}") },
+            row:         if v.horizontal { v.fixed } else { v.pos },
+            col:         if v.horizontal { v.pos   } else { v.fixed },
+            length:      v.length,
+            orientation: if v.horizontal { "horizontal".into() } else { "vertical".into() },
+            is_target:   i == 0,
+            color:       if i == 0 { "#EF4444".into() } else { colors[i % colors.len()].into() },
+        }).collect(),
+    }
+}
 
-        for _ in 0..max_mutations {
-            if let Some(mutated_board) = mutate(&current_board, cfg, &mut rng) {
-                let new_score = solve_board(&mutated_board, cfg.grid_size, cfg.max_moves);
-                
-                // On accepte si c'est résoluble ET que c'est au moins aussi difficile
-                if new_score != u32::MAX && new_score >= current_score {
-                    if new_score > current_score { stuck_counter = 0; } else { stuck_counter += 1; }
-                    
-                    current_board = mutated_board;
-                    current_score = new_score;
+// ── Génération mono-thread d'un level ─────────────────────────────────────────
 
-                    // Si on atteint la plage cible, on a gagné !
-                    if current_score >= cfg.min_moves && current_score <= cfg.max_moves {
-                        return Some((current_board, current_score));
+fn generate_single(task: &Task, max_restarts: u32) -> Option<(Level, u32, Duration)> {
+    let t0         = Instant::now();
+    let cfg        = task.cfg;
+    let exit_side  = task.exit_side;
+    let max_states = task.max_states;
+    let mut rng    = SmallRng::seed_from_u64(rand::random());
+
+    let mut visited: FxHashSet<u64> =
+        FxHashSet::with_capacity_and_hasher(max_states.min(1 << 17), Default::default());
+
+    for restart in 0..max_restarts {
+        // random_board retourne aussi target_fixed qui est FIXÉ pour ce restart
+        let (mut board, target_fixed) = random_board(cfg, exit_side, &mut rng);
+        let mut score = solve_board(&board, cfg.grid_size, cfg.max_moves, exit_side, max_states, &mut visited);
+        if score == u32::MAX { score = 0; }
+
+        let mut stuck = 0u32;
+
+        for _ in 0..2000 {
+            if let Some(mutated) = mutate(&board, cfg, &mut rng) {
+                let ns = solve_board(&mutated, cfg.grid_size, cfg.max_moves, exit_side, max_states, &mut visited);
+                if ns == u32::MAX { continue; }
+
+                let accept = ns > score || (ns == score && rng.gen_bool(0.3));
+                if accept {
+                    stuck = if ns > score { 0 } else { stuck + 1 };
+                    board = mutated;
+                    score = ns;
+
+                    if score >= cfg.min_moves && score <= cfg.max_moves {
+                        return Some((
+                            board_to_level(task.id, &board, score, cfg.grid_size, exit_side, target_fixed),
+                            restart + 1,
+                            t0.elapsed(),
+                        ));
                     }
                 }
             }
-            // Anti-blocage : si on tourne en rond, on casse la boucle pour trigger un restart
-            if stuck_counter > 150 { break; }
+            if stuck > 150 { break; }
         }
-        None
-    });
-
-    if let Some((final_board, moves)) = result {
-        let vehicles = final_board.iter().enumerate().map(|(i, v)| Vehicle {
-            id: if i == 0 { "target".to_string() } else { format!("v{}", i) },
-            row: if v.horizontal { v.fixed } else { v.pos },
-            col: if v.horizontal { v.pos } else { v.fixed },
-            length: v.length,
-            orientation: if v.horizontal { "horizontal".into() } else { "vertical".into() },
-            is_target: i == 0,
-            color: if i == 0 { "#EF4444".into() } else { COLORS[i % COLORS.len()].into() },
-        }).collect();
-
-        Some((
-            Level {
-                id: level_id,
-                grid_size: cfg.grid_size,
-                exit_row: (cfg.grid_size / 2 - 1) as u8,
-                exit_col: cfg.grid_size - 1,
-                min_moves: moves,
-                vehicles,
-            },
-            attempts.load(Ordering::Relaxed),
-        ))
-    } else {
-        None
     }
+    None
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 fn main() {
     let cli = Cli::parse();
-    if cli.threads > 0 { rayon::ThreadPoolBuilder::new().num_threads(cli.threads).build_global().unwrap(); }
 
-    println!("╔══════════════════════════════════════════════════╗");
-    println!("║ Rush Hour Gen — Évolution & Optimisation Extrême ║");
-    println!("╚══════════════════════════════════════════════════╝");
-    
-    let global_start = Instant::now();
-    let mut all_levels = Vec::new();
+    let num_threads = if cli.threads > 0 {
+        cli.threads
+    } else {
+        std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4)
+    };
+    rayon::ThreadPoolBuilder::new().num_threads(num_threads).build_global().unwrap();
+
+    println!("╔══════════════════════════════════════════════════════╗");
+    println!("║  Rush Hour Gen — {} threads, bfs_states={}  ║", num_threads, cli.max_bfs_states);
+    println!("╚══════════════════════════════════════════════════════╝\n");
+
+    let specs: &[(&'static str, u32, fn(u8) -> DifficultyConfig)] = &[
+        ("EASY",   cli.easy,   |gs| DifficultyConfig { grid_size: gs, min_vehicles: 5,  max_vehicles: 8,  min_moves: 6,  max_moves: 12  }),
+        ("NORMAL", cli.normal, |gs| DifficultyConfig { grid_size: gs, min_vehicles: 8,  max_vehicles: 12, min_moves: 12, max_moves: 20  }),
+        ("HARD",   cli.hard,   |gs| DifficultyConfig { grid_size: gs, min_vehicles: 10, max_vehicles: 14, min_moves: 20, max_moves: 40  }),
+        ("EXPERT", cli.expert, |gs| DifficultyConfig { grid_size: gs, min_vehicles: 12, max_vehicles: 16, min_moves: 40, max_moves: 60  }),
+        ("MASTER", cli.master, |gs| DifficultyConfig { grid_size: gs, min_vehicles: 14, max_vehicles: 18, min_moves: 60, max_moves: 100 }),
+    ];
+
+    let base = cli.max_bfs_states;
+
+    let mut tasks: Vec<Task> = Vec::new();
     let mut current_id = cli.start_id;
+    let mut rng_main   = SmallRng::from_entropy();
 
-    let configs = [(cli.hard, HARD, "HARD"), (cli.expert, EXPERT, "EXPERT")];
+    for (label, count, make_cfg) in specs {
+        let max_states = match *label {
+            "EASY" | "NORMAL" => base / 3,
+            "HARD"            => base,
+            "EXPERT"          => base * 2,
+            "MASTER"          => base * 4,
+            _                 => base,
+        }.max(10_000);
 
-    for (count, cfg, label) in configs {
-        for i in 1..=count {
-            let t0 = Instant::now();
-            if let Some((level, restarts)) = generate_evolutionary(current_id, cfg, cli.max_restarts) {
-                println!("  [{:<6} {:>2}/{:<2}] id={:>3} | {:>2} coups | {:>5} restarts | {:.2?}", 
-                         label, i, count, current_id, level.min_moves, restarts, t0.elapsed());
-                all_levels.push(level);
-                current_id += 1;
-            } else {
-                eprintln!("  [{:<6} {:>2}/{:<2}] ÉCHEC après {} restarts", label, i, count, cli.max_restarts);
-            }
+        for i in 1..=*count {
+            let gs = match *label {
+                "EASY" | "NORMAL" => if rng_main.gen_bool(0.2) { 7 } else { 6 },
+                "HARD" | "EXPERT" => if rng_main.gen_bool(0.5) { 7 } else { 6 },
+                "MASTER"          => if rng_main.gen_bool(0.6) { 8 } else { 7 },
+                _                 => 6,
+            };
+            tasks.push(Task {
+                id:    current_id,
+                cfg:   make_cfg(gs),
+                label,
+                idx:   i,
+                count: *count,
+                exit_side:  ExitSide::random(&mut rng_main),
+                max_states,
+            });
+            current_id += 1;
         }
     }
 
-    let json_str = serde_json::to_string_pretty(&all_levels).unwrap();
-    std::fs::write(&cli.output, &json_str).unwrap();
-    println!("\n  Génération terminée en {:.2?}! Fichier écrit: {}", global_start.elapsed(), cli.output);
+    let total        = tasks.len();
+    let done_counter = AtomicU32::new(0);
+    let global_start = Instant::now();
+    println!("  {} levels à générer sur {} threads\n", total, num_threads);
+
+    let results: Vec<Option<(Level, u32, Duration)>> = tasks
+        .par_iter()
+        .map(|task| {
+            let res  = generate_single(task, cli.max_restarts);
+            let done = done_counter.fetch_add(1, Ordering::Relaxed) + 1;
+            match &res {
+                Some((level, restarts, elapsed)) =>
+                    println!(
+                        "  [{:<6} {:>2}/{:<2}] id={:>3} | {:>2}x{:<2} | {:>3} coups | exit=({},{}) | {:>5} restarts | {:.2?}  [{}/{}]",
+                        task.label, task.idx, task.count,
+                        level.id, level.grid_size, level.grid_size,
+                        level.min_moves, level.exit_row, level.exit_col,
+                        restarts, elapsed, done, total
+                    ),
+                None =>
+                    eprintln!("  [{:<6} {:>2}/{:<2}] ÉCHEC  [{}/{}]",
+                        task.label, task.idx, task.count, done, total),
+            }
+            res
+        })
+        .collect();
+
+    let file  = File::create(&cli.output).expect("Impossible de créer le fichier");
+    let mut w = BufWriter::new(file);
+    let mut ok = 0u32;
+    write!(w, "[\n").unwrap();
+    let mut first = true;
+    for opt in &results {
+        if let Some((level, _, _)) = opt {
+            if !first { write!(w, ",\n").unwrap(); }
+            first = false;
+            write!(w, "{}", serde_json::to_string_pretty(level).unwrap()).unwrap();
+            ok += 1;
+        }
+    }
+    write!(w, "\n]\n").unwrap();
+    w.flush().unwrap();
+
+    println!("\n  {}/{} levels en {:.2?} — {}", ok, total, global_start.elapsed(), cli.output);
 }

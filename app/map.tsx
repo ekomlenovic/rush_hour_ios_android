@@ -431,14 +431,34 @@ export default function MapScreen() {
             <View style={styles.settingBlock}>
               <Text style={[styles.settingLabel, { color: colors.text }]}>Difficulty: {genDifficulty}</Text>
               <View style={styles.buttonSegmentGroup}>
-                {(['EASY', 'NORMAL', 'HARD', 'EXPERT'] as const).map(diff => (
+                {(['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER'] as const).map(diff => (
                   <Pressable
                     key={diff}
-                    onPress={() => setGenDifficulty(diff)}
+                    onPress={() => {
+                      setGenDifficulty(diff);
+                      setGenGridSize(DIFFICULTY_LEVELS[diff].gridSize);
+                    }}
                     style={[styles.segmentBtn, genDifficulty === diff && { backgroundColor: colors.accent }]}
                   >
                     <Text style={[styles.segmentText, { color: genDifficulty === diff ? '#FFF' : colors.text }]}>
                       {diff}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.settingBlock}>
+              <Text style={[styles.settingLabel, { color: colors.text }]}>Grid Size: {genGridSize}x{genGridSize}</Text>
+              <View style={styles.buttonSegmentGroup}>
+                {[6, 7, 8].map(size => (
+                  <Pressable
+                    key={size}
+                    onPress={() => setGenGridSize(size)}
+                    style={[styles.segmentBtn, genGridSize === size && { backgroundColor: colors.accent }]}
+                  >
+                    <Text style={[styles.segmentText, { color: genGridSize === size ? '#FFF' : colors.text }]}>
+                      {size}x{size}
                     </Text>
                   </Pressable>
                 ))}

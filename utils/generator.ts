@@ -14,6 +14,7 @@ export const DIFFICULTY_LEVELS: Record<string, DifficultyConfig> = {
   NORMAL: { gridSize: 6, minVehicles: 8, maxVehicles: 12, minMovesRequired: 10, maxMovesRequired: 15 },
   HARD: { gridSize: 6, minVehicles: 10, maxVehicles: 14, minMovesRequired: 15, maxMovesRequired: 25 },
   EXPERT: { gridSize: 6, minVehicles: 12, maxVehicles: 16, minMovesRequired: 25, maxMovesRequired: 50 },
+  MASTER: { gridSize: 7, minVehicles: 14, maxVehicles: 20, minMovesRequired: 40, maxMovesRequired: 80 },
 };
 
 const COLORS = [
@@ -153,9 +154,9 @@ export function generateLevel(id: number, config: DifficultyConfig): Level | nul
       color: '#EF4444',
     });
 
-    const pathCols = shuffle([2, 3, 4, 5]);
-    const minBlock = clamp(Math.floor(minMovesRequired / 5), 1, 4);
-    const maxBlock = clamp(Math.ceil(maxMovesRequired / 4), minBlock, 4);
+    const pathCols = shuffle(Array.from({ length: gridSize - 2 }, (_, i) => i + 2));
+    const minBlock = clamp(Math.floor(minMovesRequired / 5), 1, pathCols.length);
+    const maxBlock = clamp(Math.ceil(maxMovesRequired / 4), minBlock, pathCols.length);
     const numBlock = minBlock + Math.floor(seededRandom() * (maxBlock - minBlock + 1));
 
 
@@ -218,6 +219,7 @@ export function generateLevel(id: number, config: DifficultyConfig): Level | nul
         exitRow: targetRow,
         exitCol,
         minMoves: moves,
+        updatedAt: Date.now(),
       };
 
 

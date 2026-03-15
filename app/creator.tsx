@@ -18,11 +18,11 @@ const SNAP = (val: number) => {
 };
 
 const BOARD_PADDING = 20;
-const GRID_SIZE = 6;
 const MINI_CELL = 30;
 
 // ─── Palettes et Données ──────────────────────────────────────────────────────
 
+const GRID_SIZES = [6, 7, 8];
 const CAR_PALETTE = [
   '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6',
   '#EC4899', '#14B8A6', '#F97316', '#06B6D4',
@@ -71,8 +71,10 @@ export default function LevelCreatorScreen() {
   const params = useLocalSearchParams<{ levelId: string }>();
   const { saveCreatedLevel, createdLevels, importedLevels } = useGameStore();
 
+  const [gridSize, setGridSize] = useState(6);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [exitRow, setExitRow] = useState(2);
+  const [exitCol, setExitCol] = useState(6);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
 
   const boardRef = useRef<View>(null);
@@ -81,7 +83,7 @@ export default function LevelCreatorScreen() {
 
   const screenWidth = Dimensions.get('window').width;
   const boardSize = screenWidth - BOARD_PADDING * 2;
-  const cellSize = boardSize / GRID_SIZE;
+  const cellSize = boardSize / gridSize;
 
   useEffect(() => { vehiclesRef.current = vehicles; }, [vehicles]);
 
@@ -97,16 +99,88 @@ export default function LevelCreatorScreen() {
       const id = parseInt(params.levelId);
       const level = [...createdLevels, ...importedLevels].find(l => l.id === id);
       if (level) {
+        setGridSize(level.gridSize || 6);
         setVehicles(level.vehicles.map(v => ({ ...v })));
         setExitRow(level.exitRow ?? 2);
+        setExitCol(level.exitCol ?? (level.gridSize || 6));
         return;
       }
     }
+    const INITIAL_GRID = 6;
+    setGridSize(INITIAL_GRID);
+    setExitRow(2);
+    setExitCol(6);
     setVehicles([{
       id: 'target', row: 2, col: 0, length: 2,
       orientation: 'horizontal', isTarget: true, color: '#EF4444',
     }]);
   }, []);
+
+  const handleExitSideChange = (side: 'Right' | 'Left' | 'Top' | 'Bottom') => {
+    const target = vehicles.find(v => v.id === 'target');
+    if (!target) return;
+
+    let newExR = target.row;
+    let newExC = target.col;
+    let targetOrient: 'horizontal' | 'vertical' = 'horizontal';
+
+    if (side === 'Right') { 
+      newExR = target.row; 
+      newExC = gridSize; 
+      targetOrient = 'horizontal'; 
+    }
+    else if (side === 'Left') { 
+      newExR = target.row; 
+      newExC = 255; 
+      targetOrient = 'horizontal'; 
+    }
+    else if (side === 'Bottom') { 
+      newExR = gridSize; 
+      newExC = target.col; 
+      targetOrient = 'vertical'; 
+    }
+    else if (side === 'Top') { 
+      newExR = 255; 
+      newExC = target.col; 
+      targetOrient = 'vertical'; 
+    }
+
+    setExitRow(newExR);
+    setExitCol(newExC);
+
+    // Update target car to match orientation
+    setVehicles(prev => prev.map(v => {
+      if (v.id === 'target') {
+        const newV = { ...v, orientation: targetOrient };
+        // Ensure within bounds on swap
+        if (targetOrient === 'horizontal') {
+          newV.col = Math.min(v.col, gridSize - v.length);
+        } else {
+          newV.row = Math.min(v.row, gridSize - v.length);
+        }
+        return newV;
+      }
+      return v;
+    }));
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  // When grid size changes, ensure target car is correctly positioned
+  const handleGridSizeChange = (newSize: number) => {
+    setGridSize(newSize);
+    const newTargetRow = Math.floor(newSize / 2) - (newSize % 2 === 0 ? 1 : 0);
+    setExitRow(newTargetRow);
+    setVehicles(prev => prev.map(v => 
+      v.id === 'target' 
+        ? { ...v, row: newTargetRow, col: Math.min(v.col, newSize - v.length) }
+        : { 
+            ...v, 
+            row: Math.min(v.row, newSize - (v.orientation === 'vertical' ? v.length : 1)),
+            col: Math.min(v.col, newSize - (v.orientation === 'horizontal' ? v.length : 1))
+          }
+    ));
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
 
   // ── Helpers ──
 
@@ -128,14 +202,14 @@ export default function LevelCreatorScreen() {
     const topY = ly - itemH / 2;
 
     // 4. Bornes maximales
-    const maxCol = GRID_SIZE - (orientation === 'horizontal' ? length : 1);
-    const maxRow = GRID_SIZE - (orientation === 'vertical' ? length : 1);
+    const maxCol = gridSize - (orientation === 'horizontal' ? length : 1);
+    const maxRow = gridSize - (orientation === 'vertical' ? length : 1);
 
     return {
       col: Math.max(0, Math.min(maxCol, Math.round(topX / cellSize))),
       row: Math.max(0, Math.min(maxRow, Math.round(topY / cellSize))),
     };
-  }, [cellSize]);
+  }, [cellSize, gridSize]);
 
   const hasCollision = useCallback((
     row: number, col: number,
@@ -184,11 +258,50 @@ export default function LevelCreatorScreen() {
   const moveVehicle = useCallback((vehicleId: string, row: number, col: number) => {
     setVehicles(prev => {
       const next = prev.map(v => v.id === vehicleId ? { ...v, row, col } : v);
-      if (next.find(v => v.id === vehicleId)?.isTarget) setExitRow(row);
+      if (next.find(v => v.id === vehicleId)?.isTarget) {
+        // If target moves, sync exit position ONLY IF on correct axis
+        const isH = next.find(v => v.id === vehicleId)?.orientation === 'horizontal';
+        if (isH && (exitCol >= gridSize || exitCol === 255)) setExitRow(row);
+        if (!isH && (exitRow >= gridSize || exitRow === 255)) setExitCol(col);
+      }
       return next;
     });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, []);
+  }, [exitCol, exitRow, gridSize]);
+
+  const pivotVehicle = useCallback((id: string) => {
+    if (id === 'target') {
+      // Toggle orientation by switching exit side
+      const currentIsHorizontal = vehicles.find(v => v.id === 'target')?.orientation === 'horizontal';
+      if (currentIsHorizontal) {
+        handleExitSideChange('Bottom');
+      } else {
+        handleExitSideChange('Right');
+      }
+      return;
+    }
+    setVehicles(prev => {
+      const v = prev.find(v => v.id === id);
+      if (!v) return prev;
+      const newOrient = v.orientation === 'horizontal' ? 'vertical' : 'horizontal';
+      
+      // Check if pivot is possible (no OOB and no collision)
+      const maxCol = gridSize - (newOrient === 'horizontal' ? v.length : 1);
+      const maxRow = gridSize - (newOrient === 'vertical' ? v.length : 1);
+      
+      // Keep within bounds
+      const nr = Math.min(v.row, maxRow);
+      const nc = Math.min(v.col, maxCol);
+      
+      if (!hasCollision(nr, nc, newOrient, v.length, id)) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        return prev.map(item => item.id === id ? { ...item, orientation: newOrient, row: nr, col: nc } : item);
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        return prev;
+      }
+    });
+  }, [gridSize, hasCollision]);
 
   const placeFromToolbox = useCallback((template: VehicleTemplate, screenX: number, screenY: number) => {
     const lx = screenX - boardPos.current.x;
@@ -219,7 +332,7 @@ export default function LevelCreatorScreen() {
 
   // ── Actions ──
   const handleTest = () => {
-    const minMoves = validateLevel(vehicles, GRID_SIZE, exitRow, 5);
+    const minMoves = validateLevel(vehicles, gridSize, exitRow, exitCol);
     if (minMoves === -1) {
       Alert.alert('Unsolvable ✗', 'No valid solution found. Keep adjusting!');
     } else {
@@ -228,14 +341,14 @@ export default function LevelCreatorScreen() {
   };
 
   const handleSave = () => {
-    const minMoves = validateLevel(vehicles, GRID_SIZE, exitRow, 5);
+    const minMoves = validateLevel(vehicles, gridSize, exitRow, exitCol);
     if (minMoves === -1) {
       Alert.alert('Unsolvable', 'Fix the level before saving.');
       return;
     }
     const isImported = params.levelId && importedLevels.some(l => l.id === parseInt(params.levelId));
     const newId = isImported ? Date.now() : (params.levelId ? parseInt(params.levelId) : Date.now());
-    const newLevel: Level = { id: newId, gridSize: GRID_SIZE, vehicles, exitRow, exitCol: GRID_SIZE, minMoves, updatedAt: Date.now() };
+    const newLevel: Level = { id: newId, gridSize, vehicles, exitRow, exitCol, minMoves, updatedAt: Date.now() };
     saveCreatedLevel(newLevel);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Alert.alert('Saved!', isImported ? 'Saved as a new level.' : 'Level updated.', [
@@ -284,7 +397,7 @@ export default function LevelCreatorScreen() {
           <Pressable onPress={() => router.back()} style={styles.backBtn}>
             <Text style={[styles.backArrow, { color: C.sub }]}>←</Text>
           </Pressable>
-          <Text style={[styles.title, { color: C.text }]}>Level Creator</Text>
+          <Text style={[styles.title, { color: C.text }]}>Creator</Text>
           <View style={styles.headerRight}>
             <Pressable onPress={handleTest} style={[styles.pill, { borderColor: C.accent, borderWidth: 1.5 }]}>
               <Text style={[styles.pillText, { color: C.accent }]}>Test</Text>
@@ -295,19 +408,89 @@ export default function LevelCreatorScreen() {
           </View>
         </View>
 
+        {/* ── Grid Size Selector (Sub-header) ── */}
+        <View style={styles.subHeader}>
+          <Text style={[styles.subTitle, { color: C.sub }]}>Grid Size:</Text>
+          <View style={styles.gridSizeSelector}>
+            {GRID_SIZES.map(s => (
+              <Pressable 
+                key={s} 
+                onPress={() => handleGridSizeChange(s)}
+                style={[
+                  styles.sizePill, 
+                  gridSize === s && { backgroundColor: C.accent }
+                ]}
+              >
+                <Text style={[
+                  styles.sizePillText, 
+                  { color: gridSize === s ? '#FFF' : C.sub }
+                ]}>{s}x{s}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
         {/* ── Board ── */}
         <View style={styles.boardWrapper}>
-          <View style={[styles.exitLabelWrap, { top: exitRow * cellSize + cellSize * 0.5 - 10 }]}>
-            <Text style={styles.exitLabel}>EXIT</Text>
-            <Text style={styles.exitArrow}>▶</Text>
-          </View>
+            {/* Exit logic and flags */}
+            {(() => {
+              const isRight = exitCol >= gridSize && exitCol !== 255;
+              const isLeft = exitCol === 255;
+              const isBottom = exitRow >= gridSize && exitRow !== 255;
+              const isTop = exitRow === 255;
+
+              // Gate styles
+              let indicatorStyle: any = null;
+              let glowStyle: any = null;
+              const exitColor = '#EF4444';
+
+              // Label styles
+              let labelStyle: any = null;
+              let arrow = '▶';
+
+              if (isRight) {
+                indicatorStyle = { top: exitRow * cellSize + cellSize * 0.2, right: 0, width: 6, height: cellSize * 0.6, borderRadius: 3 };
+                glowStyle = { top: exitRow * cellSize, right: -8, width: 16, height: cellSize, opacity: 0.15, borderRadius: 8 };
+                labelStyle = { top: exitRow * cellSize + cellSize * 0.5 - 10, right: 2 }; 
+                arrow = '▶';
+              } else if (isLeft) {
+                indicatorStyle = { top: exitRow * cellSize + cellSize * 0.2, left: 0, width: 6, height: cellSize * 0.6, borderRadius: 3 };
+                glowStyle = { top: exitRow * cellSize, left: -8, width: 16, height: cellSize, opacity: 0.15, borderRadius: 8 };
+                labelStyle = { top: exitRow * cellSize + cellSize * 0.5 - 10, left: 2, flexDirection: 'row-reverse' }; 
+                arrow = '◀';
+              } else if (isBottom) {
+                indicatorStyle = { left: exitCol * cellSize + cellSize * 0.2, bottom: 0, height: 6, width: cellSize * 0.6, borderRadius: 3 };
+                glowStyle = { left: exitCol * cellSize, bottom: -8, height: 16, width: cellSize, opacity: 0.15, borderRadius: 8 };
+                labelStyle = { left: exitCol * cellSize + cellSize * 0.5 - 10, bottom: 2, flexDirection: 'column' }; 
+                arrow = '▼';
+              } else if (isTop) {
+                indicatorStyle = { left: exitCol * cellSize + cellSize * 0.2, top: 0, height: 6, width: cellSize * 0.6, borderRadius: 3 };
+                glowStyle = { left: exitCol * cellSize, top: -8, height: 16, width: cellSize, opacity: 0.15, borderRadius: 8 };
+                labelStyle = { left: exitCol * cellSize + cellSize * 0.5 - 10, top: 2, flexDirection: 'column-reverse' }; 
+                arrow = '▲';
+              }
+
+              return (
+                <>
+                  {/* Label */}
+                  <View style={[styles.exitLabelWrap, labelStyle]}>
+                    <Text style={styles.exitLabel}>EXIT</Text>
+                    <Text style={styles.exitArrow}>{arrow}</Text>
+                  </View>
+
+                  {/* Indicator & Glow */}
+                  {indicatorStyle && <View style={[styles.exitIndicator, { backgroundColor: exitColor, ...indicatorStyle }]} />}
+                  {glowStyle && <View style={{ position: 'absolute', backgroundColor: exitColor, ...glowStyle }} />}
+                </>
+              );
+            })()}
 
           <View
             ref={boardRef}
             onLayout={() => requestAnimationFrame(measureBoard)}
             style={[styles.board, { width: boardSize, height: boardSize, borderColor: C.border, backgroundColor: C.boardBg }]}
           >
-            {Array.from({ length: GRID_SIZE + 1 }).map((_, i) => (
+            {Array.from({ length: gridSize + 1 }).map((_, i) => (
               <React.Fragment key={i}>
                 <View style={[styles.gridH, { top: i * cellSize, backgroundColor: C.grid }]} />
                 <View style={[styles.gridV, { left: i * cellSize, backgroundColor: C.grid }]} />
@@ -343,10 +526,41 @@ export default function LevelCreatorScreen() {
                   setActiveDrag(null);
                 }}
                 onRemove={() => removeVehicle(v.id)}
+                onPress={() => pivotVehicle(v.id)}
               />
             ))}
           </View>
-          <Text style={[styles.hint, { color: C.sub }]}>Drag to move  ·  Long press to remove</Text>
+          <Text style={[styles.hint, { color: C.sub }]}>Drag to move  ·  Tap to rotate  ·  Long press to remove</Text>
+        </View>
+
+        {/* ── Exit Side Selector ── */}
+        <View style={styles.subHeader}>
+          <Text style={[styles.subTitle, { color: C.sub }]}>Exit:</Text>
+          <View style={styles.gridSizeSelector}>
+            {(['Right', 'Left', 'Top', 'Bottom'] as const).map(side => {
+              const target = vehicles.find(v => v.id === 'target');
+              const isH = (side === 'Right' || side === 'Left');
+              const orientMatch = target ? (isH === (target.orientation === 'horizontal')) : true;
+              
+              const axisMatch = 
+                side === 'Right' ? (exitCol >= gridSize && exitCol !== 255) :
+                side === 'Left' ? (exitCol === 255) :
+                side === 'Bottom' ? (exitRow >= gridSize && exitRow !== 255) :
+                side === 'Top' ? (exitRow === 255) : false;
+              
+              const active = orientMatch && axisMatch;
+              
+              return (
+                <Pressable 
+                  key={side} 
+                  onPress={() => handleExitSideChange(side)}
+                  style={[styles.sizePill, active && { backgroundColor: C.accent }]}
+                >
+                  <Text style={[styles.sizePillText, { color: active ? '#FFF' : C.sub }]}>{side}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
         {/* ── Floating preview (Le véhicule centré sur le doigt !) ── */}
@@ -406,7 +620,7 @@ type BoardVehicleProps = {
   onRemove: () => void;
 };
 
-function BoardVehicle({ vehicle: v, cellSize, isGhost, onDragStart, onDragMove, onDragEnd, onRemove }: BoardVehicleProps) {
+function BoardVehicle({ vehicle: v, cellSize, isGhost, onDragStart, onDragMove, onDragEnd, onRemove, onPress }: BoardVehicleProps & { onPress: () => void }) {
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
   const sc = useSharedValue(1);
@@ -415,6 +629,11 @@ function BoardVehicle({ vehicle: v, cellSize, isGhost, onDragStart, onDragMove, 
   useEffect(() => {
     opacity.value = SNAP(isGhost ? 0.12 : 1);
   }, [isGhost]);
+
+  const tap = Gesture.Tap()
+    .onStart(() => {
+      runOnJS(onPress)();
+    });
 
   const pan = Gesture.Pan()
     .minDistance(2)
@@ -438,7 +657,7 @@ function BoardVehicle({ vehicle: v, cellSize, isGhost, onDragStart, onDragMove, 
     .minDuration(600)
     .onStart(() => runOnJS(onRemove)());
 
-  const gesture = Gesture.Exclusive(pan, longPress);
+  const gesture = Gesture.Exclusive(pan, tap, longPress);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [
@@ -544,7 +763,13 @@ const styles = StyleSheet.create({
   pillText: { fontSize: 13, fontWeight: '700' },
 
   boardWrapper: { alignItems: 'center', paddingHorizontal: BOARD_PADDING, marginTop: 8 },
-  exitLabelWrap: { position: 'absolute', right: 2, flexDirection: 'row', alignItems: 'center', gap: 2, zIndex: 10 },
+  exitLabelWrap: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 2, zIndex: 10 },
+  exitIndicator: {
+    position: 'absolute',
+    width: 6,
+    borderRadius: 3,
+    zIndex: 10,
+  },
   exitLabel: { fontSize: 7, fontWeight: '800', color: '#EF4444', letterSpacing: 0.8 },
   exitArrow: { fontSize: 11, color: '#EF4444' },
   board: { position: 'relative', borderWidth: 1.5, borderRadius: 14, overflow: 'hidden' },
@@ -576,4 +801,33 @@ const styles = StyleSheet.create({
   toolName: { fontSize: 12, fontWeight: '700' },
   toolBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5, borderWidth: 1 },
   toolBadgeText: { fontSize: 10, fontWeight: '700' },
+  gridSizeSelector: {
+    flexDirection: 'row',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    padding: 2,
+    borderRadius: 20,
+  },
+  subHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingBottom: 12,
+  },
+  subTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  sizePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 18,
+  },
+  sizePillText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
 });
