@@ -1,4 +1,4 @@
-name: Build iOS IPA (Unsigned)
+name: Build iOS & Android (Unsigned)
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build iOS Unsigned IPA
+    name: Build Apps
     runs-on: macos-15
     permissions:
       contents: write
@@ -21,6 +21,12 @@ jobs:
         with:
           node-version: 20
           cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
@@ -43,6 +49,7 @@ jobs:
       - name: Install Expo CLI + EAS CLI
         run: npm install -g expo-cli eas-cli
 
+      # iOS Build
       - name: Generate native iOS project (expo prebuild)
         run: npx expo prebuild --platform ios --clean
         env:
@@ -73,66 +80,93 @@ jobs:
           cp -r build/RushHours.xcarchive/Products/Applications/RushHours.app build/ipa/Payload/
           cd build/ipa
           zip -r ../../rush-hours-unsigned.ipa Payload
-          ls -lh ../../rush-hours-unsigned.ipa
 
-      - name: Upload IPA as GitHub artifact
+      # Android Build
+      - name: Generate native Android project (expo prebuild)
+        run: npx expo prebuild --platform android --clean
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Android APK
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+      - name: Copy Android APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk rush-hours.apk
+
+      # Artifacts and Release
+      - name: Upload Binaries as GitHub artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: rush-hours-ios-unsigned
-          path: rush-hours-unsigned.ipa
+          name: rush-hours-builds
+          path: |
+            rush-hours-unsigned.ipa
+            rush-hours.apk
           retention-days: 30
 
-      - name: Upload IPA to GitHub Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: ios-v${{ steps.bump-version.outputs.version }}-b${{ github.run_number }}
-          name: Rush Hours iOS v${{ steps.bump-version.outputs.version }} (Build ${{ github.run_number }})
+          tag_name: v${{ steps.bump-version.outputs.version }}-b${{ github.run_number }}
+          name: Rush Hours v${{ steps.bump-version.outputs.version }} (Build ${{ github.run_number }})
           body: |
-            ## iOS Release (IPA Non-Signé)
+            ## Release v${{ steps.bump-version.outputs.version }}
+            
+            Multi-platform build from `${{ github.sha }}`.
 
-            Build automatique depuis le commit `${{ github.sha }}`.
-
-            ### IPA Non-Signé — Installation via SideStore / AltStore
-
-            Cet IPA **n'est pas signé** par Apple. Pour l'installer sur ton iPhone :
-
-            1. **[SideStore](https://sidestore.io/)** (recommandé) : Importe l'IPA dans SideStore
-            2. **[AltStore](https://altstore.io/)** : Côté-chargement avec ton Apple ID gratuit
-            3. **Sideloadly** (Windows/Mac) : [sideloadly.io](https://sideloadly.io/)
-
-            > Il te faudra refaire la signature tous les 7 jours avec un Apple ID gratuit,
-            > ou tous les ans avec un abonnement Apple Developer.
-          files: rush-hours-unsigned.ipa
+            ### iOS (IPA Non-Signé)
+            À installer via SideStore / AltStore.
+            
+            ### Android (APK)
+            Installation directe.
+          files: |
+            rush-hours-unsigned.ipa
+            rush-hours.apk
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update SideStore source.json & Push Changes
+      - name: Update Update Sources & Push Changes
         run: |
           IPA_SIZE=$(stat -f%z rush-hours-unsigned.ipa)
+          APK_SIZE=$(stat -f%z rush-hours.apk)
           VERSION="${{ steps.bump-version.outputs.version }}"
-          TAG_NAME="ios-v${VERSION}-b${{ github.run_number }}"
-          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG_NAME}/rush-hours-unsigned.ipa"
+          TAG_NAME="v${VERSION}-b${{ github.run_number }}"
+          BASE_URL="https://github.com/${{ github.repository }}/releases/download/${TAG_NAME}"
+          IPA_URL="${BASE_URL}/rush-hours-unsigned.ipa"
+          APK_URL="${BASE_URL}/rush-hours.apk"
           DATE=$(date +'%Y-%m-%d')
           
           node -e "
             const fs = require('fs');
-            const source = JSON.parse(fs.readFileSync('sidestore-source.json', 'utf8'));
-            const app = source.apps[0];
-            app.version = '${VERSION}';
-            app.buildVersion = '${{ github.run_number }}';
-            app.versionDate = '${DATE}';
-            app.downloadURL = '${DOWNLOAD_URL}';
-            app.size = parseInt('${IPA_SIZE}');
-            fs.writeFileSync('sidestore-source.json', JSON.stringify(source, null, 2));
+            
+            // Update sidestore-source.json (iOS)
+            const iosSource = JSON.parse(fs.readFileSync('sidestore-source.json', 'utf8'));
+            const iosApp = iosSource.apps[0];
+            iosApp.version = '${VERSION}';
+            iosApp.buildVersion = '${{ github.run_number }}';
+            iosApp.versionDate = '${DATE}';
+            iosApp.downloadURL = '${IPA_URL}';
+            iosApp.size = parseInt('${IPA_SIZE}');
+            fs.writeFileSync('sidestore-source.json', JSON.stringify(iosSource, null, 2));
+            
+            // Update android-source.json (Android)
+            const androidSource = JSON.parse(fs.readFileSync('android-source.json', 'utf8'));
+            const androidApp = androidSource.apps[0];
+            androidApp.version = '${VERSION}';
+            androidApp.buildVersion = '${{ github.run_number }}';
+            androidApp.versionDate = '${DATE}';
+            androidApp.downloadURL = '${APK_URL}';
+            androidApp.size = parseInt('${APK_SIZE}');
+            fs.writeFileSync('android-source.json', JSON.stringify(androidSource, null, 2));
           "
           
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json app.json sidestore-source.json
-          git commit -m "chore: bump version to ${VERSION} and update sidestore [skip ci]"
+          git add package.json app.json sidestore-source.json android-source.json
+          git commit -m "chore: bump version to ${VERSION} and update update sources [skip ci]"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

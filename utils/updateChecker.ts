@@ -1,6 +1,10 @@
+import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
-const SOURCE_URL = 'https://raw.githubusercontent.com/ekomlenovic/rush_hour_ios_android/refs/heads/main/sidestore-source.json';
+const SOURCE_BASE_URL = 'https://raw.githubusercontent.com/ekomlenovic/rush_hour_ios_android/refs/heads/main';
+const SOURCE_URL = Platform.OS === 'ios' 
+  ? `${SOURCE_BASE_URL}/sidestore-source.json`
+  : `${SOURCE_BASE_URL}/android-source.json`;
 
 export interface UpdateInfo {
   isUpdateAvailable: boolean;
