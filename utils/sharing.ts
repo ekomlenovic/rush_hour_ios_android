@@ -55,7 +55,19 @@ export function serializeLevel(level: Level): string {
  */
 export function deserializeLevel(data: string, id: number = 999998): Level | null {
   try {
-    const decoded = customAtob(data);
+    let cleanData = data;
+    
+    // 1. If it's a full URL, extract the 'data' parameter
+    if (data.includes('?data=')) {
+      cleanData = data.split('?data=')[1].split('&')[0];
+    } else if (data.includes('data=')) {
+       cleanData = data.split('data=')[1].split('&')[0];
+    }
+
+    // 2. Decode URL encoding if present (e.g. %2B for +)
+    cleanData = decodeURIComponent(cleanData);
+
+    const decoded = customAtob(cleanData);
     const sections = decoded.split('|');
     if (sections.length < 5) return null;
 

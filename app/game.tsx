@@ -10,6 +10,8 @@ import { checkWin } from '@/utils/collision';
 import { sampleLevels } from '@/data/sampleLevels';
 import { getHint, solvePuzzle, Move } from '@/utils/solver';
 import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel } from '@/utils/generator';
+import { getShareUrl, getQRCodeUrl, deserializeLevel } from '@/utils/sharing';
+import { Image, Modal, Share, Clipboard, Alert } from 'react-native';
 
 export default function GameScreen() {
   const colorScheme = useColorScheme();
@@ -26,8 +28,12 @@ export default function GameScreen() {
   const resetLevel = useGameStore(s => s.resetLevel);
   const completeLevel = useGameStore(s => s.completeLevel);
   const generatedLevels = useGameStore(s => s.generatedLevels);
+  const createdLevels = useGameStore(s => s.createdLevels);
+  const importedLevels = useGameStore(s => s.importedLevels);
   const addGeneratedLevel = useGameStore(s => s.addGeneratedLevel);
   const cancelGeneration = useGameStore(s => s.cancelGeneration);
+  const currentDailyLevel = useGameStore(s => s.currentDailyLevel);
+  const dailyLevelDate = useGameStore(s => s.dailyLevelDate);
 
   const [won, setWon] = useState(false);
   const [isLoading, setLoading] = useState(true);
@@ -35,8 +41,28 @@ export default function GameScreen() {
   const [computedMinMoves, setComputedMinMoves] = useState<number | null>(null);
   const [hintRemainingMoves, setHintRemainingMoves] = useState<number | null>(null);
 
-  const currentDailyLevel = useGameStore(s => s.currentDailyLevel);
-  const dailyLevelDate = useGameStore(s => s.dailyLevelDate);
+  const [isShareVisible, setShareVisible] = useState(false);
+
+  const handleShare = async () => {
+    if (!currentLevel) return;
+    const url = getShareUrl(currentLevel);
+    try {
+      await Share.share({
+        message: `Challenge me on Rush Hours! Can you beat this level in ${minMoves} moves?\n${url}`,
+        url: url,
+      });
+    } catch (error) {
+      console.error('Sharing failed', error);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (!currentLevel) return;
+    const url = getShareUrl(currentLevel);
+    Clipboard.setString(url);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Alert.alert("Copied!", "Link copied to clipboard.");
+  };
 
   // Load the level and compute the real minMoves via BFS
   useEffect(() => {
@@ -52,8 +78,14 @@ export default function GameScreen() {
         const idParam = params.levelId;
         const dateParam = (params as any).date;
         const id = Number(idParam);
+        const dataParamInUrl = (params as any).data;
 
         let level: any = null;
+
+        // 0. Primary: Check if level data is passed directly in URL (Deep Link fallback)
+        if (dataParamInUrl) {
+          level = deserializeLevel(dataParamInUrl as string);
+        }
 
         if (idParam === 'daily' && dateParam) {
           // Use cache if available and date matches
@@ -77,8 +109,16 @@ export default function GameScreen() {
             level = generatedLevels.find((l) => l.id === id);
           }
 
-          // 3. Fallback: Generate it right now (Infinite Map support)
-          if (!level) {
+          // 3. Try to find it in created or imported levels (use string comparison for robustness)
+          if (!level && id) {
+            const state = useGameStore.getState();
+            level = state.createdLevels.find((l) => String(l.id) === String(id)) || 
+                    state.importedLevels.find((l) => String(l.id) === String(id));
+          }
+
+          // 4. Fallback: Generate it right now (Infinite Map support)
+          // Only for small IDs (1-1000) - large IDs should be in customs
+          if (!level && id > 0 && id <= 1000) {
             const difficulty = id <= 5 ? DIFFICULTY_LEVELS.EASY : DIFFICULTY_LEVELS.NORMAL;
             level = generateLevel(id || 1, difficulty) || sampleLevels[0];
             if (level.id !== sampleLevels[0].id) {
@@ -87,17 +127,24 @@ export default function GameScreen() {
           }
         }
 
-        if (level) {
+        if (level && level.vehicles && level.vehicles.length > 0) {
           loadLevel(level);
           setComputedMinMoves(level.minMoves > 0 ? level.minMoves : null);
+          setLoading(false);
+        } else {
+          // If level not found, don't just hang or show empty grid
+          // Redirect back or show error
+          console.error("Level not found for ID:", id);
+          if (idParam) {
+            Alert.alert("Error", "Could not load this level.");
+            router.back();
+          }
         }
-
-        setLoading(false);
       }, 300);
     });
 
     return () => task.cancel();
-  }, [params.levelId, (params as any).date]);
+  }, [params.levelId, (params as any).date, createdLevels, importedLevels]);
 
 
   const isDailyCompleted = !!(params.levelId === 'daily' && (params as any).date && useGameStore.getState().dailyChallengeProgress[(params as any).date]?.completed);
@@ -204,7 +251,9 @@ export default function GameScreen() {
         <Text style={[styles.levelTitle, { color: colors.text }]}>
           {params.levelId === 'daily' ? `Daily Challenge` : `Level ${currentLevel.id}`}
         </Text>
-        <View style={{ width: 60 }} />
+        <Pressable onPress={() => setShareVisible(true)} style={styles.shareHeaderBtn}>
+          <Text style={{ fontSize: 22 }}>📤</Text>
+        </Pressable>
       </Animated.View>
 
       {/* Stats bar */}
@@ -283,6 +332,44 @@ export default function GameScreen() {
           </Pressable>
         </Animated.View>
       )}
+
+      {/* Share Modal */}
+      <Modal visible={isShareVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <BlurView intensity={30} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <Animated.View entering={FadeInDown.springify()} style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Share Level</Text>
+              <Pressable onPress={() => setShareVisible(false)}>
+                <Text style={{ fontSize: 20, color: colors.sub, padding: 8 }}>✕</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.qrContainer}>
+                <Image 
+                    source={{ uri: getQRCodeUrl(getShareUrl(currentLevel)) }} 
+                    style={styles.qrCode} 
+                />
+                <Text style={[styles.qrHint, { color: colors.sub }]}>Scan to challenge a friend!</Text>
+            </View>
+
+            <View style={styles.shareButtonsRow}>
+                <Pressable
+                  style={[styles.mainBtn, { backgroundColor: colors.accent, flex: 1 }]}
+                  onPress={handleShare}
+                >
+                  <Text style={styles.mainBtnText}>Share Link</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.mainBtn, { backgroundColor: colors.sub, flex: 1 }]}
+                  onPress={handleCopyLink}
+                >
+                  <Text style={styles.mainBtnText}>Copy URL</Text>
+                </Pressable>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
     </View>
 
   );
@@ -425,5 +512,68 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     letterSpacing: 0.5,
+  },
+  shareHeaderBtn: {
+    width: 60,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    width: '85%',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  qrContainer: {
+    alignItems: 'center',
+    padding: 10,
+  },
+  qrCode: {
+    width: 250,
+    height: 250,
+    borderRadius: 20,
+    marginBottom: 16,
+    backgroundColor: '#FFF',
+  },
+  qrHint: {
+    fontSize: 14,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  mainBtn: {
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  mainBtnText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  shareButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24,
   }
 });
