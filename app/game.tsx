@@ -8,7 +8,8 @@ import Board from '@/components/Board';
 import { useGameStore } from '@/store/gameStore';
 import { checkWin } from '@/utils/collision';
 import { sampleLevels } from '@/data/sampleLevels';
-import { getHint, solvePuzzle, Move } from '@/utils/solver';
+import { Move, solvePuzzle } from '@/utils/solver';
+import { solvePuzzleAsync } from '@/utils/solver.background';
 import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel } from '@/utils/generator';
 import { getShareUrl, getQRCodeUrl, deserializeLevel } from '@/utils/sharing';
 import { Image, Modal, Share, Clipboard, Alert } from 'react-native';
@@ -207,10 +208,10 @@ export default function GameScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }, [resetLevel]);
 
-  const handleHint = useCallback(() => {
+  const handleHint = useCallback(async () => {
     if (!currentLevel || won) return;
 
-    const result = solvePuzzle(
+    const result = await solvePuzzleAsync(
       vehicles,
       currentLevel.gridSize,
       currentLevel.exitRow,
@@ -218,8 +219,8 @@ export default function GameScreen() {
     );
 
     if (result.minMoves > 0 && result.moves.length > 0) {
-      setHintRemainingMoves(result.minMoves); // Show remaining best score instead of overwriting global
-      const hintMove = result.moves[0]; // Get the first move from the solution
+      setHintRemainingMoves(result.minMoves);
+      const hintMove = result.moves[0];
       setHintVehicleId(hintMove.vehicleId);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 

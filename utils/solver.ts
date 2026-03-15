@@ -32,6 +32,7 @@ export function solvePuzzle(
   exitCol: number,
   depthLimit: number = 200
 ): SolverResult {
+  'worklet';
   const n = vehicles.length;
   const isHoriz = new Uint8Array(n);
   const fixed = new Uint8Array(n);
@@ -177,6 +178,7 @@ export function getHint(
   exitRow: number,
   exitCol: number
 ): Move | null {
+  'worklet';
   const result = solvePuzzle(vehicles, gridSize, exitRow, exitCol);
   if (!result.solvable || result.moves.length === 0) return null;
   return result.moves[0];

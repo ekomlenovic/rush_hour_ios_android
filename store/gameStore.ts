@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
 
 /** Describes a single vehicle/block on the grid */
 export interface Vehicle {
@@ -19,8 +20,6 @@ export interface Vehicle {
   color: string;
 }
 
-
-
 /** Describes a level */
 export interface Level {
   id: number;
@@ -38,8 +37,6 @@ export interface Level {
   /** Whether the level is marked as a favorite */
   isFavorite?: boolean;
 }
-
-
 
 /** Player progress for a specific level */
 export interface LevelProgress {
@@ -150,7 +147,6 @@ export const useGameStore = create<GameState>()(
     });
   },
 
-
   moveVehicle: (vehicleId: string, newRow: number, newCol: number) => {
     const { vehicles, history, moveCount } = get();
     const snapshot = vehicles.map((v) => ({ ...v }));
@@ -165,8 +161,6 @@ export const useGameStore = create<GameState>()(
     });
   },
 
-
-
   undo: () => {
     const { history, moveCount } = get();
     if (history.length === 0) return;
@@ -174,7 +168,6 @@ export const useGameStore = create<GameState>()(
     set({
       vehicles: previous,
       history: history.slice(0, -1),
-      // Undo still counts as a move (penalty)
       moveCount: moveCount + 1,
     });
   },
@@ -222,7 +215,7 @@ export const useGameStore = create<GameState>()(
           stars: Math.max(existing?.stars || 0, stars),
         }
       },
-      dailyChallengeSaveState: null // Clear saved state when completed
+      dailyChallengeSaveState: null 
     });
     get().checkAchievements();
   },
@@ -242,13 +235,12 @@ export const useGameStore = create<GameState>()(
 
     if (newAchievements.length !== achievements.length) {
       set({ achievements: newAchievements });
-      // Logic for achievement notification could be added here
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
   },
 
   addGeneratedLevel: (level: Level) => {
     const { generatedLevels } = get();
-    // Prevent duplicates
     if (!generatedLevels.find((l) => l.id === level.id)) {
       set({ generatedLevels: [...generatedLevels, level] });
     }
@@ -256,7 +248,6 @@ export const useGameStore = create<GameState>()(
 
   addImportedLevel: (level: Level) => {
     const { importedLevels } = get();
-    // Use a unique ID if it conflicts, or just push if it's new
     if (!importedLevels.find(l => l.id === level.id)) {
       set({ importedLevels: [...importedLevels, { ...level, updatedAt: level.updatedAt || Date.now() }] });
     }
@@ -299,9 +290,7 @@ export const useGameStore = create<GameState>()(
 
   purgeCustomLevels: (baseLevelCount: number) => {
     const { progress, maxUnlockedLevel } = get();
-    // Keep only progress for base levels
     const cleanedProgress = progress.filter(p => p.levelId <= baseLevelCount);
-    // Clamp max unlocked back to the final base level + 1 if they completed the base game
     const clampedUnlocked = Math.min(maxUnlockedLevel, baseLevelCount + 1);
     
     set({
