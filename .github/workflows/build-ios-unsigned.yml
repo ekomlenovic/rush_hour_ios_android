@@ -1,0 +1,138 @@
+name: Build iOS IPA (Unsigned)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build iOS Unsigned IPA
+    runs-on: macos-15
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Bump version from package.json
+        id: bump-version
+        run: |
+          npm version patch --no-git-tag-version
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+          # Sync to app.json
+          node -e "
+            const fs = require('fs');
+            const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+            app.expo.version = '${VERSION}';
+            fs.writeFileSync('app.json', JSON.stringify(app, null, 2));
+          "
+
+      - name: Install Expo CLI + EAS CLI
+        run: npm install -g expo-cli eas-cli
+
+      - name: Generate native iOS project (expo prebuild)
+        run: npx expo prebuild --platform ios --clean
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install CocoaPods
+        working-directory: ios
+        run: pod install
+
+      - name: Build iOS unsigned archive (xcodebuild)
+        working-directory: ios
+        run: |
+          xcodebuild archive \
+            -workspace RushHours.xcworkspace \
+            -scheme RushHours \
+            -configuration Release \
+            -archivePath ../build/RushHours.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM="" \
+            -allowProvisioningUpdates \
+            | xcpretty --color || true
+
+      - name: Package unsigned IPA
+        run: |
+          mkdir -p build/ipa/Payload
+          cp -r build/RushHours.xcarchive/Products/Applications/RushHours.app build/ipa/Payload/
+          cd build/ipa
+          zip -r ../../rush-hours-unsigned.ipa Payload
+          ls -lh ../../rush-hours-unsigned.ipa
+
+      - name: Upload IPA as GitHub artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rush-hours-ios-unsigned
+          path: rush-hours-unsigned.ipa
+          retention-days: 30
+
+      - name: Upload IPA to GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: ios-v${{ steps.bump-version.outputs.version }}-b${{ github.run_number }}
+          name: Rush Hours iOS v${{ steps.bump-version.outputs.version }} (Build ${{ github.run_number }})
+          body: |
+            ## iOS Release (IPA Non-Signé)
+
+            Build automatique depuis le commit `${{ github.sha }}`.
+
+            ### IPA Non-Signé — Installation via SideStore / AltStore
+
+            Cet IPA **n'est pas signé** par Apple. Pour l'installer sur ton iPhone :
+
+            1. **[SideStore](https://sidestore.io/)** (recommandé) : Importe l'IPA dans SideStore
+            2. **[AltStore](https://altstore.io/)** : Côté-chargement avec ton Apple ID gratuit
+            3. **Sideloadly** (Windows/Mac) : [sideloadly.io](https://sideloadly.io/)
+
+            > Il te faudra refaire la signature tous les 7 jours avec un Apple ID gratuit,
+            > ou tous les ans avec un abonnement Apple Developer.
+          files: rush-hours-unsigned.ipa
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update SideStore source.json & Push Changes
+        run: |
+          IPA_SIZE=$(stat -f%z rush-hours-unsigned.ipa)
+          VERSION="${{ steps.bump-version.outputs.version }}"
+          TAG_NAME="ios-v${VERSION}-b${{ github.run_number }}"
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG_NAME}/rush-hours-unsigned.ipa"
+          DATE=$(date +'%Y-%m-%d')
+          
+          node -e "
+            const fs = require('fs');
+            const source = JSON.parse(fs.readFileSync('sidestore-source.json', 'utf8'));
+            const app = source.apps[0];
+            app.version = '${VERSION}';
+            app.buildVersion = '${{ github.run_number }}';
+            app.versionDate = '${DATE}';
+            app.downloadURL = '${DOWNLOAD_URL}';
+            app.size = parseInt('${IPA_SIZE}');
+            fs.writeFileSync('sidestore-source.json', JSON.stringify(source, null, 2));
+          "
+          
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json app.json sidestore-source.json
+          git commit -m "chore: bump version to ${VERSION} and update sidestore [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

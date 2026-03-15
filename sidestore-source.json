@@ -1,0 +1,20 @@
+{
+  "name": "RushHours Repo",
+  "identifier": "com.rushhours.repo",
+  "sourceURL": "https://raw.githubusercontent.com/ekomlenovic/rush_hour_ios_android/refs/heads/main/sidestore-source.json",
+  "apps": [
+    {
+      "name": "RushHours",
+      "bundleIdentifier": "com.rushhours.app",
+      "developerName": "eko",
+      "localizedDescription": "Rush Hour puzzle game.",
+      "iconURL": "https://i.imgur.com/71j15Xh.png",
+      "tintColor": "e5a019",
+      "version": "1.0.0",
+      "buildVersion": "4",
+      "versionDate": "2026-03-15",
+      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/ios-v1.0.0-b4/rush-hours-unsigned.ipa",
+      "size": 12919524
+    }
+  ]
+}

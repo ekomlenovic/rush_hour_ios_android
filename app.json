@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Rush Hours",
+    "slug": "rush-hours",
+    "version": "0.0.2",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "rush-hours",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A2B4C"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rushhours.app"
+    },
+    "android": {
+      "package": "com.rushhours.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#1A2B4C",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cdc1bf0b-e239-46b5-819b-401cbe9e2c83"
+      }
+    },
+    "owner": "ekomlenovic"
+  }
+}

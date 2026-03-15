@@ -1,0 +1,226 @@
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+/** Describes a single vehicle/block on the grid */
+export interface Vehicle {
+  id: string;
+  /** Row (for vertical) or Row (for horizontal) — top-left cell */
+  row: number;
+  /** Column — top-left cell */
+  col: number;
+  /** Number of cells this vehicle occupies (2 or 3 typically) */
+  length: number;
+  /** Movement axis */
+  orientation: 'horizontal' | 'vertical';
+  /** Whether this is the target vehicle that must exit */
+  isTarget: boolean;
+  /** Color used for rendering */
+  color: string;
+}
+
+/** Describes a level */
+export interface Level {
+  id: number;
+  /** Grid dimensions (e.g. 6 for 6×6, 7 for 7×7, etc.) */
+  gridSize: number;
+  /** Initial vehicle placements */
+  vehicles: Vehicle[];
+  /** Exit position: row & col of the exit cell on the grid edge */
+  exitRow: number;
+  exitCol: number;
+  /** Minimum number of moves to solve (computed by BFS solver) */
+  minMoves: number;
+}
+
+/** Player progress for a specific level */
+export interface LevelProgress {
+  levelId: number;
+  completed: boolean;
+  bestScore: number;
+  stars?: number;
+}
+
+interface GenerationState {
+  isRunning: boolean;
+  current: number;
+  total: number;
+  shouldCancel: boolean;
+  estimatedRemainingSeconds: number;
+}
+
+interface GameState {
+  /** Currently loaded level data */
+  currentLevel: Level | null;
+  /** Current vehicle positions during gameplay */
+  vehicles: Vehicle[];
+  /** Number of moves made so far */
+  moveCount: number;
+  /** History stack for undo functionality */
+  history: Vehicle[][];
+  /** Player's progress across all levels */
+  progress: LevelProgress[];
+  /** The highest unlocked level id */
+  maxUnlockedLevel: number;
+  /** The id of the last played level to resume map position */
+  lastPlayedLevelId: number | null;
+  /** Infinite Map: Dynamically generated levels that are saved locally */
+  generatedLevels: Level[];
+
+  /** Background generation state (persists across screen navigation) */
+  generationState: GenerationState;
+
+  /** Audio Enabled state */
+  isMusicEnabled: boolean;
+
+  // Actions
+  loadLevel: (level: Level) => void;
+  moveVehicle: (vehicleId: string, newRow: number, newCol: number) => void;
+  undo: () => void;
+  resetLevel: () => void;
+  completeLevel: (levelId: number, score: number, stars: number) => void;
+  addGeneratedLevel: (level: Level) => void;
+  purgeCustomLevels: (baseLevelCount: number) => void;
+  toggleMusicEnabled: () => void;
+  setGenerationState: (state: Partial<GenerationState>) => void;
+  cancelGeneration: () => void;
+  hardReset: () => void;
+}
+
+export const useGameStore = create<GameState>()(
+  persist(
+    (set, get) => ({
+      currentLevel: null,
+  vehicles: [],
+  moveCount: 0,
+  history: [],
+  progress: [],
+  maxUnlockedLevel: 1,
+  lastPlayedLevelId: null,
+  generatedLevels: [],
+  isMusicEnabled: true,
+  generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
+
+  loadLevel: (level: Level) => {
+    set({
+      currentLevel: level,
+      vehicles: level.vehicles.map((v) => ({ ...v })),
+      moveCount: 0,
+      history: [],
+      lastPlayedLevelId: level.id,
+    });
+  },
+
+  moveVehicle: (vehicleId: string, newRow: number, newCol: number) => {
+    const { vehicles, history, moveCount } = get();
+    // Save current state to history for undo
+    const snapshot = vehicles.map((v) => ({ ...v }));
+    const updated = vehicles.map((v) =>
+      v.id === vehicleId ? { ...v, row: newRow, col: newCol } : v
+    );
+    set({
+      vehicles: updated,
+      moveCount: moveCount + 1,
+      history: [...history, snapshot],
+    });
+  },
+
+  undo: () => {
+    const { history, moveCount } = get();
+    if (history.length === 0) return;
+    const previous = history[history.length - 1];
+    set({
+      vehicles: previous,
+      history: history.slice(0, -1),
+      // Undo still counts as a move (penalty)
+      moveCount: moveCount + 1,
+    });
+  },
+
+  resetLevel: () => {
+    const { currentLevel } = get();
+    if (!currentLevel) return;
+    set({
+      vehicles: currentLevel.vehicles.map((v) => ({ ...v })),
+      moveCount: 0,
+      history: [],
+    });
+  },
+
+  completeLevel: (levelId: number, score: number, stars: number) => {
+    const { progress, maxUnlockedLevel } = get();
+    const existing = progress.find((p) => p.levelId === levelId);
+    let updatedProgress: LevelProgress[];
+    if (existing) {
+      updatedProgress = progress.map((p) =>
+        p.levelId === levelId
+          ? { ...p, completed: true, bestScore: Math.max(p.bestScore, score), stars: Math.max(p.stars || 0, stars) }
+          : p
+      );
+    } else {
+      updatedProgress = [...progress, { levelId, completed: true, bestScore: score, stars }];
+    }
+    set({
+      progress: updatedProgress,
+      maxUnlockedLevel: Math.max(maxUnlockedLevel, levelId + 1),
+    });
+  },
+
+  addGeneratedLevel: (level: Level) => {
+    const { generatedLevels } = get();
+    // Prevent duplicates
+    if (!generatedLevels.find((l) => l.id === level.id)) {
+      set({ generatedLevels: [...generatedLevels, level] });
+    }
+  },
+
+  purgeCustomLevels: (baseLevelCount: number) => {
+    const { progress, maxUnlockedLevel } = get();
+    // Keep only progress for base levels
+    const cleanedProgress = progress.filter(p => p.levelId <= baseLevelCount);
+    // Clamp max unlocked back to the final base level + 1 if they completed the base game
+    const clampedUnlocked = Math.min(maxUnlockedLevel, baseLevelCount + 1);
+    
+    set({
+      generatedLevels: [],
+      progress: cleanedProgress,
+      maxUnlockedLevel: clampedUnlocked,
+    });
+  },
+
+  toggleMusicEnabled: () => {
+    const { isMusicEnabled } = get();
+    set({ isMusicEnabled: !isMusicEnabled });
+  },
+
+  setGenerationState: (state) => set((s) => ({ generationState: { ...s.generationState, ...state } })),
+
+  cancelGeneration: () => {
+    const current = get().generationState;
+    set({ generationState: { ...current, shouldCancel: true } });
+  },
+
+  hardReset: () => {
+    set({
+      progress: [],
+      maxUnlockedLevel: 1,
+      lastPlayedLevelId: null,
+      generatedLevels: [],
+      currentLevel: null,
+      vehicles: [],
+      moveCount: 0,
+      history: [],
+      generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
+    });
+  },
+}), {
+  name: 'rush-hour-storage',
+  storage: createJSONStorage(() => AsyncStorage),
+  partialize: (state) => ({
+    progress: state.progress,
+    maxUnlockedLevel: state.maxUnlockedLevel,
+    lastPlayedLevelId: state.lastPlayedLevelId,
+    generatedLevels: state.generatedLevels,
+    isMusicEnabled: state.isMusicEnabled,
+  }),
+}));
