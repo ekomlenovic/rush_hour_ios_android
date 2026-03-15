@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, useColorScheme, Pressable, ActivityIndicator, InteractionManager } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import Animated, { FadeInDown, FadeInUp, ZoomIn, FadeIn } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, ZoomIn, FadeIn, FadeOut } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import Board from '@/components/Board';
@@ -346,6 +346,18 @@ export default function GameScreen() {
         </Animated.View>
       )}
 
+      {/* Hint Loading Pill */}
+      {isHintLoading && (
+        <Animated.View 
+          entering={FadeInUp.duration(300)} 
+          exiting={FadeOut.duration(300)} 
+          style={[styles.hintPill, { backgroundColor: isDark ? 'rgba(245,158,11,0.15)' : 'rgba(217,119,6,0.1)' }]}
+        >
+          <ActivityIndicator size="small" color={colors.hint} />
+          <Text style={[styles.hintPillText, { color: colors.hint }]}>Analyzing Puzzle...</Text>
+        </Animated.View>
+      )}
+
       {/* Action buttons - Hidden for daily challenge or if won */}
       {params.levelId !== 'daily' && !won && (
         <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.actions}>
@@ -611,5 +623,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     marginTop: 24,
+  },
+  hintPill: {
+    position: 'absolute',
+    top: 110,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    zIndex: 100,
+  },
+  hintPillText: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   }
 });
