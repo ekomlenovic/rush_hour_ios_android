@@ -78,7 +78,7 @@ export default function GameScreen() {
     cancelGeneration();
 
     const task = InteractionManager.runAfterInteractions(() => {
-      setTimeout(() => {
+      setTimeout(async () => {
         const idParam = params.levelId;
         const dateParam = (params as any).date;
         const id = Number(idParam);
@@ -96,7 +96,7 @@ export default function GameScreen() {
           if (currentDailyLevel && dailyLevelDate === dateParam) {
             level = currentDailyLevel;
           } else {
-            level = generateDailyLevel(dateParam);
+            level = await generateDailyLevel(dateParam);
             if (level) {
               useGameStore.setState({ 
                 currentDailyLevel: level, 
@@ -259,15 +259,26 @@ export default function GameScreen() {
   const stars = moveCount <= minMoves ? 3 : moveCount <= minMoves + 3 ? 2 : 1;
 
   if (isLoading || !currentLevel) {
+    const isMondayDaily = params.levelId === 'daily' && (params as any).date && new Date((params as any).date).getDay() === 1;
+
     return (
       <View style={[styles.container, { backgroundColor: colors.bg, justifyContent: 'center', alignItems: 'center' }]}>
-        <Animated.View entering={FadeIn.duration(400)}>
+        <Animated.View entering={FadeIn.duration(400)} style={{ alignItems: 'center' }}>
           <ActivityIndicator size="large" color={colors.accent} />
           <Text style={[styles.loadingText, { color: colors.sub }]}>Preparing Puzzle...</Text>
+          {isMondayDaily && (
+            <Animated.Text 
+              entering={FadeInDown.delay(1000)}
+              style={[styles.mondayWarning, { color: colors.sub }]}
+            >
+              It's Monday! This hard puzzle may take a moment to generate...
+            </Animated.Text>
+          )}
         </Animated.View>
       </View>
     );
   }
+
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -640,5 +651,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  mondayWarning: {
+    marginTop: 12,
+    fontSize: 14,
+    textAlign: 'center',
+    paddingHorizontal: 40,
+    opacity: 0.7,
+    fontStyle: 'italic',
   }
 });
+
