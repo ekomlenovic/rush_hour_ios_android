@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, useColorScheme, Pressable, Modal, Switch, Alert } from 'react-native';
 
 
@@ -8,6 +8,9 @@ import { BlurView } from 'expo-blur';
 import { useGameStore } from '@/store/gameStore';
 import { useAudio } from '@/context/AudioProvider';
 import { haptics, Haptics } from '@/utils/haptics';
+import { checkForUpdate, UpdateInfo } from '@/utils/updateChecker';
+import * as Linking from 'expo-linking';
+import Constants from 'expo-constants';
 
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -20,6 +23,55 @@ export default function HomeScreen() {
 
   const { toggleMusic, isPlaying: isMusicEnabled } = useAudio();
   const [isSettingsVisible, setSettingsVisible] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+
+  const handleUpdateCheck = async () => {
+    setIsCheckingUpdate(true);
+    const info = await checkForUpdate();
+    setUpdateInfo(info);
+    setIsCheckingUpdate(false);
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    if (info.isUpdateAvailable) {
+      Alert.alert(
+        "Update Available",
+        `A new version (${info.latestVersion}) is available. Would you like to download it?`,
+        [
+          { text: "Later", style: "cancel" },
+          { 
+            text: "Download", 
+            onPress: () => info.downloadURL && Linking.openURL(info.downloadURL) 
+          }
+        ]
+      );
+    } else if (!info.error) {
+      Alert.alert("Up to Date", "You are already using the latest version.");
+    } else {
+      Alert.alert("Check Failed", "Could not check for updates. Please try again later.");
+    }
+  };
+
+  useEffect(() => {
+    // Silent check on launch
+    const autoCheck = async () => {
+      const info = await checkForUpdate();
+      if (info.isUpdateAvailable) {
+        Alert.alert(
+          "Update Available",
+          `A new version (${info.latestVersion}) is available. Would you like to download it?`,
+          [
+            { text: "Later", style: "cancel" },
+            { 
+              text: "Download", 
+              onPress: () => info.downloadURL && Linking.openURL(info.downloadURL) 
+            }
+          ]
+        );
+      }
+    };
+    autoCheck();
+  }, []);
 
   const handleHardReset = () => {
     Alert.alert(
@@ -176,9 +228,25 @@ export default function HomeScreen() {
               />
             </View>
 
+            <View style={[styles.divider, { backgroundColor: colors.sub } ]} />
+
+            <View style={styles.versionRow}>
+              <View>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Version</Text>
+                <Text style={[styles.settingSub, { color: colors.sub }]}>{Constants.expoConfig?.version || '1.0.0'}</Text>
+              </View>
+              <Pressable 
+                onPress={handleUpdateCheck}
+                disabled={isCheckingUpdate}
+                style={[styles.updateButton, { backgroundColor: colors.card }]}
+              >
+                <Text style={[styles.updateButtonText, { color: colors.accent }]}>
+                  {isCheckingUpdate ? 'Checking...' : 'Check for Update'}
+                </Text>
+              </Pressable>
+            </View>
+
             <View style={[styles.divider, { backgroundColor: colors.sub }]} />
-
-
             <Pressable
               style={[styles.resetBtn, { borderColor: colors.sub, borderStyle: 'dotted', marginBottom: 24 }]}
               onPress={handleHardReset}
@@ -342,6 +410,21 @@ const styles = StyleSheet.create({
   resetBtnText: {
     fontSize: 15,
     fontWeight: '700',
+  },
+  versionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  updateButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  updateButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
