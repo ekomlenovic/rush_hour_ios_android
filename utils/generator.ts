@@ -36,8 +36,8 @@ function createPRNG(seed: string) {
   }
   // If h is 0, the LCG will stay at 0. Force it to something else.
   if (h === 0) h = 1;
-  
-  return function() {
+
+  return function () {
     h = Math.imul(16807, h) | 0;
     // We want a positive float between 0 and 1
     const res = (h & 0x7fffffff) / 0x7fffffff;
@@ -54,24 +54,131 @@ function seededRandom() {
 
 /**
  * Wraps generation with a specific seed to ensure deterministic results.
+ * Now asynchronous to prevent UI blocking during the multi-attempt trial process.
  */
-export function generateDailyLevel(dateStr: string): Level | null {
+export async function generateDailyLevel(dateStr: string): Promise<Level | null> {
   const prng = createPRNG(dateStr);
   const oldRNG = currentRNG;
   currentRNG = prng;
-  
-  // Use a fixed difficulty for Daily Challenge (e.g., between NORMAL and HARD)
-  const difficulty = DIFFICULTY_LEVELS.NORMAL; 
-  // Custom ID for daily: lets use a large offset
-  const dailyId = 999999;
-  
+
+  const date = new Date(dateStr);
+  const isMonday = date.getDay() === 1;
+
+  // Use a fixed difficulty for Daily Challenge: NORMAL usually, HARD on Mondays
+  const difficulty = isMonday ? DIFFICULTY_LEVELS.HARD : DIFFICULTY_LEVELS.NORMAL;
+  // Use timestamp for daily ID: ensuring it changes every day
+
+  const dailyId = Date.parse(dateStr) || 999999;
+
   try {
-    const level = generateLevel(dailyId, difficulty);
-    return level;
-  } finally {
+    // We use a small timeout to allow UI to breathe
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // We use the new scrambled generator for near-instant on-device generation
+        const level = generateScrambledLevel(dailyId, difficulty);
+        currentRNG = oldRNG; // Restore RNG after generation
+        resolve(level);
+      }, 0);
+    });
+  } catch (e) {
     currentRNG = oldRNG;
+    return null;
   }
 }
+
+/**
+ * Generates a level by starting from a solved state and scrambling it backwards.
+ * This is O(1) in terms of "probability of success" and very fast on mobile.
+ */
+export function generateScrambledLevel(id: number, config: DifficultyConfig, retries: number = 0): Level | null {
+  const { gridSize, minVehicles, maxVehicles, minMovesRequired } = config;
+  const targetRow = Math.floor(gridSize / 2) - 1;
+  const exitCol = gridSize;
+
+  // 1. Initial Solved State
+  const vehicles: Vehicle[] = [{
+    id: 'target',
+    row: targetRow,
+    col: gridSize - 2,
+    length: 2,
+    orientation: 'horizontal',
+    isTarget: true,
+    color: '#EF4444',
+  }];
+
+  // 2. Add random vehicles
+  const targetCount = minVehicles + Math.floor(seededRandom() * (maxVehicles - minVehicles + 1));
+  let attempts = 0;
+  while (vehicles.length < targetCount && attempts < 100) {
+    attempts++;
+    const orientation = seededRandom() > 0.5 ? 'horizontal' : 'vertical';
+    const length = seededRandom() > 0.3 ? 2 : 3;
+    const row = Math.floor(seededRandom() * gridSize);
+    const col = Math.floor(seededRandom() * gridSize);
+
+    if (canPlace(vehicles, row, col, length, orientation, gridSize)) {
+      vehicles.push({
+        id: `v${vehicles.length}`,
+        row, col, length, orientation,
+        isTarget: false,
+        color: COLORS[vehicles.length % COLORS.length],
+      });
+    }
+  }
+
+  // 3. Scramble
+  // Perform random moves backwards
+  const scrambleSteps = 150;
+  for (let s = 0; s < scrambleSteps; s++) {
+    const vIdx = Math.floor(seededRandom() * vehicles.length);
+    const v = vehicles[vIdx];
+    const dir = seededRandom() > 0.5 ? 1 : -1;
+    const dist = Math.floor(seededRandom() * 2) + 1; // move 1 or 2 cells
+
+    // Test if move is valid
+    const newPos = (v.orientation === 'horizontal' ? v.col : v.row) + dir * dist;
+    const testRow = v.orientation === 'vertical' ? newPos : v.row;
+    const testCol = v.orientation === 'horizontal' ? newPos : v.col;
+
+    // Boundary check
+    if (newPos >= 0 && newPos + v.length <= gridSize) {
+      // Collision check (ignoring current vehicle)
+      const others = vehicles.filter((_, i) => i !== vIdx);
+      if (canPlace(others, testRow, testCol, v.length, v.orientation, gridSize)) {
+        v.row = testRow;
+        v.col = testCol;
+      }
+    }
+  }
+
+  // 4. Validate and get minMoves
+  const solveResult = solvePuzzle(vehicles, gridSize, targetRow, exitCol, 200);
+
+  if (solveResult.solvable && solveResult.minMoves >= (minMovesRequired / 2)) {
+    return {
+      id,
+      gridSize,
+      vehicles,
+      exitRow: targetRow,
+      exitCol,
+      minMoves: solveResult.minMoves,
+      updatedAt: Date.now(),
+    };
+  }
+
+  // Fallback if scramble didn't yield a "hard enough" level or somehow broke
+  // Limit retries to prevent infinite recursion
+  const currentRetries = (arguments[2] || 0);
+  if (currentRetries < 20) {
+    return generateScrambledLevel(id, config, currentRetries + 1);
+  }
+
+  // Final fallback: try the original (slower but guaranteed) generator
+  return generateLevel(id, config);
+}
+
+
+
 
 
 // ─────────────────────────────────────────────────────────────────────────────
