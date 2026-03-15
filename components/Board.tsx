@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
 import { View, StyleSheet, useColorScheme, Dimensions } from 'react-native';
-import { Vehicle } from '@/store/gameStore';
+import { Vehicle, useGameStore } from '@/store/gameStore';
 import { getMoveBounds } from '@/utils/collision';
 import Block from './Block';
+
 
 interface BoardProps {
   gridSize: number;
@@ -11,11 +12,14 @@ interface BoardProps {
   exitCol: number;
   onMoveEnd: (vehicleId: string, newRow: number, newCol: number) => void;
   hintVehicleId?: string | null;
+  disabled?: boolean;
 }
+
 
 const BOARD_PADDING = 24;
 
-const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hintVehicleId }: BoardProps) => {
+const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hintVehicleId, disabled = false }: BoardProps) => {
+
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -86,6 +90,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
       {gridLines}
 
       {/* Exit indicator */}
+
       <View
         style={[
           styles.exitIndicator,
@@ -126,10 +131,21 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
             isHinted={hintVehicleId === v.id}
             min={b.min}
             max={b.max}
+            disabled={disabled}
           />
         );
       })}
+
+      {disabled && (
+        <View 
+          style={[
+            StyleSheet.absoluteFill, 
+            { backgroundColor: 'rgba(0,0,0,0.1)', zIndex: 100 }
+          ]} 
+        />
+      )}
     </View>
+
   );
 });
 
