@@ -1,6 +1,6 @@
 {
   "name": "rush_hour_ios",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
