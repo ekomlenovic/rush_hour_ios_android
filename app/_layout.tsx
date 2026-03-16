@@ -7,6 +7,7 @@ import { AudioProvider } from '@/context/AudioProvider';
 import * as Linking from 'expo-linking';
 import { deserializeLevel } from '@/utils/sharing';
 import { useGameStore } from '@/store/gameStore';
+import '@/utils/i18n';
 
 const DARK_BG = '#0F0F1A';
 const LIGHT_BG = '#F5F5FA';
