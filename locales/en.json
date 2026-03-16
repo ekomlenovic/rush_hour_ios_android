@@ -109,6 +109,7 @@
   "creator": {
     "title": "Level Creator",
     "save": "Save",
+    "test": "Test",
     "clear": "Clear",
     "play": "Play",
     "exit": "Exit",

@@ -108,7 +108,8 @@
   },
   "creator": {
     "title": "Créateur de Niveaux",
-    "save": "Sauvegarder",
+    "save": "Sauver",
+    "test": "Test",
     "clear": "Effacer",
     "play": "Jouer",
     "exit": "Quitter",
