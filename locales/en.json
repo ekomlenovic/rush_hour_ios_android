@@ -42,7 +42,14 @@
     "haptic_feedback": "Haptic Feedback",
     "haptic_desc": "Vibrate on interactions",
     "version": "Version",
-    "hard_reset_progress": "Hard Reset Progress"
+    "hard_reset_progress": "Hard Reset Progress",
+    "subtitle": "Slide. Think. Escape.",
+    "daily_challenge": "Daily Challenge",
+    "daily_done": "Daily Done! ⭐{{stars}}",
+    "update_desc": "A new version ({{version}}) is available. Would you like to download it?",
+    "check_for_update": "Check for Update",
+    "hard_reset_confirm_desc": "This will erase EVERYTHING: all your progress, stars, and custom levels. Are you sure?",
+    "hard_reset_confirm_btn": "Yes, Reset Everything"
   },
   "map": {
     "title": "Play",
