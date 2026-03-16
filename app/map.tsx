@@ -10,6 +10,7 @@ import { useAudio } from '@/context/AudioProvider';
 import { DIFFICULTY_LEVELS, generateLevel } from '@/utils/generator';
 import { useTranslation } from 'react-i18next';
 import i18n, { changeLanguage } from '@/utils/i18n';
+import { RFValue } from '@/utils/responsive';
 
 const { width } = Dimensions.get('window');
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -424,7 +425,7 @@ export default function MapScreen() {
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>{t('home.options')}</Text>
               <Pressable onPress={() => setSettingsVisible(false)}>
-                <Text style={{ fontSize: 20, color: colors.sub, padding: 8 }}>✕</Text>
+                <Text style={{ fontSize: RFValue(20), color: colors.sub, padding: 8 }}>✕</Text>
               </Pressable>
             </View>
 
@@ -510,7 +511,11 @@ export default function MapScreen() {
                       }}
                       style={[styles.segmentBtn, genDifficulty === diff && { backgroundColor: colors.accent }]}
                     >
-                      <Text style={[styles.segmentText, { color: genDifficulty === diff ? '#FFF' : colors.text }]}>
+                      <Text 
+                        style={[styles.segmentText, { color: genDifficulty === diff ? '#FFF' : colors.text }]}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                      >
                         {diff}
                       </Text>
                     </Pressable>
@@ -596,7 +601,7 @@ export default function MapScreen() {
 
             {!settingsScrolledToBottom && (
               <Animated.View entering={FadeInDown} style={styles.scrollHint}>
-                <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 12 }}>{t('map.scroll_hint', { defaultValue: 'Scroll for more content ↓' })}</Text>
+                <Text style={{ color: colors.accent, fontWeight: '700', fontSize: RFValue(12) }}>{t('map.scroll_hint', { defaultValue: 'Scroll for more content ↓' })}</Text>
               </Animated.View>
             )}
           </View>
@@ -626,7 +631,7 @@ export default function MapScreen() {
                 hitSlop={15}
                 style={[styles.pillCancelBtn, { backgroundColor: isDark ? 'rgba(239,68,68,0.18)' : 'rgba(239,68,68,0.1)' }]}
               >
-                <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 13 }}>✕ {t('common.cancel')}</Text>
+                <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: RFValue(13) }}>✕ {t('common.cancel')}</Text>
               </Pressable>
             )}
           </View>
@@ -780,7 +785,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: RFValue(24),
     fontWeight: '800',
   },
   settingRow: {
@@ -790,12 +795,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   settingLabel: {
-    fontSize: 16,
+    fontSize: RFValue(16),
     fontWeight: '600',
     marginBottom: 4,
   },
   settingSub: {
-    fontSize: 13,
+    fontSize: RFValue(13),
   },
   languageBtns: { 
     flexDirection: 'row', 
@@ -810,7 +815,7 @@ const styles = StyleSheet.create({
     borderRadius: 8 
   },
   langBtnText: { 
-    fontSize: 14, 
+    fontSize: RFValue(14), 
     fontWeight: '700' 
   },
   divider: {
@@ -819,7 +824,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: RFValue(14),
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -830,7 +835,7 @@ const styles = StyleSheet.create({
   },
   buttonSegmentGroup: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 4,
     marginTop: 8,
   },
   segmentBtn: {
@@ -841,7 +846,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   segmentText: {
-    fontSize: 15,
+    fontSize: RFValue(12),
     fontWeight: '700',
   },
   mainBtn: {
@@ -856,7 +861,7 @@ const styles = StyleSheet.create({
   },
   mainBtnText: {
     color: '#FFF',
-    fontSize: 16,
+    fontSize: RFValue(16),
     fontWeight: '800',
   },
   resetBtn: {
@@ -866,7 +871,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   resetBtnText: {
-    fontSize: 15,
+    fontSize: RFValue(15),
     fontWeight: '700',
   },
   generationPill: {
@@ -887,7 +892,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(108,99,255,0.2)',
   },
   pillTitle: {
-    fontSize: 14,
+    fontSize: RFValue(14),
     fontWeight: '700',
   },
   pillBarTrack: {
@@ -902,7 +907,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   pillSub: {
-    fontSize: 12,
+    fontSize: RFValue(12),
     marginTop: 6,
   },
   pillCancelBtn: {
