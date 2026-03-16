@@ -13,6 +13,7 @@ import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
 import i18n, { changeLanguage } from '@/utils/i18n';
+import { RFValue } from '@/utils/responsive';
 
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -197,7 +198,7 @@ export default function HomeScreen() {
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>{t('home.options')}</Text>
               <Pressable onPress={() => setSettingsVisible(false)}>
-                <Text style={{ fontSize: 20, color: colors.sub, padding: 8 }}>✕</Text>
+                <Text style={{ fontSize: RFValue(20), color: colors.sub, padding: 8 }}>✕</Text>
               </Pressable>
             </View>
 
@@ -393,7 +394,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: RFValue(24),
     fontWeight: '800',
   },
   settingRow: {
@@ -403,12 +404,12 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   settingLabel: {
-    fontSize: 18,
+    fontSize: RFValue(18),
     fontWeight: '600',
     marginBottom: 2,
   },
   settingSub: {
-    fontSize: 14,
+    fontSize: RFValue(14),
   },
   languageBtns: { 
     flexDirection: 'row', 
@@ -423,7 +424,7 @@ const styles = StyleSheet.create({
     borderRadius: 8 
   },
   langBtnText: { 
-    fontSize: 14, 
+    fontSize: RFValue(14), 
     fontWeight: '700' 
   },
   closeButton: {
@@ -433,7 +434,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: RFValue(18),
     fontWeight: '700',
   },
   divider: {
@@ -448,7 +449,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   resetBtnText: {
-    fontSize: 15,
+    fontSize: RFValue(15),
     fontWeight: '700',
   },
   versionRow: {
@@ -463,7 +464,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   updateButtonText: {
-    fontSize: 14,
+    fontSize: RFValue(14),
     fontWeight: '600',
   },
 });
