@@ -89,38 +89,6 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
       {/* Grid lines */}
       {gridLines}
 
-      {/* Exit indicator and glow */}
-      {(() => {
-        const isRight = exitCol >= gridSize && exitCol !== 255;
-        const isLeft = exitCol === 255 || exitCol < 0;
-        const isBottom = exitRow >= gridSize && exitRow !== 255;
-        const isTop = exitRow === 255 || exitRow < 0;
-
-        let indicatorStyle: any = {};
-        let glowStyle: any = {};
-
-        if (isRight) {
-          indicatorStyle = { top: exitRow * cellSize + cellSize * 0.2, right: 0, width: 6, height: cellSize * 0.6, borderRadius: 3 };
-          glowStyle = { top: exitRow * cellSize, right: -8, width: 16, height: cellSize, opacity: 0.15, borderRadius: 8 };
-        } else if (isLeft) {
-          indicatorStyle = { top: exitRow * cellSize + cellSize * 0.2, left: 0, width: 6, height: cellSize * 0.6, borderRadius: 3 };
-          glowStyle = { top: exitRow * cellSize, left: -8, width: 16, height: cellSize, opacity: 0.15, borderRadius: 8 };
-        } else if (isBottom) {
-          indicatorStyle = { left: exitCol * cellSize + cellSize * 0.2, bottom: 0, height: 6, width: cellSize * 0.6, borderRadius: 3 };
-          glowStyle = { left: exitCol * cellSize, bottom: -8, height: 16, width: cellSize, opacity: 0.15, borderRadius: 8 };
-        } else if (isTop) {
-          indicatorStyle = { left: exitCol * cellSize + cellSize * 0.2, top: 0, height: 6, width: cellSize * 0.6, borderRadius: 3 };
-          glowStyle = { left: exitCol * cellSize, top: -8, height: 16, width: cellSize, opacity: 0.15, borderRadius: 8 };
-        }
-
-        return (
-          <>
-            <View style={[styles.exitIndicator, { backgroundColor: exitColor, ...indicatorStyle }]} />
-            <View style={{ position: 'absolute', backgroundColor: exitColor, ...glowStyle }} />
-          </>
-        );
-      })()}
-
       {/* Vehicles */}
       {cellSize > 0 && !isNaN(cellSize) && vehicles.map((v) => {
         const b = vehicleBounds.find(vb => vb.id === v.id)?.bounds || { min: 0, max: gridSize - v.length };
@@ -139,6 +107,57 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
           />
         );
       })}
+
+      {/* Exit indicator and glow - Rendered AFTER vehicles to be on top */}
+      {(() => {
+        const isRight = exitCol >= gridSize && exitCol !== 255;
+        const isLeft = exitCol === 255 || exitCol < 0;
+        const isBottom = exitRow >= gridSize && exitRow !== 255;
+        const isTop = exitRow === 255 || exitRow < 0;
+
+        let indicatorStyle: any = {};
+        let glowStyle: any = {};
+
+        // Back to original dimensions but with high zIndex and a black border
+        if (isRight) {
+          indicatorStyle = { top: exitRow * cellSize + cellSize * 0.2, right: 0, width: 6, height: cellSize * 0.6, borderRadius: 3 };
+          glowStyle = { top: exitRow * cellSize, right: -8, width: 16, height: cellSize, opacity: 0.15, borderRadius: 8 };
+        } else if (isLeft) {
+          indicatorStyle = { top: exitRow * cellSize + cellSize * 0.2, left: 0, width: 6, height: cellSize * 0.6, borderRadius: 3 };
+          glowStyle = { top: exitRow * cellSize, left: -8, width: 16, height: cellSize, opacity: 0.15, borderRadius: 8 };
+        } else if (isBottom) {
+          indicatorStyle = { left: exitCol * cellSize + cellSize * 0.2, bottom: 0, height: 6, width: cellSize * 0.6, borderRadius: 3 };
+          glowStyle = { left: exitCol * cellSize, bottom: -8, height: 16, width: cellSize, opacity: 0.15, borderRadius: 8 };
+        } else if (isTop) {
+          indicatorStyle = { left: exitCol * cellSize + cellSize * 0.2, top: 0, height: 6, width: cellSize * 0.6, borderRadius: 3 };
+          glowStyle = { left: exitCol * cellSize, top: -8, height: 16, width: cellSize, opacity: 0.15, borderRadius: 8 };
+        }
+
+        return (
+          <>
+            <View 
+              style={[
+                styles.exitIndicator, 
+                { 
+                  backgroundColor: exitColor, 
+                  ...indicatorStyle,
+                  borderColor: '#000',
+                  borderWidth: 1,
+                  zIndex: 60, // Ensure it's above vehicles
+                }
+              ]} 
+            />
+            <View 
+              style={{ 
+                position: 'absolute', 
+                backgroundColor: exitColor, 
+                ...glowStyle,
+                zIndex: 59,
+              }} 
+            />
+          </>
+        );
+      })()}
 
       {disabled && (
         <View 
