@@ -302,7 +302,7 @@ export default function GameScreen() {
           <Text style={[styles.backText, { color: colors.sub }]}>← {t('common.map', { defaultValue: 'Map' })}</Text>
         </Pressable>
         <Text style={[styles.levelTitle, { color: colors.text }]}>
-          {params.levelId === 'daily' ? t('home.daily_challenge') : t('game.level_count', { id: currentLevel.id, defaultValue: `Level ${currentLevel.id}` })}
+          {params.levelId === 'daily' ? t('home.daily_challenge', { defaultValue: 'Daily Challenge' }) : t('game.level_count', { id: currentLevel.id, defaultValue: `Level ${currentLevel.id}` })}
         </Text>
         <Pressable onPress={() => setShareVisible(true)} style={styles.shareHeaderBtn}>
           <Text style={{ fontSize: 22 }}>📤</Text>

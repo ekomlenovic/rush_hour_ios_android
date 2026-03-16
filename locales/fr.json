@@ -42,7 +42,14 @@
     "haptic_feedback": "Retour haptique",
     "haptic_desc": "Vibrer lors des interactions",
     "version": "Version",
-    "hard_reset_progress": "Réinitialiser la progression"
+    "hard_reset_progress": "Réinitialiser la progression",
+    "subtitle": "Glissez. Réfléchissez. Évadez-vous.",
+    "daily_challenge": "Défi quotidien",
+    "daily_done": "Défi terminé ! ⭐{{stars}}",
+    "update_desc": "Une nouvelle version ({{version}}) est disponible. Souhaitez-vous la télécharger ?",
+    "check_for_update": "Vérifier les mises à jour",
+    "hard_reset_confirm_desc": "Cela effacera TOUT : votre progression, vos étoiles et vos niveaux personnalisés. Êtes-vous sûr ?",
+    "hard_reset_confirm_btn": "Oui, tout réinitialiser"
   },
   "map": {
     "title": "Jouer",
