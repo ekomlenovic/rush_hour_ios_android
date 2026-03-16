@@ -399,10 +399,10 @@ export default function LevelCreatorScreen() {
           <Pressable onPress={() => router.back()} style={styles.backBtn}>
             <Text style={[styles.backArrow, { color: C.sub }]}>←</Text>
           </Pressable>
-          <Text style={[styles.title, { color: C.text }]}>{t('creator.title')}</Text>
+          <Text style={[styles.title, { color: C.text }]} numberOfLines={1}>{t('creator.title')}</Text>
           <View style={styles.headerRight}>
             <Pressable onPress={handleTest} style={[styles.pill, { borderColor: C.accent, borderWidth: 1.5 }]}>
-              <Text style={[styles.pillText, { color: C.accent }]}>{t('creator.test', { defaultValue: 'Test' })}</Text>
+              <Text style={[styles.pillText, { color: C.accent }]}>{t('creator.test')}</Text>
             </Pressable>
             <Pressable onPress={handleSave} style={[styles.pill, { backgroundColor: C.accent }]}>
               <Text style={[styles.pillText, { color: '#FFF' }]}>{t('creator.save')}</Text>
@@ -757,13 +757,13 @@ function ToolboxItem({ template, colors, onDragUpdate, onDrop }: ToolboxItemProp
 const styles = StyleSheet.create({
   container: { flex: 1 },
 
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 56, paddingHorizontal: 20, paddingBottom: 10 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingTop: 56, paddingHorizontal: 12, paddingBottom: 10, gap: 6 },
   backBtn: { width: 44, height: 44, justifyContent: 'center' },
   backArrow: { fontSize: 26, fontWeight: '600' },
-  title: { fontSize: 18, fontWeight: '800', letterSpacing: 0.2 },
+  title: { flex: 1, fontSize: 16, fontWeight: '800', letterSpacing: 0.1 },
   headerRight: { flexDirection: 'row', gap: 8 },
-  pill: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20 },
-  pillText: { fontSize: 13, fontWeight: '700' },
+  pill: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 20 },
+  pillText: { fontSize: 12, fontWeight: '700' },
 
   boardWrapper: { alignItems: 'center', paddingHorizontal: BOARD_PADDING, marginTop: 8 },
   exitLabelWrap: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 2, zIndex: 10 },
