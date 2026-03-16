@@ -219,7 +219,13 @@ export default function GameScreen() {
   const handleHint = useCallback(async () => {
     if (!currentLevel || won || isHintLoading) return;
 
+    const startTime = Date.now();
     setIsHintLoading(true);
+    
+    // Give React and UI thread time to render the loading indicator
+    // before the UI thread potentially gets blocked by the solver worklet
+    await new Promise(resolve => setTimeout(resolve, 150));
+
     try {
       const result = await solvePuzzleAsync(
         vehicles,
@@ -227,6 +233,12 @@ export default function GameScreen() {
         currentLevel.exitRow,
         currentLevel.exitCol
       );
+
+      // Ensure at least 800ms of loading time for visual consistency and to avoid "flashing"
+      const duration = Date.now() - startTime;
+      if (duration < 800) {
+        await new Promise(resolve => setTimeout(resolve, 800 - duration));
+      }
 
       if (result.minMoves > 0 && result.moves.length > 0) {
         setHintRemainingMoves(result.minMoves);
@@ -520,6 +532,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
+    minWidth: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   actionText: {
     fontSize: 15,
