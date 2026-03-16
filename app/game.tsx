@@ -406,6 +406,14 @@ export default function GameScreen() {
         </Animated.View>
       )}
 
+      {/* Goal text for Level 1 */}
+      {currentLevel.id === 1 && params.levelId !== 'daily' && !won && (
+        <Animated.View entering={FadeInDown.delay(500).springify()} style={styles.goalContainer}>
+          <Text style={[styles.goalHeader, { color: colors.accent }]}>🎯 {t('game.goal_title')}</Text>
+          <Text style={[styles.goalText, { color: colors.sub }]}>{t('game.goal_desc')}</Text>
+        </Animated.View>
+      )}
+
       {/* Share Modal */}
       <Modal visible={isShareVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
@@ -676,6 +684,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     opacity: 0.7,
     fontStyle: 'italic',
+  },
+  goalContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  goalHeader: {
+    fontSize: 14,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  goalText: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 20,
+    fontWeight: '500',
   }
 });
 

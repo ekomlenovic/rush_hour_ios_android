@@ -9,21 +9,9 @@ import { Vehicle } from '@/store/gameStore';
 const { width } = Dimensions.get('window');
 
 const TUTORIAL_STEPS = [
-  {
-    title: "Welcome to Rush Hour!",
-    description: "The goal is to get the red car to the exit on the right.",
-    highlight: "target",
-  },
-  {
-    title: "Vertical Movement",
-    description: "Try sliding the green bus down to clear the path.",
-    highlight: "v1",
-  },
-  {
-    title: "Horizontal Movement",
-    description: "Now slide the target car all the way to the right!",
-    highlight: "target",
-  },
+  { highlight: "target" },
+  { highlight: "v1" },
+  { highlight: "target" },
 ];
 
 const TUTORIAL_VEHICLES: Vehicle[] = [
@@ -102,10 +90,10 @@ export default function TutorialScreen() {
         style={[styles.card, { backgroundColor: colors.card }]}
       >
          <Text style={[styles.cardTitle, { color: colors.accent }]}>
-          {t(`tutorial.step${step}_title`, { defaultValue: step === 0 ? 'Welcome to Rush Hour!' : step === 1 ? 'Vertical Movement' : 'Horizontal Movement' })}
+          {t(`tutorial.step${step}_title`)}
         </Text>
          <Text style={[styles.cardDesc, { color: colors.text }]}>
-          {t(`tutorial.step${step}_desc`, { defaultValue: step === 0 ? 'The goal is to get the red car to the exit on the right.' : step === 1 ? 'Try sliding the green bus down to clear the path.' : 'Now slide the target car all the way to the right!' })}
+          {t(`tutorial.step${step}_desc`)}
         </Text>
         
         {step === 0 && (
