@@ -11,11 +11,14 @@ import { haptics, Haptics } from '@/utils/haptics';
 import { checkForUpdate, UpdateInfo } from '@/utils/updateChecker';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
+import { useTranslation } from 'react-i18next';
+import i18n, { changeLanguage } from '@/utils/i18n';
 
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
@@ -35,20 +38,20 @@ export default function HomeScreen() {
 
     if (info.isUpdateAvailable) {
       Alert.alert(
-        "Update Available",
-        `A new version (${info.latestVersion}) is available. Would you like to download it?`,
+        t('common.update_available'),
+        t('home.update_desc', { version: info.latestVersion, defaultValue: `A new version (${info.latestVersion}) is available. Would you like to download it?` }),
         [
-          { text: "Later", style: "cancel" },
+          { text: t('common.later'), style: "cancel" },
           { 
-            text: "Download", 
+            text: t('common.download'), 
             onPress: () => info.downloadURL && Linking.openURL(info.downloadURL) 
           }
         ]
       );
     } else if (!info.error) {
-      Alert.alert("Up to Date", "You are already using the latest version.");
+      Alert.alert(t('common.up_to_date'), t('common.already_latest'));
     } else {
-      Alert.alert("Check Failed", "Could not check for updates. Please try again later.");
+      Alert.alert(t('common.check_failed'), t('common.could_not_check'));
     }
   };
 
@@ -58,12 +61,12 @@ export default function HomeScreen() {
       const info = await checkForUpdate();
       if (info.isUpdateAvailable) {
         Alert.alert(
-          "Update Available",
-          `A new version (${info.latestVersion}) is available. Would you like to download it?`,
+          t('common.update_available'),
+          t('home.update_desc', { version: info.latestVersion, defaultValue: `A new version (${info.latestVersion}) is available. Would you like to download it?` }),
           [
-            { text: "Later", style: "cancel" },
+            { text: t('common.later'), style: "cancel" },
             { 
-              text: "Download", 
+              text: t('common.download'), 
               onPress: () => info.downloadURL && Linking.openURL(info.downloadURL) 
             }
           ]
@@ -75,12 +78,12 @@ export default function HomeScreen() {
 
   const handleHardReset = () => {
     Alert.alert(
-      "Hard Reset",
-      "This will erase EVERYTHING: all your progress, stars, and custom levels. Are you sure?",
+      t('common.hard_reset'),
+      t('home.hard_reset_confirm_desc', { defaultValue: "This will erase EVERYTHING: all your progress, stars, and custom levels. Are you sure?" }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t('common.cancel'), style: "cancel" },
         {
-          text: "Yes, Reset Everything",
+          text: t('home.hard_reset_confirm_btn', { defaultValue: "Yes, Reset Everything" }),
           style: "destructive",
           onPress: () => {
             hardReset();
@@ -115,7 +118,7 @@ export default function HomeScreen() {
         entering={FadeInUp.delay(400).springify()}
         style={[styles.subtitle, { color: colors.sub }]}
       >
-        Slide. Think. Escape.
+        {t('home.subtitle', { defaultValue: 'Slide. Think. Escape.' })}
       </Animated.Text>
 
       <AnimatedPressable
@@ -125,7 +128,7 @@ export default function HomeScreen() {
           router.push('/map');
         }}
       >
-        <Text style={styles.playText}>World Map</Text>
+        <Text style={styles.playText}>{t('home.world_map')}</Text>
       </AnimatedPressable>
 
       <AnimatedPressable
@@ -139,7 +142,7 @@ export default function HomeScreen() {
         }}
       >
         <Text style={[styles.secondaryText, { color: dailyStatus?.completed ? colors.success : colors.accent }]}>
-          {dailyStatus?.completed ? `Daily Done! ⭐${dailyStatus.stars}` : 'Daily Challenge'}
+          {dailyStatus?.completed ? t('home.daily_done', { stars: dailyStatus.stars, defaultValue: `Daily Done! ⭐${dailyStatus.stars}` }) : t('home.daily_challenge', { defaultValue: 'Daily Challenge' })}
         </Text>
 
       </AnimatedPressable>
@@ -150,7 +153,7 @@ export default function HomeScreen() {
           style={[styles.linkButton]}
           onPress={() => router.push('/custom-levels')}
         >
-          <Text style={[styles.linkText, { color: colors.accent }]}>My Levels</Text>
+          <Text style={[styles.linkText, { color: colors.accent }]}>{t('home.my_levels')}</Text>
         </AnimatedPressable>
 
         <AnimatedPressable
@@ -158,7 +161,7 @@ export default function HomeScreen() {
           style={[styles.linkButton]}
           onPress={() => router.push('/creator')}
         >
-          <Text style={[styles.linkText, { color: colors.accent }]}>Level Creator</Text>
+          <Text style={[styles.linkText, { color: colors.accent }]}>{t('home.level_creator')}</Text>
         </AnimatedPressable>
       </View>
 
@@ -168,7 +171,7 @@ export default function HomeScreen() {
           style={[styles.linkButton]}
           onPress={() => router.push('/tutorial')}
         >
-          <Text style={[styles.linkText, { color: colors.sub }]}>How to Play?</Text>
+          <Text style={[styles.linkText, { color: colors.sub }]}>{t('home.how_to_play')}</Text>
         </AnimatedPressable>
 
       </View>
@@ -192,7 +195,7 @@ export default function HomeScreen() {
           <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
           <View style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Options</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('home.options')}</Text>
               <Pressable onPress={() => setSettingsVisible(false)}>
                 <Text style={{ fontSize: 20, color: colors.sub, padding: 8 }}>✕</Text>
               </Pressable>
@@ -200,8 +203,29 @@ export default function HomeScreen() {
 
             <View style={styles.settingRow}>
               <View>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>Background Music</Text>
-                <Text style={[styles.settingSub, { color: colors.sub }]}>Smooth melody during gameplay</Text>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('common.language')}</Text>
+                <Text style={[styles.settingSub, { color: colors.sub }]}>{i18n.language === 'en' ? t('common.en') : t('common.fr')}</Text>
+              </View>
+              <View style={styles.languageBtns}>
+                <Pressable
+                  onPress={() => changeLanguage('en')}
+                  style={[styles.langBtn, i18n.language === 'en' && { backgroundColor: colors.accent }]}
+                >
+                  <Text style={[styles.langBtnText, { color: i18n.language === 'en' ? '#FFF' : colors.text }]}>EN</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => changeLanguage('fr')}
+                  style={[styles.langBtn, i18n.language === 'fr' && { backgroundColor: colors.accent }]}
+                >
+                  <Text style={[styles.langBtnText, { color: i18n.language === 'fr' ? '#FFF' : colors.text }]}>FR</Text>
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={styles.settingRow}>
+              <View>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('home.background_music')}</Text>
+                <Text style={[styles.settingSub, { color: colors.sub }]}>{t('home.music_desc')}</Text>
               </View>
               <Switch
                 value={isMusicEnabled}
@@ -215,8 +239,8 @@ export default function HomeScreen() {
 
             <View style={styles.settingRow}>
               <View>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>Haptic Feedback</Text>
-                <Text style={[styles.settingSub, { color: colors.sub }]}>Vibrate on interactions</Text>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('home.haptic_feedback')}</Text>
+                <Text style={[styles.settingSub, { color: colors.sub }]}>{t('home.haptic_desc')}</Text>
               </View>
               <Switch
                 value={isHapticsEnabled}
@@ -232,7 +256,7 @@ export default function HomeScreen() {
 
             <View style={styles.versionRow}>
               <View>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>Version</Text>
+                 <Text style={[styles.settingLabel, { color: colors.text }]}>{t('home.version')}</Text>
                 <Text style={[styles.settingSub, { color: colors.sub }]}>{Constants.expoConfig?.version || '1.0.0'}</Text>
               </View>
               <Pressable 
@@ -241,7 +265,7 @@ export default function HomeScreen() {
                 style={[styles.updateButton, { backgroundColor: colors.card }]}
               >
                 <Text style={[styles.updateButtonText, { color: colors.accent }]}>
-                  {isCheckingUpdate ? 'Checking...' : 'Check for Update'}
+                  {isCheckingUpdate ? t('common.checking', { defaultValue: 'Checking...' }) : t('home.check_for_update', { defaultValue: 'Check for Update' })}
                 </Text>
               </Pressable>
             </View>
@@ -251,14 +275,14 @@ export default function HomeScreen() {
               style={[styles.resetBtn, { borderColor: colors.sub, borderStyle: 'dotted', marginBottom: 24 }]}
               onPress={handleHardReset}
             >
-              <Text style={[styles.resetBtnText, { color: colors.sub }]}>Hard Reset Progress</Text>
+              <Text style={[styles.resetBtnText, { color: colors.sub }]}>{t('home.hard_reset_progress')}</Text>
             </Pressable>
 
             <Pressable
               style={[styles.closeButton, { backgroundColor: colors.accent }]}
               onPress={() => setSettingsVisible(false)}
             >
-              <Text style={styles.closeButtonText}>Done</Text>
+              <Text style={styles.closeButtonText}>{t('common.done', { defaultValue: 'Done' })}</Text>
             </Pressable>
 
           </View>
@@ -385,6 +409,22 @@ const styles = StyleSheet.create({
   },
   settingSub: {
     fontSize: 14,
+  },
+  languageBtns: { 
+    flexDirection: 'row', 
+    gap: 8, 
+    backgroundColor: 'rgba(0,0,0,0.05)', 
+    padding: 4, 
+    borderRadius: 12 
+  },
+  langBtn: { 
+    paddingHorizontal: 12, 
+    paddingVertical: 6, 
+    borderRadius: 8 
+  },
+  langBtnText: { 
+    fontSize: 14, 
+    fontWeight: '700' 
   },
   closeButton: {
     paddingVertical: 14,

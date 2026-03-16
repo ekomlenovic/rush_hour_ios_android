@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, useColorScheme, Pressable, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeOut, Layout, ZoomIn } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import Board from '@/components/Board';
 import { Vehicle } from '@/store/gameStore';
 
@@ -47,6 +48,7 @@ const TUTORIAL_VEHICLES: Vehicle[] = [
 ];
 
 export default function TutorialScreen() {
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
@@ -73,11 +75,11 @@ export default function TutorialScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* Header */}
-      <View style={styles.header}>
+       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={[styles.backText, { color: colors.sub }]}>Skip</Text>
+          <Text style={[styles.backText, { color: colors.sub }]}>{t('tutorial.skip')}</Text>
         </Pressable>
-        <Text style={[styles.title, { color: colors.text }]}>Tutorial</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('tutorial.title')}</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -88,8 +90,8 @@ export default function TutorialScreen() {
           vehicles={vehicles}
           exitRow={2}
           exitCol={6}
-          onMoveEnd={handleMoveEnd}
-          hintVehicleId={TUTORIAL_STEPS[step]?.highlight}
+           onMoveEnd={handleMoveEnd}
+          hintVehicleId={t(`tutorial.step${step}.highlight`, { defaultValue: step === 1 ? 'v1' : 'target' })}
         />
       </Animated.View>
 
@@ -99,19 +101,19 @@ export default function TutorialScreen() {
         entering={FadeInDown.springify()} 
         style={[styles.card, { backgroundColor: colors.card }]}
       >
-        <Text style={[styles.cardTitle, { color: colors.accent }]}>
-          {TUTORIAL_STEPS[step]?.title}
+         <Text style={[styles.cardTitle, { color: colors.accent }]}>
+          {t(`tutorial.step${step}_title`, { defaultValue: step === 0 ? 'Welcome to Rush Hour!' : step === 1 ? 'Vertical Movement' : 'Horizontal Movement' })}
         </Text>
-        <Text style={[styles.cardDesc, { color: colors.text }]}>
-          {TUTORIAL_STEPS[step]?.description}
+         <Text style={[styles.cardDesc, { color: colors.text }]}>
+          {t(`tutorial.step${step}_desc`, { defaultValue: step === 0 ? 'The goal is to get the red car to the exit on the right.' : step === 1 ? 'Try sliding the green bus down to clear the path.' : 'Now slide the target car all the way to the right!' })}
         </Text>
         
         {step === 0 && (
           <Pressable 
             style={[styles.nextBtn, { backgroundColor: colors.accent }]}
-            onPress={() => setStep(1)}
+             onPress={() => setStep(1)}
           >
-            <Text style={styles.nextBtnText}>Got it!</Text>
+            <Text style={styles.nextBtnText}>{t('common.got_it')}</Text>
           </Pressable>
         )}
       </Animated.View>
@@ -120,14 +122,14 @@ export default function TutorialScreen() {
       {completed && (
         <Animated.View entering={FadeIn} style={styles.overlay}>
           <Animated.View entering={ZoomIn.springify()} style={[styles.winCard, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
-            <Text style={styles.emoji}>🎉</Text>
-            <Text style={[styles.winTitle, { color: colors.accent }]}>Excellent!</Text>
-            <Text style={[styles.winDesc, { color: colors.text }]}>You're ready to tackle the World Map.</Text>
+             <Text style={styles.emoji}>🎉</Text>
+            <Text style={[styles.winTitle, { color: colors.accent }]}>{t('common.excellent')}</Text>
+            <Text style={[styles.winDesc, { color: colors.text }]}>{t('tutorial.ready_desc')}</Text>
             <Pressable 
               style={[styles.playBtn, { backgroundColor: colors.accent }]}
-              onPress={() => router.replace('/map')}
+               onPress={() => router.replace('/map')}
             >
-              <Text style={styles.playBtnText}>Start Playing</Text>
+              <Text style={styles.playBtnText}>{t('tutorial.start_playing')}</Text>
             </Pressable>
           </Animated.View>
         </Animated.View>

@@ -8,6 +8,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle, runOnJS, withTiming,
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useTranslation } from 'react-i18next';
 import { useGameStore, Vehicle, Level } from '@/store/gameStore';
 import { validateLevel } from '@/utils/solver';
 import { haptics, Haptics } from '@/utils/haptics';
@@ -65,6 +66,7 @@ const DIR_LABEL = {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function LevelCreatorScreen() {
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
@@ -334,16 +336,16 @@ export default function LevelCreatorScreen() {
   const handleTest = () => {
     const minMoves = validateLevel(vehicles, gridSize, exitRow, exitCol);
     if (minMoves === -1) {
-      Alert.alert('Unsolvable ✗', 'No valid solution found. Keep adjusting!');
+      Alert.alert(t('creator.unsolvable_title', { defaultValue: 'Unsolvable ✗' }), t('creator.unsolvable_desc', { defaultValue: 'No valid solution found. Keep adjusting!' }));
     } else {
-      Alert.alert('Solvable ✓', `Minimum ${minMoves} move${minMoves === 1 ? '' : 's'} to complete.`);
+      Alert.alert(t('creator.solvable_title', { defaultValue: 'Solvable ✓' }), t('creator.solvable_desc', { count: minMoves, defaultValue: `Minimum ${minMoves} move${minMoves === 1 ? '' : 's'} to complete.` }));
     }
   };
 
   const handleSave = () => {
     const minMoves = validateLevel(vehicles, gridSize, exitRow, exitCol);
     if (minMoves === -1) {
-      Alert.alert('Unsolvable', 'Fix the level before saving.');
+      Alert.alert(t('creator.unsolvable_title', { defaultValue: 'Unsolvable' }), t('creator.fix_before_save', { defaultValue: 'Fix the level before saving.' }));
       return;
     }
     const isImported = params.levelId && importedLevels.some(l => l.id === parseInt(params.levelId));
@@ -351,8 +353,8 @@ export default function LevelCreatorScreen() {
     const newLevel: Level = { id: newId, gridSize, vehicles, exitRow, exitCol, minMoves, updatedAt: Date.now() };
     saveCreatedLevel(newLevel);
     haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert('Saved!', isImported ? 'Saved as a new level.' : 'Level updated.', [
-      { text: 'OK', onPress: () => router.back() },
+    Alert.alert(t('common.saved', { defaultValue: 'Saved!' }), isImported ? t('creator.saved_new', { defaultValue: 'Saved as a new level.' }) : t('creator.level_updated', { defaultValue: 'Level updated.' }), [
+      { text: t('common.ok'), onPress: () => router.back() },
     ]);
   };
 
@@ -397,20 +399,20 @@ export default function LevelCreatorScreen() {
           <Pressable onPress={() => router.back()} style={styles.backBtn}>
             <Text style={[styles.backArrow, { color: C.sub }]}>←</Text>
           </Pressable>
-          <Text style={[styles.title, { color: C.text }]}>Creator</Text>
+          <Text style={[styles.title, { color: C.text }]}>{t('creator.title')}</Text>
           <View style={styles.headerRight}>
             <Pressable onPress={handleTest} style={[styles.pill, { borderColor: C.accent, borderWidth: 1.5 }]}>
-              <Text style={[styles.pillText, { color: C.accent }]}>Test</Text>
+              <Text style={[styles.pillText, { color: C.accent }]}>{t('creator.test', { defaultValue: 'Test' })}</Text>
             </Pressable>
             <Pressable onPress={handleSave} style={[styles.pill, { backgroundColor: C.accent }]}>
-              <Text style={[styles.pillText, { color: '#FFF' }]}>Save</Text>
+              <Text style={[styles.pillText, { color: '#FFF' }]}>{t('creator.save')}</Text>
             </Pressable>
           </View>
         </View>
 
         {/* ── Grid Size Selector (Sub-header) ── */}
         <View style={styles.subHeader}>
-          <Text style={[styles.subTitle, { color: C.sub }]}>Grid Size:</Text>
+          <Text style={[styles.subTitle, { color: C.sub }]}>{t('map.grid_size_label', { defaultValue: 'Grid Size:' })}</Text>
           <View style={styles.gridSizeSelector}>
             {GRID_SIZES.map(s => (
               <Pressable 
@@ -530,12 +532,12 @@ export default function LevelCreatorScreen() {
               />
             ))}
           </View>
-          <Text style={[styles.hint, { color: C.sub }]}>Drag to move  ·  Tap to rotate  ·  Long press to remove</Text>
+          <Text style={[styles.hint, { color: C.sub }]}>{t('creator.hint_text', { defaultValue: 'Drag to move  ·  Tap to rotate  ·  Long press to remove' })}</Text>
         </View>
 
         {/* ── Exit Side Selector ── */}
         <View style={styles.subHeader}>
-          <Text style={[styles.subTitle, { color: C.sub }]}>Exit:</Text>
+          <Text style={[styles.subTitle, { color: C.sub }]}>{t('creator.exit_label', { defaultValue: 'Exit:' })}</Text>
           <View style={styles.gridSizeSelector}>
             {(['Right', 'Left', 'Top', 'Bottom'] as const).map(side => {
               const target = vehicles.find(v => v.id === 'target');
@@ -581,7 +583,7 @@ export default function LevelCreatorScreen() {
 
         {/* ── Toolbox ── */}
         <View style={[styles.toolbox, { borderTopColor: C.border, backgroundColor: C.bg }]}>
-          <Text style={[styles.toolboxHeading, { color: C.sub }]}>VEHICLES</Text>
+          <Text style={[styles.toolboxHeading, { color: C.sub }]}>{t('creator.vehicles_toolbox', { defaultValue: 'VEHICLES' })}</Text>
           <View style={styles.toolboxGrid}>
             {TOOLBOX_ITEMS.map((item, idx) => {
               const dynamicColor = getNextAvailableColor(item.color);
@@ -701,6 +703,7 @@ type ToolboxItemProps = {
 };
 
 function ToolboxItem({ template, colors, onDragUpdate, onDrop }: ToolboxItemProps) {
+  const { t } = useTranslation();
   const sc = useSharedValue(1);
 
   const gesture = Gesture.Pan()
@@ -739,7 +742,7 @@ function ToolboxItem({ template, colors, onDragUpdate, onDrop }: ToolboxItemProp
         </View>
 
         <View style={styles.toolLabels}>
-          <Text style={[styles.toolName, { color: colors.text }]}>{template.label}</Text>
+          <Text style={[styles.toolName, { color: colors.text }]}>{t(`creator.${template.label.toLowerCase()}`, { defaultValue: template.label })}</Text>
           <View style={[styles.toolBadge, { backgroundColor: template.color + '28', borderColor: template.color + '55' }]}>
             <Text style={[styles.toolBadgeText, { color: template.color }]}>{dir} {size}</Text>
           </View>

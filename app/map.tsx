@@ -8,6 +8,8 @@ import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
 import { useAudio } from '@/context/AudioProvider';
 import { DIFFICULTY_LEVELS, generateLevel } from '@/utils/generator';
+import { useTranslation } from 'react-i18next';
+import i18n, { changeLanguage } from '@/utils/i18n';
 
 const { width } = Dimensions.get('window');
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -71,6 +73,7 @@ const LevelNode = React.memo(({
   isDark,
   index
 }: LevelNodeProps) => {
+  const { t } = useTranslation();
   const getCustomColor = () => {
     if (!levelData) return '#8B5CF6';
     if (levelData.minMoves < 14) return '#10B981';
@@ -132,7 +135,7 @@ const LevelNode = React.memo(({
               {'⭐'.repeat(stars)}
             </Text>
           ) : isCurrent ? (
-            <Text style={[styles.currentText, { color: colors.accent }]}>Next</Text>
+            <Text style={[styles.currentText, { color: colors.accent }]}>{t('map.next')}</Text>
           ) : null}
         </View>
       )}
@@ -141,6 +144,7 @@ const LevelNode = React.memo(({
 });
 
 export default function MapScreen() {
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
@@ -257,12 +261,12 @@ export default function MapScreen() {
 
   const handleHardReset = () => {
     Alert.alert(
-      "Hard Reset",
-      "This will erase EVERYTHING: all your progress, stars, and custom levels. Are you sure?",
+      t('common.hard_reset'),
+      t('home.hard_reset_confirm_desc', { defaultValue: "This will erase EVERYTHING: all your progress, stars, and custom levels. Are you sure?" }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t('common.cancel'), style: "cancel" },
         {
-          text: "Yes, Reset Everything",
+          text: t('home.hard_reset_confirm_btn', { defaultValue: "Yes, Reset Everything" }),
           style: "destructive",
           onPress: () => {
             hardReset();
@@ -313,9 +317,9 @@ export default function MapScreen() {
       <Animated.View entering={FadeInUp.delay(100).springify()} style={[styles.header, { backgroundColor: isDark ? 'rgba(15,15,26,0.85)' : 'rgba(245,245,250,0.85)' }]}>
         <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={[styles.backText, { color: colors.sub }]}>← Home</Text>
+          <Text style={[styles.backText, { color: colors.sub }]}>← {t('common.home', { defaultValue: 'Home' })}</Text>
         </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>World Map</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{t('map.title')}</Text>
         <Pressable onPress={() => setSettingsVisible(true)} style={styles.settingsButton}>
           <Text style={{ fontSize: 24, color: colors.text }}>⚙️</Text>
         </Pressable>
@@ -418,7 +422,7 @@ export default function MapScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Settings & Lab</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('home.options')}</Text>
               <Pressable onPress={() => setSettingsVisible(false)}>
                 <Text style={{ fontSize: 20, color: colors.sub, padding: 8 }}>✕</Text>
               </Pressable>
@@ -435,11 +439,33 @@ export default function MapScreen() {
               }}
               scrollEventThrottle={16}
             >
+              {/* Language Switcher */}
+              <View style={styles.settingRow}>
+                <View>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>{t('common.language')}</Text>
+                  <Text style={[styles.settingSub, { color: colors.sub }]}>{i18n.language === 'en' ? t('common.en') : t('common.fr')}</Text>
+                </View>
+                <View style={styles.languageBtns}>
+                  <Pressable
+                    onPress={() => changeLanguage('en')}
+                    style={[styles.langBtn, i18n.language === 'en' && { backgroundColor: colors.accent }]}
+                  >
+                    <Text style={[styles.langBtnText, { color: i18n.language === 'en' ? '#FFF' : colors.text }]}>EN</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => changeLanguage('fr')}
+                    style={[styles.langBtn, i18n.language === 'fr' && { backgroundColor: colors.accent }]}
+                  >
+                    <Text style={[styles.langBtnText, { color: i18n.language === 'fr' ? '#FFF' : colors.text }]}>FR</Text>
+                  </Pressable>
+                </View>
+              </View>
+
               {/* Music Toggle */}
               <View style={styles.settingRow}>
                 <View>
-                  <Text style={[styles.settingLabel, { color: colors.text }]}>Background Music</Text>
-                  <Text style={[styles.settingSub, { color: colors.sub }]}>Whispers of the Verdant Stream</Text>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>{t('map.background_music')}</Text>
+                  <Text style={[styles.settingSub, { color: colors.sub }]}>{t('map.music_name')}</Text>
                 </View>
                 <Switch
                   value={isMusicEnabled}
@@ -450,8 +476,8 @@ export default function MapScreen() {
 
               <View style={styles.settingRow}>
                 <View>
-                  <Text style={[styles.settingLabel, { color: colors.text }]}>Haptic Feedback</Text>
-                  <Text style={[styles.settingSub, { color: colors.sub }]}>Vibrate on interactions</Text>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>{t('map.haptic_feedback')}</Text>
+                  <Text style={[styles.settingSub, { color: colors.sub }]}>{t('map.vibrate_interactions')}</Text>
                 </View>
                 <Switch
                   value={isHapticsEnabled}
@@ -466,14 +492,14 @@ export default function MapScreen() {
               <View style={[styles.divider, { backgroundColor: colors.sub }]} />
 
               {/* Generator Setttings */}
-              <Text style={[styles.sectionTitle, { color: colors.accent }]}>Level Generator</Text>
+              <Text style={[styles.sectionTitle, { color: colors.accent }]}>{t('map.level_generator')}</Text>
 
               <Text style={[styles.settingSub, { color: '#F59E0B', marginBottom: 16, fontWeight: '600' }]}>
-                ⚠️ Note: Complex level generation (Expert/Master) can be resource-intensive on mobile devices.
+                {t('map.generator_warning', { defaultValue: '⚠️ Note: Complex level generation (Expert/Master) can be resource-intensive on mobile devices.' })}
               </Text>
 
               <View style={styles.settingBlock}>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>Difficulty: {genDifficulty}</Text>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('creator.difficulty')}: {genDifficulty}</Text>
                 <View style={styles.buttonSegmentGroup}>
                   {(['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER'] as const).map(diff => (
                     <Pressable
@@ -493,7 +519,7 @@ export default function MapScreen() {
               </View>
 
               <View style={styles.settingBlock}>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>Grid Size: {genGridSize}x{genGridSize}</Text>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('map.grid_size', { size: genGridSize, defaultValue: `Grid Size: ${genGridSize}x${genGridSize}` })}</Text>
                 <View style={styles.buttonSegmentGroup}>
                   {[6, 7, 8].map(size => (
                     <Pressable
@@ -512,7 +538,7 @@ export default function MapScreen() {
 
 
               <View style={styles.settingBlock}>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>Amount to create: {genAmount}</Text>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('map.amount_to_create', { amount: genAmount, defaultValue: `Amount to create: ${genAmount}` })}</Text>
                 <View style={styles.buttonSegmentGroup}>
                   {[1, 5, 10, 20].map(amt => (
                     <Pressable
@@ -536,7 +562,7 @@ export default function MapScreen() {
                   disabled={isGenerating}
                 >
                   <Text style={styles.mainBtnText}>
-                    {isGenerating ? '⏳ Generation in Progress...' : `Generate ${genAmount} Levels (~${Math.ceil((genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000)}s)`}
+                    {isGenerating ? t('map.generating', { defaultValue: '⏳ Generation in Progress...' }) : t('map.generate_btn', { amount: genAmount, time: Math.ceil((genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000), defaultValue: `Generate ${genAmount} Levels (~${Math.ceil((genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000)}s)` })}
                   </Text>
                 </Pressable>
 
@@ -545,32 +571,32 @@ export default function MapScreen() {
                     style={[styles.resetBtn, { borderColor: '#EF4444' }]}
                     onPress={handleResetLevels}
                   >
-                    <Text style={[styles.resetBtnText, { color: '#EF4444' }]}>Reset Custom Levels</Text>
+                    <Text style={[styles.resetBtnText, { color: '#EF4444' }]}>{t('map.reset_custom')}</Text>
                   </Pressable>
                 )}
 
                 <View style={[styles.divider, { backgroundColor: colors.sub, marginVertical: 12 }]} />
 
-                <Text style={[styles.sectionTitle, { color: colors.accent, marginBottom: 8 }]}>Community & Levels</Text>
+                <Text style={[styles.sectionTitle, { color: colors.accent, marginBottom: 8 }]}>{t('map.community_levels', { defaultValue: 'Community & Levels' })}</Text>
                 <Pressable
                   style={[styles.mainBtn, { backgroundColor: '#24292e', marginBottom: 12 }]}
                   onPress={() => Linking.openURL('https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?title=Request:%20New%20Complex%20Levels&body=I%20would%20like%20to%20see%20more%20high-difficulty%20levels%21')}
                 >
-                  <Text style={styles.mainBtnText}>Request New Levels on GitHub</Text>
+                  <Text style={styles.mainBtnText}>{t('map.request_github')}</Text>
                 </Pressable>
 
                 <Pressable
                   style={[styles.resetBtn, { borderColor: colors.sub, borderStyle: 'dotted', marginTop: 12 }]}
                   onPress={handleHardReset}
                 >
-                  <Text style={[styles.resetBtnText, { color: colors.sub }]}>Hard Reset Progress</Text>
+                  <Text style={[styles.resetBtnText, { color: colors.sub }]}>{t('map.hard_reset_progress')}</Text>
                 </Pressable>
               </View>
             </ScrollView>
 
             {!settingsScrolledToBottom && (
               <Animated.View entering={FadeInDown} style={styles.scrollHint}>
-                <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 12 }}>Scroll for more content ↓</Text>
+                <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 12 }}>{t('map.scroll_hint', { defaultValue: 'Scroll for more content ↓' })}</Text>
               </Animated.View>
             )}
           </View>
@@ -591,7 +617,7 @@ export default function MapScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <ActivityIndicator color={generationState.shouldCancel ? '#EF4444' : colors.accent} size="small" />
               <Text style={[styles.pillTitle, { color: generationState.shouldCancel ? '#EF4444' : colors.text }]}>
-                {generationState.shouldCancel ? 'Canceling...' : 'Generating Levels'}
+                {generationState.shouldCancel ? t('map.canceling', { defaultValue: 'Canceling...' }) : t('map.generating_levels', { defaultValue: 'Generating Levels' })}
               </Text>
             </View>
             {!generationState.shouldCancel && (
@@ -600,7 +626,7 @@ export default function MapScreen() {
                 hitSlop={15}
                 style={[styles.pillCancelBtn, { backgroundColor: isDark ? 'rgba(239,68,68,0.18)' : 'rgba(239,68,68,0.1)' }]}
               >
-                <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 13 }}>✕ Cancel</Text>
+                <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 13 }}>✕ {t('common.cancel')}</Text>
               </Pressable>
             )}
           </View>
@@ -621,11 +647,11 @@ export default function MapScreen() {
           {/* Count and time */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text style={[styles.pillSub, { color: colors.sub }]}>
-              {generationState.current} of {generationState.total} levels ready !
+              {t('map.generation_progress', { current: generationState.current, total: generationState.total, defaultValue: `${generationState.current} of ${generationState.total} levels ready !` })}
             </Text>
             {generationState.estimatedRemainingSeconds > 0 && !generationState.shouldCancel && (
               <Text style={[styles.pillSub, { color: colors.accent, fontWeight: '600' }]}>
-                ~{generationState.estimatedRemainingSeconds}s left
+                ~{t('map.time_left', { seconds: generationState.estimatedRemainingSeconds, defaultValue: `${generationState.estimatedRemainingSeconds}s left` })}
               </Text>
             )}
           </View>
@@ -770,6 +796,22 @@ const styles = StyleSheet.create({
   },
   settingSub: {
     fontSize: 13,
+  },
+  languageBtns: { 
+    flexDirection: 'row', 
+    gap: 8, 
+    backgroundColor: 'rgba(0,0,0,0.05)', 
+    padding: 4, 
+    borderRadius: 12 
+  },
+  langBtn: { 
+    paddingHorizontal: 12, 
+    paddingVertical: 6, 
+    borderRadius: 8 
+  },
+  langBtnText: { 
+    fontSize: 14, 
+    fontWeight: '700' 
   },
   divider: {
     height: 1,

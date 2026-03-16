@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, useColorScheme, Pressable, FlatList, Alert, Share, Clipboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
 import { haptics, Haptics } from '@/utils/haptics';
 import { deserializeLevel, getShareUrl } from '@/utils/sharing';
 import { TextInput } from 'react-native';
 
 export default function CustomLevelsScreen() {
+    const { t } = useTranslation();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const router = useRouter();
@@ -29,12 +31,12 @@ export default function CustomLevelsScreen() {
 
     const handleDelete = (id: number) => {
         Alert.alert(
-            "Delete Level",
-            "Are you sure you want to delete this level?",
+            t('custom_levels.delete_title', { defaultValue: 'Delete Level' }),
+            t('custom_levels.delete_confirm', { defaultValue: 'Are you sure you want to delete this level?' }),
             [
-                { text: "Cancel", style: "cancel" },
+                { text: t('common.cancel'), style: "cancel" },
                 {
-                    text: "Delete",
+                    text: t('common.delete'),
                     style: "destructive",
                     onPress: () => {
                         deleteCustomLevel(id, activeTab === 'favorites' ? (createdLevels.some(l => l.id === id) ? 'created' : 'imported') : activeTab);
@@ -54,10 +56,10 @@ export default function CustomLevelsScreen() {
             addImportedLevel(level);
             setImportUrl('');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert("Success", "Level imported successfully!");
+            Alert.alert(t('common.success'), t('custom_levels.import_success', { defaultValue: 'Level imported successfully!' }));
         } else {
             haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert("Error", "Invalid level URL or code.");
+            Alert.alert(t('common.error'), t('custom_levels.import_error', { defaultValue: 'Invalid level URL or code.' }));
         }
     };
 
@@ -88,8 +90,8 @@ export default function CustomLevelsScreen() {
                 style={[styles.levelCard, { backgroundColor: colors.card }]}
             >
                 <View style={styles.levelInfo}>
-                    <Text style={[styles.levelTitle, { color: colors.text }]}>Level #{item.id}</Text>
-                    <Text style={[styles.levelSub, { color: colors.sub }]}>{item.vehicles.length} vehicles • {item.minMoves} min moves</Text>
+                    <Text style={[styles.levelTitle, { color: colors.text }]}>{t('game.level_count', { id: item.id, defaultValue: `Level #${item.id}` })}</Text>
+                    <Text style={[styles.levelSub, { color: colors.sub }]}>{t('custom_levels.level_stats', { count: item.vehicles.length, moves: item.minMoves, defaultValue: `${item.vehicles.length} vehicles • ${item.minMoves} min moves` })}</Text>
                 </View>
                 <View style={styles.actions}>
                     <Pressable
@@ -108,13 +110,13 @@ export default function CustomLevelsScreen() {
                         onPress={() => router.push(`/game?levelId=${item.id}`)}
                         style={[styles.actionBtn, { backgroundColor: colors.accent }]}
                     >
-                        <Text style={styles.actionText}>Play</Text>
+                        <Text style={styles.actionText}>{t('common.play')}</Text>
                     </Pressable>
                     <Pressable
                         onPress={() => router.push(`/creator?levelId=${item.id}`)}
                         style={[styles.actionBtn, { backgroundColor: colors.sub }]}
                     >
-                        <Text style={styles.actionText}>Edit</Text>
+                        <Text style={styles.actionText}>{t('common.edit')}</Text>
                     </Pressable>
                     <Pressable
                         onPress={() => handleDelete(item.id)}
@@ -129,11 +131,11 @@ export default function CustomLevelsScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.bg }]}>
-            <View style={styles.header}>
+             <View style={styles.header}>
                 <Pressable onPress={() => router.back()} style={styles.backButton}>
-                    <Text style={[styles.backText, { color: colors.sub }]}>← Home</Text>
+                    <Text style={[styles.backText, { color: colors.sub }]}>← {t('common.home')}</Text>
                 </Pressable>
-                <Text style={[styles.headerTitle, { color: colors.text }]}>Custom Levels</Text>
+                <Text style={[styles.headerTitle, { color: colors.text }]}>{t('home.my_levels')}</Text>
                 <View style={{ width: 60 }} />
             </View>
 
@@ -142,44 +144,44 @@ export default function CustomLevelsScreen() {
                     onPress={() => setActiveTab('created')}
                     style={[styles.tab, activeTab === 'created' && { borderBottomColor: colors.accent, borderBottomWidth: 3 }]}
                 >
-                    <Text style={[styles.tabText, { color: activeTab === 'created' ? colors.text : colors.sub }]}>Created</Text>
+                    <Text style={[styles.tabText, { color: activeTab === 'created' ? colors.text : colors.sub }]}>{t('custom_levels.tabs.created')}</Text>
                 </Pressable>
                 <Pressable
                     onPress={() => setActiveTab('imported')}
                     style={[styles.tab, activeTab === 'imported' && { borderBottomColor: colors.accent, borderBottomWidth: 3 }]}
                 >
-                    <Text style={[styles.tabText, { color: activeTab === 'imported' ? colors.text : colors.sub }]}>Imported</Text>
+                    <Text style={[styles.tabText, { color: activeTab === 'imported' ? colors.text : colors.sub }]}>{t('custom_levels.tabs.imported')}</Text>
                 </Pressable>
                 <Pressable
                     onPress={() => setActiveTab('favorites')}
                     style={[styles.tab, activeTab === 'favorites' && { borderBottomColor: colors.accent, borderBottomWidth: 3 }]}
                 >
-                    <Text style={[styles.tabText, { color: activeTab === 'favorites' ? colors.text : colors.sub }]}>Favorites</Text>
+                    <Text style={[styles.tabText, { color: activeTab === 'favorites' ? colors.text : colors.sub }]}>{t('custom_levels.tabs.favorites')}</Text>
                 </Pressable>
             </View>
 
             {activeTab === 'imported' && (
                 <View style={[styles.importSection, { backgroundColor: colors.card }]}>
                     <View style={styles.inputContainer}>
-                        <TextInput
+                         <TextInput
                             style={[styles.input, { color: colors.text, borderColor: colors.sub + '22' }]}
-                            placeholder="Level link or code..."
+                            placeholder={t('custom_levels.import_placeholder', { defaultValue: 'Level link or code...' })}
                             placeholderTextColor={colors.sub}
                             value={importUrl}
                             onChangeText={setImportUrl}
                         />
                         <Pressable
-                            onPress={handlePaste}
+                             onPress={handlePaste}
                             style={[styles.pasteBtn, { backgroundColor: colors.sub + '22' }]}
                         >
-                            <Text style={[styles.pasteBtnText, { color: colors.accent }]}>Paste</Text>
+                            <Text style={[styles.pasteBtnText, { color: colors.accent }]}>{t('common.paste')}</Text>
                         </Pressable>
                     </View>
                     <Pressable
-                        onPress={handleManualImport}
+                         onPress={handleManualImport}
                         style={[styles.importBtn, { backgroundColor: colors.accent }]}
                     >
-                        <Text style={styles.importBtnText}>Import</Text>
+                        <Text style={styles.importBtnText}>{t('common.import')}</Text>
                     </Pressable>
                 </View>
             )}
@@ -191,15 +193,15 @@ export default function CustomLevelsScreen() {
                 contentContainerStyle={styles.listContent}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <Text style={[styles.emptyText, { color: colors.sub }]}>
-                            {activeTab === 'created' ? "You haven't created any levels yet." : activeTab === 'imported' ? "No imported levels found." : "No favorite levels yet."}
+                         <Text style={[styles.emptyText, { color: colors.sub }]}>
+                            {activeTab === 'created' ? t('custom_levels.empty_created') : activeTab === 'imported' ? t('custom_levels.empty_imported') : t('custom_levels.empty_favorites')}
                         </Text>
                         {activeTab === 'created' && (
                             <Pressable
-                                onPress={() => router.push('/creator')}
+                                 onPress={() => router.push('/creator')}
                                 style={[styles.createBtn, { backgroundColor: colors.accent }]}
                             >
-                                <Text style={styles.createBtnText}>Create New Level</Text>
+                                <Text style={styles.createBtnText}>{t('custom_levels.create_new')}</Text>
                             </Pressable>
                         )}
                     </View>
