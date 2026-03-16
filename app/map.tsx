@@ -35,6 +35,13 @@ const generatePathPoints = (count: number, screenHeight: number) => {
   const contentHeight = count * nodeSpacing + 150;
   const totalHeight = Math.max(screenHeight * 1.1, contentHeight);
 
+  // Level 0 (Tutorial) - Positioned to the left of Level 1
+  points.push({
+    id: 0,
+    x: centerX - 80, // Left of center
+    y: totalHeight - 150,
+  });
+
   for (let i = 0; i < count; i++) {
     // i=0 is level 1. It goes at the BOTTOM.
     const xOffset = Math.sin(i * 1.5) * amplitude;
@@ -54,6 +61,7 @@ interface LevelNodeProps {
   isCurrent: boolean;
   isCustom: boolean;
   isPadlockNode: boolean;
+  isTutorial: boolean;
   stars: number;
   onPress: (id: number, unlocked: boolean, custom: boolean) => void;
   colors: any;
@@ -68,6 +76,7 @@ const LevelNode = React.memo(({
   isCurrent,
   isCustom,
   isPadlockNode,
+  isTutorial,
   stars,
   onPress,
   colors,
@@ -85,6 +94,8 @@ const LevelNode = React.memo(({
   let carColor = colors.locked;
   if (isPadlockNode) {
     carColor = colors.locked;
+  } else if (isTutorial) {
+    carColor = '#3B82F6'; // Distinct blue for tutorial
   } else if (isCurrent) {
     carColor = '#EF4444';
   } else if (isCustom) {
@@ -93,7 +104,7 @@ const LevelNode = React.memo(({
     carColor = '#5A4FE0';
   }
 
-  const nodeOpacity = (isUnlocked || isPadlockNode) ? 1 : 0.4;
+  const nodeOpacity = (isUnlocked || isPadlockNode || isTutorial) ? 1 : 0.4;
 
   return (
     <Animated.View
@@ -110,26 +121,26 @@ const LevelNode = React.memo(({
           { backgroundColor: carColor, borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)', opacity: nodeOpacity },
           isCurrent && { transform: [{ scale: 1.15 }], shadowColor: carColor, shadowOpacity: 0.6, shadowRadius: 12, elevation: 12 },
           isCustom && { borderRadius: 24, borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)', shadowColor: carColor },
-          { transform: [{ scale: pressed && isUnlocked ? 0.9 : (isCurrent ? 1.15 : 1) }] }
+          { transform: [{ scale: pressed && (isUnlocked || isTutorial) ? 0.9 : (isCurrent ? 1.15 : 1) }] }
         ]}
       >
-        <View style={[styles.carShine, { backgroundColor: isUnlocked ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)' }]} />
+        <View style={[styles.carShine, { backgroundColor: (isUnlocked || isTutorial) ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)' }]} />
 
         {isPadlockNode ? (
           <Text style={[styles.lockedIcon, { color: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)' }]}>🔒</Text>
         ) : (
           <View style={{ alignItems: 'center' }}>
             <Text style={styles.nodeText}>
-              {isCustom ? `∞` : point.id}
+              {isCustom ? `∞` : isTutorial ? '0' : point.id}
             </Text>
-            {!isUnlocked && (
+            {!isUnlocked && !isTutorial && (
               <Text style={{ fontSize: 12, position: 'absolute', bottom: -18 }}>🔒</Text>
             )}
           </View>
         )}
       </Pressable>
 
-      {isUnlocked && (
+      {(isUnlocked || isTutorial) && (
         <View style={styles.starsContainer}>
           {stars > 0 ? (
             <Text style={styles.starsText}>
@@ -137,6 +148,8 @@ const LevelNode = React.memo(({
             </Text>
           ) : isCurrent ? (
             <Text style={[styles.currentText, { color: colors.accent }]}>{t('map.next')}</Text>
+          ) : isTutorial ? (
+            <Text style={[styles.currentText, { color: colors.accent, fontSize: 10 }]}>{t('tutorial.title')}</Text>
           ) : null}
         </View>
       )}
@@ -303,6 +316,11 @@ export default function MapScreen() {
   };
 
   const handleLevelPress = (levelId: number, isUnlocked: boolean, isCustom: boolean) => {
+    if (levelId === 0) {
+      haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      router.push('/tutorial');
+      return;
+    }
     // Custom generated levels are ALWAYS accessible regardless of progression lock
     if (!isUnlocked && !isCustom) {
       haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -345,6 +363,7 @@ export default function MapScreen() {
             we will use a simpler pure-View based path generation for the connections. */}
             {pathPoints.map((point, index) => {
               if (index === pathPoints.length - 1) return null;
+
               const nextPoint = pathPoints[index + 1];
 
               // Only render the line if at least one point is visible
@@ -387,12 +406,15 @@ export default function MapScreen() {
             {pathPoints.map((point, index) => {
               if (!isVisible(point.y)) return null;
 
-              const isPadlockNode = index === levels.length;
-              const levelData = isPadlockNode ? null : levels[index];
+              const isTutorial = point.id === 0;
+              const isPadlockNode = point.id !== 0 && index === pathPoints.length - 1;
+              
+              // find level data by matching point.id with level.id
+              const levelData = isTutorial || isPadlockNode ? null : levels.find(l => l.id === point.id);
 
-              const isUnlocked = point.id <= maxUnlockedLevel;
+              const isUnlocked = isTutorial || point.id <= maxUnlockedLevel;
               const isCurrent = point.id === maxUnlockedLevel;
-              const isCustom = !isPadlockNode && point.id > sampleLevels.length;
+              const isCustom = !isTutorial && !isPadlockNode && point.id > sampleLevels.length;
 
               const levelProgress = progress.find(p => p.levelId === point.id);
               const stars = levelProgress?.stars || 0;
@@ -406,6 +428,7 @@ export default function MapScreen() {
                   isCurrent={isCurrent}
                   isCustom={isCustom}
                   isPadlockNode={isPadlockNode}
+                  isTutorial={isTutorial}
                   stars={stars}
                   onPress={handleLevelPress}
                   colors={colors}
