@@ -81,7 +81,9 @@
     "share_link": "Partager le lien",
     "copy_url": "Copier l'URL",
     "load_error": "Impossible de charger ce niveau.",
-    "share_message": "Défie-moi sur Rush Hours ! Peux-tu battre ce niveau en {{moves}} coups ?\n{{url}}"
+    "share_message": "Défie-moi sur Rush Hours ! Peux-tu battre ce niveau en {{moves}} coups ?\n{{url}}",
+    "goal_title": "Objectif",
+    "goal_desc": "Faites glisser la voiture rouge vers la sortie en haut !"
   },
   "tutorial": {
     "title": "Tutoriel",
@@ -89,7 +91,13 @@
     "vertical_movement": "Mouvement vertical",
     "horizontal_movement": "Mouvement horizontal",
     "ready_desc": "Vous êtes prêt à attaquer la Carte du Monde.",
-    "start_playing": "Commencer à jouer"
+    "start_playing": "Commencer à jouer",
+    "step0_title": "Bienvenue dans Rush Hour !",
+    "step0_desc": "Le but est de faire sortir la voiture rouge par la sortie à droite.",
+    "step1_title": "Mouvement Vertical",
+    "step1_desc": "Essayez de faire glisser le bus vert vers le bas pour libérer le passage.",
+    "step2_title": "Mouvement Horizontal",
+    "step2_desc": "Maintenant, faites glisser la voiture cible jusqu'à la sortie à droite !"
   },
   "creator": {
     "title": "Créateur de Niveaux",

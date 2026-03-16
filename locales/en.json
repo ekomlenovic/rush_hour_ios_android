@@ -81,7 +81,9 @@
     "share_link": "Share Link",
     "copy_url": "Copy URL",
     "load_error": "Could not load this level.",
-    "share_message": "Challenge me on Rush Hours! Can you beat this level in {{moves}} moves?\n{{url}}"
+    "share_message": "Challenge me on Rush Hours! Can you beat this level in {{moves}} moves?\n{{url}}",
+    "goal_title": "Objective",
+    "goal_desc": "Slide the red car to the exit at the top!"
   },
   "tutorial": {
     "title": "Tutorial",
@@ -89,7 +91,13 @@
     "vertical_movement": "Vertical Movement",
     "horizontal_movement": "Horizontal Movement",
     "ready_desc": "You're ready to tackle the World Map.",
-    "start_playing": "Start Playing"
+    "start_playing": "Start Playing",
+    "step0_title": "Welcome to Rush Hour!",
+    "step0_desc": "The goal is to get the red car to the exit on the right.",
+    "step1_title": "Vertical Movement",
+    "step1_desc": "Try sliding the green bus down to clear the path.",
+    "step2_title": "Horizontal Movement",
+    "step2_desc": "Now slide the target car all the way to the right!"
   },
   "creator": {
     "title": "Level Creator",
