@@ -44,7 +44,7 @@ export default function HomeScreen() {
         [
           { text: t('common.later'), style: "cancel" },
           { 
-            text: t('common.download'), 
+            text: info.isStoreUpdate ? t('common.update') : t('common.download'), 
             onPress: () => info.downloadURL && Linking.openURL(info.downloadURL) 
           }
         ]
@@ -67,7 +67,7 @@ export default function HomeScreen() {
           [
             { text: t('common.later'), style: "cancel" },
             { 
-              text: t('common.download'), 
+              text: info.isStoreUpdate ? t('common.update') : t('common.download'), 
               onPress: () => info.downloadURL && Linking.openURL(info.downloadURL) 
             }
           ]

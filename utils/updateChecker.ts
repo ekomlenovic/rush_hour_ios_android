@@ -11,6 +11,7 @@ export interface UpdateInfo {
   latestVersion: string;
   currentVersion: string;
   downloadURL?: string;
+  isStoreUpdate?: boolean; // True if downloading via Play Store/App Store
   error?: string;
 }
 
@@ -36,11 +37,14 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
     const latestVersion = latestApp.version;
     const downloadURL = latestApp.downloadURL;
 
+    const isStoreUpdate = downloadURL?.includes('play.google.com') || downloadURL?.includes('apps.apple.com') || downloadURL?.startsWith('market://');
+
     return {
       isUpdateAvailable: isVersionGreater(latestVersion, currentVersion),
       latestVersion,
       currentVersion,
       downloadURL,
+      isStoreUpdate,
     };
   } catch (error) {
     console.error('Update check failed:', error);
