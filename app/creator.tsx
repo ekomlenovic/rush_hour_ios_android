@@ -18,7 +18,7 @@ const SNAP = (val: number) => {
   return withTiming(val, { duration: 110 });
 };
 
-const BOARD_PADDING = 20;
+const BOARD_PADDING = 32;
 const MINI_CELL = 30;
 
 // ─── Palettes et Données ──────────────────────────────────────────────────────
@@ -84,7 +84,8 @@ export default function LevelCreatorScreen() {
   const vehiclesRef = useRef<Vehicle[]>([]);
 
   const screenWidth = Dimensions.get('window').width;
-  const boardSize = screenWidth - BOARD_PADDING * 2;
+  const screenHeight = Dimensions.get('window').height;
+  const boardSize = Math.min(screenWidth - BOARD_PADDING * 2, screenHeight * 0.48);
   const cellSize = boardSize / gridSize;
 
   useEffect(() => { vehiclesRef.current = vehicles; }, [vehicles]);
@@ -147,20 +148,27 @@ export default function LevelCreatorScreen() {
       targetOrient = 'vertical'; 
     }
 
+    let newTargetRow = target.row;
+    let newTargetCol = target.col;
+    if (targetOrient === 'horizontal') {
+      newTargetCol = Math.min(target.col, gridSize - target.length);
+    } else {
+      newTargetRow = Math.min(target.row, gridSize - target.length);
+    }
+
+    if (hasCollision(newTargetRow, newTargetCol, targetOrient, target.length, 'target')) {
+      haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert(t('creator.collision_title'), t('creator.collision_desc'));
+      return;
+    }
+
     setExitRow(newExR);
     setExitCol(newExC);
 
     // Update target car to match orientation
     setVehicles(prev => prev.map(v => {
       if (v.id === 'target') {
-        const newV = { ...v, orientation: targetOrient };
-        // Ensure within bounds on swap
-        if (targetOrient === 'horizontal') {
-          newV.col = Math.min(v.col, gridSize - v.length);
-        } else {
-          newV.row = Math.min(v.row, gridSize - v.length);
-        }
-        return newV;
+        return { ...v, orientation: targetOrient, row: newTargetRow, col: newTargetCol };
       }
       return v;
     }));
@@ -172,15 +180,14 @@ export default function LevelCreatorScreen() {
     setGridSize(newSize);
     const newTargetRow = Math.floor(newSize / 2) - (newSize % 2 === 0 ? 1 : 0);
     setExitRow(newTargetRow);
-    setVehicles(prev => prev.map(v => 
-      v.id === 'target' 
-        ? { ...v, row: newTargetRow, col: Math.min(v.col, newSize - v.length) }
-        : { 
-            ...v, 
-            row: Math.min(v.row, newSize - (v.orientation === 'vertical' ? v.length : 1)),
-            col: Math.min(v.col, newSize - (v.orientation === 'horizontal' ? v.length : 1))
-          }
-    ));
+    setExitCol(newSize);
+    setVehicles(prev => {
+      const target = prev.find(v => v.id === 'target');
+      if (target) {
+        return [{ ...target, row: newTargetRow, col: Math.min(target.col, newSize - target.length), orientation: 'horizontal' }];
+      }
+      return [];
+    });
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
@@ -300,6 +307,7 @@ export default function LevelCreatorScreen() {
         return prev.map(item => item.id === id ? { ...item, orientation: newOrient, row: nr, col: nc } : item);
       } else {
         haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert(t('creator.collision_title'), t('creator.collision_desc'));
         return prev;
       }
     });
@@ -434,6 +442,7 @@ export default function LevelCreatorScreen() {
 
         {/* ── Board ── */}
         <View style={styles.boardWrapper}>
+          <View style={{ width: boardSize, height: boardSize }}>
             {/* Exit logic and flags */}
             {(() => {
               const isRight = exitCol >= gridSize && exitCol !== 255;
@@ -532,6 +541,7 @@ export default function LevelCreatorScreen() {
               />
             ))}
           </View>
+          </View>
           <Text style={[styles.hint, { color: C.sub }]}>{t('creator.hint_text')}</Text>
         </View>
 
@@ -558,7 +568,7 @@ export default function LevelCreatorScreen() {
                   onPress={() => handleExitSideChange(side)}
                   style={[styles.sizePill, active && { backgroundColor: C.accent }]}
                 >
-                  <Text style={[styles.sizePillText, { color: active ? '#FFF' : C.sub }]}>{side}</Text>
+                  <Text style={[styles.sizePillText, { color: active ? '#FFF' : C.sub }]}>{t(`creator.${side.toLowerCase()}`)}</Text>
                 </Pressable>
               );
             })}
