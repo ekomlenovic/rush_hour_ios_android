@@ -52,7 +52,7 @@ export default function GameScreen() {
     const url = getShareUrl(currentLevel);
     try {
       await Share.share({
-        message: t('game.share_message', { moves: minMoves, url: url, defaultValue: `Challenge me on Rush Hours! Can you beat this level in ${minMoves} moves?\n${url}` }),
+        message: t('game.share_message', { moves: minMoves, url: url }),
         url: url,
       });
     } catch (error) {
@@ -65,7 +65,7 @@ export default function GameScreen() {
     const url = getShareUrl(currentLevel);
     Clipboard.setString(url);
     haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert(t('common.copied', { defaultValue: 'Copied!' }), t('common.link_copied', { defaultValue: 'Link copied to clipboard.' }));
+    Alert.alert(t('common.copied'), t('common.link_copied'));
   };
 
   // Load the level and compute the real minMoves via BFS
@@ -145,7 +145,7 @@ export default function GameScreen() {
           // Redirect back or show error
           console.error("Level not found for ID:", id);
           if (idParam) {
-            Alert.alert(t('common.error', { defaultValue: 'Error' }), t('game.load_error', { defaultValue: 'Could not load this level.' }));
+            Alert.alert(t('common.error'), t('game.load_error'));
             router.back();
           }
         }
@@ -266,13 +266,13 @@ export default function GameScreen() {
       <View style={[styles.container, { backgroundColor: colors.bg, justifyContent: 'center', alignItems: 'center' }]}>
         <Animated.View entering={FadeIn.duration(400)} style={{ alignItems: 'center' }}>
           <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={[styles.loadingText, { color: colors.sub }]}>{t('game.preparing_puzzle', { defaultValue: 'Preparing Puzzle...' })}</Text>
+          <Text style={[styles.loadingText, { color: colors.sub }]}>{t('game.preparing_puzzle')}</Text>
           {isMondayDaily && (
             <Animated.Text 
               entering={FadeInDown.delay(1000)}
               style={[styles.mondayWarning, { color: colors.sub }]}
             >
-              {t('game.monday_warning', { defaultValue: "It's Monday! This hard puzzle may take a moment to generate..." })}
+              {t('game.monday_warning')}
             </Animated.Text>
           )}
         </Animated.View>
@@ -286,10 +286,10 @@ export default function GameScreen() {
       {/* Header */}
       <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={[styles.backText, { color: colors.sub }]}>← {t('common.map', { defaultValue: 'Map' })}</Text>
+          <Text style={[styles.backText, { color: colors.sub }]}>← {t('common.map')}</Text>
         </Pressable>
         <Text style={[styles.levelTitle, { color: colors.text }]}>
-          {params.levelId === 'daily' ? t('home.daily_challenge', { defaultValue: 'Daily Challenge' }) : t('game.level_count', { id: currentLevel.id, defaultValue: `Level ${currentLevel.id}` })}
+          {params.levelId === 'daily' ? t('home.daily_challenge') : t('game.level_count', { id: currentLevel.id })}
         </Text>
         <Pressable onPress={() => setShareVisible(true)} style={styles.shareHeaderBtn}>
           <Text style={{ fontSize: 22 }}>📤</Text>
@@ -307,13 +307,13 @@ export default function GameScreen() {
             <Text style={[styles.statLabel, { color: colors.sub }]}>{t('game.best')}</Text>
             <Text style={[styles.statValue, { color: colors.text }]}>
               {minMoves}
-              {hintRemainingMoves ? <Text style={{ color: colors.hint, fontSize: 13 }}> ({t('game.hint_left', { count: hintRemainingMoves, defaultValue: `${hintRemainingMoves} left` })})</Text> : null}
+              {hintRemainingMoves ? <Text style={{ color: colors.hint, fontSize: 13 }}> ({t('game.hint_left', { count: hintRemainingMoves })})</Text> : null}
             </Text>
           </View>
         </View>
         <View style={[styles.divider, { backgroundColor: colors.sub }]} />
         <View style={styles.stat}>
-          <Text style={[styles.statLabel, { color: colors.sub }]}>{t('game.score', { defaultValue: 'Score' })}</Text>
+          <Text style={[styles.statLabel, { color: colors.sub }]}>{t('game.score')}</Text>
           <Text style={[styles.statValue, { color: score > 0 ? '#10B981' : colors.sub }]}>{score}</Text>
         </View>
       </Animated.View>
@@ -344,15 +344,15 @@ export default function GameScreen() {
             <Text style={styles.winStars}>
               {'⭐'.repeat(stars)}{'☆'.repeat(3 - stars)}
             </Text>
-            <Text style={[styles.winTitle, { color: colors.accent }]}>{t('game.level_complete', { defaultValue: 'Level Complete!' })}</Text>
+            <Text style={[styles.winTitle, { color: colors.accent }]}>{t('game.level_complete')}</Text>
             <Text style={[styles.winScore, { color: colors.text }]}>
-              {t('game.win_stats', { moves: moveCount, best: minMoves, score: score, defaultValue: `${moveCount} moves · Best: ${minMoves} · Score: ${score}` })}
+              {t('game.win_stats', { moves: moveCount, best: minMoves, score: score })}
             </Text>
             <Pressable
               style={[styles.winButton, { backgroundColor: colors.accent }]}
               onPress={() => router.back()}
             >
-             <Text style={styles.winButtonText}>{t('common.continue', { defaultValue: 'Continue' })}</Text>
+             <Text style={styles.winButtonText}>{t('common.continue')}</Text>
             </Pressable>
           </Animated.View>
         </Animated.View>
@@ -366,7 +366,7 @@ export default function GameScreen() {
           style={[styles.hintPill, { backgroundColor: isDark ? 'rgba(245,158,11,0.15)' : 'rgba(217,119,6,0.1)' }]}
         >
           <ActivityIndicator size="small" color={colors.hint} />
-          <Text style={[styles.hintPillText, { color: colors.hint }]}>{t('game.analyzing', { defaultValue: 'Analyzing Puzzle...' })}</Text>
+          <Text style={[styles.hintPillText, { color: colors.hint }]}>{t('game.analyzing')}</Text>
         </Animated.View>
       )}
 
@@ -407,7 +407,7 @@ export default function GameScreen() {
           <BlurView intensity={30} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
           <Animated.View entering={FadeInDown.springify()} style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('game.share_level', { defaultValue: 'Share Level' })}</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('game.share_level')}</Text>
               <Pressable onPress={() => setShareVisible(false)}>
                 <Text style={{ fontSize: 20, color: colors.sub, padding: 8 }}>✕</Text>
               </Pressable>
@@ -418,7 +418,7 @@ export default function GameScreen() {
                     source={{ uri: getQRCodeUrl(getShareUrl(currentLevel)) }} 
                      style={styles.qrCode} 
                 />
-                <Text style={[styles.qrHint, { color: colors.sub }]}>{t('game.qr_hint', { defaultValue: 'Scan to challenge a friend!' })}</Text>
+                <Text style={[styles.qrHint, { color: colors.sub }]}>{t('game.qr_hint')}</Text>
             </View>
 
             <View style={styles.shareButtonsRow}>
@@ -426,13 +426,13 @@ export default function GameScreen() {
                   style={[styles.mainBtn, { backgroundColor: colors.accent, flex: 1 }]}
                   onPress={handleShare}
                 >
-                   <Text style={styles.mainBtnText}>{t('game.share_link', { defaultValue: 'Share Link' })}</Text>
+                   <Text style={styles.mainBtnText}>{t('game.share_link')}</Text>
                 </Pressable>
                 <Pressable
                   style={[styles.mainBtn, { backgroundColor: colors.sub, flex: 1 }]}
                   onPress={handleCopyLink}
                 >
-                   <Text style={styles.mainBtnText}>{t('game.copy_url', { defaultValue: 'Copy URL' })}</Text>
+                   <Text style={styles.mainBtnText}>{t('game.copy_url')}</Text>
                 </Pressable>
             </View>
           </Animated.View>

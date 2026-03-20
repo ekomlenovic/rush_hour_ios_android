@@ -29,7 +29,9 @@
     "import": "Import",
     "language": "Language",
     "en": "English",
-    "fr": "French"
+    "fr": "French",
+    "checking": "Checking...",
+    "done": "Done"
   },
   "home": {
     "world_map": "Play",
@@ -49,7 +51,8 @@
     "update_desc": "A new version ({{version}}) is available. Would you like to download it?",
     "check_for_update": "Check for Update",
     "hard_reset_confirm_desc": "This will erase EVERYTHING: all your progress, stars, and custom levels. Are you sure?",
-    "hard_reset_confirm_btn": "Yes, Reset Everything"
+    "hard_reset_confirm_btn": "Yes, Reset Everything",
+    "done": "Done"
   },
   "map": {
     "title": "Play",
@@ -61,7 +64,19 @@
     "level_generator": "Level Generator",
     "reset_custom": "Reset Custom Levels",
     "request_github": "Request New Levels on GitHub",
-    "hard_reset_progress": "Hard Reset Progress"
+    "hard_reset_progress": "Hard Reset Progress",
+    "grid_size_label": "Grid Size:",
+    "generator_warning": "⚠️ Note: Complex level generation (Expert/Master) can be resource-intensive on mobile devices.",
+    "grid_size": "Grid Size: {{size}}x{{size}}",
+    "amount_to_create": "Amount to create: {{amount}}",
+    "generating": "⏳ Generation in Progress...",
+    "generating_levels": "Generating Levels",
+    "generate_btn": "Generate {{amount}} Levels (~{{time}}s)",
+    "community_levels": "Community & Levels",
+    "scroll_hint": "Scroll for more content ↓",
+    "canceling": "Canceling...",
+    "generation_progress": "{{current}} of {{total}} levels ready !",
+    "time_left": "{{seconds}}s left"
   },
   "game": {
     "best": "Best",
@@ -149,5 +164,12 @@
     "create_new": "Create New Level",
     "import_success": "Level imported successfully!",
     "import_error": "Invalid level URL or code."
+  },
+  "difficulty": {
+    "EASY": "Easy",
+    "NORMAL": "Normal",
+    "HARD": "Hard",
+    "EXPERT": "Expert",
+    "MASTER": "Master"
   }
 }

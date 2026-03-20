@@ -29,7 +29,9 @@
     "import": "Importer",
     "language": "Langue",
     "en": "Anglais",
-    "fr": "Français"
+    "fr": "Français",
+    "checking": "Vérification...",
+    "done": "Terminé"
   },
   "home": {
     "world_map": "Jouer",
@@ -49,7 +51,8 @@
     "update_desc": "Une nouvelle version ({{version}}) est disponible. Souhaitez-vous la télécharger ?",
     "check_for_update": "Vérifier les mises à jour",
     "hard_reset_confirm_desc": "Cela effacera TOUT : votre progression, vos étoiles et vos niveaux personnalisés. Êtes-vous sûr ?",
-    "hard_reset_confirm_btn": "Oui, tout réinitialiser"
+    "hard_reset_confirm_btn": "Oui, tout réinitialiser",
+    "done": "Terminé"
   },
   "map": {
     "title": "Jouer",
@@ -61,7 +64,19 @@
     "level_generator": "Générateur de Niveaux",
     "reset_custom": "Réinitialiser les niveaux personnalisés",
     "request_github": "Demander de nouveaux niveaux sur GitHub",
-    "hard_reset_progress": "Réinitialiser la progression"
+    "hard_reset_progress": "Réinitialiser la progression",
+    "grid_size_label": "Taille de la grille :",
+    "generator_warning": "⚠️ Note : La génération de niveaux complexes (Expert/Master) peut être intensive pour les ressources sur les appareils mobiles.",
+    "grid_size": "Taille de la grille : {{size}}x{{size}}",
+    "amount_to_create": "Nombre à créer : {{amount}}",
+    "generating": "⏳ Génération en cours...",
+    "generating_levels": "Générations de niveaux",
+    "generate_btn": "Générer {{amount}} niveaux (~{{time}}s)",
+    "community_levels": "Communauté & Niveaux",
+    "scroll_hint": "Faites défiler pour plus de contenu ↓",
+    "canceling": "Annulation...",
+    "generation_progress": "{{current}} sur {{total}} niveaux prêts !",
+    "time_left": "{{seconds}}s restantes"
   },
   "game": {
     "best": "Meilleur",
@@ -149,5 +164,12 @@
     "create_new": "Créer un nouveau niveau",
     "import_success": "Niveau importé avec succès !",
     "import_error": "Lien ou code de niveau invalide."
+  },
+  "difficulty": {
+    "EASY": "Facile",
+    "NORMAL": "Normal",
+    "HARD": "Difficile",
+    "EXPERT": "Expert",
+    "MASTER": "Maître"
   }
 }

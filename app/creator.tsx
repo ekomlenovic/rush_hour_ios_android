@@ -336,16 +336,16 @@ export default function LevelCreatorScreen() {
   const handleTest = () => {
     const minMoves = validateLevel(vehicles, gridSize, exitRow, exitCol);
     if (minMoves === -1) {
-      Alert.alert(t('creator.unsolvable_title', { defaultValue: 'Unsolvable ✗' }), t('creator.unsolvable_desc', { defaultValue: 'No valid solution found. Keep adjusting!' }));
+      Alert.alert(t('creator.unsolvable_title'), t('creator.unsolvable_desc'));
     } else {
-      Alert.alert(t('creator.solvable_title', { defaultValue: 'Solvable ✓' }), t('creator.solvable_desc', { count: minMoves, defaultValue: `Minimum ${minMoves} move${minMoves === 1 ? '' : 's'} to complete.` }));
+      Alert.alert(t('creator.solvable_title'), t('creator.solvable_desc', { count: minMoves }));
     }
   };
 
   const handleSave = () => {
     const minMoves = validateLevel(vehicles, gridSize, exitRow, exitCol);
     if (minMoves === -1) {
-      Alert.alert(t('creator.unsolvable_title', { defaultValue: 'Unsolvable' }), t('creator.fix_before_save', { defaultValue: 'Fix the level before saving.' }));
+      Alert.alert(t('creator.unsolvable_title'), t('creator.fix_before_save'));
       return;
     }
     const isImported = params.levelId && importedLevels.some(l => l.id === parseInt(params.levelId));
@@ -353,7 +353,7 @@ export default function LevelCreatorScreen() {
     const newLevel: Level = { id: newId, gridSize, vehicles, exitRow, exitCol, minMoves, updatedAt: Date.now() };
     saveCreatedLevel(newLevel);
     haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert(t('common.saved', { defaultValue: 'Saved!' }), isImported ? t('creator.saved_new', { defaultValue: 'Saved as a new level.' }) : t('creator.level_updated', { defaultValue: 'Level updated.' }), [
+    Alert.alert(t('common.saved'), isImported ? t('creator.saved_new') : t('creator.level_updated'), [
       { text: t('common.ok'), onPress: () => router.back() },
     ]);
   };
@@ -412,7 +412,7 @@ export default function LevelCreatorScreen() {
 
         {/* ── Grid Size Selector (Sub-header) ── */}
         <View style={styles.subHeader}>
-          <Text style={[styles.subTitle, { color: C.sub }]}>{t('map.grid_size_label', { defaultValue: 'Grid Size:' })}</Text>
+          <Text style={[styles.subTitle, { color: C.sub }]}>{t('map.grid_size_label')}</Text>
           <View style={styles.gridSizeSelector}>
             {GRID_SIZES.map(s => (
               <Pressable 
@@ -532,12 +532,12 @@ export default function LevelCreatorScreen() {
               />
             ))}
           </View>
-          <Text style={[styles.hint, { color: C.sub }]}>{t('creator.hint_text', { defaultValue: 'Drag to move  ·  Tap to rotate  ·  Long press to remove' })}</Text>
+          <Text style={[styles.hint, { color: C.sub }]}>{t('creator.hint_text')}</Text>
         </View>
 
         {/* ── Exit Side Selector ── */}
         <View style={styles.subHeader}>
-          <Text style={[styles.subTitle, { color: C.sub }]}>{t('creator.exit_label', { defaultValue: 'Exit:' })}</Text>
+          <Text style={[styles.subTitle, { color: C.sub }]}>{t('creator.exit_label')}</Text>
           <View style={styles.gridSizeSelector}>
             {(['Right', 'Left', 'Top', 'Bottom'] as const).map(side => {
               const target = vehicles.find(v => v.id === 'target');
@@ -742,7 +742,7 @@ function ToolboxItem({ template, colors, onDragUpdate, onDrop }: ToolboxItemProp
         </View>
 
         <View style={styles.toolLabels}>
-          <Text style={[styles.toolName, { color: colors.text }]}>{t(`creator.${template.label.toLowerCase()}`, { defaultValue: template.label })}</Text>
+          <Text style={[styles.toolName, { color: colors.text }]}>{t(`creator.${template.label.toLowerCase()}`)}</Text>
           <View style={[styles.toolBadge, { backgroundColor: template.color + '28', borderColor: template.color + '55' }]}>
             <Text style={[styles.toolBadgeText, { color: template.color }]}>{dir} {size}</Text>
           </View>
