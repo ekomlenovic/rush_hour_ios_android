@@ -40,7 +40,7 @@ export default function HomeScreen() {
     if (info.isUpdateAvailable) {
       Alert.alert(
         t('common.update_available'),
-        t('home.update_desc', { version: info.latestVersion, defaultValue: `A new version (${info.latestVersion}) is available. Would you like to download it?` }),
+        t('home.update_desc', { version: info.latestVersion }),
         [
           { text: t('common.later'), style: "cancel" },
           { 
@@ -63,7 +63,7 @@ export default function HomeScreen() {
       if (info.isUpdateAvailable) {
         Alert.alert(
           t('common.update_available'),
-          t('home.update_desc', { version: info.latestVersion, defaultValue: `A new version (${info.latestVersion}) is available. Would you like to download it?` }),
+          t('home.update_desc', { version: info.latestVersion }),
           [
             { text: t('common.later'), style: "cancel" },
             { 
@@ -80,11 +80,11 @@ export default function HomeScreen() {
   const handleHardReset = () => {
     Alert.alert(
       t('common.hard_reset'),
-      t('home.hard_reset_confirm_desc', { defaultValue: "This will erase EVERYTHING: all your progress, stars, and custom levels. Are you sure?" }),
+      t('home.hard_reset_confirm_desc'),
       [
         { text: t('common.cancel'), style: "cancel" },
         {
-          text: t('home.hard_reset_confirm_btn', { defaultValue: "Yes, Reset Everything" }),
+          text: t('home.hard_reset_confirm_btn'),
           style: "destructive",
           onPress: () => {
             hardReset();
@@ -119,7 +119,7 @@ export default function HomeScreen() {
         entering={FadeInUp.delay(400).springify()}
         style={[styles.subtitle, { color: colors.sub }]}
       >
-        {t('home.subtitle', { defaultValue: 'Slide. Think. Escape.' })}
+        {t('home.subtitle')}
       </Animated.Text>
 
       <AnimatedPressable
@@ -143,7 +143,7 @@ export default function HomeScreen() {
         }}
       >
         <Text style={[styles.secondaryText, { color: dailyStatus?.completed ? colors.success : colors.accent }]}>
-          {dailyStatus?.completed ? t('home.daily_done', { stars: dailyStatus.stars, defaultValue: `Daily Done! ⭐${dailyStatus.stars}` }) : t('home.daily_challenge', { defaultValue: 'Daily Challenge' })}
+          {dailyStatus?.completed ? t('home.daily_done', { stars: dailyStatus.stars }) : t('home.daily_challenge')}
         </Text>
 
       </AnimatedPressable>
@@ -266,7 +266,7 @@ export default function HomeScreen() {
                 style={[styles.updateButton, { backgroundColor: colors.card }]}
               >
                 <Text style={[styles.updateButtonText, { color: colors.accent }]}>
-                  {isCheckingUpdate ? t('common.checking', { defaultValue: 'Checking...' }) : t('home.check_for_update', { defaultValue: 'Check for Update' })}
+                  {isCheckingUpdate ? t('common.checking') : t('home.check_for_update')}
                 </Text>
               </Pressable>
             </View>
@@ -283,7 +283,7 @@ export default function HomeScreen() {
               style={[styles.closeButton, { backgroundColor: colors.accent }]}
               onPress={() => setSettingsVisible(false)}
             >
-              <Text style={styles.closeButtonText}>{t('common.done', { defaultValue: 'Done' })}</Text>
+              <Text style={styles.closeButtonText}>{t('common.done')}</Text>
             </Pressable>
 
           </View>

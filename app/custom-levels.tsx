@@ -31,8 +31,8 @@ export default function CustomLevelsScreen() {
 
     const handleDelete = (id: number) => {
         Alert.alert(
-            t('custom_levels.delete_title', { defaultValue: 'Delete Level' }),
-            t('custom_levels.delete_confirm', { defaultValue: 'Are you sure you want to delete this level?' }),
+            t('custom_levels.delete_title'),
+            t('custom_levels.delete_confirm'),
             [
                 { text: t('common.cancel'), style: "cancel" },
                 {
@@ -56,10 +56,10 @@ export default function CustomLevelsScreen() {
             addImportedLevel(level);
             setImportUrl('');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert(t('common.success'), t('custom_levels.import_success', { defaultValue: 'Level imported successfully!' }));
+            Alert.alert(t('common.success'), t('custom_levels.import_success'));
         } else {
             haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert(t('common.error'), t('custom_levels.import_error', { defaultValue: 'Invalid level URL or code.' }));
+            Alert.alert(t('common.error'), t('custom_levels.import_error'));
         }
     };
 
@@ -90,8 +90,8 @@ export default function CustomLevelsScreen() {
                 style={[styles.levelCard, { backgroundColor: colors.card }]}
             >
                 <View style={styles.levelInfo}>
-                    <Text style={[styles.levelTitle, { color: colors.text }]}>{t('game.level_count', { id: item.id, defaultValue: `Level #${item.id}` })}</Text>
-                    <Text style={[styles.levelSub, { color: colors.sub }]}>{t('custom_levels.level_stats', { count: item.vehicles.length, moves: item.minMoves, defaultValue: `${item.vehicles.length} vehicles • ${item.minMoves} min moves` })}</Text>
+                    <Text style={[styles.levelTitle, { color: colors.text }]}>{t('game.level_count', { id: item.id })}</Text>
+                    <Text style={[styles.levelSub, { color: colors.sub }]}>{t('custom_levels.level_stats', { count: item.vehicles.length, moves: item.minMoves })}</Text>
                 </View>
                 <View style={styles.actions}>
                     <Pressable
@@ -165,7 +165,7 @@ export default function CustomLevelsScreen() {
                     <View style={styles.inputContainer}>
                          <TextInput
                             style={[styles.input, { color: colors.text, borderColor: colors.sub + '22' }]}
-                            placeholder={t('custom_levels.import_placeholder', { defaultValue: 'Level link or code...' })}
+                            placeholder={t('custom_levels.import_placeholder')}
                             placeholderTextColor={colors.sub}
                             value={importUrl}
                             onChangeText={setImportUrl}

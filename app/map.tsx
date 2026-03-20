@@ -284,11 +284,11 @@ export default function MapScreen() {
   const handleHardReset = () => {
     Alert.alert(
       t('common.hard_reset'),
-      t('home.hard_reset_confirm_desc', { defaultValue: "This will erase EVERYTHING: all your progress, stars, and custom levels. Are you sure?" }),
+      t('home.hard_reset_confirm_desc'),
       [
         { text: t('common.cancel'), style: "cancel" },
         {
-          text: t('home.hard_reset_confirm_btn', { defaultValue: "Yes, Reset Everything" }),
+          text: t('home.hard_reset_confirm_btn'),
           style: "destructive",
           onPress: () => {
             hardReset();
@@ -349,7 +349,7 @@ export default function MapScreen() {
       <Animated.View entering={FadeInUp.delay(100).springify()} style={[styles.header, { backgroundColor: isDark ? 'rgba(15,15,26,0.85)' : 'rgba(245,245,250,0.85)' }]}>
         <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={[styles.backText, { color: colors.sub }]}>← {t('common.home', { defaultValue: 'Home' })}</Text>
+          <Text style={[styles.backText, { color: colors.sub }]}>← {t('common.home')}</Text>
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.text }]}>{t('map.title')}</Text>
         <Pressable onPress={() => setSettingsVisible(true)} style={styles.settingsButton}>
@@ -532,11 +532,11 @@ export default function MapScreen() {
               <Text style={[styles.sectionTitle, { color: colors.accent }]}>{t('map.level_generator')}</Text>
 
               <Text style={[styles.settingSub, { color: '#F59E0B', marginBottom: 16, fontWeight: '600' }]}>
-                {t('map.generator_warning', { defaultValue: '⚠️ Note: Complex level generation (Expert/Master) can be resource-intensive on mobile devices.' })}
+                {t('map.generator_warning')}
               </Text>
 
               <View style={styles.settingBlock}>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('creator.difficulty')}: {genDifficulty}</Text>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('creator.difficulty')}: {t(`difficulty.${genDifficulty}`)}</Text>
                 <View style={styles.buttonSegmentGroup}>
                   {(['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER'] as const).map(diff => (
                     <Pressable
@@ -552,7 +552,7 @@ export default function MapScreen() {
                         numberOfLines={1}
                         adjustsFontSizeToFit
                       >
-                        {diff}
+                        {t(`difficulty.${diff}`)}
                       </Text>
                     </Pressable>
                   ))}
@@ -560,7 +560,7 @@ export default function MapScreen() {
               </View>
 
               <View style={styles.settingBlock}>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('map.grid_size', { size: genGridSize, defaultValue: `Grid Size: ${genGridSize}x${genGridSize}` })}</Text>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('map.grid_size', { size: genGridSize })}</Text>
                 <View style={styles.buttonSegmentGroup}>
                   {[6, 7, 8].map(size => (
                     <Pressable
@@ -579,7 +579,7 @@ export default function MapScreen() {
 
 
               <View style={styles.settingBlock}>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('map.amount_to_create', { amount: genAmount, defaultValue: `Amount to create: ${genAmount}` })}</Text>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('map.amount_to_create', { amount: genAmount })}</Text>
                 <View style={styles.buttonSegmentGroup}>
                   {[1, 5, 10, 20].map(amt => (
                     <Pressable
@@ -603,7 +603,7 @@ export default function MapScreen() {
                   disabled={isGenerating}
                 >
                   <Text style={styles.mainBtnText}>
-                    {isGenerating ? t('map.generating', { defaultValue: '⏳ Generation in Progress...' }) : t('map.generate_btn', { amount: genAmount, time: Math.ceil((genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000), defaultValue: `Generate ${genAmount} Levels (~${Math.ceil((genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000)}s)` })}
+                    {isGenerating ? t('map.generating') : t('map.generate_btn', { amount: genAmount, time: Math.ceil((genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000) })}
                   </Text>
                 </Pressable>
 
@@ -618,7 +618,7 @@ export default function MapScreen() {
 
                 <View style={[styles.divider, { backgroundColor: colors.sub, marginVertical: 12 }]} />
 
-                <Text style={[styles.sectionTitle, { color: colors.accent, marginBottom: 8 }]}>{t('map.community_levels', { defaultValue: 'Community & Levels' })}</Text>
+                <Text style={[styles.sectionTitle, { color: colors.accent, marginBottom: 8 }]}>{t('map.community_levels')}</Text>
                 <Pressable
                   style={[styles.mainBtn, { backgroundColor: '#24292e', marginBottom: 12 }]}
                   onPress={() => Linking.openURL('https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?title=Request:%20New%20Complex%20Levels&body=I%20would%20like%20to%20see%20more%20high-difficulty%20levels%21')}
@@ -637,7 +637,7 @@ export default function MapScreen() {
 
             {!settingsScrolledToBottom && (
               <Animated.View entering={FadeInDown} style={styles.scrollHint}>
-                <Text style={{ color: colors.accent, fontWeight: '700', fontSize: RFValue(12) }}>{t('map.scroll_hint', { defaultValue: 'Scroll for more content ↓' })}</Text>
+                <Text style={{ color: colors.accent, fontWeight: '700', fontSize: RFValue(12) }}>{t('map.scroll_hint')}</Text>
               </Animated.View>
             )}
           </View>
@@ -658,7 +658,7 @@ export default function MapScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <ActivityIndicator color={generationState.shouldCancel ? '#EF4444' : colors.accent} size="small" />
               <Text style={[styles.pillTitle, { color: generationState.shouldCancel ? '#EF4444' : colors.text }]}>
-                {generationState.shouldCancel ? t('map.canceling', { defaultValue: 'Canceling...' }) : t('map.generating_levels', { defaultValue: 'Generating Levels' })}
+                {generationState.shouldCancel ? t('map.canceling') : t('map.generating_levels')}
               </Text>
             </View>
             {!generationState.shouldCancel && (
@@ -688,11 +688,11 @@ export default function MapScreen() {
           {/* Count and time */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text style={[styles.pillSub, { color: colors.sub }]}>
-              {t('map.generation_progress', { current: generationState.current, total: generationState.total, defaultValue: `${generationState.current} of ${generationState.total} levels ready !` })}
+              {t('map.generation_progress', { current: generationState.current, total: generationState.total })}
             </Text>
             {generationState.estimatedRemainingSeconds > 0 && !generationState.shouldCancel && (
               <Text style={[styles.pillSub, { color: colors.accent, fontWeight: '600' }]}>
-                ~{t('map.time_left', { seconds: generationState.estimatedRemainingSeconds, defaultValue: `${generationState.estimatedRemainingSeconds}s left` })}
+                ~{t('map.time_left', { seconds: generationState.estimatedRemainingSeconds })}
               </Text>
             )}
           </View>
