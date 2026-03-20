@@ -198,18 +198,26 @@ export default function MapScreen() {
 
   // Synchronously calculate initial scroll position to avoid "teleportation"
   const initialY = useMemo(() => {
-    const targetId = lastPlayedLevelId || maxUnlockedLevel;
+    const targetId = (lastPlayedLevelId && lastPlayedLevelId < 900000) ? lastPlayedLevelId : maxUnlockedLevel;
     const targetNode = pathPoints.find(p => p.id === targetId);
     if (targetNode) {
       return Math.max(0, targetNode.y - screenHeight / 2 + 50);
     }
-    return 0;
+    // Fallback to BOTTOM of map (where level 1 is) if target not found
+    return Math.max(0, totalHeight - screenHeight);
   }, [pathPoints, lastPlayedLevelId, maxUnlockedLevel, screenHeight]);
 
   // Set initial scroll state
   useEffect(() => {
     setScrollY(initialY);
-  }, [initialY]);
+    // Force scroll after a short delay once ready
+    if (isReady) {
+      const timer = setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ y: initialY, animated: false });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [initialY, isReady]);
 
   // Custom Generator Logic
   const handleGenerateCustomLevels = async () => {
@@ -293,12 +301,17 @@ export default function MapScreen() {
   };
 
   useEffect(() => {
+    // Sanitization: Fix corrupted maxUnlockedLevel if it's a legacy Daily ID (999999)
+    if (maxUnlockedLevel >= 900000) {
+      useGameStore.setState({ maxUnlockedLevel: sampleLevels.length + 1 });
+    }
+
     // Defer heavy rendering until after navigation transition
     const task = InteractionManager.runAfterInteractions(() => {
       setIsReady(true);
     });
     return () => task.cancel();
-  }, []);
+  }, [maxUnlockedLevel]);
 
   useEffect(() => {
     // Reset generation state on mount to prevent stuck "Canceling..." state

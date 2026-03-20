@@ -68,7 +68,7 @@ export async function generateDailyLevel(dateStr: string): Promise<Level | null>
   const difficulty = isMonday ? DIFFICULTY_LEVELS.HARD : DIFFICULTY_LEVELS.NORMAL;
   // Use timestamp for daily ID: ensuring it changes every day
 
-  const dailyId = Date.parse(dateStr) || 999999;
+  const dailyId = 999999;
 
   try {
     // We use a small timeout to allow UI to breathe

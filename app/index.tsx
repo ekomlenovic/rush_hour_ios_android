@@ -129,7 +129,7 @@ export default function HomeScreen() {
           router.push('/map');
         }}
       >
-        <Text style={styles.playText}>{t('home.world_map')}</Text>
+        <Text style={styles.playText}>{t('home.world_map') || 'Play'}</Text>
       </AnimatedPressable>
 
       <AnimatedPressable
