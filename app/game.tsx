@@ -37,8 +37,6 @@ export default function GameScreen() {
   const cancelGeneration = useGameStore(s => s.cancelGeneration);
   const currentDailyLevel = useGameStore(s => s.currentDailyLevel);
   const dailyLevelDate = useGameStore(s => s.dailyLevelDate);
-  const dailyChallengeSaveState = useGameStore(s => s.dailyChallengeSaveState);
-  const saveDailyState = useGameStore(s => s.saveDailyState);
 
   const [won, setWon] = useState(false);
   const [isLoading, setLoading] = useState(true);
@@ -139,12 +137,7 @@ export default function GameScreen() {
         }
 
         if (level && level.vehicles && level.vehicles.length > 0) {
-          // If it's the daily challenge and we have a saved state, load it
-          if (idParam === 'daily' && dailyChallengeSaveState) {
-            loadLevel(level, dailyChallengeSaveState);
-          } else {
-            loadLevel(level);
-          }
+          loadLevel(level);
           setComputedMinMoves(level.minMoves > 0 ? level.minMoves : null);
           setLoading(false);
         } else {
@@ -192,14 +185,8 @@ export default function GameScreen() {
       } else {
         completeLevel(currentLevel.id, score, stars);
       }
-    } else {
-      // If it's a daily challenge and NOT won, save progress
-      const idParam = params.levelId;
-      if (idParam === 'daily') {
-        saveDailyState(updatedVehicles, updatedMoveCount, useGameStore.getState().history);
-      }
     }
-  }, [won, moveVehicle, currentLevel, computedMinMoves, completeLevel, params.levelId, (params as any).date, saveDailyState]);
+  }, [won, moveVehicle, currentLevel, computedMinMoves, completeLevel, params.levelId, (params as any).date]);
 
   const handleUndo = useCallback(() => {
     undo();

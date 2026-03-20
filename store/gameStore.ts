@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
+import { sampleLevels } from '../data/sampleLevels';
 
 /** Describes a single vehicle/block on the grid */
 export interface Vehicle {
@@ -46,6 +47,13 @@ export interface LevelProgress {
   stars?: number;
 }
 
+/** Saved state for an ongoing level session */
+export interface LevelSaveState {
+  vehicles: Vehicle[];
+  moveCount: number;
+  history: Vehicle[][];
+}
+
 interface GenerationState {
   isRunning: boolean;
   current: number;
@@ -87,8 +95,8 @@ interface GameState {
   dailyLevelDate: string | null;
   generationState: GenerationState;
 
-  /** Daily challenge saved state (to prevent reset on leave) */
-  dailyChallengeSaveState: { vehicles: Vehicle[]; moveCount: number; history: Vehicle[][] } | null;
+  /** Per-level saved state (to prevent reset on leave), keyed by levelId or "daily-YYYY-MM-DD" */
+  savedStates: Record<string | number, LevelSaveState>;
 
   /** Audio Enabled state */
   isMusicEnabled: boolean;
@@ -96,7 +104,7 @@ interface GameState {
   isHapticsEnabled: boolean;
 
   // Actions
-  loadLevel: (level: Level, savedState?: { vehicles: Vehicle[]; moveCount: number; history: Vehicle[][] }) => void;
+  loadLevel: (level: Level, savedState?: LevelSaveState) => void;
   moveVehicle: (vehicleId: string, newRow: number, newCol: number) => void;
   undo: () => void;
   resetLevel: () => void;
@@ -113,7 +121,6 @@ interface GameState {
   toggleMusicEnabled: () => void;
   toggleHapticsEnabled: () => void;
   setGenerationState: (state: Partial<GenerationState>) => void;
-  saveDailyState: (vehicles: Vehicle[], moveCount: number, history: Vehicle[][]) => void;
   cancelGeneration: () => void;
   hardReset: () => void;
 }
@@ -123,249 +130,291 @@ export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
       currentLevel: null,
-  vehicles: [],
-  moveCount: 0,
-  history: [],
-  progress: [],
-  maxUnlockedLevel: 1,
-  lastPlayedLevelId: null,
-  generatedLevels: [],
-  importedLevels: [],
-  createdLevels: [],
-  dailyChallengeProgress: {},
-  achievements: [],
-  currentDailyLevel: null,
-  dailyLevelDate: null,
-  dailyChallengeSaveState: null,
-  isMusicEnabled: true,
-  isHapticsEnabled: true,
-  generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
-
-  loadLevel: (level: Level, savedState?: { vehicles: Vehicle[]; moveCount: number; history: Vehicle[][] }) => {
-    set({
-      currentLevel: level,
-      vehicles: savedState ? savedState.vehicles : level.vehicles.map((v) => ({ ...v })),
-      moveCount: savedState ? savedState.moveCount : 0,
-      history: savedState ? savedState.history : [],
-      lastPlayedLevelId: level.id === 999999 ? get().lastPlayedLevelId : level.id,
-    });
-  },
-
-  moveVehicle: (vehicleId: string, newRow: number, newCol: number) => {
-    const { vehicles, history, moveCount } = get();
-    const snapshot = vehicles.map((v) => ({ ...v }));
-    
-    const updated = vehicles.map((v) =>
-      v.id === vehicleId ? { ...v, row: newRow, col: newCol } : v
-    );
-    set({
-      vehicles: updated,
-      moveCount: moveCount + 1,
-      history: [...history, snapshot],
-    });
-  },
-
-  undo: () => {
-    const { history, moveCount } = get();
-    if (history.length === 0) return;
-    const previous = history[history.length - 1];
-    set({
-      vehicles: previous,
-      history: history.slice(0, -1),
-      moveCount: moveCount + 1,
-    });
-  },
-
-  resetLevel: () => {
-    const { currentLevel } = get();
-    if (!currentLevel) return;
-    set({
-      vehicles: currentLevel.vehicles.map((v) => ({ ...v })),
+      vehicles: [],
       moveCount: 0,
       history: [],
-    });
-  },
-
-  completeLevel: (levelId: number, score: number, stars: number) => {
-    const { progress, maxUnlockedLevel } = get();
-    const existing = progress.find((p) => p.levelId === levelId);
-    let updatedProgress: LevelProgress[];
-    if (existing) {
-      updatedProgress = progress.map((p) =>
-        p.levelId === levelId
-          ? { ...p, completed: true, bestScore: Math.max(p.bestScore, score), stars: Math.max(p.stars || 0, stars) }
-          : p
-      );
-    } else {
-      updatedProgress = [...progress, { levelId, completed: true, bestScore: score, stars }];
-    }
-    set({
-      progress: updatedProgress,
-      maxUnlockedLevel: Math.max(maxUnlockedLevel, levelId + 1),
-    });
-    get().checkAchievements();
-  },
-
-  completeDailyChallenge: (dateKey: string, score: number, stars: number) => {
-    const { dailyChallengeProgress } = get();
-    const existing = dailyChallengeProgress[dateKey];
-    
-    set({
-      dailyChallengeProgress: {
-        ...dailyChallengeProgress,
-        [dateKey]: {
-          completed: true,
-          score: Math.max(existing?.score || 0, score),
-          stars: Math.max(existing?.stars || 0, stars),
-        }
-      },
-      dailyChallengeSaveState: null 
-    });
-    get().checkAchievements();
-  },
-
-  checkAchievements: () => {
-    const { progress, dailyChallengeProgress, achievements } = get();
-    const newAchievements: string[] = [...achievements];
-    
-    const completedCount = progress.filter(p => p.completed).length;
-    const perfectCount = progress.filter(p => p.stars === 3).length;
-    const dailyCount = Object.values(dailyChallengeProgress).filter(p => p.completed).length;
-
-    if (completedCount >= 5 && !achievements.includes('novice')) newAchievements.push('novice');
-    if (completedCount >= 50 && !achievements.includes('expert')) newAchievements.push('expert');
-    if (perfectCount >= 10 && !achievements.includes('perfectionist')) newAchievements.push('perfectionist');
-    if (dailyCount >= 1 && !achievements.includes('daily_winner')) newAchievements.push('daily_winner');
-
-    if (newAchievements.length !== achievements.length) {
-      set({ achievements: newAchievements });
-      if (get().isHapticsEnabled) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-    }
-  },
-
-  addGeneratedLevel: (level: Level) => {
-    const { generatedLevels } = get();
-    if (!generatedLevels.find((l) => l.id === level.id)) {
-      set({ generatedLevels: [...generatedLevels, level] });
-    }
-  },
-
-  addImportedLevel: (level: Level) => {
-    const { importedLevels } = get();
-    if (!importedLevels.find(l => l.id === level.id)) {
-      set({ importedLevels: [...importedLevels, { ...level, updatedAt: level.updatedAt || Date.now() }] });
-    }
-  },
-
-  saveCreatedLevel: (level: Level) => {
-    const { createdLevels } = get();
-    const index = createdLevels.findIndex(l => l.id === level.id);
-    const updatedLevel = { ...level, updatedAt: Date.now() };
-    if (index !== -1) {
-      const updated = [...createdLevels];
-      updated[index] = updatedLevel;
-      set({ createdLevels: updated });
-    } else {
-      set({ createdLevels: [...createdLevels, updatedLevel] });
-    }
-  },
-
-  toggleFavorite: (id: number, type: 'imported' | 'created') => {
-    if (type === 'imported') {
-      const updated = get().importedLevels.map(l => 
-        l.id === id ? { ...l, isFavorite: !l.isFavorite } : l
-      );
-      set({ importedLevels: updated });
-    } else {
-      const updated = get().createdLevels.map(l => 
-        l.id === id ? { ...l, isFavorite: !l.isFavorite } : l
-      );
-      set({ createdLevels: updated });
-    }
-  },
-
-  deleteCustomLevel: (id: number, type: 'imported' | 'created') => {
-    if (type === 'imported') {
-      set({ importedLevels: get().importedLevels.filter(l => l.id !== id) });
-    } else {
-      set({ createdLevels: get().createdLevels.filter(l => l.id !== id) });
-    }
-  },
-
-  purgeCustomLevels: (baseLevelCount: number) => {
-    const { progress, maxUnlockedLevel } = get();
-    const cleanedProgress = progress.filter(p => p.levelId <= baseLevelCount);
-    const clampedUnlocked = Math.min(maxUnlockedLevel, baseLevelCount + 1);
-    
-    set({
-      generatedLevels: [],
-      progress: cleanedProgress,
-      maxUnlockedLevel: clampedUnlocked,
-    });
-  },
-
-  toggleMusicEnabled: () => {
-    const { isMusicEnabled } = get();
-    set({ isMusicEnabled: !isMusicEnabled });
-  },
-  toggleHapticsEnabled: () => {
-    const { isHapticsEnabled } = get();
-    set({ isHapticsEnabled: !isHapticsEnabled });
-  },
-
-  setGenerationState: (state) => set((s) => ({ generationState: { ...s.generationState, ...state } })),
-
-  saveDailyState: (vehicles, moveCount, history) => {
-    set({ 
-        dailyChallengeSaveState: { 
-            vehicles: vehicles.map(v => ({ ...v })), 
-            moveCount, 
-            history: history.map(h => h.map(v => ({ ...v }))) 
-        } 
-    });
-  },
-
-  cancelGeneration: () => {
-    const current = get().generationState;
-    set({ generationState: { ...current, shouldCancel: true } });
-  },
-
-  hardReset: () => {
-    set({
       progress: [],
       maxUnlockedLevel: 1,
       lastPlayedLevelId: null,
       generatedLevels: [],
       importedLevels: [],
       createdLevels: [],
-      currentLevel: null,
-      vehicles: [],
-      moveCount: 0,
-      history: [],
-      generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
       dailyChallengeProgress: {},
-      dailyChallengeSaveState: null,
-    });
-  },
-}), {
-  name: 'rush-hour-storage',
-  storage: createJSONStorage(() => AsyncStorage),
-  partialize: (state) => ({
-    progress: state.progress,
-    maxUnlockedLevel: state.maxUnlockedLevel,
-    lastPlayedLevelId: state.lastPlayedLevelId,
-    generatedLevels: state.generatedLevels,
-    importedLevels: state.importedLevels,
-    createdLevels: state.createdLevels,
-    dailyChallengeProgress: state.dailyChallengeProgress,
-    achievements: state.achievements,
-    currentDailyLevel: state.currentDailyLevel,
-    dailyLevelDate: state.dailyLevelDate,
-    dailyChallengeSaveState: state.dailyChallengeSaveState,
-    isMusicEnabled: state.isMusicEnabled,
-    isHapticsEnabled: state.isHapticsEnabled,
-    generationState: state.generationState,
-  }),
-}));
+      achievements: [],
+      currentDailyLevel: null,
+      dailyLevelDate: null,
+      savedStates: {},
+      isMusicEnabled: true,
+      isHapticsEnabled: true,
+      generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
+
+      loadLevel: (level, savedState) => {
+        const state = get();
+        const levelKey = level.id === 999999 && state.dailyLevelDate ? `daily-${state.dailyLevelDate}` : level.id;
+        const resolvedSavedState = savedState || state.savedStates[levelKey];
+
+        set({
+          currentLevel: level,
+          vehicles: resolvedSavedState ? resolvedSavedState.vehicles.map(v => ({...v})) : level.vehicles.map((v) => ({ ...v })),
+          moveCount: resolvedSavedState ? resolvedSavedState.moveCount : 0,
+          history: resolvedSavedState ? resolvedSavedState.history.map(h => h.map(v => ({...v}))) : [],
+          lastPlayedLevelId: (level.id >= 900000) ? state.lastPlayedLevelId : level.id,
+        });
+      },
+
+      moveVehicle: (vehicleId, newRow, newCol) => {
+        const { vehicles, history, moveCount, currentLevel, dailyLevelDate, savedStates } = get();
+        if (!currentLevel) return;
+
+        const snapshot = vehicles.map((v) => ({ ...v }));
+        const updated = vehicles.map((v) =>
+          v.id === vehicleId ? { ...v, row: newRow, col: newCol } : v
+        );
+
+        const newMoveCount = moveCount + 1;
+        const newHistory = [...history, snapshot];
+        const levelKey = currentLevel.id === 999999 && dailyLevelDate ? `daily-${dailyLevelDate}` : currentLevel.id;
+        
+        set({
+          vehicles: updated,
+          moveCount: newMoveCount,
+          history: newHistory,
+          savedStates: {
+            ...savedStates,
+            [levelKey]: { 
+              vehicles: updated.map(v => ({...v})), 
+              moveCount: newMoveCount, 
+              history: newHistory.map(h => h.map(v => ({...v}))) 
+            }
+          }
+        });
+      },
+
+      undo: () => {
+        const { history, moveCount, currentLevel, dailyLevelDate, savedStates } = get();
+        if (history.length === 0 || !currentLevel) return;
+        
+        const previous = history[history.length - 1];
+        const newHistory = history.slice(0, -1);
+        const newMoveCount = moveCount + 1;
+        const levelKey = currentLevel.id === 999999 && dailyLevelDate ? `daily-${dailyLevelDate}` : currentLevel.id;
+
+        set({
+          vehicles: previous,
+          history: newHistory,
+          moveCount: newMoveCount,
+          savedStates: {
+            ...savedStates,
+            [levelKey]: { 
+              vehicles: previous.map(v => ({...v})), 
+              moveCount: newMoveCount, 
+              history: newHistory.map(h => h.map(v => ({...v}))) 
+            }
+          }
+        });
+      },
+
+      resetLevel: () => {
+        const { currentLevel, dailyLevelDate, savedStates } = get();
+        if (!currentLevel) return;
+        
+        const levelKey = currentLevel.id === 999999 && dailyLevelDate ? `daily-${dailyLevelDate}` : currentLevel.id;
+        const newSavedStates = { ...savedStates };
+        delete newSavedStates[levelKey];
+
+        set({
+          vehicles: currentLevel.vehicles.map((v) => ({ ...v })),
+          moveCount: 0,
+          history: [],
+          savedStates: newSavedStates
+        });
+      },
+
+      completeLevel: (levelId, score, stars) => {
+        const { progress, maxUnlockedLevel, savedStates } = get();
+        
+        const existing = progress.find((p) => p.levelId === levelId);
+        let updatedProgress: LevelProgress[];
+        if (existing) {
+          updatedProgress = progress.map((p) =>
+            p.levelId === levelId
+              ? { ...p, completed: true, bestScore: Math.max(p.bestScore, score), stars: Math.max(p.stars || 0, stars) }
+              : p
+          );
+        } else {
+          updatedProgress = [...progress, { levelId, completed: true, bestScore: score, stars }];
+        }
+        
+        const newSavedStates = { ...savedStates };
+        delete newSavedStates[levelId];
+
+        // Only advance map progression for map-based levels (Campaign + Generated)
+        // Daily Challenge (999999) and Custom Levels (timestamps) are excluded
+        const isMapLevel = levelId < 900000;
+
+        set({
+          progress: updatedProgress,
+          maxUnlockedLevel: isMapLevel ? Math.max(maxUnlockedLevel, levelId + 1) : maxUnlockedLevel,
+          savedStates: newSavedStates
+        });
+        get().checkAchievements();
+      },
+
+      completeDailyChallenge: (dateKey, score, stars) => {
+        const { dailyChallengeProgress, savedStates } = get();
+        const existing = dailyChallengeProgress[dateKey];
+        const newSavedStates = { ...savedStates };
+        delete newSavedStates[`daily-${dateKey}`];
+        
+        set({
+          dailyChallengeProgress: {
+            ...dailyChallengeProgress,
+            [dateKey]: {
+              completed: true,
+              score: Math.max(existing?.score || 0, score),
+              stars: Math.max(existing?.stars || 0, stars),
+            }
+          },
+          savedStates: newSavedStates 
+        });
+        get().checkAchievements();
+      },
+
+      checkAchievements: () => {
+        const { progress, dailyChallengeProgress, achievements } = get();
+        const newAchievements: string[] = [...achievements];
+        
+        const completedCount = progress.filter(p => p.completed).length;
+        const perfectCount = progress.filter(p => p.stars === 3).length;
+        const dailyCount = Object.values(dailyChallengeProgress).filter(p => p.completed).length;
+
+        if (completedCount >= 5 && !achievements.includes('novice')) newAchievements.push('novice');
+        if (completedCount >= 50 && !achievements.includes('expert')) newAchievements.push('expert');
+        if (perfectCount >= 10 && !achievements.includes('perfectionist')) newAchievements.push('perfectionist');
+        if (dailyCount >= 1 && !achievements.includes('daily_winner')) newAchievements.push('daily_winner');
+
+        if (newAchievements.length !== achievements.length) {
+          set({ achievements: newAchievements });
+          if (get().isHapticsEnabled) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
+        }
+      },
+
+      addGeneratedLevel: (level) => {
+        const { generatedLevels } = get();
+        if (!generatedLevels.find((l) => l.id === level.id)) {
+          set({ generatedLevels: [...generatedLevels, level] });
+        }
+      },
+
+      addImportedLevel: (level) => {
+        const { importedLevels } = get();
+        if (!importedLevels.find(l => l.id === level.id)) {
+          set({ importedLevels: [...importedLevels, { ...level, updatedAt: level.updatedAt || Date.now() }] });
+        }
+      },
+
+      saveCreatedLevel: (level) => {
+        const { createdLevels } = get();
+        const index = createdLevels.findIndex(l => l.id === level.id);
+        const updatedLevel = { ...level, updatedAt: Date.now() };
+        if (index !== -1) {
+          const updated = [...createdLevels];
+          updated[index] = updatedLevel;
+          set({ createdLevels: updated });
+        } else {
+          set({ createdLevels: [...createdLevels, updatedLevel] });
+        }
+      },
+
+      toggleFavorite: (id, type) => {
+        if (type === 'imported') {
+          const updated = get().importedLevels.map(l => 
+            l.id === id ? { ...l, isFavorite: !l.isFavorite } : l
+          );
+          set({ importedLevels: updated });
+        } else {
+          const updated = get().createdLevels.map(l => 
+            l.id === id ? { ...l, isFavorite: !l.isFavorite } : l
+          );
+          set({ createdLevels: updated });
+        }
+      },
+
+      deleteCustomLevel: (id, type) => {
+        if (type === 'imported') {
+          set({ importedLevels: get().importedLevels.filter(l => l.id !== id) });
+        } else {
+          set({ createdLevels: get().createdLevels.filter(l => l.id !== id) });
+        }
+      },
+
+      purgeCustomLevels: (baseLevelCount) => {
+        const { progress, maxUnlockedLevel } = get();
+        const cleanedProgress = progress.filter(p => p.levelId <= baseLevelCount);
+        const clampedUnlocked = Math.min(maxUnlockedLevel, baseLevelCount + 1);
+        
+        set({
+          generatedLevels: [],
+          progress: cleanedProgress,
+          maxUnlockedLevel: clampedUnlocked,
+        });
+      },
+
+      toggleMusicEnabled: () => {
+        const { isMusicEnabled } = get();
+        set({ isMusicEnabled: !isMusicEnabled });
+      },
+      toggleHapticsEnabled: () => {
+        const { isHapticsEnabled } = get();
+        set({ isHapticsEnabled: !isHapticsEnabled });
+      },
+
+      setGenerationState: (state) => set((s) => ({ generationState: { ...s.generationState, ...state } })),
+
+      cancelGeneration: () => {
+        const current = get().generationState;
+        set({ generationState: { ...current, shouldCancel: true } });
+      },
+
+      hardReset: () => {
+        set({
+          progress: [],
+          maxUnlockedLevel: 1,
+          lastPlayedLevelId: null,
+          generatedLevels: [],
+          importedLevels: [],
+          createdLevels: [],
+          currentLevel: null,
+          vehicles: [],
+          moveCount: 0,
+          history: [],
+          generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
+          dailyChallengeProgress: {},
+          savedStates: {},
+        });
+      },
+    }),
+    {
+      name: 'rush-hour-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        progress: state.progress,
+        maxUnlockedLevel: state.maxUnlockedLevel,
+        lastPlayedLevelId: state.lastPlayedLevelId,
+        generatedLevels: state.generatedLevels,
+        importedLevels: state.importedLevels,
+        createdLevels: state.createdLevels,
+        dailyChallengeProgress: state.dailyChallengeProgress,
+        achievements: state.achievements,
+        currentDailyLevel: state.currentDailyLevel,
+        dailyLevelDate: state.dailyLevelDate,
+        savedStates: state.savedStates,
+        isMusicEnabled: state.isMusicEnabled,
+        isHapticsEnabled: state.isHapticsEnabled,
+        generationState: state.generationState,
+      }),
+    }
+  )
+);
