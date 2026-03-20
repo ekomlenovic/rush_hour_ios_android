@@ -146,7 +146,13 @@
     "exit_label": "Exit:",
     "vehicles_toolbox": "VEHICLES",
     "car": "Car",
-    "truck": "Truck"
+    "truck": "Truck",
+    "left": "Left",
+    "right": "Right",
+    "top": "Top",
+    "bottom": "Bottom",
+    "collision_title": "Action Blocked",
+    "collision_desc": "The vehicle would overlap with another object. Please clear the path first."
   },
   "custom_levels": {
     "delete_title": "Delete Level",

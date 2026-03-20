@@ -146,7 +146,13 @@
     "exit_label": "Sortie :",
     "vehicles_toolbox": "VÉHICULES",
     "car": "Voiture",
-    "truck": "Camion"
+    "truck": "Camion",
+    "left": "Gauche",
+    "right": "Droite",
+    "top": "Haut",
+    "bottom": "Bas",
+    "collision_title": "Action bloquée",
+    "collision_desc": "Le véhicule entrerait en collision avec un autre. Veuillez dégager le passage d'abord."
   },
   "custom_levels": {
     "delete_title": "Supprimer le niveau",
