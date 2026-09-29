@@ -1,7 +1,7 @@
 import fs from 'fs';
-import { sampleLevels as pack1 } from './data/sampleLevels.ts'; // Tes 49 niveaux actuels
-import packA from './a.json' with { type: 'json' };
-import packB from './b.json' with { type: 'json' };
+import { sampleLevels as pack1 } from './data/sampleLevels.ts';
+
+const packA = JSON.parse(fs.readFileSync('./new_levels_1.json', 'utf-8'));
 
 const mergeAndFixIds = (packs: any[][]) => {
     // 1. Fusionner tous les tableaux en un seul
@@ -16,7 +16,7 @@ const mergeAndFixIds = (packs: any[][]) => {
     return fixedLevels;
 };
 
-const finalPack = mergeAndFixIds([pack1, packA, packB]);
+const finalPack = mergeAndFixIds([pack1, packA]);
 
 // 3. Sauvegarder le résultat
 const output = `// Auto-generated merge — ${new Date().toISOString()}

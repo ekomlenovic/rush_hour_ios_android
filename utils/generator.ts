@@ -87,21 +87,57 @@ export async function generateDailyLevel(dateStr: string): Promise<Level | null>
 }
 
 /**
+ * Picks a random exit side and returns the corresponding target vehicle config.
+ * Sides: 0=right, 1=left, 2=bottom, 3=top
+ */
+function pickExitSide(gridSize: number): {
+  exitRow: number;
+  exitCol: number;
+  targetOrientation: 'horizontal' | 'vertical';
+  targetRow: number;
+  targetCol: number;
+} {
+  const side = Math.floor(seededRandom() * 4);
+  switch (side) {
+    case 0: { // Right exit
+      const row = Math.floor(seededRandom() * (gridSize - 1)) + 1; // avoid row 0 for variety
+      return { exitRow: row, exitCol: gridSize, targetOrientation: 'horizontal', targetRow: row, targetCol: gridSize - 2 };
+    }
+    case 1: { // Left exit
+      const row = Math.floor(seededRandom() * (gridSize - 1)) + 1;
+      return { exitRow: row, exitCol: 255, targetOrientation: 'horizontal', targetRow: row, targetCol: 0 };
+    }
+    case 2: { // Bottom exit
+      const col = Math.floor(seededRandom() * (gridSize - 1)) + 1;
+      return { exitRow: gridSize, exitCol: col, targetOrientation: 'vertical', targetRow: gridSize - 2, targetCol: col };
+    }
+    case 3: { // Top exit
+      const col = Math.floor(seededRandom() * (gridSize - 1)) + 1;
+      return { exitRow: 255, exitCol: col, targetOrientation: 'vertical', targetRow: 0, targetCol: col };
+    }
+    default: { // Fallback to right (classic)
+      const row = Math.floor(gridSize / 2) - 1;
+      return { exitRow: row, exitCol: gridSize, targetOrientation: 'horizontal', targetRow: row, targetCol: gridSize - 2 };
+    }
+  }
+}
+
+/**
  * Generates a level by starting from a solved state and scrambling it backwards.
  * This is O(1) in terms of "probability of success" and very fast on mobile.
+ * Now randomly picks one of 4 exit sides for variety.
  */
 export function generateScrambledLevel(id: number, config: DifficultyConfig, retries: number = 0): Level | null {
   const { gridSize, minVehicles, maxVehicles, minMovesRequired } = config;
-  const targetRow = Math.floor(gridSize / 2) - 1;
-  const exitCol = gridSize;
+  const { exitRow, exitCol, targetOrientation, targetRow, targetCol } = pickExitSide(gridSize);
 
-  // 1. Initial Solved State
+  // 1. Initial Solved State — target is placed at the exit edge
   const vehicles: Vehicle[] = [{
     id: 'target',
     row: targetRow,
-    col: gridSize - 2,
+    col: targetCol,
     length: 2,
-    orientation: 'horizontal',
+    orientation: targetOrientation,
     isTarget: true,
     color: '#EF4444',
   }];
@@ -152,14 +188,14 @@ export function generateScrambledLevel(id: number, config: DifficultyConfig, ret
   }
 
   // 4. Validate and get minMoves
-  const solveResult = solvePuzzle(vehicles, gridSize, targetRow, exitCol, 200);
+  const solveResult = solvePuzzle(vehicles, gridSize, exitRow, exitCol, 200);
 
   if (solveResult.solvable && solveResult.minMoves >= (minMovesRequired / 2)) {
     return {
       id,
       gridSize,
       vehicles,
-      exitRow: targetRow,
+      exitRow,
       exitCol,
       minMoves: solveResult.minMoves,
       updatedAt: Date.now(),
@@ -243,48 +279,62 @@ function canPlace(
 export function generateLevel(id: number, config: DifficultyConfig): Level | null {
   const { gridSize, minVehicles, maxVehicles, minMovesRequired, maxMovesRequired } = config;
 
-  const targetRow = Math.floor(gridSize / 2) - 1;
-  const exitCol = gridSize;
   const bfsLimit = maxMovesRequired + 10;
   const maxAttempts = minMovesRequired >= 20 ? 3000 : 1500;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const { exitRow, exitCol, targetOrientation, targetRow, targetCol } = pickExitSide(gridSize);
     const vehicles: Vehicle[] = [];
+
+    // Place target at the far end from the exit (so it has to travel across)
+    const startRow = targetOrientation === 'horizontal' ? targetRow : (exitRow === 255 ? gridSize - 2 : 0);
+    const startCol = targetOrientation === 'vertical' ? targetCol : (exitCol === 255 ? gridSize - 2 : 0);
 
     vehicles.push({
       id: 'target',
-      row: targetRow,
-      col: 0,
+      row: startRow,
+      col: startCol,
       length: 2,
-      orientation: 'horizontal',
+      orientation: targetOrientation,
       isTarget: true,
       color: '#EF4444',
     });
 
-    const pathCols = shuffle(Array.from({ length: gridSize - 2 }, (_, i) => i + 2));
-    const minBlock = clamp(Math.floor(minMovesRequired / 5), 1, pathCols.length);
-    const maxBlock = clamp(Math.ceil(maxMovesRequired / 4), minBlock, pathCols.length);
+    // Place blockers perpendicular to the target's path
+    const isHorizTarget = targetOrientation === 'horizontal';
+    const pathIndices = isHorizTarget
+      ? shuffle(Array.from({ length: gridSize - 2 }, (_, i) => i + 2))  // columns to block
+      : shuffle(Array.from({ length: gridSize - 2 }, (_, i) => i + 2)); // rows to block
+
+    const minBlock = clamp(Math.floor(minMovesRequired / 5), 1, pathIndices.length);
+    const maxBlock = clamp(Math.ceil(maxMovesRequired / 4), minBlock, pathIndices.length);
     const numBlock = minBlock + Math.floor(seededRandom() * (maxBlock - minBlock + 1));
 
-
     for (let b = 0; b < numBlock; b++) {
-      const col = pathCols[b];
+      const idx = pathIndices[b];
       for (let p = 0; p < 25; p++) {
         const length = seededRandom() > 0.4 ? 2 : 3;
-        const minRow = Math.max(0, targetRow - length + 1);
-        const maxRow = Math.min(gridSize - length, targetRow);
-        if (minRow > maxRow) continue;
 
-        const row = minRow + Math.floor(seededRandom() * (maxRow - minRow + 1));
-        if (canPlace(vehicles, row, col, length, 'vertical', gridSize)) {
-          vehicles.push({
-            id: `blocker_${b}`,
-            row, col, length,
-            orientation: 'vertical',
-            isTarget: false,
-            color: COLORS[b % COLORS.length],
-          });
-          break;
+        if (isHorizTarget) {
+          // Place vertical blockers on target's row
+          const minRow = Math.max(0, startRow - length + 1);
+          const maxRow = Math.min(gridSize - length, startRow);
+          if (minRow > maxRow) continue;
+          const row = minRow + Math.floor(seededRandom() * (maxRow - minRow + 1));
+          if (canPlace(vehicles, row, idx, length, 'vertical', gridSize)) {
+            vehicles.push({ id: `blocker_${b}`, row, col: idx, length, orientation: 'vertical', isTarget: false, color: COLORS[b % COLORS.length] });
+            break;
+          }
+        } else {
+          // Place horizontal blockers on target's column
+          const minCol = Math.max(0, startCol - length + 1);
+          const maxCol = Math.min(gridSize - length, startCol);
+          if (minCol > maxCol) continue;
+          const col = minCol + Math.floor(seededRandom() * (maxCol - minCol + 1));
+          if (canPlace(vehicles, idx, col, length, 'horizontal', gridSize)) {
+            vehicles.push({ id: `blocker_${b}`, row: idx, col, length, orientation: 'horizontal', isTarget: false, color: COLORS[b % COLORS.length] });
+            break;
+          }
         }
       }
     }
@@ -299,7 +349,9 @@ export function generateLevel(id: number, config: DifficultyConfig): Level | nul
         const row = Math.floor(seededRandom() * gridSize);
         const col = Math.floor(seededRandom() * gridSize);
 
-        if (orientation === 'horizontal' && row === targetRow) continue;
+        // Don't place a same-orientation vehicle on the target's fixed axis
+        if (isHorizTarget && orientation === 'horizontal' && row === startRow) continue;
+        if (!isHorizTarget && orientation === 'vertical' && col === startCol) continue;
 
         if (canPlace(vehicles, row, col, length, orientation, gridSize)) {
           vehicles.push({
@@ -316,14 +368,14 @@ export function generateLevel(id: number, config: DifficultyConfig): Level | nul
     }
 
     // ── 4. optimized solver – exact minimum move count ─────────────────────────────
-    const moves = solvePuzzle(vehicles, gridSize, targetRow, exitCol, bfsLimit).minMoves;
+    const moves = solvePuzzle(vehicles, gridSize, exitRow, exitCol, bfsLimit).minMoves;
 
     if (moves >= minMovesRequired && moves <= maxMovesRequired) {
       return {
         id,
         gridSize,
         vehicles,
-        exitRow: targetRow,
+        exitRow,
         exitCol,
         minMoves: moves,
         updatedAt: Date.now(),
