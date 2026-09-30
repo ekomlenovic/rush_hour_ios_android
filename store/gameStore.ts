@@ -113,6 +113,8 @@ interface GameState {
 
   /** Hint token economy */
   hintTokens: number;
+  /** Total number of hints ever used */
+  totalHintsUsed: number;
 
   /** Weekly challenge state */
   weeklyChallenge: {
@@ -176,6 +178,7 @@ export const useGameStore = create<GameState>()(
       lastStreakDate: null,
       lastOpenDate: null,
       hintTokens: 5,
+      totalHintsUsed: 0,
       weeklyChallenge: { weekKey: null, level: null, completed: false, score: 0, stars: 0 },
       generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
 
@@ -400,9 +403,8 @@ export const useGameStore = create<GameState>()(
       },
 
       useHintToken: () => {
-        const { hintTokens } = get();
-        if (hintTokens <= 0) return false;
-        set({ hintTokens: hintTokens - 1 });
+        const { totalHintsUsed } = get();
+        set({ totalHintsUsed: totalHintsUsed + 1 });
         return true;
       },
 
@@ -523,6 +525,7 @@ export const useGameStore = create<GameState>()(
           lastStreakDate: null,
           lastOpenDate: null,
           hintTokens: 5,
+          totalHintsUsed: 0,
           weeklyChallenge: { weekKey: null, level: null, completed: false, score: 0, stars: 0 },
         });
       },
@@ -550,6 +553,7 @@ export const useGameStore = create<GameState>()(
         lastStreakDate: state.lastStreakDate,
         lastOpenDate: state.lastOpenDate,
         hintTokens: state.hintTokens,
+        totalHintsUsed: state.totalHintsUsed,
         weeklyChallenge: state.weeklyChallenge,
       }),
     }

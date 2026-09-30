@@ -214,11 +214,8 @@ export default function GameScreen() {
   const handleHint = useCallback(async () => {
     if (!currentLevel || won || isHintLoading) return;
 
-    // Check hint tokens
-    if (!useHintTokenFn()) {
-      Alert.alert(t('game.no_hints'), t('game.no_hints_desc'));
-      return;
-    }
+    // Track hint usage (unlimited hints)
+    useHintTokenFn();
 
     const startTime = Date.now();
     setIsHintLoading(true);
@@ -398,7 +395,7 @@ export default function GameScreen() {
             {isHintLoading ? (
               <ActivityIndicator size="small" color={colors.hint} />
             ) : (
-              <Text style={[styles.actionText, { color: colors.hint }]}>💡 {t('game.hint')} ({hintTokens})</Text>
+              <Text style={[styles.actionText, { color: colors.hint }]}>💡 {t('game.hint')}</Text>
             )}
           </Pressable>
            <Pressable onPress={handleReset} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
