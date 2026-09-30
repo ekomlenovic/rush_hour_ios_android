@@ -59,7 +59,7 @@
     "weekly_done": "Weekly Done! ⭐{{stars}}",
     "streak": "{{count}} day streak 🔥",
     "welcome_back": "Welcome Back!",
-    "welcome_back_desc": "You were away for {{days}} days. Here's {{tokens}} bonus hints to get back on track!",
+    "welcome_back_desc": "You were away for {{days}} days. Let's get back to sliding!",
     "missed_dailies": "You missed {{count}} daily challenges"
   },
   "map": {
@@ -201,6 +201,13 @@
     "achievements": "Achievements",
     "locked": "Locked",
     "streak_calendar": "Streak Calendar",
+    "mon": "M",
+    "tue": "T",
+    "wed": "W",
+    "thu": "T",
+    "fri": "F",
+    "sat": "S",
+    "sun": "S",
     "hint_tokens": "Hint Tokens",
     "hints_used": "Hints Used",
     "days": "days"
