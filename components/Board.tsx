@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet, useColorScheme, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Dimensions } from 'react-native';
 import { Vehicle, useGameStore } from '@/store/gameStore';
 import { getMoveBounds } from '@/utils/collision';
 import Block from './Block';
@@ -161,11 +161,35 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
 
       {disabled && (
         <View 
+          pointerEvents="auto"
           style={[
             StyleSheet.absoluteFill, 
-            { backgroundColor: 'rgba(0,0,0,0.1)', zIndex: 100 }
+            { 
+              backgroundColor: isDark ? 'rgba(15, 15, 26, 0.72)' : 'rgba(255,255,255,0.45)', 
+              zIndex: 100,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }
           ]} 
-        />
+        >
+          <View
+            style={{
+              backgroundColor: isDark ? 'rgba(30, 30, 50, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+          >
+            <Text style={{ fontSize: 24, textAlign: 'center' }}>🔒</Text>
+          </View>
+        </View>
       )}
     </View>
 

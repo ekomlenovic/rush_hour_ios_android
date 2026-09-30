@@ -37,6 +37,7 @@ export default function GameScreen() {
   const cancelGeneration = useGameStore(s => s.cancelGeneration);
   const currentDailyLevel = useGameStore(s => s.currentDailyLevel);
   const dailyLevelDate = useGameStore(s => s.dailyLevelDate);
+  const dailyChallengeProgress = useGameStore(s => s.dailyChallengeProgress);
   const hintTokens = useGameStore(s => s.hintTokens);
   const useHintTokenFn = useGameStore(s => s.useHintToken);
   const addHintTokensFn = useGameStore(s => s.addHintTokens);
@@ -159,7 +160,9 @@ export default function GameScreen() {
   }, [params.levelId, (params as any).date, createdLevels, importedLevels]);
 
 
-  const isDailyCompleted = !!(params.levelId === 'daily' && (params as any).date && useGameStore.getState().dailyChallengeProgress[(params as any).date]?.completed);
+  const dailyDateKey = (params as any).date;
+  const dailyCompletedEntry = params.levelId === 'daily' && dailyDateKey ? dailyChallengeProgress[dailyDateKey] : null;
+  const isDailyCompleted = !!dailyCompletedEntry?.completed;
 
   const handleMoveEnd = useCallback((vehicleId: string, newRow: number, newCol: number) => {
     if (won || isDailyCompleted) return;
@@ -401,6 +404,33 @@ export default function GameScreen() {
            <Pressable onPress={handleReset} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
             <Text style={[styles.actionText, { color: colors.text }]}>↻ {t('common.reset')}</Text>
           </Pressable>
+        </Animated.View>
+      )}
+
+      {/* Completed Daily Challenge Banner */}
+      {isDailyCompleted && (
+        <Animated.View
+          entering={FadeInDown.delay(350).springify()}
+          style={[
+            styles.goalContainer,
+            {
+              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.12)' : 'rgba(5, 150, 105, 0.08)',
+              borderColor: isDark ? 'rgba(16, 185, 129, 0.35)' : 'rgba(5, 150, 105, 0.25)',
+              borderWidth: 1.5,
+              borderRadius: 16,
+              padding: 16,
+              marginTop: 16,
+              alignItems: 'center',
+            }
+          ]}
+        >
+          <Text style={{ fontSize: 24, marginBottom: 4 }}>✅</Text>
+          <Text style={{ color: isDark ? '#34D399' : '#059669', fontWeight: '800', fontSize: 16, textAlign: 'center' }}>
+            {t('home.daily_done', { stars: dailyCompletedEntry?.stars ?? 3 })}
+          </Text>
+          <Text style={{ color: colors.sub, fontSize: 13, textAlign: 'center', marginTop: 4 }}>
+            {t('game.daily_already_completed')}
+          </Text>
         </Animated.View>
       )}
 

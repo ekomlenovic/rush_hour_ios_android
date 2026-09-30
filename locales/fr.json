@@ -120,7 +120,8 @@
     "hints_remaining": "{{count}} indices",
     "no_hints": "Plus d'indices !",
     "no_hints_desc": "Complétez des défis quotidiens ou obtenez 3 étoiles pour gagner des indices.",
-    "hint_earned": "+{{count}} jetons d'indice !"
+    "hint_earned": "+{{count}} jetons d'indice !",
+    "daily_already_completed": "Défi du jour déjà réussi ! Rendez-vous demain."
   },
   "tutorial": {
     "title": "Tutoriel",
