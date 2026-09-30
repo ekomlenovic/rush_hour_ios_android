@@ -142,6 +142,7 @@ interface GameState {
   purgeCustomLevels: (baseLevelCount: number) => void;
   toggleMusicEnabled: () => void;
   toggleHapticsEnabled: () => void;
+  unlockAllLevels: () => void;
   setGenerationState: (state: Partial<GenerationState>) => void;
   cancelGeneration: () => void;
   hardReset: () => void;
@@ -496,6 +497,12 @@ export const useGameStore = create<GameState>()(
       toggleHapticsEnabled: () => {
         const { isHapticsEnabled } = get();
         set({ isHapticsEnabled: !isHapticsEnabled });
+      },
+
+      unlockAllLevels: () => {
+        const { generatedLevels } = get();
+        const totalLevels = sampleLevels.length + generatedLevels.length;
+        set({ maxUnlockedLevel: Math.max(1, totalLevels) });
       },
 
       setGenerationState: (state) => set((s) => ({ generationState: { ...s.generationState, ...state } })),
