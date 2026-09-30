@@ -23,12 +23,28 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
-  const { maxUnlockedLevel, dailyChallengeProgress, hardReset, isHapticsEnabled, toggleHapticsEnabled } = useGameStore();
+  const { maxUnlockedLevel, dailyChallengeProgress, hardReset, isHapticsEnabled, toggleHapticsEnabled, currentStreak, recordAppOpen, hintTokens } = useGameStore();
 
   const { toggleMusic, isPlaying: isMusicEnabled } = useAudio();
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [comebackInfo, setComebackInfo] = useState<{ isComeback: boolean; missedDays: number } | null>(null);
+
+  useEffect(() => {
+    const info = recordAppOpen();
+    if (info.isComeback) {
+      setComebackInfo(info);
+      // Grant bonus hints on comeback
+      useGameStore.getState().addHintTokens(3);
+      setTimeout(() => {
+        Alert.alert(
+          t('home.welcome_back'),
+          t('home.welcome_back_desc', { days: info.missedDays, tokens: 3 })
+        );
+      }, 500);
+    }
+  }, []);
 
   const handleUpdateCheck = async () => {
     setIsCheckingUpdate(true);
@@ -43,9 +59,9 @@ export default function HomeScreen() {
         t('home.update_desc', { version: info.latestVersion }),
         [
           { text: t('common.later'), style: "cancel" },
-          { 
-            text: info.isStoreUpdate ? t('common.update') : t('common.download'), 
-            onPress: () => info.downloadURL && Linking.openURL(info.downloadURL) 
+          {
+            text: info.isStoreUpdate ? t('common.update') : t('common.download'),
+            onPress: () => info.downloadURL && Linking.openURL(info.downloadURL)
           }
         ]
       );
@@ -66,9 +82,9 @@ export default function HomeScreen() {
           t('home.update_desc', { version: info.latestVersion }),
           [
             { text: t('common.later'), style: "cancel" },
-            { 
-              text: info.isStoreUpdate ? t('common.update') : t('common.download'), 
-              onPress: () => info.downloadURL && Linking.openURL(info.downloadURL) 
+            {
+              text: info.isStoreUpdate ? t('common.update') : t('common.download'),
+              onPress: () => info.downloadURL && Linking.openURL(info.downloadURL)
             }
           ]
         );
@@ -98,7 +114,7 @@ export default function HomeScreen() {
 
 
 
-  const dateStr = new Date().toISOString().split('T')[0];
+  const dateStr = '2026-10-03';
 
   const dailyStatus = dailyChallengeProgress[dateStr];
 
@@ -148,6 +164,15 @@ export default function HomeScreen() {
 
       </AnimatedPressable>
 
+      {currentStreak > 0 && (
+        <Animated.Text
+          entering={FadeInDown.delay(800).springify()}
+          style={[styles.streakText, { color: '#F59E0B' }]}
+        >
+          {t('home.streak', { count: currentStreak })}
+        </Animated.Text>
+      )}
+
       <View style={styles.footerLinks}>
         <AnimatedPressable
           entering={FadeInDown.delay(900).springify()}
@@ -155,6 +180,14 @@ export default function HomeScreen() {
           onPress={() => router.push('/custom-levels')}
         >
           <Text style={[styles.linkText, { color: colors.accent }]}>{t('home.my_levels')}</Text>
+        </AnimatedPressable>
+
+        <AnimatedPressable
+          entering={FadeInDown.delay(950).springify()}
+          style={[styles.linkButton]}
+          onPress={() => router.push('/profile')}
+        >
+          <Text style={[styles.linkText, { color: colors.accent }]}>{t('home.profile')}</Text>
         </AnimatedPressable>
 
         <AnimatedPressable
@@ -253,14 +286,14 @@ export default function HomeScreen() {
               />
             </View>
 
-            <View style={[styles.divider, { backgroundColor: colors.sub } ]} />
+            <View style={[styles.divider, { backgroundColor: colors.sub }]} />
 
             <View style={styles.versionRow}>
               <View>
-                 <Text style={[styles.settingLabel, { color: colors.text }]}>{t('home.version')}</Text>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('home.version')}</Text>
                 <Text style={[styles.settingSub, { color: colors.sub }]}>{Constants.expoConfig?.version || '1.0.0'}</Text>
               </View>
-              <Pressable 
+              <Pressable
                 onPress={handleUpdateCheck}
                 disabled={isCheckingUpdate}
                 style={[styles.updateButton, { backgroundColor: colors.card }]}
@@ -345,6 +378,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
   },
+  streakText: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 8,
+    textAlign: 'center',
+  },
   footerLinks: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -411,21 +450,21 @@ const styles = StyleSheet.create({
   settingSub: {
     fontSize: RFValue(14),
   },
-  languageBtns: { 
-    flexDirection: 'row', 
-    gap: 8, 
-    backgroundColor: 'rgba(0,0,0,0.05)', 
-    padding: 4, 
-    borderRadius: 12 
+  languageBtns: {
+    flexDirection: 'row',
+    gap: 8,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    padding: 4,
+    borderRadius: 12
   },
-  langBtn: { 
-    paddingHorizontal: 12, 
-    paddingVertical: 6, 
-    borderRadius: 8 
+  langBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8
   },
-  langBtnText: { 
-    fontSize: RFValue(14), 
-    fontWeight: '700' 
+  langBtnText: {
+    fontSize: RFValue(14),
+    fontWeight: '700'
   },
   closeButton: {
     paddingVertical: 14,

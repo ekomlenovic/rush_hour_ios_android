@@ -53,7 +53,14 @@
     "check_for_update": "Check for Update",
     "hard_reset_confirm_desc": "This will erase EVERYTHING: all your progress, stars, and custom levels. Are you sure?",
     "hard_reset_confirm_btn": "Yes, Reset Everything",
-    "done": "Done"
+    "done": "Done",
+    "profile": "Profile",
+    "weekly_challenge": "Weekly Challenge",
+    "weekly_done": "Weekly Done! ⭐{{stars}}",
+    "streak": "{{count}} day streak 🔥",
+    "welcome_back": "Welcome Back!",
+    "welcome_back_desc": "You were away for {{days}} days. Here's {{tokens}} bonus hints to get back on track!",
+    "missed_dailies": "You missed {{count}} daily challenges"
   },
   "map": {
     "title": "Play",
@@ -106,7 +113,11 @@
     "load_error": "Could not load this level.",
     "share_message": "Challenge me on Rush Hours! Can you beat this level in {{moves}} moves?\n{{url}}",
     "goal_title": "Objective",
-    "goal_desc": "Slide the red car to the exit at the top!"
+    "goal_desc": "Slide the red car to the exit at the top!",
+    "hints_remaining": "{{count}} hints",
+    "no_hints": "No hints left!",
+    "no_hints_desc": "Complete daily challenges or earn 3 stars to get more hints.",
+    "hint_earned": "+{{count}} hint tokens!"
   },
   "tutorial": {
     "title": "Tutorial",
@@ -178,5 +189,43 @@
     "HARD": "Hard",
     "EXPERT": "Expert",
     "MASTER": "Master"
+  },
+  "profile": {
+    "title": "Profile",
+    "stats": "Statistics",
+    "levels_completed": "Levels Completed",
+    "total_stars": "Total Stars",
+    "best_streak": "Best Streak",
+    "current_streak": "Current Streak",
+    "dailies_completed": "Dailies Completed",
+    "achievements": "Achievements",
+    "locked": "Locked",
+    "streak_calendar": "Streak Calendar",
+    "hint_tokens": "Hint Tokens",
+    "days": "days"
+  },
+  "achievements": {
+    "novice": "Novice",
+    "novice_desc": "Complete 5 levels",
+    "expert": "Expert",
+    "expert_desc": "Complete 50 levels",
+    "veteran": "Veteran",
+    "veteran_desc": "Complete 100 levels",
+    "perfectionist": "Perfectionist",
+    "perfectionist_desc": "Get 3 stars on 10 levels",
+    "daily_winner": "Daily Winner",
+    "daily_winner_desc": "Complete your first daily challenge",
+    "streak_3": "Getting Warmed Up",
+    "streak_3_desc": "Reach a 3-day streak",
+    "streak_7": "On Fire",
+    "streak_7_desc": "Reach a 7-day streak",
+    "streak_30": "Unstoppable",
+    "streak_30_desc": "Reach a 30-day streak",
+    "creator_star": "Level Designer",
+    "creator_star_desc": "Create 5 levels",
+    "daily_devotee": "Daily Devotee",
+    "daily_devotee_desc": "Complete 7 daily challenges",
+    "weekly_warrior": "Weekly Warrior",
+    "weekly_warrior_desc": "Complete a weekly challenge"
   }
 }

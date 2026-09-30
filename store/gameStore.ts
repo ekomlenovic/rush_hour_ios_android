@@ -103,6 +103,26 @@ interface GameState {
   /** Haptics Enabled state */
   isHapticsEnabled: boolean;
 
+  /** Streak tracking */
+  currentStreak: number;
+  bestStreak: number;
+  lastStreakDate: string | null;
+
+  /** Last time the app was opened (ISO date YYYY-MM-DD) for comeback detection */
+  lastOpenDate: string | null;
+
+  /** Hint token economy */
+  hintTokens: number;
+
+  /** Weekly challenge state */
+  weeklyChallenge: {
+    weekKey: string | null;  // e.g. '2026-W40'
+    level: Level | null;
+    completed: boolean;
+    score: number;
+    stars: number;
+  };
+
   // Actions
   loadLevel: (level: Level, savedState?: LevelSaveState) => void;
   moveVehicle: (vehicleId: string, newRow: number, newCol: number) => void;
@@ -123,6 +143,11 @@ interface GameState {
   setGenerationState: (state: Partial<GenerationState>) => void;
   cancelGeneration: () => void;
   hardReset: () => void;
+  updateStreak: (dateKey: string) => void;
+  recordAppOpen: () => { isComeback: boolean; missedDays: number };
+  useHintToken: () => boolean;
+  addHintTokens: (amount: number) => void;
+  completeWeeklyChallenge: (weekKey: string, score: number, stars: number) => void;
 }
 
 
@@ -146,6 +171,12 @@ export const useGameStore = create<GameState>()(
       savedStates: {},
       isMusicEnabled: true,
       isHapticsEnabled: true,
+      currentStreak: 0,
+      bestStreak: 0,
+      lastStreakDate: null,
+      lastOpenDate: null,
+      hintTokens: 5,
+      weeklyChallenge: { weekKey: null, level: null, completed: false, score: 0, stars: 0 },
       generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
 
       loadLevel: (level, savedState) => {
@@ -277,21 +308,43 @@ export const useGameStore = create<GameState>()(
           },
           savedStates: newSavedStates 
         });
+
+        // Update streak
+        get().updateStreak(dateKey);
+        // Reward hint tokens for daily completion
+        get().addHintTokens(2);
+
         get().checkAchievements();
       },
 
       checkAchievements: () => {
-        const { progress, dailyChallengeProgress, achievements } = get();
+        const { progress, dailyChallengeProgress, achievements, currentStreak, createdLevels, weeklyChallenge } = get();
         const newAchievements: string[] = [...achievements];
         
         const completedCount = progress.filter(p => p.completed).length;
         const perfectCount = progress.filter(p => p.stars === 3).length;
         const dailyCount = Object.values(dailyChallengeProgress).filter(p => p.completed).length;
 
+        // Original achievements
         if (completedCount >= 5 && !achievements.includes('novice')) newAchievements.push('novice');
         if (completedCount >= 50 && !achievements.includes('expert')) newAchievements.push('expert');
+        if (completedCount >= 100 && !achievements.includes('veteran')) newAchievements.push('veteran');
         if (perfectCount >= 10 && !achievements.includes('perfectionist')) newAchievements.push('perfectionist');
         if (dailyCount >= 1 && !achievements.includes('daily_winner')) newAchievements.push('daily_winner');
+
+        // Streak achievements
+        if (currentStreak >= 3 && !achievements.includes('streak_3')) newAchievements.push('streak_3');
+        if (currentStreak >= 7 && !achievements.includes('streak_7')) newAchievements.push('streak_7');
+        if (currentStreak >= 30 && !achievements.includes('streak_30')) newAchievements.push('streak_30');
+
+        // Creator achievement
+        if (createdLevels.length >= 5 && !achievements.includes('creator_star')) newAchievements.push('creator_star');
+
+        // Daily devotee
+        if (dailyCount >= 7 && !achievements.includes('daily_devotee')) newAchievements.push('daily_devotee');
+
+        // Weekly warrior
+        if (weeklyChallenge.completed && !achievements.includes('weekly_warrior')) newAchievements.push('weekly_warrior');
 
         if (newAchievements.length !== achievements.length) {
           set({ achievements: newAchievements });
@@ -299,6 +352,77 @@ export const useGameStore = create<GameState>()(
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           }
         }
+      },
+
+      updateStreak: (dateKey: string) => {
+        const { lastStreakDate, currentStreak, bestStreak } = get();
+        
+        if (lastStreakDate === dateKey) return; // Already counted today
+        
+        const today = new Date(dateKey);
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        let newStreak: number;
+        if (lastStreakDate === yesterdayStr) {
+          newStreak = currentStreak + 1;
+        } else if (!lastStreakDate) {
+          newStreak = 1;
+        } else {
+          newStreak = 1; // Streak broken
+        }
+        
+        set({
+          currentStreak: newStreak,
+          bestStreak: Math.max(bestStreak, newStreak),
+          lastStreakDate: dateKey,
+        });
+      },
+
+      recordAppOpen: () => {
+        const { lastOpenDate } = get();
+        const today = new Date().toISOString().split('T')[0];
+        
+        let isComeback = false;
+        let missedDays = 0;
+        
+        if (lastOpenDate) {
+          const last = new Date(lastOpenDate);
+          const now = new Date(today);
+          const diffMs = now.getTime() - last.getTime();
+          missedDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          isComeback = missedDays >= 3;
+        }
+        
+        set({ lastOpenDate: today });
+        return { isComeback, missedDays };
+      },
+
+      useHintToken: () => {
+        const { hintTokens } = get();
+        if (hintTokens <= 0) return false;
+        set({ hintTokens: hintTokens - 1 });
+        return true;
+      },
+
+      addHintTokens: (amount: number) => {
+        const { hintTokens } = get();
+        set({ hintTokens: hintTokens + amount });
+      },
+
+      completeWeeklyChallenge: (weekKey: string, score: number, stars: number) => {
+        const { weeklyChallenge } = get();
+        set({
+          weeklyChallenge: {
+            ...weeklyChallenge,
+            weekKey,
+            completed: true,
+            score: Math.max(weeklyChallenge.score, score),
+            stars: Math.max(weeklyChallenge.stars, stars),
+          }
+        });
+        get().checkAchievements();
       },
 
       addGeneratedLevel: (level) => {
@@ -326,6 +450,7 @@ export const useGameStore = create<GameState>()(
         } else {
           set({ createdLevels: [...createdLevels, updatedLevel] });
         }
+        get().checkAchievements();
       },
 
       toggleFavorite: (id, type) => {
@@ -393,6 +518,12 @@ export const useGameStore = create<GameState>()(
           generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
           dailyChallengeProgress: {},
           savedStates: {},
+          currentStreak: 0,
+          bestStreak: 0,
+          lastStreakDate: null,
+          lastOpenDate: null,
+          hintTokens: 5,
+          weeklyChallenge: { weekKey: null, level: null, completed: false, score: 0, stars: 0 },
         });
       },
     }),
@@ -414,6 +545,12 @@ export const useGameStore = create<GameState>()(
         isMusicEnabled: state.isMusicEnabled,
         isHapticsEnabled: state.isHapticsEnabled,
         generationState: state.generationState,
+        currentStreak: state.currentStreak,
+        bestStreak: state.bestStreak,
+        lastStreakDate: state.lastStreakDate,
+        lastOpenDate: state.lastOpenDate,
+        hintTokens: state.hintTokens,
+        weeklyChallenge: state.weeklyChallenge,
       }),
     }
   )
