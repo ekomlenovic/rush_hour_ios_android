@@ -96,7 +96,8 @@ export function deserializeLevel(data: string, id: number = 999998): Level | nul
       exitRow,
       exitCol,
       minMoves,
-      vehicles
+      vehicles,
+      updatedAt: Date.now()
     };
   } catch (err) {
     console.error('Failed to deserialize level:', err);

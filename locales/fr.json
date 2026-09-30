@@ -53,7 +53,14 @@
     "check_for_update": "Vérifier les mises à jour",
     "hard_reset_confirm_desc": "Cela effacera TOUT : votre progression, vos étoiles et vos niveaux personnalisés. Êtes-vous sûr ?",
     "hard_reset_confirm_btn": "Oui, tout réinitialiser",
-    "done": "Terminé"
+    "done": "Terminé",
+    "profile": "Profil",
+    "weekly_challenge": "Défi hebdomadaire",
+    "weekly_done": "Hebdo terminé ! ⭐{{stars}}",
+    "streak": "{{count}} jours de suite 🔥",
+    "welcome_back": "Bon retour !",
+    "welcome_back_desc": "Vous étiez absent {{days}} jours. Voici {{tokens}} indices bonus pour reprendre !",
+    "missed_dailies": "Vous avez manqué {{count}} défis quotidiens"
   },
   "map": {
     "title": "Jouer",
@@ -106,7 +113,11 @@
     "load_error": "Impossible de charger ce niveau.",
     "share_message": "Défie-moi sur Rush Hours ! Peux-tu battre ce niveau en {{moves}} coups ?\n{{url}}",
     "goal_title": "Objectif",
-    "goal_desc": "Faites glisser la voiture rouge vers la sortie en haut !"
+    "goal_desc": "Faites glisser la voiture rouge vers la sortie en haut !",
+    "hints_remaining": "{{count}} indices",
+    "no_hints": "Plus d'indices !",
+    "no_hints_desc": "Complétez des défis quotidiens ou obtenez 3 étoiles pour gagner des indices.",
+    "hint_earned": "+{{count}} jetons d'indice !"
   },
   "tutorial": {
     "title": "Tutoriel",
@@ -178,5 +189,43 @@
     "HARD": "Difficile",
     "EXPERT": "Expert",
     "MASTER": "Maître"
+  },
+  "profile": {
+    "title": "Profil",
+    "stats": "Statistiques",
+    "levels_completed": "Niveaux complétés",
+    "total_stars": "Étoiles totales",
+    "best_streak": "Meilleur streak",
+    "current_streak": "Streak actuel",
+    "dailies_completed": "Défis quotidiens complétés",
+    "achievements": "Succès",
+    "locked": "Verrouillé",
+    "streak_calendar": "Calendrier de streak",
+    "hint_tokens": "Jetons d'indice",
+    "days": "jours"
+  },
+  "achievements": {
+    "novice": "Novice",
+    "novice_desc": "Compléter 5 niveaux",
+    "expert": "Expert",
+    "expert_desc": "Compléter 50 niveaux",
+    "veteran": "Vétéran",
+    "veteran_desc": "Compléter 100 niveaux",
+    "perfectionist": "Perfectionniste",
+    "perfectionist_desc": "Obtenir 3 étoiles sur 10 niveaux",
+    "daily_winner": "Champion du jour",
+    "daily_winner_desc": "Compléter votre premier défi quotidien",
+    "streak_3": "Échauffement",
+    "streak_3_desc": "Atteindre un streak de 3 jours",
+    "streak_7": "En feu",
+    "streak_7_desc": "Atteindre un streak de 7 jours",
+    "streak_30": "Inarrêtable",
+    "streak_30_desc": "Atteindre un streak de 30 jours",
+    "creator_star": "Architecte",
+    "creator_star_desc": "Créer 5 niveaux",
+    "daily_devotee": "Fidèle du quotidien",
+    "daily_devotee_desc": "Compléter 7 défis quotidiens",
+    "weekly_warrior": "Guerrier hebdomadaire",
+    "weekly_warrior_desc": "Compléter un défi hebdomadaire"
   }
 }

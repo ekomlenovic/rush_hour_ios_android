@@ -37,6 +37,9 @@ export default function GameScreen() {
   const cancelGeneration = useGameStore(s => s.cancelGeneration);
   const currentDailyLevel = useGameStore(s => s.currentDailyLevel);
   const dailyLevelDate = useGameStore(s => s.dailyLevelDate);
+  const hintTokens = useGameStore(s => s.hintTokens);
+  const useHintTokenFn = useGameStore(s => s.useHintToken);
+  const addHintTokensFn = useGameStore(s => s.addHintTokens);
 
   const [won, setWon] = useState(false);
   const [isLoading, setLoading] = useState(true);
@@ -185,8 +188,13 @@ export default function GameScreen() {
       } else {
         completeLevel(currentLevel.id, score, stars);
       }
+
+      // Reward hint tokens for 3-star completion
+      if (stars === 3) {
+        addHintTokensFn(1);
+      }
     }
-  }, [won, moveVehicle, currentLevel, computedMinMoves, completeLevel, params.levelId, (params as any).date]);
+  }, [won, moveVehicle, currentLevel, computedMinMoves, completeLevel, params.levelId, (params as any).date, addHintTokensFn]);
 
   const handleUndo = useCallback(() => {
     undo();
@@ -205,6 +213,12 @@ export default function GameScreen() {
 
   const handleHint = useCallback(async () => {
     if (!currentLevel || won || isHintLoading) return;
+
+    // Check hint tokens
+    if (!useHintTokenFn()) {
+      Alert.alert(t('game.no_hints'), t('game.no_hints_desc'));
+      return;
+    }
 
     const startTime = Date.now();
     setIsHintLoading(true);
@@ -384,7 +398,7 @@ export default function GameScreen() {
             {isHintLoading ? (
               <ActivityIndicator size="small" color={colors.hint} />
             ) : (
-              <Text style={[styles.actionText, { color: colors.hint }]}>💡 {t('game.hint')}</Text>
+              <Text style={[styles.actionText, { color: colors.hint }]}>💡 {t('game.hint')} ({hintTokens})</Text>
             )}
           </Pressable>
            <Pressable onPress={handleReset} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
