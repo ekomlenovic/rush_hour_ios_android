@@ -114,7 +114,7 @@ export default function HomeScreen() {
 
 
 
-  const dateStr = '2026-10-03';
+  const dateStr = new Date().toISOString().split('T')[0];
 
   const dailyStatus = dailyChallengeProgress[dateStr];
 
