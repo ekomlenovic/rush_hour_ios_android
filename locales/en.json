@@ -120,7 +120,8 @@
     "hints_remaining": "{{count}} hints",
     "no_hints": "No hints left!",
     "no_hints_desc": "Complete daily challenges or earn 3 stars to get more hints.",
-    "hint_earned": "+{{count}} hint tokens!"
+    "hint_earned": "+{{count}} hint tokens!",
+    "daily_already_completed": "Today's challenge is already completed! Come back tomorrow."
   },
   "tutorial": {
     "title": "Tutorial",
