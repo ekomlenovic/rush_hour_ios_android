@@ -54,7 +54,7 @@ export default function ProfileScreen() {
   const currentStreak = useGameStore((state) => state.currentStreak || 0);
   const bestStreak = useGameStore((state) => state.bestStreak || 0);
   const dailyChallengeProgress = useGameStore((state) => state.dailyChallengeProgress || {});
-  const hintTokens = useGameStore((state) => state.hintTokens || 0);
+  const totalHintsUsed = useGameStore((state) => state.totalHintsUsed || 0);
   const achievements = useGameStore((state) => state.achievements || []);
 
   const levelsCompleted = useMemo(() => progress.filter(p => p.completed).length, [progress]);
@@ -98,8 +98,8 @@ export default function ProfileScreen() {
               <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.dailies_completed', 'Dailies Completed')}</Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>💡 {hintTokens}</Text>
-              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.hint_tokens', 'Hint Tokens')}</Text>
+              <Text style={[styles.statValue, { color: textColor }]}>💡 {totalHintsUsed}</Text>
+              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.hints_used', 'Hints Used')}</Text>
             </View>
           </View>
         </Animated.View>
