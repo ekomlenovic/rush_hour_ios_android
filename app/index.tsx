@@ -23,7 +23,7 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
-  const { maxUnlockedLevel, dailyChallengeProgress, hardReset, isHapticsEnabled, toggleHapticsEnabled, currentStreak, recordAppOpen, hintTokens } = useGameStore();
+  const { maxUnlockedLevel, dailyChallengeProgress, hardReset, unlockAllLevels, isHapticsEnabled, toggleHapticsEnabled, currentStreak, recordAppOpen, hintTokens } = useGameStore();
 
   const { toggleMusic, isPlaying: isMusicEnabled } = useAudio();
   const [isSettingsVisible, setSettingsVisible] = useState(false);
@@ -92,6 +92,24 @@ export default function HomeScreen() {
     };
     autoCheck();
   }, []);
+
+  const handleUnlockAll = () => {
+    Alert.alert(
+      t('home.unlock_all'),
+      t('home.unlock_all_confirm'),
+      [
+        { text: t('common.cancel'), style: "cancel" },
+        {
+          text: t('common.ok'),
+          onPress: () => {
+            unlockAllLevels();
+            haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert(t('common.success'), t('home.unlock_all_success'));
+          }
+        }
+      ]
+    );
+  };
 
   const handleHardReset = () => {
     Alert.alert(
@@ -305,6 +323,14 @@ export default function HomeScreen() {
             </View>
 
             <View style={[styles.divider, { backgroundColor: colors.sub }]} />
+
+            <Pressable
+              style={[styles.resetBtn, { borderColor: colors.accent, backgroundColor: colors.card, marginBottom: 12 }]}
+              onPress={handleUnlockAll}
+            >
+              <Text style={[styles.resetBtnText, { color: colors.accent, fontWeight: '700' }]}>🔓 {t('home.unlock_all')}</Text>
+            </Pressable>
+
             <Pressable
               style={[styles.resetBtn, { borderColor: colors.sub, borderStyle: 'dotted', marginBottom: 24 }]}
               onPress={handleHardReset}

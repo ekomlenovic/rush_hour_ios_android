@@ -163,7 +163,7 @@ export default function MapScreen() {
   const isDark = colorScheme === 'dark';
   const router = useRouter();
 
-  const { maxUnlockedLevel, lastPlayedLevelId, progress, generatedLevels, generationState, setGenerationState, cancelGeneration, hardReset, purgeCustomLevels, isHapticsEnabled, toggleHapticsEnabled } = useGameStore();
+  const { maxUnlockedLevel, lastPlayedLevelId, progress, generatedLevels, generationState, setGenerationState, cancelGeneration, hardReset, purgeCustomLevels, isHapticsEnabled, toggleHapticsEnabled, unlockAllLevels } = useGameStore();
   const { toggleMusic, isPlaying: isMusicEnabled } = useAudio();
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -279,6 +279,24 @@ export default function MapScreen() {
   const handleResetLevels = () => {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     purgeCustomLevels(sampleLevels.length);
+  };
+
+  const handleUnlockAll = () => {
+    Alert.alert(
+      t('home.unlock_all'),
+      t('home.unlock_all_confirm'),
+      [
+        { text: t('common.cancel'), style: "cancel" },
+        {
+          text: t('common.ok'),
+          onPress: () => {
+            unlockAllLevels();
+            haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert(t('common.success'), t('home.unlock_all_success'));
+          }
+        }
+      ]
+    );
   };
 
   const handleHardReset = () => {
@@ -624,6 +642,13 @@ export default function MapScreen() {
                   onPress={() => Linking.openURL('https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?title=Request:%20New%20Complex%20Levels&body=I%20would%20like%20to%20see%20more%20high-difficulty%20levels%21')}
                 >
                   <Text style={styles.mainBtnText}>{t('map.request_github')}</Text>
+                </Pressable>
+
+                <Pressable
+                  style={[styles.resetBtn, { borderColor: colors.accent, backgroundColor: colors.bg, marginTop: 12 }]}
+                  onPress={handleUnlockAll}
+                >
+                  <Text style={[styles.resetBtnText, { color: colors.accent, fontWeight: '700' }]}>🔓 {t('home.unlock_all')}</Text>
                 </Pressable>
 
                 <Pressable
