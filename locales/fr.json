@@ -59,7 +59,7 @@
     "weekly_done": "Hebdo terminé ! ⭐{{stars}}",
     "streak": "{{count}} jours de suite 🔥",
     "welcome_back": "Bon retour !",
-    "welcome_back_desc": "Vous étiez absent {{days}} jours. Voici {{tokens}} indices bonus pour reprendre !",
+    "welcome_back_desc": "Vous étiez absent {{days}} jours. Bonne reprise !",
     "missed_dailies": "Vous avez manqué {{count}} défis quotidiens"
   },
   "map": {
@@ -201,6 +201,13 @@
     "achievements": "Succès",
     "locked": "Verrouillé",
     "streak_calendar": "Calendrier de streak",
+    "mon": "L",
+    "tue": "M",
+    "wed": "M",
+    "thu": "J",
+    "fri": "V",
+    "sat": "S",
+    "sun": "D",
     "hint_tokens": "Jetons d'indice",
     "hints_used": "Indices utilisés",
     "days": "jours"

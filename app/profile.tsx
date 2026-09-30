@@ -20,18 +20,28 @@ const ACHIEVEMENT_LIST = [
   { id: 'weekly_warrior', icon: '⚔️' },
 ];
 
-function getLast35Days() {
-  const days = [];
+function getCalendarDays() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().split('T')[0];
 
-  for (let i = 34; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
+  // Monday-first day of week: 0=Mon, ..., 6=Sun
+  const todayDow = (today.getDay() + 6) % 7;
+
+  // Start from Monday, 4 weeks before this week's Monday
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - todayDow - 28);
+
+  const days = [];
+  for (let i = 0; i < 35; i++) {
+    const d = new Date(startDate);
+    d.setDate(startDate.getDate() + i);
+    const dateString = d.toISOString().split('T')[0];
     days.push({
       date: d,
-      dateString: d.toISOString().split('T')[0],
-      isToday: i === 0,
+      dateString,
+      isToday: dateString === todayStr,
+      isFuture: d > today,
     });
   }
   return days;
@@ -61,8 +71,16 @@ export default function ProfileScreen() {
   const totalStars = useMemo(() => progress.reduce((sum, p) => sum + (p.stars || 0), 0), [progress]);
   const dailiesCompleted = useMemo(() => Object.values(dailyChallengeProgress).filter((p: any) => p.completed).length, [dailyChallengeProgress]);
 
-  const days = useMemo(() => getLast35Days(), []);
-  const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const days = useMemo(() => getCalendarDays(), []);
+  const weekDays = [
+    t('profile.mon', 'L'),
+    t('profile.tue', 'M'),
+    t('profile.wed', 'M'),
+    t('profile.thu', 'J'),
+    t('profile.fri', 'V'),
+    t('profile.sat', 'S'),
+    t('profile.sun', 'D'),
+  ];
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
@@ -107,31 +125,35 @@ export default function ProfileScreen() {
         <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.section}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>{t('profile.streak_calendar', 'Streak Calendar')}</Text>
           <View style={[styles.calendarCard, { backgroundColor: cardColor, borderColor }]}>
-            <View style={styles.weekDaysRow}>
+            <View style={styles.calendarRow}>
               {weekDays.map((day, i) => (
                 <Text key={i} style={[styles.weekDayText, { color: secondaryTextColor }]}>{day}</Text>
               ))}
             </View>
-            <View style={styles.calendarGrid}>
-              {days.map((day) => {
-                const isCompleted = dailyChallengeProgress?.[day.dateString]?.completed;
-                const cellBgColor = isCompleted ? '#4CAF50' : (isDark ? '#2D2D3A' : '#E0E0E8');
-                const cellBorder = day.isToday ? accentColor : 'transparent';
-                return (
-                  <View 
-                    key={day.dateString} 
-                    style={[
-                      styles.calendarCell, 
-                      { 
-                        backgroundColor: cellBgColor, 
-                        borderColor: cellBorder, 
-                        borderWidth: day.isToday ? 2 : 0 
-                      }
-                    ]} 
-                  />
-                );
-              })}
-            </View>
+            {[0, 1, 2, 3, 4].map((weekIdx) => (
+              <View key={weekIdx} style={styles.calendarRow}>
+                {days.slice(weekIdx * 7, weekIdx * 7 + 7).map((day) => {
+                  if (day.isFuture) {
+                    return <View key={day.dateString} style={[styles.calendarCell, { backgroundColor: 'transparent' }]} />;
+                  }
+                  const isCompleted = dailyChallengeProgress?.[day.dateString]?.completed;
+                  const cellBgColor = isCompleted ? '#4CAF50' : (isDark ? '#2D2D3A' : '#E0E0E8');
+                  return (
+                    <View
+                      key={day.dateString}
+                      style={[
+                        styles.calendarCell,
+                        {
+                          backgroundColor: cellBgColor,
+                          borderColor: day.isToday ? accentColor : 'transparent',
+                          borderWidth: day.isToday ? 2 : 0,
+                        },
+                      ]}
+                    />
+                  );
+                })}
+              </View>
+            ))}
           </View>
         </Animated.View>
 
@@ -229,7 +251,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   calendarCard: {
-    padding: RFValue(16),
+    padding: RFValue(12),
     borderRadius: RFValue(12),
     borderWidth: 1,
     shadowColor: '#000',
@@ -238,27 +260,21 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  weekDaysRow: {
+  calendarRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: RFValue(8),
+    marginBottom: RFValue(4),
   },
   weekDayText: {
-    width: '13%',
+    flex: 1,
     textAlign: 'center',
-    fontSize: RFValue(12),
+    fontSize: RFValue(11),
     fontWeight: '600',
   },
-  calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
   calendarCell: {
-    width: '13%',
+    flex: 1,
     aspectRatio: 1,
     borderRadius: RFValue(4),
-    marginBottom: RFValue(6),
+    marginHorizontal: RFValue(2),
   },
   achievementsList: {
     gap: RFValue(12),
