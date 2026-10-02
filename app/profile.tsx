@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useGameStore } from '@/store/gameStore';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
+import { getLocalDateString } from '@/utils/date';
 
 const ACHIEVEMENT_LIST = [
   { id: 'novice', icon: '🌟' },
@@ -23,7 +24,7 @@ const ACHIEVEMENT_LIST = [
 function getCalendarDays() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = getLocalDateString(today);
 
   // Monday-first day of week: 0=Mon, ..., 6=Sun
   const todayDow = (today.getDay() + 6) % 7;
@@ -36,7 +37,7 @@ function getCalendarDays() {
   for (let i = 0; i < 35; i++) {
     const d = new Date(startDate);
     d.setDate(startDate.getDate() + i);
-    const dateString = d.toISOString().split('T')[0];
+    const dateString = getLocalDateString(d);
     days.push({
       date: d,
       dateString,

@@ -14,6 +14,7 @@ import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
 import i18n, { changeLanguage } from '@/utils/i18n';
 import { RFValue } from '@/utils/responsive';
+import { getLocalDateString } from '@/utils/date';
 
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -90,7 +91,7 @@ export default function HomeScreen() {
         );
       }
     };
-    autoCheck();
+    // autoCheck();
   }, []);
 
   const handleUnlockAll = () => {
@@ -132,7 +133,7 @@ export default function HomeScreen() {
 
 
 
-  const dateStr = new Date().toISOString().split('T')[0];
+  const dateStr = getLocalDateString(new Date());
 
   const dailyStatus = dailyChallengeProgress[dateStr];
 

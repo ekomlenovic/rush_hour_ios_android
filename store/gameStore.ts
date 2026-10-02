@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { sampleLevels } from '../data/sampleLevels';
+import { getLocalDateString } from '../utils/date';
 
 /** Describes a single vehicle/block on the grid */
 export interface Vehicle {
@@ -366,7 +367,7 @@ export const useGameStore = create<GameState>()(
         const today = new Date(dateKey);
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        const yesterdayStr = getLocalDateString(yesterday);
         
         let newStreak: number;
         if (lastStreakDate === yesterdayStr) {
@@ -386,7 +387,7 @@ export const useGameStore = create<GameState>()(
 
       recordAppOpen: () => {
         const { lastOpenDate } = get();
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString(new Date());
         
         let isComeback = false;
         let missedDays = 0;
