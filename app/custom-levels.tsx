@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, FlatList, Alert, Share, Clipboard } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Pressable, FlatList, Alert, Share } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
@@ -64,7 +65,7 @@ export default function CustomLevelsScreen() {
     };
 
     const handlePaste = async () => {
-        const text = await Clipboard.getString();
+        const text = await Clipboard.getStringAsync();
         if (text) {
             setImportUrl(text);
             haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

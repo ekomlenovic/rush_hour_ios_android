@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, ScrollView, Dimensions, Modal, ActivityIndicator, Switch, InteractionManager, Alert, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Pressable, ScrollView, Dimensions, Modal, ActivityIndicator, Switch, Alert, Linking, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
@@ -325,10 +325,10 @@ export default function MapScreen() {
     }
 
     // Defer heavy rendering until after navigation transition
-    const task = InteractionManager.runAfterInteractions(() => {
+    const timer = setTimeout(() => {
       setIsReady(true);
-    });
-    return () => task.cancel();
+    }, 150);
+    return () => clearTimeout(timer);
   }, [maxUnlockedLevel]);
 
   useEffect(() => {

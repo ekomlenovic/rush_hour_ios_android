@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Pressable, Dimensions, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeOut, Layout, ZoomIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
@@ -180,21 +180,21 @@ export default function TutorialScreen() {
       </Animated.View>
 
       {/* Completion Overlay */}
-      {completed && (
-        <Animated.View entering={FadeIn} style={styles.overlay}>
-          <Animated.View entering={ZoomIn.springify()} style={[styles.winCard, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
-             <Text style={styles.emoji}>🎉</Text>
+      <Modal visible={completed} transparent animationType="fade" statusBarTranslucent onRequestClose={() => router.replace('/map')}>
+        <View style={styles.overlay}>
+          <View style={[styles.winCard, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
+            <Text style={styles.emoji}>🎉</Text>
             <Text style={[styles.winTitle, { color: colors.accent }]}>{t('common.excellent')}</Text>
             <Text style={[styles.winDesc, { color: colors.text }]}>{t('tutorial.ready_desc')}</Text>
             <Pressable 
               style={[styles.playBtn, { backgroundColor: colors.accent }]}
-               onPress={() => router.replace('/map')}
+              onPress={() => router.replace('/map')}
             >
               <Text style={styles.playBtnText}>{t('tutorial.start_playing')}</Text>
             </Pressable>
-          </Animated.View>
-        </Animated.View>
-      )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -230,7 +230,11 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   boardOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     borderRadius: 12,
   },
   card: {
@@ -287,12 +291,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
-    zIndex: 100,
   },
   winCard: {
     width: '100%',
