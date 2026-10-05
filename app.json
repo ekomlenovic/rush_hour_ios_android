@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.rushhours.app",
-      "versionCode": 5,
+      "versionCode": 6,
       "adaptiveIcon": {
         "backgroundColor": "#1A2B4C",
         "foregroundImage": "./assets/android-icon-foreground.png",
