@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, useColorScheme, Pressable,
   Dimensions, Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, {
-  useSharedValue, useAnimatedStyle, runOnJS, withTiming,
+  useSharedValue, useAnimatedStyle, runOnJS, withTiming, SharedValue,
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
@@ -44,8 +44,6 @@ type ActiveDrag = {
   orientation: 'horizontal' | 'vertical';
   length: number;
   color: string;
-  screenX: number;
-  screenY: number;
   targetRow: number;
   targetCol: number;
   isValid: boolean;
@@ -78,6 +76,13 @@ export default function LevelCreatorScreen() {
   const [exitRow, setExitRow] = useState(2);
   const [exitCol, setExitCol] = useState(6);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
+  const [floatingTemplate, setFloatingTemplate] = useState<VehicleTemplate | null>(null);
+  const lastTarget = useRef<{ id: string; row: number; col: number; isValid: boolean } | null>(null);
+
+  // Shared values Reanimated pour le curseur flottant 100% sur le thread UI (120 FPS)
+  const dragX = useSharedValue(0);
+  const dragY = useSharedValue(0);
+  const dragVisible = useSharedValue(0);
 
   const boardRef = useRef<View>(null);
   const boardPos = useRef({ x: 0, y: 0 });
@@ -251,7 +256,20 @@ export default function LevelCreatorScreen() {
   ) => {
     const { row, col } = screenToGrid(centerX, centerY, orientation, length);
     const isValid = !hasCollision(row, col, orientation, length, excludeId);
-    setActiveDrag({ id, orientation, length, color, screenX: centerX, screenY: centerY, targetRow: row, targetCol: col, isValid });
+
+    // ANTI-LAG : Ne déclenche un re-render React QUE si la cellule cible change !
+    if (
+      lastTarget.current &&
+      lastTarget.current.id === id &&
+      lastTarget.current.row === row &&
+      lastTarget.current.col === col &&
+      lastTarget.current.isValid === isValid
+    ) {
+      return;
+    }
+
+    lastTarget.current = { id, row, col, isValid };
+    setActiveDrag({ id, orientation, length, color, targetRow: row, targetCol: col, isValid });
   }, [screenToGrid, hasCollision]);
 
   /** Calcule la position centrale visuelle d'un véhicule du plateau en cours de drag */
@@ -385,18 +403,28 @@ export default function LevelCreatorScreen() {
     grid: 'rgba(0,0,0,0.06)', boardBg: 'rgba(255,255,255,0.6)', toolBg: 'rgba(255,255,255,0.7)',
   };
 
-  const ghostCells: [number, number][] = [];
-  if (activeDrag) {
+  const ghostCells = useMemo(() => {
+    if (!activeDrag) return [];
+    const cells: [number, number][] = [];
     for (let i = 0; i < activeDrag.length; i++) {
-      ghostCells.push([
+      cells.push([
         activeDrag.orientation === 'vertical' ? activeDrag.targetRow + i : activeDrag.targetRow,
         activeDrag.orientation === 'horizontal' ? activeDrag.targetCol + i : activeDrag.targetCol,
       ]);
     }
-  }
+    return cells;
+  }, [activeDrag?.targetRow, activeDrag?.targetCol, activeDrag?.length, activeDrag?.orientation]);
 
-  const floatW = activeDrag ? (activeDrag.orientation === 'horizontal' ? activeDrag.length : 1) * cellSize - 4 : 0;
-  const floatH = activeDrag ? (activeDrag.orientation === 'vertical' ? activeDrag.length : 1) * cellSize - 4 : 0;
+  const floatW = floatingTemplate ? (floatingTemplate.orientation === 'horizontal' ? floatingTemplate.length : 1) * cellSize - 4 : 0;
+  const floatH = floatingTemplate ? (floatingTemplate.orientation === 'vertical' ? floatingTemplate.length : 1) * cellSize - 4 : 0;
+
+  const floatAnimStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: dragX.value - floatW / 2 },
+      { translateY: dragY.value - floatH / 2 },
+    ],
+    opacity: dragVisible.value,
+  }));
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -534,6 +562,7 @@ export default function LevelCreatorScreen() {
                   const { cx, cy } = getVehicleVisualCenter(v, tx, ty);
                   const { row, col } = screenToGrid(cx, cy, v.orientation, v.length);
                   if (!hasCollision(row, col, v.orientation, v.length, v.id)) moveVehicle(v.id, row, col);
+                  lastTarget.current = null;
                   setActiveDrag(null);
                 }}
                 onRemove={() => removeVehicle(v.id)}
@@ -576,19 +605,21 @@ export default function LevelCreatorScreen() {
         </View>
 
         {/* ── Floating preview (Le véhicule centré sur le doigt !) ── */}
-        {activeDrag && (
-          <View
+        {floatingTemplate && (
+          <Animated.View
             pointerEvents="none"
-            style={[styles.floatingPreview, {
-              left: activeDrag.screenX - floatW / 2,
-              top: activeDrag.screenY - floatH / 2,
-              width: floatW,
-              height: floatH,
-              backgroundColor: activeDrag.color,
-            }]}
+            style={[
+              styles.floatingPreview,
+              {
+                width: floatW,
+                height: floatH,
+                backgroundColor: floatingTemplate.color,
+              },
+              floatAnimStyle,
+            ]}
           >
-            <View style={[styles.vehicleShine, activeDrag.orientation === 'vertical' && styles.vehicleShineV]} />
-          </View>
+            <View style={[styles.vehicleShine, floatingTemplate.orientation === 'vertical' && styles.vehicleShineV]} />
+          </Animated.View>
         )}
 
         {/* ── Toolbox ── */}
@@ -604,11 +635,22 @@ export default function LevelCreatorScreen() {
                   key={idx}
                   template={templateWithColor}
                   colors={C}
-                  onDragUpdate={(sx, sy, active) => {
-                    if (!active) { setActiveDrag(null); return; }
+                  dragX={dragX}
+                  dragY={dragY}
+                  dragVisible={dragVisible}
+                  onDragStart={(tmpl, sx, sy) => {
+                    setFloatingTemplate(tmpl);
+                    updateDrag(`toolbox-${idx}`, tmpl.orientation, tmpl.length, tmpl.color, sx, sy);
+                  }}
+                  onDragMove={(sx, sy) => {
                     updateDrag(`toolbox-${idx}`, templateWithColor.orientation, templateWithColor.length, templateWithColor.color, sx, sy);
                   }}
-                  onDrop={(sx, sy) => placeFromToolbox(templateWithColor, sx, sy)}
+                  onDrop={(sx, sy) => {
+                    lastTarget.current = null;
+                    setActiveDrag(null);
+                    setFloatingTemplate(null);
+                    placeFromToolbox(templateWithColor, sx, sy);
+                  }}
                 />
               );
             })}
@@ -630,9 +672,10 @@ type BoardVehicleProps = {
   onDragMove: (tx: number, ty: number) => void;
   onDragEnd: (tx: number, ty: number) => void;
   onRemove: () => void;
+  onPress: () => void;
 };
 
-function BoardVehicle({ vehicle: v, cellSize, isGhost, onDragStart, onDragMove, onDragEnd, onRemove, onPress }: BoardVehicleProps & { onPress: () => void }) {
+const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, cellSize, isGhost, onDragStart, onDragMove, onDragEnd, onRemove, onPress }: BoardVehicleProps) {
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
   const sc = useSharedValue(1);
@@ -650,15 +693,18 @@ function BoardVehicle({ vehicle: v, cellSize, isGhost, onDragStart, onDragMove, 
   const pan = Gesture.Pan()
     .minDistance(2)
     .onStart(() => {
+      'use worklet';
       sc.value = SNAP(1.05);
       runOnJS(onDragStart)();
     })
     .onUpdate(e => {
+      'use worklet';
       tx.value = e.translationX;
       ty.value = e.translationY;
       runOnJS(onDragMove)(e.translationX, e.translationY);
     })
     .onEnd(e => {
+      'use worklet';
       sc.value = SNAP(1);
       tx.value = SNAP(0);
       ty.value = SNAP(0);
@@ -701,32 +747,45 @@ function BoardVehicle({ vehicle: v, cellSize, isGhost, onDragStart, onDragMove, 
       </Animated.View>
     </GestureDetector>
   );
-}
+});
 
 // ─── ToolboxItem ──────────────────────────────────────────────────────────────
 
 type ToolboxItemProps = {
   template: VehicleTemplate;
   colors: Record<string, string>;
-  onDragUpdate: (sx: number, sy: number, active: boolean) => void;
+  dragX: SharedValue<number>;
+  dragY: SharedValue<number>;
+  dragVisible: SharedValue<number>;
+  onDragStart: (template: VehicleTemplate, sx: number, sy: number) => void;
+  onDragMove: (sx: number, sy: number) => void;
   onDrop: (sx: number, sy: number) => void;
 };
 
-function ToolboxItem({ template, colors, onDragUpdate, onDrop }: ToolboxItemProps) {
+const ToolboxItem = React.memo(function ToolboxItem({ template, colors, dragX, dragY, dragVisible, onDragStart, onDragMove, onDrop }: ToolboxItemProps) {
   const { t } = useTranslation();
   const sc = useSharedValue(1);
 
   const gesture = Gesture.Pan()
-    .onStart(() => {
+    .onStart((e) => {
+      'use worklet';
       sc.value = SNAP(0.95);
+      dragX.value = e.absoluteX;
+      dragY.value = e.absoluteY;
+      dragVisible.value = 1;
+      runOnJS(onDragStart)(template, e.absoluteX, e.absoluteY);
     })
     .onUpdate(e => {
-      runOnJS(onDragUpdate)(e.absoluteX, e.absoluteY, true);
+      'use worklet';
+      dragX.value = e.absoluteX;
+      dragY.value = e.absoluteY;
+      runOnJS(onDragMove)(e.absoluteX, e.absoluteY);
     })
     .onEnd(e => {
+      'use worklet';
       sc.value = SNAP(1);
+      dragVisible.value = 0;
       runOnJS(onDrop)(e.absoluteX, e.absoluteY);
-      runOnJS(onDragUpdate)(e.absoluteX, e.absoluteY, false);
     });
 
   const animStyle = useAnimatedStyle(() => ({
@@ -760,7 +819,7 @@ function ToolboxItem({ template, colors, onDragUpdate, onDrop }: ToolboxItemProp
       </Animated.View>
     </GestureDetector>
   );
-}
+});
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -798,7 +857,7 @@ const styles = StyleSheet.create({
   vehicleGrip: { flexDirection: 'row', gap: 5, opacity: 0.55 },
   gripDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.9)' },
 
-  floatingPreview: { position: 'absolute', borderRadius: 9, opacity: 0.9, shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 18, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)', overflow: 'hidden', zIndex: 999 },
+  floatingPreview: { position: 'absolute', top: 0, left: 0, borderRadius: 9, opacity: 0.9, shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 18, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)', overflow: 'hidden', zIndex: 999 },
 
   hint: { marginTop: 10, fontSize: 12, fontStyle: 'italic', opacity: 0.75, letterSpacing: 0.2 },
 
