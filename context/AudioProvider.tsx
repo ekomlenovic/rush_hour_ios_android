@@ -23,7 +23,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const { isMusicEnabled, toggleMusicEnabled } = useGameStore();
 
   const player = useAudioPlayer(BACKGROUND_MUSIC_SOURCE);
-  const fadeTimer = useRef<NodeJS.Timeout | null>(null);
+  const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // OPTIMIZATION: Track AppState in React state so effects can react to backgrounding
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);

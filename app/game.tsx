@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, ActivityIndicator, InteractionManager } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp, ZoomIn, FadeIn, FadeOut } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
@@ -13,7 +13,8 @@ import { solvePuzzleAsync } from '@/utils/solver.background';
 import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel } from '@/utils/generator';
 import { getShareUrl, getQRCodeUrl, deserializeLevel } from '@/utils/sharing';
 import { useTranslation } from 'react-i18next';
-import { Image, Modal, Share, Clipboard, Alert } from 'react-native';
+import { Image, Modal, Share, Alert } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 
 export default function GameScreen() {
   const { t } = useTranslation();
@@ -64,10 +65,10 @@ export default function GameScreen() {
     }
   };
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     if (!currentLevel) return;
     const url = getShareUrl(currentLevel);
-    Clipboard.setString(url);
+    await Clipboard.setStringAsync(url);
     haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Alert.alert(t('common.copied'), t('common.link_copied'));
   };
@@ -81,82 +82,80 @@ export default function GameScreen() {
     // CRITICAL: Stop any background generation to free up main thread for gameplay
     cancelGeneration();
 
-    const task = InteractionManager.runAfterInteractions(() => {
-      setTimeout(async () => {
-        const idParam = params.levelId;
-        const dateParam = (params as any).date;
-        const id = Number(idParam);
-        const dataParamInUrl = (params as any).data;
+    const timer = setTimeout(async () => {
+      const idParam = params.levelId;
+      const dateParam = (params as any).date;
+      const id = Number(idParam);
+      const dataParamInUrl = (params as any).data;
 
-        let level: any = null;
+      let level: any = null;
 
-        // 0. Primary: Check if level data is passed directly in URL (Deep Link fallback)
-        if (dataParamInUrl) {
-          level = deserializeLevel(dataParamInUrl as string);
-        }
+      // 0. Primary: Check if level data is passed directly in URL (Deep Link fallback)
+      if (dataParamInUrl) {
+        level = deserializeLevel(dataParamInUrl as string);
+      }
 
-        if (idParam === 'daily' && dateParam) {
-          // Use cache if available and date matches
-          if (currentDailyLevel && dailyLevelDate === dateParam) {
-            level = currentDailyLevel;
-          } else {
-            level = await generateDailyLevel(dateParam);
-            if (level) {
-              useGameStore.setState({ 
-                currentDailyLevel: level, 
-                dailyLevelDate: dateParam 
-              });
-            }
-          }
+      if (idParam === 'daily' && dateParam) {
+        // Use cache if available and date matches
+        if (currentDailyLevel && dailyLevelDate === dateParam) {
+          level = currentDailyLevel;
         } else {
-          // 1. Try to find it in the pre-baked JSON
-          level = sampleLevels.find((l) => l.id === id);
-          
-          // 2. Try to find it in the generated Zustand memory cache
-          if (!level) {
-            level = generatedLevels.find((l) => l.id === id);
-          }
-
-          // 3. Try to find it in created or imported levels (use string comparison for robustness)
-          if (!level && id) {
-            const state = useGameStore.getState();
-            level = state.createdLevels.find((l) => String(l.id) === String(id)) || 
-                    state.importedLevels.find((l) => String(l.id) === String(id));
-          }
-
-          // 4. Fallback: Generate it right now (Infinite Map support)
-          // Adjust difficulty based on level ID range
-          if (!level && id > 0 && id <= 2000) {
-            let difficulty = DIFFICULTY_LEVELS.EASY;
-            if (id > 1500) difficulty = DIFFICULTY_LEVELS.MASTER;
-            else if (id > 800) difficulty = DIFFICULTY_LEVELS.EXPERT;
-            else if (id > 400) difficulty = DIFFICULTY_LEVELS.HARD;
-            else if (id > 100) difficulty = DIFFICULTY_LEVELS.NORMAL;
-
-            level = generateLevel(id || 1, difficulty) || sampleLevels[0];
-            if (level && level.id !== sampleLevels[0].id) {
-              addGeneratedLevel(level);
-            }
+          level = await generateDailyLevel(dateParam);
+          if (level) {
+            useGameStore.setState({ 
+              currentDailyLevel: level, 
+              dailyLevelDate: dateParam 
+            });
           }
         }
+      } else {
+        // 1. Try to find it in the pre-baked JSON
+        level = sampleLevels.find((l) => l.id === id);
+        
+        // 2. Try to find it in the generated Zustand memory cache
+        if (!level) {
+          level = generatedLevels.find((l) => l.id === id);
+        }
 
-        if (level && level.vehicles && level.vehicles.length > 0) {
-          loadLevel(level);
-          setComputedMinMoves(level.minMoves > 0 ? level.minMoves : null);
-          setLoading(false);
-        } else {
-          // If level not found, don't just hang or show empty grid
-          // Redirect back or show error
-          console.error("Level not found for ID:", id);
-          if (idParam) {
-            Alert.alert(t('common.error'), t('game.load_error'));
-            router.back();
+        // 3. Try to find it in created or imported levels (use string comparison for robustness)
+        if (!level && id) {
+          const state = useGameStore.getState();
+          level = state.createdLevels.find((l) => String(l.id) === String(id)) || 
+                  state.importedLevels.find((l) => String(l.id) === String(id));
+        }
+
+        // 4. Fallback: Generate it right now (Infinite Map support)
+        // Adjust difficulty based on level ID range
+        if (!level && id > 0 && id <= 2000) {
+          let difficulty = DIFFICULTY_LEVELS.EASY;
+          if (id > 1500) difficulty = DIFFICULTY_LEVELS.MASTER;
+          else if (id > 800) difficulty = DIFFICULTY_LEVELS.EXPERT;
+          else if (id > 400) difficulty = DIFFICULTY_LEVELS.HARD;
+          else if (id > 100) difficulty = DIFFICULTY_LEVELS.NORMAL;
+
+          level = generateLevel(id || 1, difficulty) || sampleLevels[0];
+          if (level && level.id !== sampleLevels[0].id) {
+            addGeneratedLevel(level);
           }
         }
-      }, 300);
-    });
+      }
 
-    return () => task.cancel();
+      if (level && level.vehicles && level.vehicles.length > 0) {
+        loadLevel(level);
+        setComputedMinMoves(level.minMoves > 0 ? level.minMoves : null);
+        setLoading(false);
+      } else {
+        // If level not found, don't just hang or show empty grid
+        // Redirect back or show error
+        console.error("Level not found for ID:", id);
+        if (idParam) {
+          Alert.alert(t('common.error'), t('game.load_error'));
+          router.back();
+        }
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
   }, [params.levelId, (params as any).date, createdLevels, importedLevels]);
 
 
@@ -282,12 +281,11 @@ export default function GameScreen() {
           <ActivityIndicator size="large" color={colors.accent} />
           <Text style={[styles.loadingText, { color: colors.sub }]}>{t('game.preparing_puzzle')}</Text>
           {isMondayDaily && (
-            <Animated.Text 
-              entering={FadeInDown.delay(1000)}
-              style={[styles.mondayWarning, { color: colors.sub }]}
-            >
-              {t('game.monday_warning')}
-            </Animated.Text>
+            <Animated.View entering={FadeInDown.delay(1000)}>
+              <Text style={[styles.mondayWarning, { color: colors.sub }]}>
+                {t('game.monday_warning')}
+              </Text>
+            </Animated.View>
           )}
         </Animated.View>
       </View>
@@ -349,10 +347,9 @@ export default function GameScreen() {
       </Animated.View>
 
       {/* Win overlay */}
-      {won && (
-        <Animated.View entering={FadeInDown.springify()} style={styles.winOverlay}>
-          <Animated.View
-            entering={ZoomIn.delay(200).springify()}
+      <Modal visible={won} transparent animationType="fade" statusBarTranslucent onRequestClose={() => router.back()}>
+        <View style={styles.winOverlay}>
+          <View
             style={[styles.winCard, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}
           >
             <Text style={styles.winStars}>
@@ -368,9 +365,9 @@ export default function GameScreen() {
             >
              <Text style={styles.winButtonText}>{t('common.continue')}</Text>
             </Pressable>
-          </Animated.View>
-        </Animated.View>
-      )}
+          </View>
+        </View>
+      </Modal>
 
       {/* Hint Loading Pill */}
       {isHintLoading && (
@@ -577,11 +574,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   winOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
-    zIndex: 100,
   },
   winCard: {
     padding: 32,

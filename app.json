@@ -7,11 +7,6 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "rush-hours",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1A2B4C"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.rushhours.app"
@@ -35,7 +30,18 @@
         {
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-localization",
+      "expo-asset",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#1A2B4C"
+        }
+      ],
+      "expo-status-bar"
     ],
     "extra": {
       "router": {},
