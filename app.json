@@ -2,7 +2,7 @@
   "expo": {
     "name": "Rush Hours",
     "slug": "rush-hours",
-    "version": "1.1.4",
+    "version": "1.1.5",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.rushhours.app",
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "backgroundColor": "#1A2B4C",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -40,8 +40,7 @@
           "resizeMode": "contain",
           "backgroundColor": "#1A2B4C"
         }
-      ],
-      "expo-status-bar"
+      ]
     ],
     "extra": {
       "router": {},

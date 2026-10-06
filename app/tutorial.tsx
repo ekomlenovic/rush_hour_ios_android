@@ -180,7 +180,7 @@ export default function TutorialScreen() {
       </Animated.View>
 
       {/* Completion Overlay */}
-      <Modal visible={completed} transparent animationType="fade" statusBarTranslucent onRequestClose={() => router.replace('/map')}>
+      <Modal visible={completed} transparent animationType="fade" onRequestClose={() => router.replace('/map')}>
         <View style={styles.overlay}>
           <View style={[styles.winCard, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
             <Text style={styles.emoji}>🎉</Text>

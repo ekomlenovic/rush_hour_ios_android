@@ -333,21 +333,23 @@ export default function GameScreen() {
       {/* Board */}
       <Animated.View 
         entering={FadeInDown.delay(300).springify()} 
-        style={[styles.boardWrapper, isDailyCompleted && { opacity: 0.7 }]}
+        style={styles.boardWrapper}
       >
-        <Board
-          gridSize={currentLevel.gridSize}
-          vehicles={vehicles}
-          exitRow={currentLevel.exitRow}
-          exitCol={currentLevel.exitCol}
-          onMoveEnd={handleMoveEnd}
-          hintVehicleId={hintVehicleId}
-          disabled={isDailyCompleted}
-        />
+        <View style={isDailyCompleted ? { opacity: 0.7 } : undefined}>
+          <Board
+            gridSize={currentLevel.gridSize}
+            vehicles={vehicles}
+            exitRow={currentLevel.exitRow}
+            exitCol={currentLevel.exitCol}
+            onMoveEnd={handleMoveEnd}
+            hintVehicleId={hintVehicleId}
+            disabled={isDailyCompleted}
+          />
+        </View>
       </Animated.View>
 
       {/* Win overlay */}
-      <Modal visible={won} transparent animationType="fade" statusBarTranslucent onRequestClose={() => router.back()}>
+      <Modal visible={won} transparent animationType="fade" onRequestClose={() => router.back()}>
         <View style={styles.winOverlay}>
           <View
             style={[styles.winCard, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}
