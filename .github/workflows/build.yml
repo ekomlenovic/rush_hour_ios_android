@@ -4,18 +4,18 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  inputs:
-    build_android:
-      description: 'Build Android APK?'
-      required: false
-      type: boolean
-      default: false
-
-    bump_version:
-      description: 'Bump patch version?'
-      required: false
-      type: boolean
-      default: true
+    inputs:
+      build_android:
+        description: 'Build Android APK?'
+        required: false
+        type: boolean
+        default: false
+  
+      bump_version:
+        description: 'Bump patch version?'
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   prepare:
