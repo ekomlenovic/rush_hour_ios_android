@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { Stack, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AudioProvider } from '@/context/AudioProvider';
@@ -43,7 +42,6 @@ export default function RootLayout() {
   return (
     <AudioProvider>
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: isDark ? DARK_BG : LIGHT_BG }}>
-        <StatusBar style={isDark ? 'light' : 'dark'} />
         <Stack
           screenOptions={{
             headerShown: false,
