@@ -30,9 +30,13 @@ jobs:
       - name: Bump version
         id: bump-version
         run: |
-          npm version patch --no-git-tag-version
+          if [ "${{ inputs.bump_version }}" = "true" ]; then
+            npm version patch --no-git-tag-version
+          fi
+      
           VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
   build-ios:
     name: Build iOS
