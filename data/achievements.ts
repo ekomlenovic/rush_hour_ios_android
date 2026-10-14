@@ -151,6 +151,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'creator_star', icon: '🎨', category: 'creator', target: 5, value: c => c.createdLevels },
   { id: 'creator_puzzle', icon: '🧩', category: 'creator', target: 20, value: c => c.hardestCreatedMoves },
   { id: 'sharer', icon: '📤', category: 'creator', target: 1, value: c => c.stats.levelsShared },
+  { id: 'result_sharer', icon: '📣', category: 'creator', target: 1, value: c => c.stats.resultsShared },
   { id: 'importer', icon: '📥', category: 'creator', target: 1, value: c => c.stats.levelsImported },
   { id: 'prolific', icon: '🏗️', category: 'creator', target: 25, value: c => c.createdLevels },
   { id: 'collector', icon: '📚', category: 'creator', target: 10, value: c => c.stats.levelsImported },

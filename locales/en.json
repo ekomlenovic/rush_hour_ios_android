@@ -352,6 +352,17 @@
     "halloween": "Spooky",
     "halloween_desc": "Complete a level on October 31st",
     "pi_day": "3.14",
-    "pi_day_desc": "Complete a level on March 14th"
+    "pi_day_desc": "Complete a level on March 14th",
+    "result_sharer": "Town Crier",
+    "result_sharer_desc": "Share a challenge result"
+  },
+  "share": {
+    "share_result": "Share my result",
+    "title_daily": "Daily {{date}} 🧩",
+    "title_monday": "💀 Monday daily {{date}}",
+    "title_weekly": "Weekly challenge {{week}} ⚔️",
+    "moves": "{{moves}} moves (optimal {{optimal}})",
+    "streak_one": "{{count}}-day streak",
+    "streak_other": "{{count}}-day streak"
   }
 }

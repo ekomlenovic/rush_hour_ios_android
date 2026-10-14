@@ -17,9 +17,10 @@ import { Image, Modal, Share, Alert, AppState } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
 import { formatDuration, parseLocalDateString } from '@/utils/date';
+import { buildChallengeShareText } from '@/utils/shareResult';
 
 export default function GameScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
@@ -65,6 +66,32 @@ export default function GameScreen() {
       });
       if (result.action === Share.sharedAction) {
         useGameStore.getState().recordLevelShared();
+      }
+    } catch (error) {
+      console.error('Sharing failed', error);
+    }
+  };
+
+  // Wordle-like result of the daily / weekly challenge (no spoiler)
+  const handleShareResult = async () => {
+    const state = useGameStore.getState();
+    const key = challengeKind === 'daily' ? params.date : params.week;
+    const result = challengeKind === 'daily' ? state.dailyChallengeProgress[key!]
+      : challengeKind === 'weekly' ? state.weeklyChallengeProgress[key!]
+      : undefined;
+    if (!challengeKind || !key || !result) return;
+
+    const message = buildChallengeShareText(t, {
+      kind: challengeKind,
+      key,
+      result,
+      streak: state.currentStreak,
+      language: i18n.language,
+    });
+    try {
+      const shared = await Share.share({ message });
+      if (shared.action === Share.sharedAction) {
+        state.recordResultShared();
       }
     } catch (error) {
       console.error('Sharing failed', error);
@@ -237,10 +264,11 @@ export default function GameScreen() {
       const score = calculateScore(updatedMoveCount, minMoves);
       const stars = updatedMoveCount <= minMoves ? 3 : updatedMoveCount <= minMoves + 3 ? 2 : 1;
 
+      const details = { moves: updatedMoveCount, minMoves };
       if (challengeKind === 'daily') {
-        useGameStore.getState().completeDailyChallenge(params.date!, score, stars, timeMs);
+        useGameStore.getState().completeDailyChallenge(params.date!, score, stars, timeMs, details);
       } else if (challengeKind === 'weekly') {
-        useGameStore.getState().completeWeeklyChallenge(params.week!, score, stars, timeMs);
+        useGameStore.getState().completeWeeklyChallenge(params.week!, score, stars, timeMs, details);
       } else {
         completeLevel(currentLevel.id, score, stars, timeMs);
       }
@@ -433,6 +461,14 @@ export default function GameScreen() {
                 ))}
               </View>
             )}
+            {challengeKind && (
+              <Pressable
+                style={[styles.winButton, styles.winShareButton, { borderColor: colors.accent }]}
+                onPress={handleShareResult}
+              >
+                <Text style={[styles.winButtonText, { color: colors.accent }]}>📤 {t('share.share_result')}</Text>
+              </Pressable>
+            )}
             <Pressable
               style={[styles.winButton, { backgroundColor: colors.accent }]}
               onPress={() => router.back()}
@@ -506,6 +542,9 @@ export default function GameScreen() {
           <Text style={{ color: colors.sub, fontSize: 13, textAlign: 'center', marginTop: 4 }}>
             {t(challengeKind === 'weekly' ? 'game.weekly_already_completed' : 'game.daily_already_completed')}
           </Text>
+          <Pressable onPress={handleShareResult} style={[styles.bannerShareButton, { borderColor: isDark ? '#34D399' : '#059669' }]}>
+            <Text style={{ color: isDark ? '#34D399' : '#059669', fontWeight: '700', fontSize: 14 }}>📤 {t('share.share_result')}</Text>
+          </Pressable>
         </Animated.View>
       )}
 
@@ -682,6 +721,18 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 24,
     textAlign: 'center',
+  },
+  winShareButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    marginBottom: 12,
+  },
+  bannerShareButton: {
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1.5,
   },
   winTime: {
     fontSize: 14,
