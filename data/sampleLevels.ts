@@ -1,4 +1,4 @@
-// Auto-generated merge — 2026-09-29T19:33:32.315Z
+// Auto-generated merge — 2026-10-14T21:50:46.777Z
 import { Level } from '@/store/gameStore';
 
 export const sampleLevels: Level[] = [
@@ -31459,5 +31459,6435 @@ export const sampleLevels: Level[] = [
       }
     ],
     "updatedAt": 1790709637294
+  },
+  {
+    "id": 256,
+    "gridSize": 6,
+    "exitRow": 255,
+    "exitCol": 1,
+    "minMoves": 23,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 3,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 5,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 1,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      }
+    ],
+    "updatedAt": 1792010983715
+  },
+  {
+    "id": 257,
+    "gridSize": 6,
+    "exitRow": 255,
+    "exitCol": 0,
+    "minMoves": 22,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 1,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 5,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 2,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 0,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      }
+    ],
+    "updatedAt": 1792010984573
+  },
+  {
+    "id": 258,
+    "gridSize": 7,
+    "exitRow": 255,
+    "exitCol": 4,
+    "minMoves": 27,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 5,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 4,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 5,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 1,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 2,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      }
+    ],
+    "updatedAt": 1792010991824
+  },
+  {
+    "id": 259,
+    "gridSize": 7,
+    "exitRow": 255,
+    "exitCol": 3,
+    "minMoves": 22,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 1,
+        "col": 1,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 3,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 4,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 1,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      }
+    ],
+    "updatedAt": 1792010993554
+  },
+  {
+    "id": 260,
+    "gridSize": 7,
+    "exitRow": 255,
+    "exitCol": 2,
+    "minMoves": 26,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 5,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 5,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 0,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 1,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 3,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 5,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      }
+    ],
+    "updatedAt": 1792010995681
+  },
+  {
+    "id": 261,
+    "gridSize": 6,
+    "exitRow": 2,
+    "exitCol": 255,
+    "minMoves": 20,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 1,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 0,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 2,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 5,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      }
+    ],
+    "updatedAt": 1792010996245
+  },
+  {
+    "id": 262,
+    "gridSize": 6,
+    "exitRow": 6,
+    "exitCol": 2,
+    "minMoves": 20,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 3,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 1,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 1,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 5,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      }
+    ],
+    "updatedAt": 1792010996422
+  },
+  {
+    "id": 263,
+    "gridSize": 7,
+    "exitRow": 7,
+    "exitCol": 4,
+    "minMoves": 23,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 0,
+        "col": 1,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 4,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 6,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 3,
+        "col": 4,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 2,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      }
+    ],
+    "updatedAt": 1792011001375
+  },
+  {
+    "id": 264,
+    "gridSize": 7,
+    "exitRow": 5,
+    "exitCol": 255,
+    "minMoves": 23,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 5,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 3,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 2,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 6,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 4,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 6,
+        "col": 4,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      }
+    ],
+    "updatedAt": 1792011011904
+  },
+  {
+    "id": 265,
+    "gridSize": 6,
+    "exitRow": 6,
+    "exitCol": 4,
+    "minMoves": 20,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 2,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 3,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 5,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      }
+    ],
+    "updatedAt": 1792011012427
+  },
+  {
+    "id": 266,
+    "gridSize": 6,
+    "exitRow": 1,
+    "exitCol": 6,
+    "minMoves": 20,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 1,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 2,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 3,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      }
+    ],
+    "updatedAt": 1792011012571
+  },
+  {
+    "id": 267,
+    "gridSize": 6,
+    "exitRow": 4,
+    "exitCol": 255,
+    "minMoves": 25,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 5,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 3,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 1,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 2,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 1,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      }
+    ],
+    "updatedAt": 1792011012633
+  },
+  {
+    "id": 268,
+    "gridSize": 7,
+    "exitRow": 3,
+    "exitCol": 7,
+    "minMoves": 22,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 1,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 1,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 5,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 5,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 6,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 1,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 2,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 0,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      }
+    ],
+    "updatedAt": 1792011022692
+  },
+  {
+    "id": 269,
+    "gridSize": 7,
+    "exitRow": 6,
+    "exitCol": 255,
+    "minMoves": 22,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 6,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 5,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 0,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 4,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 4,
+        "col": 1,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 3,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 4,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 1,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 3,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      }
+    ],
+    "updatedAt": 1792011026358
+  },
+  {
+    "id": 270,
+    "gridSize": 7,
+    "exitRow": 5,
+    "exitCol": 7,
+    "minMoves": 23,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 2,
+        "col": 4,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 3,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 1,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 4,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 5,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      }
+    ],
+    "updatedAt": 1792011032381
+  },
+  {
+    "id": 271,
+    "gridSize": 7,
+    "exitRow": 4,
+    "exitCol": 7,
+    "minMoves": 24,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 2,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 2,
+        "col": 4,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 0,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 6,
+        "col": 4,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 2,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 1,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 5,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      }
+    ],
+    "updatedAt": 1792011047077
+  },
+  {
+    "id": 272,
+    "gridSize": 6,
+    "exitRow": 255,
+    "exitCol": 1,
+    "minMoves": 21,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 1,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 0,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 2,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      }
+    ],
+    "updatedAt": 1792011047331
+  },
+  {
+    "id": 273,
+    "gridSize": 7,
+    "exitRow": 7,
+    "exitCol": 5,
+    "minMoves": 21,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 5,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 6,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 5,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 1,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 4,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 6,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 3,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      }
+    ],
+    "updatedAt": 1792011049914
+  },
+  {
+    "id": 274,
+    "gridSize": 7,
+    "exitRow": 4,
+    "exitCol": 7,
+    "minMoves": 22,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 4,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 6,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 1,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 5,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 1,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      }
+    ],
+    "updatedAt": 1792011050387
+  },
+  {
+    "id": 275,
+    "gridSize": 6,
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 22,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 3,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 5,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 4,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 1,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      }
+    ],
+    "updatedAt": 1792011050697
+  },
+  {
+    "id": 276,
+    "gridSize": 7,
+    "exitRow": 4,
+    "exitCol": 255,
+    "minMoves": 21,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 3,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 0,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 2,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 1,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 1,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      }
+    ],
+    "updatedAt": 1792011055079
+  },
+  {
+    "id": 277,
+    "gridSize": 7,
+    "exitRow": 2,
+    "exitCol": 255,
+    "minMoves": 22,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 1,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 5,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 1,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 3,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 1,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      }
+    ],
+    "updatedAt": 1792011062512
+  },
+  {
+    "id": 278,
+    "gridSize": 6,
+    "exitRow": 4,
+    "exitCol": 255,
+    "minMoves": 25,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 3,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 3,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      }
+    ],
+    "updatedAt": 1792011062709
+  },
+  {
+    "id": 279,
+    "gridSize": 6,
+    "exitRow": 255,
+    "exitCol": 5,
+    "minMoves": 23,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 0,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 4,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 1,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 3,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      }
+    ],
+    "updatedAt": 1792011062919
+  },
+  {
+    "id": 280,
+    "gridSize": 6,
+    "exitRow": 3,
+    "exitCol": 6,
+    "minMoves": 29,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 5,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      }
+    ],
+    "updatedAt": 1792011063389
+  },
+  {
+    "id": 281,
+    "gridSize": 8,
+    "exitRow": 6,
+    "exitCol": 8,
+    "minMoves": 40,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 6,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 1,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 5,
+        "col": 6,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 5,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 2,
+        "col": 7,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 4,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 1,
+        "col": 6,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 5,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 5,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v15",
+        "row": 7,
+        "col": 6,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      }
+    ],
+    "updatedAt": 1792011069567
+  },
+  {
+    "id": 282,
+    "gridSize": 8,
+    "exitRow": 7,
+    "exitCol": 255,
+    "minMoves": 51,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 7,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 5,
+        "col": 7,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 2,
+        "col": 5,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 2,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 2,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 5,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 5,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 1,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 5,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 1,
+        "col": 6,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 4,
+        "col": 6,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 4,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      }
+    ],
+    "updatedAt": 1792011084948
+  },
+  {
+    "id": 283,
+    "gridSize": 7,
+    "exitRow": 3,
+    "exitCol": 7,
+    "minMoves": 40,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 5,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 2,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 5,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      }
+    ],
+    "updatedAt": 1792011086048
+  },
+  {
+    "id": 284,
+    "gridSize": 7,
+    "exitRow": 255,
+    "exitCol": 6,
+    "minMoves": 40,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 5,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 2,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 0,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 6,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v15",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      }
+    ],
+    "updatedAt": 1792011091706
+  },
+  {
+    "id": 285,
+    "gridSize": 7,
+    "exitRow": 7,
+    "exitCol": 1,
+    "minMoves": 41,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 6,
+        "col": 4,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 5,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 0,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 2,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 2,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 2,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 2,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 0,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      }
+    ],
+    "updatedAt": 1792011094657
+  },
+  {
+    "id": 286,
+    "gridSize": 7,
+    "exitRow": 255,
+    "exitCol": 0,
+    "minMoves": 40,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 2,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 6,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 1,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 5,
+        "col": 4,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 3,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      }
+    ],
+    "updatedAt": 1792011100829
+  },
+  {
+    "id": 287,
+    "gridSize": 7,
+    "exitRow": 255,
+    "exitCol": 5,
+    "minMoves": 41,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 6,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 0,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 2,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 5,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 3,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      }
+    ],
+    "updatedAt": 1792011104873
+  },
+  {
+    "id": 288,
+    "gridSize": 7,
+    "exitRow": 5,
+    "exitCol": 7,
+    "minMoves": 41,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 5,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 3,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 2,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 5,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 2,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 3,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 2,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 6,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      }
+    ],
+    "updatedAt": 1792011108701
+  },
+  {
+    "id": 289,
+    "gridSize": 8,
+    "exitRow": 6,
+    "exitCol": 8,
+    "minMoves": 42,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 6,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 5,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 6,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
+        "col": 6,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 5,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 3,
+        "col": 6,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 3,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 0,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 1,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      }
+    ],
+    "updatedAt": 1792011193034
+  },
+  {
+    "id": 290,
+    "gridSize": 7,
+    "exitRow": 4,
+    "exitCol": 255,
+    "minMoves": 41,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 1,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 1,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 0,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 6,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 6,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 5,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 3,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      }
+    ],
+    "updatedAt": 1792011628927
+  },
+  {
+    "id": 291,
+    "gridSize": 7,
+    "exitRow": 7,
+    "exitCol": 5,
+    "minMoves": 45,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 1,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 6,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 2,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 2,
+        "col": 1,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 5,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 5,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      }
+    ],
+    "updatedAt": 1792011332621
+  },
+  {
+    "id": 292,
+    "gridSize": 7,
+    "exitRow": 255,
+    "exitCol": 4,
+    "minMoves": 40,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 3,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 2,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 6,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 4,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 6,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v15",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      }
+    ],
+    "updatedAt": 1792011338315
+  },
+  {
+    "id": 293,
+    "gridSize": 7,
+    "exitRow": 255,
+    "exitCol": 5,
+    "minMoves": 41,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 5,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 3,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 1,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 1,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 4,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 6,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 4,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      }
+    ],
+    "updatedAt": 1792011349962
+  },
+  {
+    "id": 294,
+    "gridSize": 7,
+    "exitRow": 7,
+    "exitCol": 4,
+    "minMoves": 40,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 0,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 6,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 5,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 2,
+        "col": 1,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 5,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 2,
+        "col": 4,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 0,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 3,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      }
+    ],
+    "updatedAt": 1792011369352
+  },
+  {
+    "id": 295,
+    "gridSize": 7,
+    "exitRow": 255,
+    "exitCol": 2,
+    "minMoves": 45,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 5,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 0,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 2,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 5,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 3,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v15",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      }
+    ],
+    "updatedAt": 1792011374576
+  },
+  {
+    "id": 296,
+    "gridSize": 7,
+    "exitRow": 7,
+    "exitCol": 5,
+    "minMoves": 40,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 3,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 6,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 4,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 4,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      }
+    ],
+    "updatedAt": 1792011420742
+  },
+  {
+    "id": 297,
+    "gridSize": 7,
+    "exitRow": 3,
+    "exitCol": 7,
+    "minMoves": 41,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 5,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 1,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 1,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 6,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 5,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 6,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      }
+    ],
+    "updatedAt": 1792011427779
+  },
+  {
+    "id": 298,
+    "gridSize": 7,
+    "exitRow": 255,
+    "exitCol": 3,
+    "minMoves": 43,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 4,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 2,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 5,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 3,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 5,
+        "col": 4,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      }
+    ],
+    "updatedAt": 1792011429114
+  },
+  {
+    "id": 299,
+    "gridSize": 8,
+    "exitRow": 255,
+    "exitCol": 0,
+    "minMoves": 40,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 0,
+        "col": 1,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 5,
+        "col": 5,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 2,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 2,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 3,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 1,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 6,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      }
+    ],
+    "updatedAt": 1792011479742
+  },
+  {
+    "id": 300,
+    "gridSize": 7,
+    "exitRow": 6,
+    "exitCol": 255,
+    "minMoves": 46,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 6,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 5,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 4,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 5,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 0,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 3,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 0,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 0,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      }
+    ],
+    "updatedAt": 1792011481297
+  },
+  {
+    "id": 301,
+    "gridSize": 7,
+    "exitRow": 3,
+    "exitCol": 255,
+    "minMoves": 60,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 3,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 6,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 1,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 2,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 3,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 0,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 5,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 0,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      }
+    ],
+    "updatedAt": 1792013608153
+  },
+  {
+    "id": 302,
+    "gridSize": 8,
+    "exitRow": 8,
+    "exitCol": 1,
+    "minMoves": 62,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 0,
+        "col": 5,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 0,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 2,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 4,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 5,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 6,
+        "col": 0,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 6,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 1,
+        "col": 5,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v15",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v16",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v17",
+        "row": 7,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      }
+    ],
+    "updatedAt": 1792012466821
+  },
+  {
+    "id": 303,
+    "gridSize": 7,
+    "exitRow": 7,
+    "exitCol": 5,
+    "minMoves": 60,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 2,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 6,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 2,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 3,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 3,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 1,
+        "col": 2,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 4,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 5,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 6,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 1,
+        "col": 6,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v15",
+        "row": 0,
+        "col": 4,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      }
+    ],
+    "updatedAt": 1792012631823
+  },
+  {
+    "id": 304,
+    "gridSize": 7,
+    "exitRow": 3,
+    "exitCol": 7,
+    "minMoves": 63,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 2,
+        "col": 6,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 2,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 6,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 4,
+        "col": 2,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 0,
+        "col": 4,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v10",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v11",
+        "row": 3,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v12",
+        "row": 5,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v13",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v14",
+        "row": 0,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v15",
+        "row": 6,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      }
+    ],
+    "updatedAt": 1792012807886
   }
 ];
