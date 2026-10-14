@@ -1,8 +1,5 @@
 import type { ChallengeResult, Level, LevelProgress, PlayerStats } from '../store/gameStore';
 import { computeDayRuns, getLocalDateString, parseLocalDateString } from '../utils/date';
-import { sampleLevels } from './sampleLevels';
-
-const CAMPAIGN_IDS = new Set(sampleLevels.map(l => l.id));
 const HOUR_MS = 60 * 60 * 1000;
 
 export type AchievementCategory = 'progress' | 'mastery' | 'purity' | 'speed' | 'daily' | 'streak' | 'creator' | 'secret';
@@ -49,8 +46,6 @@ export interface AchievementContext {
   perfectWeeklies: number;
   /** Weekends with both the Saturday and Sunday dailies completed */
   weekendDailies: number;
-  campaignCompleted: number;
-  campaignPerfect: number;
   totalHintsUsed: number;
   bestStreak: number;
   createdLevels: number;
@@ -71,7 +66,6 @@ export function buildAchievementContext(s: AchievementSource): AchievementContex
     return dailyKeys.has(getLocalDateString(sunday));
   }).length;
   const weeklyResults = Object.values(s.weeklyChallengeProgress).filter(r => r.completed);
-  const campaign = completed.filter(p => CAMPAIGN_IDS.has(p.levelId));
 
   return {
     completedLevels: completed.length,
@@ -86,8 +80,6 @@ export function buildAchievementContext(s: AchievementSource): AchievementContex
     weeklies: weeklyResults.length,
     perfectWeeklies: weeklyResults.filter(r => r.stars === 3).length,
     weekendDailies,
-    campaignCompleted: campaign.length,
-    campaignPerfect: campaign.filter(p => p.stars === 3).length,
     totalHintsUsed: s.totalHintsUsed,
     bestStreak: s.bestStreak,
     createdLevels: s.createdLevels.length,
@@ -110,7 +102,6 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'veteran', icon: '🎖️', category: 'progress', target: 100, value: c => c.completedLevels },
   { id: 'levels_250', icon: '🏆', category: 'progress', target: 250, value: c => c.completedLevels },
   { id: 'levels_500', icon: '👑', category: 'progress', target: 500, value: c => c.completedLevels },
-  { id: 'campaign_complete', icon: '🏁', category: 'progress', target: CAMPAIGN_IDS.size, value: c => c.campaignCompleted },
   { id: 'moves_1000', icon: '👣', category: 'progress', target: 1000, value: c => c.stats.totalMoves },
   { id: 'moves_10000', icon: '🛣️', category: 'progress', target: 10000, value: c => c.stats.totalMoves },
   { id: 'play_10h', icon: '⏳', category: 'progress', target: 10, value: c => Math.floor(c.stats.totalPlayTimeMs / HOUR_MS) },
@@ -123,7 +114,6 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'big_grid', icon: '🗺️', category: 'mastery', target: 1, value: c => c.stats.winsByGridSize['8'] || 0 },
   { id: 'grid_explorer', icon: '🧭', category: 'mastery', target: 3, value: c => ['6', '7', '8'].filter(g => (c.stats.winsByGridSize[g] || 0) > 0).length },
   { id: 'perfect_master', icon: '💎', category: 'mastery', target: 40, value: c => c.stats.hardestPerfectMoves },
-  { id: 'campaign_perfect', icon: '🌟', category: 'mastery', target: CAMPAIGN_IDS.size, value: c => c.campaignPerfect },
 
   // Purity (map and custom levels only: the daily never has hints)
   { id: 'clean_run', icon: '🎯', category: 'purity', target: 1, value: c => c.noHelpLevels },
