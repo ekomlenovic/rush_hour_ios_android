@@ -43,3 +43,20 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 ## Roadmap
 
 Les évolutions prévues sont suivies dans l'epic #19 sur GitHub. Chacune doit respecter les règles ci-dessus.
+
+## Conventions
+
+Les **commits** et les **titres d'issues** suivent les [Semantic Commit Messages](https://www.conventionalcommits.org/) : `type(scope optionnel): description`.
+
+| Type | Usage |
+|---|---|
+| `feat` | nouvelle fonctionnalité |
+| `fix` | correction de bug |
+| `docs` | documentation uniquement |
+| `style` | mise en forme, sans changement de logique |
+| `refactor` | restructuration du code, sans changement de comportement |
+| `perf` | amélioration de performance |
+| `test` | ajout ou correction de tests |
+| `chore` | maintenance : dépendances, version, nettoyage, CI |
+
+Exemples : `feat(achievements): popup de déblocage`, `fix(daily): progression non réinitialisée`, `chore: supprimer le code mort des jetons d'indice`.
