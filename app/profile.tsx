@@ -63,8 +63,8 @@ export default function ProfileScreen() {
 
   const totalStars = useMemo(() => progress.reduce((sum, p) => sum + (p.stars || 0), 0), [progress]);
   const context = useMemo(
-    () => buildAchievementContext({ progress, dailyChallengeProgress, weeklyChallengeProgress, createdLevels, bestStreak, stats }),
-    [progress, dailyChallengeProgress, weeklyChallengeProgress, createdLevels, bestStreak, stats]
+    () => buildAchievementContext({ progress, dailyChallengeProgress, weeklyChallengeProgress, createdLevels, bestStreak, totalHintsUsed, stats }),
+    [progress, dailyChallengeProgress, weeklyChallengeProgress, createdLevels, bestStreak, totalHintsUsed, stats]
   );
   const perfectRate = context.completedLevels > 0 ? Math.round((context.perfectLevels / context.completedLevels) * 100) : 0;
 
