@@ -5,21 +5,11 @@ import { useRouter } from 'expo-router';
 import { useGameStore } from '@/store/gameStore';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
-import { getLocalDateString } from '@/utils/date';
+import { getLocalDateString, formatDuration } from '@/utils/date';
+import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, buildAchievementContext } from '@/data/achievements';
 
-const ACHIEVEMENT_LIST = [
-  { id: 'novice', icon: '🌟' },
-  { id: 'expert', icon: '🏅' },
-  { id: 'veteran', icon: '🎖️' },
-  { id: 'perfectionist', icon: '⭐' },
-  { id: 'daily_winner', icon: '📅' },
-  { id: 'streak_3', icon: '🔥' },
-  { id: 'streak_7', icon: '🔥🔥' },
-  { id: 'streak_30', icon: '🔥🔥🔥' },
-  { id: 'creator_star', icon: '🎨' },
-  { id: 'daily_devotee', icon: '📆' },
-  { id: 'weekly_warrior', icon: '⚔️' },
-];
+const DAILY_STAR_COLORS: Record<number, string> = { 1: '#A5D6A7', 2: '#66BB6A', 3: '#2E7D32' };
+
 
 function getCalendarDays() {
   const today = new Date();
@@ -67,10 +57,16 @@ export default function ProfileScreen() {
   const dailyChallengeProgress = useGameStore((state) => state.dailyChallengeProgress || {});
   const totalHintsUsed = useGameStore((state) => state.totalHintsUsed || 0);
   const achievements = useGameStore((state) => state.achievements || []);
+  const weeklyChallengeProgress = useGameStore((state) => state.weeklyChallengeProgress || {});
+  const createdLevels = useGameStore((state) => state.createdLevels);
+  const stats = useGameStore((state) => state.stats);
 
-  const levelsCompleted = useMemo(() => progress.filter(p => p.completed).length, [progress]);
   const totalStars = useMemo(() => progress.reduce((sum, p) => sum + (p.stars || 0), 0), [progress]);
-  const dailiesCompleted = useMemo(() => Object.values(dailyChallengeProgress).filter((p: any) => p.completed).length, [dailyChallengeProgress]);
+  const context = useMemo(
+    () => buildAchievementContext({ progress, dailyChallengeProgress, weeklyChallengeProgress, createdLevels, bestStreak, stats }),
+    [progress, dailyChallengeProgress, weeklyChallengeProgress, createdLevels, bestStreak, stats]
+  );
+  const perfectRate = context.completedLevels > 0 ? Math.round((context.perfectLevels / context.completedLevels) * 100) : 0;
 
   const days = useMemo(() => getCalendarDays(), []);
   const weekDays = [
@@ -97,7 +93,7 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { color: textColor }]}>{t('profile.stats', 'Statistics')}</Text>
           <View style={styles.statsGrid}>
             <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>{levelsCompleted}</Text>
+              <Text style={[styles.statValue, { color: textColor }]}>{context.completedLevels}</Text>
               <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.levels_completed', 'Levels Completed')}</Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
@@ -113,12 +109,38 @@ export default function ProfileScreen() {
               <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.best_streak', 'Best Streak')}</Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>{dailiesCompleted}</Text>
+              <Text style={[styles.statValue, { color: textColor }]}>{context.dailies}</Text>
               <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.dailies_completed', 'Dailies Completed')}</Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
               <Text style={[styles.statValue, { color: textColor }]}>💡 {totalHintsUsed}</Text>
               <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.hints_used', 'Hints Used')}</Text>
+            </View>
+            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
+              <Text style={[styles.statValue, { color: textColor }]}>⏳ {formatDuration(stats.totalPlayTimeMs)}</Text>
+              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.play_time')}</Text>
+            </View>
+            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
+              <Text style={[styles.statValue, { color: textColor }]}>{perfectRate}%</Text>
+              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.perfect_rate')}</Text>
+            </View>
+            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
+              <Text style={[styles.statValue, { color: textColor }]}>{context.noHintLevels}</Text>
+              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.no_hint_levels')}</Text>
+            </View>
+            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
+              <Text style={[styles.statValue, { color: textColor }]}>{stats.totalMoves}</Text>
+              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.total_moves')}</Text>
+            </View>
+            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
+              <Text style={[styles.statValue, { color: textColor }]}>
+                {context.fastestDailyMs !== null ? formatDuration(context.fastestDailyMs) : '—'}
+              </Text>
+              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.fastest_daily')}</Text>
+            </View>
+            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
+              <Text style={[styles.statValue, { color: textColor }]}>{context.weeklies}</Text>
+              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.weeklies_completed')}</Text>
             </View>
           </View>
         </Animated.View>
@@ -137,8 +159,10 @@ export default function ProfileScreen() {
                   if (day.isFuture) {
                     return <View key={day.dateString} style={[styles.calendarCell, { backgroundColor: 'transparent' }]} />;
                   }
-                  const isCompleted = dailyChallengeProgress?.[day.dateString]?.completed;
-                  const cellBgColor = isCompleted ? '#4CAF50' : (isDark ? '#2D2D3A' : '#E0E0E8');
+                  const daily = dailyChallengeProgress?.[day.dateString];
+                  const cellBgColor = daily?.completed
+                    ? DAILY_STAR_COLORS[daily.stars] ?? DAILY_STAR_COLORS[3]
+                    : (isDark ? '#2D2D3A' : '#E0E0E8');
                   return (
                     <View
                       key={day.dateString}
@@ -159,27 +183,45 @@ export default function ProfileScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(300).duration(400)} style={[styles.section, { paddingBottom: RFValue(40) }]}>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>{t('profile.achievements', 'Achievements')}</Text>
-          <View style={styles.achievementsList}>
-            {ACHIEVEMENT_LIST.map((ach) => {
-              const isUnlocked = achievements?.includes(ach.id);
-              return (
-                <View key={ach.id} style={[styles.achievementCard, { backgroundColor: cardColor, borderColor }]}>
-                  <View style={[styles.achievementIconContainer, { opacity: isUnlocked ? 1 : 0.4 }]}>
-                    <Text style={styles.achievementIcon}>{isUnlocked ? ach.icon : '🔒'}</Text>
-                  </View>
-                  <View style={styles.achievementTextContainer}>
-                    <Text style={[styles.achievementName, { color: textColor, opacity: isUnlocked ? 1 : 0.6 }]}>
-                      {t(`achievements.${ach.id}`)}
-                    </Text>
-                    <Text style={[styles.achievementDesc, { color: secondaryTextColor, opacity: isUnlocked ? 1 : 0.6 }]}>
-                      {t(`achievements.${ach.id}_desc`)}
-                    </Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>
+            {t('profile.achievements', 'Achievements')} · {achievements.length}/{ACHIEVEMENTS.length}
+          </Text>
+          {ACHIEVEMENT_CATEGORIES.map((category) => (
+            <View key={category} style={styles.achievementCategory}>
+              <Text style={[styles.categoryTitle, { color: secondaryTextColor }]}>{t(`achievements.categories.${category}`)}</Text>
+              <View style={styles.achievementsList}>
+                {ACHIEVEMENTS.filter(a => a.category === category).map((ach) => {
+                  const isUnlocked = achievements.includes(ach.id);
+                  const isSecret = ach.hidden && !isUnlocked;
+                  const current = Math.min(ach.value(context), ach.target);
+                  const showProgress = !isUnlocked && !isSecret && ach.target > 1;
+                  return (
+                    <View key={ach.id} style={[styles.achievementCard, { backgroundColor: cardColor, borderColor }]}>
+                      <View style={[styles.achievementIconContainer, { opacity: isUnlocked ? 1 : 0.4 }]}>
+                        <Text style={styles.achievementIcon}>{isUnlocked ? ach.icon : '🔒'}</Text>
+                      </View>
+                      <View style={styles.achievementTextContainer}>
+                        <Text style={[styles.achievementName, { color: textColor, opacity: isUnlocked ? 1 : 0.6 }]}>
+                          {isSecret ? '???' : t(`achievements.${ach.id}`)}
+                        </Text>
+                        <Text style={[styles.achievementDesc, { color: secondaryTextColor, opacity: isUnlocked ? 1 : 0.6 }]}>
+                          {isSecret ? t('achievements.secret_desc') : t(`achievements.${ach.id}_desc`)}
+                        </Text>
+                        {showProgress && (
+                          <View style={styles.progressRow}>
+                            <View style={[styles.progressTrack, { backgroundColor: borderColor }]}>
+                              <View style={[styles.progressFill, { width: `${(current / ach.target) * 100}%`, backgroundColor: accentColor }]} />
+                            </View>
+                            <Text style={[styles.progressText, { color: secondaryTextColor }]}>{current}/{ach.target}</Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          ))}
         </Animated.View>
       </ScrollView>
     </View>
@@ -276,6 +318,36 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: RFValue(4),
     marginHorizontal: RFValue(2),
+  },
+  achievementCategory: {
+    marginBottom: RFValue(16),
+  },
+  categoryTitle: {
+    fontSize: RFValue(13),
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: RFValue(8),
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: RFValue(8),
+  },
+  progressTrack: {
+    flex: 1,
+    height: RFValue(6),
+    borderRadius: RFValue(3),
+    overflow: 'hidden',
+    marginRight: RFValue(8),
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: RFValue(3),
+  },
+  progressText: {
+    fontSize: RFValue(11),
+    fontWeight: '600',
   },
   achievementsList: {
     gap: RFValue(12),

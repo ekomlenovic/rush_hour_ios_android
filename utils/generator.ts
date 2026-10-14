@@ -1,5 +1,6 @@
-import { Vehicle, Level } from '../store/gameStore';
+import { Vehicle, Level, DAILY_LEVEL_ID, WEEKLY_LEVEL_ID } from '../store/gameStore';
 import { solvePuzzle } from './solver';
+import { sampleLevels } from '../data/sampleLevels';
 
 export interface DifficultyConfig {
   gridSize: number;
@@ -57,25 +58,130 @@ function seededRandom() {
  * Now asynchronous to prevent UI blocking during the multi-attempt trial process.
  */
 export async function generateDailyLevel(dateStr: string): Promise<Level | null> {
-  const prng = createPRNG(dateStr);
-  const oldRNG = currentRNG;
-  currentRNG = prng;
-
   const date = new Date(dateStr);
   const isMonday = date.getDay() === 1;
 
   // Use a fixed difficulty for Daily Challenge: NORMAL usually, HARD on Mondays
   const difficulty = isMonday ? DIFFICULTY_LEVELS.HARD : DIFFICULTY_LEVELS.NORMAL;
-  // Use timestamp for daily ID: ensuring it changes every day
 
-  const dailyId = 999999;
+  return generateSeededLevel(dateStr, DAILY_LEVEL_ID, difficulty);
+}
+
+/** Campaign levels at least this hard feed the weekly challenge */
+const WEEKLY_MIN_MOVES = 25;
+/** Stride through the pool: consecutive weeks get unrelated levels */
+const WEEKLY_POOL_STRIDE = 23;
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Number of weeks between 1970 and the Monday of an ISO week key ('2026-W42') */
+function getWeekIndex(weekKey: string): number {
+  const [year, week] = weekKey.split('-W').map(Number);
+  // January 4th is always in ISO week 1
+  const jan4 = Date.UTC(year, 0, 4);
+  const jan4DayOfWeek = new Date(jan4).getUTCDay() || 7;
+  const monday = jan4 - (jan4DayOfWeek - 1) * 86400000 + (week - 1) * WEEK_MS;
+  return Math.round(monday / WEEK_MS);
+}
+
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
+/**
+ * Applies one of the 8 symmetries of the square (bit 0: transpose, bit 1: flip rows, bit 2: flip columns).
+ * The puzzle stays equivalent, with the same minimum number of moves.
+ */
+export function transformLevel(level: Level, symmetry: number): Level {
+  const n = level.gridSize;
+  const transpose = (symmetry & 1) !== 0;
+  const flipRows = (symmetry & 2) !== 0;
+  const flipCols = (symmetry & 4) !== 0;
+
+  const mapCell = (row: number, col: number): [number, number] => {
+    let [r, c] = transpose ? [col, row] : [row, col];
+    if (flipRows) r = n - 1 - r;
+    if (flipCols) c = n - 1 - c;
+    return [r, c];
+  };
+
+  const vehicles = level.vehicles.map((v) => {
+    const cells = Array.from({ length: v.length }, (_, i) =>
+      mapCell(v.orientation === 'vertical' ? v.row + i : v.row, v.orientation === 'horizontal' ? v.col + i : v.col)
+    );
+    const orientation: Vehicle['orientation'] = transpose
+      ? (v.orientation === 'horizontal' ? 'vertical' : 'horizontal')
+      : v.orientation;
+    return {
+      ...v,
+      row: Math.min(...cells.map(([r]) => r)),
+      col: Math.min(...cells.map(([, c]) => c)),
+      orientation,
+    };
+  });
+
+  // The exit is a virtual cell just outside the grid; 255 encodes -1 (top or left side)
+  const [exitRow, exitCol] = mapCell(
+    level.exitRow === 255 ? -1 : level.exitRow,
+    level.exitCol === 255 ? -1 : level.exitCol,
+  );
+
+  return {
+    ...level,
+    vehicles,
+    exitRow: exitRow === -1 ? 255 : exitRow,
+    exitCol: exitCol === -1 ? 255 : exitCol,
+  };
+}
+
+/**
+ * Weekly challenge: same puzzle for everyone during an ISO week, harder than the daily.
+ * Built from a hard campaign level, disguised by a symmetry and new colors:
+ * instant to produce and the minimum number of moves is already known.
+ */
+export async function generateWeeklyLevel(weekKey: string): Promise<Level | null> {
+  const pool = sampleLevels.filter(l => l.minMoves >= WEEKLY_MIN_MOVES);
+  if (pool.length === 0) return null;
+
+  const weekIndex = getWeekIndex(weekKey);
+  // A stride coprime with the pool size visits every level before repeating one
+  const stride = gcd(WEEKLY_POOL_STRIDE, pool.length) === 1 ? WEEKLY_POOL_STRIDE : 1;
+  const source = pool[(weekIndex * stride) % pool.length];
+  // Never the identity, so the level does not look like its campaign version
+  const symmetry = 1 + (weekIndex % 7);
+
+  const transformed = transformLevel(source, symmetry);
+
+  // Shuffle the colors of the other vehicles
+  const random = createPRNG(`weekly-${weekKey}`);
+  const colors = shuffleWith(COLORS, random);
+  let colorIndex = 0;
+  const vehicles = transformed.vehicles.map(v =>
+    v.isTarget ? v : { ...v, color: colors[colorIndex++ % colors.length] }
+  );
+
+  return { ...transformed, id: WEEKLY_LEVEL_ID, vehicles, updatedAt: Date.now() };
+}
+
+function shuffleWith<T>(arr: T[], random: () => number): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+async function generateSeededLevel(seed: string, id: number, difficulty: DifficultyConfig): Promise<Level | null> {
+  const prng = createPRNG(seed);
+  const oldRNG = currentRNG;
+  currentRNG = prng;
 
   try {
     // We use a small timeout to allow UI to breathe
     return new Promise((resolve) => {
       setTimeout(() => {
         // We use the new scrambled generator for near-instant on-device generation
-        const level = generateScrambledLevel(dailyId, difficulty);
+        const level = generateScrambledLevel(id, difficulty);
         currentRNG = oldRNG; // Restore RNG after generation
         resolve(level);
       }, 0);
