@@ -41,6 +41,7 @@ Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler
 | Puzzle tiré d'un **niveau difficile de la campagne** (≥ 25 coups minimum) | `generateWeeklyLevel` (`utils/generator.ts`) |
 | Le niveau est **déguisé** : une des 7 symétries non triviales (rotation / miroir) et couleurs remélangées. Le nombre minimum de coups est inchangé | `transformLevel` |
 | **Diversité** : tout le pool est parcouru avant qu'un niveau revienne, deux semaines de suite ne se ressemblent pas | pas de 23 dans le pool, symétrie qui change chaque semaine |
+| Ajouter des niveaux à la campagne agrandit le pool et **change le tirage des semaines suivantes**. La semaine en cours ne bouge pas : son niveau est en cache pour sa clé de semaine | `currentWeeklyLevel` / `weeklyLevelKey` |
 | **Recommencer** est le seul bouton d'action ; il remet les coups à zéro | `resetLevel`, boutons dans `app/game.tsx` |
 | N'affecte **ni le streak ni la carte** | ID réservé `999998`, `weeklyChallengeProgress` |
 
