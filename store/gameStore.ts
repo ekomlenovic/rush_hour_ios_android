@@ -105,6 +105,18 @@ export interface PlayerStats {
   nightWins: number;
   /** Wins on January 1st */
   newYearWins: number;
+  /** Wins on special days, keyed by 'MM-DD' (e.g. '12-25') or 'fri13' */
+  specialDayWins: Record<string, number>;
+  /** Longest active time spent on a level before winning it */
+  longestWinMs: number;
+  /** Most resets during a winning attempt */
+  maxResetsBeforeWin: number;
+  /** Highest minMoves of a level won with 3 stars */
+  hardestPerfectMoves: number;
+  /** Daily challenges won between 5 and 7 AM */
+  earlyDailyWins: number;
+  /** Weekly challenges won on Sunday, the last day */
+  lastMinuteWeeklies: number;
   /** Longest absence between two app opens, in days */
   longestAbsenceDays: number;
 }
@@ -227,6 +239,12 @@ const initialStats = (): PlayerStats => ({
   fastestWinMs: null,
   nightWins: 0,
   newYearWins: 0,
+  specialDayWins: {},
+  longestWinMs: 0,
+  maxResetsBeforeWin: 0,
+  hardestPerfectMoves: 0,
+  earlyDailyWins: 0,
+  lastMinuteWeeklies: 0,
   longestAbsenceDays: 0,
 });
 
@@ -240,11 +258,22 @@ function getLevelKey(level: Level, dailyLevelDate: string | null, weeklyLevelKey
   return level.id;
 }
 
+/** Special days counted for secret achievements */
+function getSpecialDayKeys(now: Date): string[] {
+  const keys = [`${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`];
+  if (now.getDay() === 5 && now.getDate() === 13) keys.push('fri13');
+  return keys;
+}
+
+type WinKind = 'level' | 'daily' | 'weekly';
+
 /** Stats after winning the current level with the given attempt */
-function withWinStats(stats: PlayerStats, level: Level, attempt: AttemptStats, timeMs: number | undefined): PlayerStats {
+function withWinStats(stats: PlayerStats, level: Level, attempt: AttemptStats, timeMs: number | undefined, stars: number, kind: WinKind): PlayerStats {
   const now = new Date();
   const gridKey = String(level.gridSize);
   const countsForSpeed = timeMs !== undefined && level.minMoves >= SPEED_RECORD_MIN_MOVES;
+  const specialDayWins = { ...stats.specialDayWins };
+  for (const key of getSpecialDayKeys(now)) specialDayWins[key] = (specialDayWins[key] || 0) + 1;
   return {
     ...stats,
     totalWins: stats.totalWins + 1,
@@ -256,6 +285,12 @@ function withWinStats(stats: PlayerStats, level: Level, attempt: AttemptStats, t
       : stats.fastestWinMs,
     nightWins: stats.nightWins + (now.getHours() < 5 ? 1 : 0),
     newYearWins: stats.newYearWins + (now.getMonth() === 0 && now.getDate() === 1 ? 1 : 0),
+    specialDayWins,
+    longestWinMs: Math.max(stats.longestWinMs, timeMs ?? 0),
+    maxResetsBeforeWin: Math.max(stats.maxResetsBeforeWin, attempt.resets),
+    hardestPerfectMoves: stars === 3 ? Math.max(stats.hardestPerfectMoves, level.minMoves) : stats.hardestPerfectMoves,
+    earlyDailyWins: stats.earlyDailyWins + (kind === 'daily' && now.getHours() >= 5 && now.getHours() < 7 ? 1 : 0),
+    lastMinuteWeeklies: stats.lastMinuteWeeklies + (kind === 'weekly' && now.getDay() === 0 ? 1 : 0),
   };
 }
 
@@ -455,7 +490,7 @@ export const useGameStore = create<GameState>()(
           progress: updatedProgress,
           maxUnlockedLevel: isMapLevel ? Math.max(maxUnlockedLevel, levelId + 1) : maxUnlockedLevel,
           savedStates: newSavedStates,
-          stats: isCurrentLevel && currentLevel ? withWinStats(stats, currentLevel, currentAttempt, timeMs) : stats,
+          stats: isCurrentLevel && currentLevel ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'level') : stats,
           currentAttempt: emptyAttempt(),
         });
         get().checkAchievements();
@@ -472,7 +507,7 @@ export const useGameStore = create<GameState>()(
             [dateKey]: mergeChallengeResult(dailyChallengeProgress[dateKey], score, stars, timeMs),
           },
           savedStates: newSavedStates,
-          stats: currentLevel?.id === DAILY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs) : stats,
+          stats: currentLevel?.id === DAILY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'daily') : stats,
           currentAttempt: emptyAttempt(),
         });
 
@@ -493,7 +528,7 @@ export const useGameStore = create<GameState>()(
             [weekKey]: mergeChallengeResult(weeklyChallengeProgress[weekKey], score, stars, timeMs),
           },
           savedStates: newSavedStates,
-          stats: currentLevel?.id === WEEKLY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs) : stats,
+          stats: currentLevel?.id === WEEKLY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'weekly') : stats,
           currentAttempt: emptyAttempt(),
         });
         get().checkAchievements();
