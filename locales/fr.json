@@ -65,7 +65,10 @@
     "welcome_back_desc": "Vous étiez absent {{days}} jours. Bonne reprise !",
     "missed_dailies": "Vous avez manqué {{count}} défis quotidiens",
     "weekly_days_left_one": "Encore {{count}} jour",
-    "weekly_days_left_other": "Encore {{count}} jours"
+    "weekly_days_left_other": "Encore {{count}} jours",
+    "freeze_used_one": "Un gel a protégé ton streak de {{streak}} jours ! ({{count}} jour manqué)",
+    "freeze_used_other": "Tes gels ont protégé ton streak de {{streak}} jours ! ({{count}} jours manqués)",
+    "streak_lost": "Ton streak de {{count}} jours s'est arrêté. Un nouveau commence aujourd'hui !"
   },
   "map": {
     "title": "Jouer",
@@ -218,7 +221,8 @@
     "no_hint_levels": "Niveaux sans indice",
     "total_moves": "Coups joués",
     "fastest_daily": "Meilleur temps (défi du jour)",
-    "weeklies_completed": "Défis hebdo complétés"
+    "weeklies_completed": "Défis hebdo complétés",
+    "streak_freezes": "Gels de streak"
   },
   "achievements": {
     "novice": "Novice",
@@ -354,7 +358,9 @@
     "pi_day": "3,14",
     "pi_day_desc": "Réussir un niveau le 14 mars",
     "result_sharer": "Crieur public",
-    "result_sharer_desc": "Partager le résultat d'un défi"
+    "result_sharer_desc": "Partager le résultat d'un défi",
+    "frozen_save": "Sauvé par la glace",
+    "frozen_save_desc": "Un gel de streak a protégé votre streak"
   },
   "share": {
     "share_result": "Partager mon résultat",
