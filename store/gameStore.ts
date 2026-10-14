@@ -82,6 +82,15 @@ export interface ChallengeResult {
   score: number;
   stars: number;
   timeMs?: number;
+  /** Moves of the best result and the level's optimum, for result sharing */
+  moves?: number;
+  minMoves?: number;
+}
+
+/** Extra details recorded with a challenge result */
+export interface ChallengeDetails {
+  moves: number;
+  minMoves: number;
 }
 
 /** Lifetime player statistics */
@@ -96,6 +105,8 @@ export interface PlayerStats {
   /** Wins per grid size, keyed by size ('6', '7', '8') */
   winsByGridSize: Record<string, number>;
   levelsShared: number;
+  /** Daily / weekly results shared (Wordle-like text) */
+  resultsShared: number;
   levelsImported: number;
   /** Highest minMoves of a level ever won */
   hardestWinMoves: number;
@@ -201,11 +212,12 @@ interface GameState {
   recordHintUsed: () => void;
   addPlayTime: (ms: number) => void;
   completeLevel: (levelId: number, score: number, stars: number, timeMs?: number) => void;
-  completeDailyChallenge: (dateKey: string, score: number, stars: number, timeMs?: number) => void;
-  completeWeeklyChallenge: (weekKey: string, score: number, stars: number, timeMs?: number) => void;
+  completeDailyChallenge: (dateKey: string, score: number, stars: number, timeMs?: number, details?: ChallengeDetails) => void;
+  completeWeeklyChallenge: (weekKey: string, score: number, stars: number, timeMs?: number, details?: ChallengeDetails) => void;
   checkAchievements: (options?: { silent?: boolean }) => void;
   consumeUnlockQueue: () => string[];
   recordLevelShared: () => void;
+  recordResultShared: () => void;
   addGeneratedLevel: (level: Level) => void;
   addImportedLevel: (level: Level) => void;
   saveCreatedLevel: (level: Level) => void;
@@ -234,6 +246,7 @@ const initialStats = (): PlayerStats => ({
   firstTryWins: 0,
   winsByGridSize: {},
   levelsShared: 0,
+  resultsShared: 0,
   levelsImported: 0,
   hardestWinMoves: 0,
   fastestWinMs: null,
@@ -308,13 +321,18 @@ function recomputeStreak(state: Record<string, unknown>): Partial<Pick<GameState
   };
 }
 
-function mergeChallengeResult(existing: ChallengeResult | undefined, score: number, stars: number, timeMs?: number): ChallengeResult {
+function mergeChallengeResult(existing: ChallengeResult | undefined, score: number, stars: number, timeMs?: number, details?: ChallengeDetails): ChallengeResult {
   const times = [existing?.timeMs, timeMs].filter((t): t is number => t !== undefined);
+  const isBest = !existing || score >= existing.score;
+  const moves = isBest ? details?.moves ?? existing?.moves : existing?.moves;
+  const minMoves = details?.minMoves ?? existing?.minMoves;
   return {
     completed: true,
     score: Math.max(existing?.score || 0, score),
     stars: Math.max(existing?.stars || 0, stars),
     timeMs: times.length > 0 ? Math.min(...times) : undefined,
+    ...(moves !== undefined && { moves }),
+    ...(minMoves !== undefined && { minMoves }),
   };
 }
 
@@ -532,7 +550,7 @@ export const useGameStore = create<GameState>()(
         get().checkAchievements();
       },
 
-      completeDailyChallenge: (dateKey, score, stars, timeMs) => {
+      completeDailyChallenge: (dateKey, score, stars, timeMs, details) => {
         const { dailyChallengeProgress, savedStates, currentLevel, currentAttempt, stats } = get();
         const newSavedStates = { ...savedStates };
         delete newSavedStates[`daily-${dateKey}`];
@@ -540,7 +558,7 @@ export const useGameStore = create<GameState>()(
         set({
           dailyChallengeProgress: {
             ...dailyChallengeProgress,
-            [dateKey]: mergeChallengeResult(dailyChallengeProgress[dateKey], score, stars, timeMs),
+            [dateKey]: mergeChallengeResult(dailyChallengeProgress[dateKey], score, stars, timeMs, details),
           },
           savedStates: newSavedStates,
           stats: currentLevel?.id === DAILY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'daily') : stats,
@@ -553,7 +571,7 @@ export const useGameStore = create<GameState>()(
         get().checkAchievements();
       },
 
-      completeWeeklyChallenge: (weekKey, score, stars, timeMs) => {
+      completeWeeklyChallenge: (weekKey, score, stars, timeMs, details) => {
         const { weeklyChallengeProgress, savedStates, currentLevel, currentAttempt, stats } = get();
         const newSavedStates = { ...savedStates };
         delete newSavedStates[`weekly-${weekKey}`];
@@ -561,7 +579,7 @@ export const useGameStore = create<GameState>()(
         set({
           weeklyChallengeProgress: {
             ...weeklyChallengeProgress,
-            [weekKey]: mergeChallengeResult(weeklyChallengeProgress[weekKey], score, stars, timeMs),
+            [weekKey]: mergeChallengeResult(weeklyChallengeProgress[weekKey], score, stars, timeMs, details),
           },
           savedStates: newSavedStates,
           stats: currentLevel?.id === WEEKLY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'weekly') : stats,
@@ -597,6 +615,12 @@ export const useGameStore = create<GameState>()(
         const { unlockQueue } = get();
         if (unlockQueue.length > 0) set({ unlockQueue: [] });
         return unlockQueue;
+      },
+
+      recordResultShared: () => {
+        const { stats } = get();
+        set({ stats: { ...stats, resultsShared: stats.resultsShared + 1 } });
+        get().checkAchievements();
       },
 
       recordLevelShared: () => {
