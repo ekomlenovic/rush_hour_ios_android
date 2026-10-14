@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { sampleLevels } from '../data/sampleLevels';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
-import { getLocalDateString, daysBetween, computeDayRuns } from '../utils/date';
+import { getLocalDateString, daysBetween, computeDayRuns, addDays } from '../utils/date';
 
 /** Reserved level IDs for challenges (excluded from map progression) */
 export const DAILY_LEVEL_ID = 999999;
@@ -128,6 +128,9 @@ export interface PlayerStats {
   earlyDailyWins: number;
   /** Weekly challenges won on Sunday, the last day */
   lastMinuteWeeklies: number;
+  /** Streak freezes earned and consumed */
+  freezesEarned: number;
+  freezesUsed: number;
   /** Longest absence between two app opens, in days */
   longestAbsenceDays: number;
 }
@@ -197,6 +200,10 @@ interface GameState {
   currentStreak: number;
   bestStreak: number;
   lastStreakDate: string | null;
+  /** Streak freezes in stock: each one covers a missed day (see docs/GAME_DESIGN.md) */
+  streakFreezes: number;
+  /** Days covered by a freeze, shown in the calendar */
+  frozenDates: string[];
 
   /** Last time the app was opened (ISO date YYYY-MM-DD) for comeback detection */
   lastOpenDate: string | null;
@@ -232,7 +239,54 @@ interface GameState {
   cancelGeneration: () => void;
   hardReset: () => void;
   updateStreak: (dateKey: string) => void;
-  recordAppOpen: () => { isComeback: boolean; missedDays: number };
+  recordAppOpen: () => AppOpenInfo;
+  addStreakFreeze: () => boolean;
+}
+
+/** What happened since the last app open */
+export interface AppOpenInfo {
+  isComeback: boolean;
+  missedDays: number;
+  /** Missed days covered by streak freezes */
+  frozenDays: number;
+  /** Streak value lost because there were not enough freezes */
+  lostStreak: number;
+}
+
+export const MAX_STREAK_FREEZES = 2;
+/** A freeze is earned every this many days of streak */
+const FREEZE_STREAK_INTERVAL = 7;
+
+/**
+ * Applies the days missed since the last daily: freezes cover them if there are enough,
+ * otherwise the streak is lost (freezes are kept). Today itself can still be played.
+ */
+function settleStreak(state: Pick<GameState, 'currentStreak' | 'lastStreakDate' | 'streakFreezes' | 'frozenDates' | 'stats'>, today: string): {
+  patch: Partial<GameState>;
+  frozenDays: number;
+  lostStreak: number;
+} {
+  const { currentStreak, lastStreakDate, streakFreezes, frozenDates, stats } = state;
+  if (!lastStreakDate || currentStreak === 0) return { patch: {}, frozenDays: 0, lostStreak: 0 };
+
+  const missed = daysBetween(lastStreakDate, today) - 1;
+  if (missed <= 0) return { patch: {}, frozenDays: 0, lostStreak: 0 };
+
+  if (streakFreezes >= missed) {
+    const covered = Array.from({ length: missed }, (_, i) => addDays(lastStreakDate, i + 1));
+    return {
+      patch: {
+        streakFreezes: streakFreezes - missed,
+        frozenDates: [...frozenDates, ...covered],
+        // As if yesterday was played: today's daily continues the streak
+        lastStreakDate: addDays(today, -1),
+        stats: { ...stats, freezesUsed: stats.freezesUsed + missed },
+      },
+      frozenDays: missed,
+      lostStreak: 0,
+    };
+  }
+  return { patch: { currentStreak: 0 }, frozenDays: 0, lostStreak: currentStreak };
 }
 
 const emptyAttempt = (): AttemptStats => ({ hints: 0, undos: 0, resets: 0, elapsedMs: 0 });
@@ -258,6 +312,8 @@ const initialStats = (): PlayerStats => ({
   hardestPerfectMoves: 0,
   earlyDailyWins: 0,
   lastMinuteWeeklies: 0,
+  freezesEarned: 0,
+  freezesUsed: 0,
   longestAbsenceDays: 0,
 });
 
@@ -423,6 +479,8 @@ export const useGameStore = create<GameState>()(
       currentStreak: 0,
       bestStreak: 0,
       lastStreakDate: null,
+      streakFreezes: 0,
+      frozenDates: [],
       lastOpenDate: null,
       totalHintsUsed: 0,
       generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
@@ -630,25 +688,37 @@ export const useGameStore = create<GameState>()(
       },
 
       updateStreak: (dateKey: string) => {
-        const { lastStreakDate, currentStreak, bestStreak } = get();
+        if (get().lastStreakDate === dateKey) return; // Already counted today
 
-        if (lastStreakDate === dateKey) return; // Already counted today
+        // Missed days may not have been settled yet (e.g. app opened on a deep link)
+        set(settleStreak(get(), dateKey).patch);
+        const { lastStreakDate, currentStreak, bestStreak, streakFreezes, stats } = get();
 
         // Date keys are local dates: never parse them with new Date('YYYY-MM-DD') (UTC)
-        let newStreak: number;
-        if (lastStreakDate && daysBetween(lastStreakDate, dateKey) === 1) {
-          newStreak = currentStreak + 1;
-        } else if (!lastStreakDate) {
-          newStreak = 1;
-        } else {
-          newStreak = 1; // Streak broken
-        }
+        const newStreak = lastStreakDate && daysBetween(lastStreakDate, dateKey) === 1
+          ? currentStreak + 1
+          : 1;
+        const earnsFreeze = newStreak % FREEZE_STREAK_INTERVAL === 0 && streakFreezes < MAX_STREAK_FREEZES;
 
         set({
           currentStreak: newStreak,
           bestStreak: Math.max(bestStreak, newStreak),
           lastStreakDate: dateKey,
+          ...(earnsFreeze && {
+            streakFreezes: streakFreezes + 1,
+            stats: { ...stats, freezesEarned: stats.freezesEarned + 1 },
+          }),
         });
+      },
+
+      addStreakFreeze: () => {
+        const { streakFreezes, stats } = get();
+        if (streakFreezes >= MAX_STREAK_FREEZES) return false;
+        set({
+          streakFreezes: streakFreezes + 1,
+          stats: { ...stats, freezesEarned: stats.freezesEarned + 1 },
+        });
+        return true;
       },
 
       recordAppOpen: () => {
@@ -667,8 +737,10 @@ export const useGameStore = create<GameState>()(
           lastOpenDate: today,
           stats: { ...stats, longestAbsenceDays: Math.max(stats.longestAbsenceDays, missedDays) },
         });
+        const { patch, frozenDays, lostStreak } = settleStreak(get(), today);
+        set(patch);
         get().checkAchievements();
-        return { isComeback, missedDays };
+        return { isComeback, missedDays, frozenDays, lostStreak };
       },
 
       addGeneratedLevel: (level) => {
@@ -786,6 +858,8 @@ export const useGameStore = create<GameState>()(
           currentStreak: 0,
           bestStreak: 0,
           lastStreakDate: null,
+          streakFreezes: 0,
+          frozenDates: [],
           lastOpenDate: null,
           totalHintsUsed: 0,
         });
@@ -846,6 +920,8 @@ export const useGameStore = create<GameState>()(
         currentStreak: state.currentStreak,
         bestStreak: state.bestStreak,
         lastStreakDate: state.lastStreakDate,
+        streakFreezes: state.streakFreezes,
+        frozenDates: state.frozenDates,
         lastOpenDate: state.lastOpenDate,
         totalHintsUsed: state.totalHintsUsed,
       }),

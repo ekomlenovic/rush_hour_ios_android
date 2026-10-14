@@ -25,23 +25,25 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
-  const { maxUnlockedLevel, dailyChallengeProgress, hardReset, unlockAllLevels, isHapticsEnabled, toggleHapticsEnabled, currentStreak, recordAppOpen, weeklyChallengeProgress } = useGameStore();
+  const { maxUnlockedLevel, dailyChallengeProgress, hardReset, unlockAllLevels, isHapticsEnabled, toggleHapticsEnabled, currentStreak, recordAppOpen, weeklyChallengeProgress, streakFreezes } = useGameStore();
 
   const { toggleMusic, isPlaying: isMusicEnabled } = useAudio();
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const insets = useSafeAreaInsets();
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
-  const [comebackInfo, setComebackInfo] = useState<{ isComeback: boolean; missedDays: number } | null>(null);
-
   useEffect(() => {
     const info = recordAppOpen();
-    if (info.isComeback) {
-      setComebackInfo(info);
+    const lines = [
+      info.isComeback ? t('home.welcome_back_desc', { days: info.missedDays }) : null,
+      info.frozenDays > 0 ? t('home.freeze_used', { count: info.frozenDays, streak: useGameStore.getState().currentStreak }) : null,
+      info.lostStreak > 0 ? t('home.streak_lost', { count: info.lostStreak }) : null,
+    ].filter(Boolean);
+    if (lines.length > 0) {
       setTimeout(() => {
         Alert.alert(
-          t('home.welcome_back'),
-          t('home.welcome_back_desc', { days: info.missedDays })
+          info.isComeback ? t('home.welcome_back') : info.frozenDays > 0 ? '❄️' : '🔥',
+          lines.join('\n\n')
         );
       }, 500);
     }
@@ -212,6 +214,7 @@ export default function HomeScreen() {
           style={[styles.streakText, { color: '#F59E0B' }]}
         >
           {t('home.streak', { count: currentStreak })}
+          {streakFreezes > 0 ? `   ❄️ ×${streakFreezes}` : ''}
         </Animated.Text>
       )}
 

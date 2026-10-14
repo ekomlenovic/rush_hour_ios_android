@@ -65,7 +65,10 @@
     "welcome_back_desc": "You were away for {{days}} days. Let's get back to sliding!",
     "missed_dailies": "You missed {{count}} daily challenges",
     "weekly_days_left_one": "{{count}} day left",
-    "weekly_days_left_other": "{{count}} days left"
+    "weekly_days_left_other": "{{count}} days left",
+    "freeze_used_one": "A freeze saved your {{streak}}-day streak! ({{count}} day missed)",
+    "freeze_used_other": "Your freezes saved your {{streak}}-day streak! ({{count}} days missed)",
+    "streak_lost": "Your {{count}}-day streak has ended. A new one starts today!"
   },
   "map": {
     "title": "Play",
@@ -218,7 +221,8 @@
     "no_hint_levels": "Levels Without Hints",
     "total_moves": "Moves Played",
     "fastest_daily": "Best Daily Time",
-    "weeklies_completed": "Weeklies Completed"
+    "weeklies_completed": "Weeklies Completed",
+    "streak_freezes": "Streak Freezes"
   },
   "achievements": {
     "novice": "Novice",
@@ -354,7 +358,9 @@
     "pi_day": "3.14",
     "pi_day_desc": "Complete a level on March 14th",
     "result_sharer": "Town Crier",
-    "result_sharer_desc": "Share a challenge result"
+    "result_sharer_desc": "Share a challenge result",
+    "frozen_save": "Saved by the Ice",
+    "frozen_save_desc": "A streak freeze protected your streak"
   },
   "share": {
     "share_result": "Share my result",

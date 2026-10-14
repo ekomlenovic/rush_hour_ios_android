@@ -146,6 +146,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'streak_30', icon: '🔥', category: 'streak', target: 30, value: c => c.bestStreak },
   { id: 'streak_100', icon: '☄️', category: 'streak', target: 100, value: c => c.bestStreak },
   { id: 'streak_365', icon: '🌋', category: 'streak', target: 365, value: c => c.bestStreak },
+  { id: 'frozen_save', icon: '❄️', category: 'streak', target: 1, value: c => c.stats.freezesUsed },
 
   // Creator & sharing
   { id: 'creator_star', icon: '🎨', category: 'creator', target: 5, value: c => c.createdLevels },

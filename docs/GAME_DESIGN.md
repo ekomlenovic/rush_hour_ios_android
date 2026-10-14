@@ -31,6 +31,20 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 | Étoiles : 3 ⭐ = solution optimale, 2 ⭐ ≤ optimal + 3, sinon 1 ⭐ | `app/game.tsx` |
 | On garde le meilleur score et les meilleures étoiles | `completeLevel` |
 
+## Streak et gels
+
+Le streak compte les jours consécutifs avec le défi du jour réussi.
+
+| Règle | Implémentation |
+|---|---|
+| Un **gel** ❄️ couvre un jour manqué : le streak continue (le jour gelé ne compte pas dans le total) | `settleStreak` (`store/gameStore.ts`) |
+| Les gels sont **consommés automatiquement**, à l'ouverture de l'app ou à la réussite du défi suivant | `recordAppOpen`, `updateStreak` |
+| S'il manque plus de jours que de gels en stock, le streak est **perdu** (affiché à 0) et les gels sont **conservés** | |
+| Stock limité à **2 gels** | `MAX_STREAK_FREEZES` |
+| On gagne un gel **tous les 7 jours de streak** et en finissant les **3 missions du jour** | `updateStreak`, missions |
+| Pas de monnaie : un gel ne s'achète pas | |
+| Les jours gelés apparaissent en bleu dans le calendrier du profil | `frozenDates` |
+
 ## Défi hebdomadaire — un essai unique, plus difficile
 
 Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler, progression conservée, plateau verrouillé une fois réussi jusqu'au lundi suivant), **à une exception près : il peut être recommencé**. C'est le gros puzzle de la semaine, on a le droit de repartir de zéro tant qu'il n'est pas réussi.
