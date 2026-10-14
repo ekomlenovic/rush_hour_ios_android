@@ -65,7 +65,10 @@
     "welcome_back_desc": "Vous étiez absent {{days}} jours. Bonne reprise !",
     "missed_dailies": "Vous avez manqué {{count}} défis quotidiens",
     "weekly_days_left_one": "Encore {{count}} jour",
-    "weekly_days_left_other": "Encore {{count}} jours"
+    "weekly_days_left_other": "Encore {{count}} jours",
+    "freeze_used_one": "Un gel a protégé ton streak de {{streak}} jours ! ({{count}} jour manqué)",
+    "freeze_used_other": "Tes gels ont protégé ton streak de {{streak}} jours ! ({{count}} jours manqués)",
+    "streak_lost": "Ton streak de {{count}} jours s'est arrêté. Un nouveau commence aujourd'hui !"
   },
   "map": {
     "title": "Jouer",
@@ -218,7 +221,8 @@
     "no_hint_levels": "Niveaux sans indice",
     "total_moves": "Coups joués",
     "fastest_daily": "Meilleur temps (défi du jour)",
-    "weeklies_completed": "Défis hebdo complétés"
+    "weeklies_completed": "Défis hebdo complétés",
+    "streak_freezes": "Gels de streak"
   },
   "achievements": {
     "novice": "Novice",
@@ -352,6 +356,64 @@
     "halloween": "Frissons",
     "halloween_desc": "Réussir un niveau le 31 octobre",
     "pi_day": "3,14",
-    "pi_day_desc": "Réussir un niveau le 14 mars"
+    "pi_day_desc": "Réussir un niveau le 14 mars",
+    "result_sharer": "Crieur public",
+    "result_sharer_desc": "Partager le résultat d'un défi",
+    "frozen_save": "Sauvé par la glace",
+    "frozen_save_desc": "Un gel de streak a protégé votre streak",
+    "missions_1": "Mission accomplie",
+    "missions_1_desc": "Terminer toutes les missions d'une journée",
+    "missions_7": "Agent fiable",
+    "missions_7_desc": "Terminer toutes les missions du jour 7 fois",
+    "missions_30": "Agent d'élite",
+    "missions_30_desc": "Terminer toutes les missions du jour 30 fois"
+  },
+  "share": {
+    "share_result": "Partager mon résultat",
+    "title_daily": "Défi du {{date}} 🧩",
+    "title_monday": "💀 Défi du lundi {{date}}",
+    "title_weekly": "Défi de la semaine {{week}} ⚔️",
+    "moves": "{{moves}} coups (optimal {{optimal}})",
+    "streak_one": "Streak {{count}} jour",
+    "streak_other": "Streak {{count}} jours"
+  },
+  "missions": {
+    "title": "Missions",
+    "completed": "Missions du jour terminées !",
+    "reward_freeze": "+1 gel de streak ❄️",
+    "reward_full": "Stock de gels déjà plein ❄️",
+    "reward_hint": "Termine les 3 missions pour gagner un gel de streak ❄️",
+    "all_done": "Bravo, toutes les missions du jour sont faites !",
+    "renew": "Nouvelles missions demain",
+    "list": {
+      "win_3": "Termine 3 niveaux",
+      "win_5": "Termine 5 niveaux",
+      "perfect_2": "Obtiens 3 ⭐ sur 2 niveaux",
+      "no_hint": "Termine un niveau sans indice",
+      "clean": "Termine un niveau sans indice ni annulation",
+      "big_grid": "Termine un niveau en 7×7 ou plus",
+      "daily": "Réussis le défi du jour",
+      "moves_100": "Joue 100 coups",
+      "play_10min": "Joue 10 minutes"
+    }
+  },
+  "reminders": {
+    "channel_name": "Rappels",
+    "daily_title": "Défi du jour 🧩",
+    "daily_body": "Le défi du jour t'attend !",
+    "streak_title": "Streak en danger 🔥",
+    "streak_body_one": "Ton streak de {{count}} jour est en danger : réussis le défi du jour avant minuit !",
+    "streak_body_other": "Ton streak de {{count}} jours est en danger : réussis le défi du jour avant minuit !",
+    "weekly_title": "Nouveau défi hebdo ⚔️",
+    "weekly_body": "Le défi de la semaine est disponible. Sauras-tu le résoudre ?",
+    "setting": "Rappels",
+    "setting_desc": "Défi du jour, streak en danger, défi hebdo",
+    "hour": "Heure du rappel",
+    "hour_desc": "Le rappel « streak en danger » arrive 2 h plus tard",
+    "denied_title": "Notifications désactivées",
+    "denied_body": "Autorise les notifications de Rush Hours dans les réglages du téléphone pour recevoir les rappels.",
+    "prompt_title": "Un petit rappel ? 🔔",
+    "prompt_body": "Veux-tu un rappel chaque jour pour ne pas manquer le défi du jour et garder ton streak ? Tu peux changer l'heure dans les options.",
+    "prompt_yes": "Oui, me rappeler"
   }
 }

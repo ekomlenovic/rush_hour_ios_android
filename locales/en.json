@@ -65,7 +65,10 @@
     "welcome_back_desc": "You were away for {{days}} days. Let's get back to sliding!",
     "missed_dailies": "You missed {{count}} daily challenges",
     "weekly_days_left_one": "{{count}} day left",
-    "weekly_days_left_other": "{{count}} days left"
+    "weekly_days_left_other": "{{count}} days left",
+    "freeze_used_one": "A freeze saved your {{streak}}-day streak! ({{count}} day missed)",
+    "freeze_used_other": "Your freezes saved your {{streak}}-day streak! ({{count}} days missed)",
+    "streak_lost": "Your {{count}}-day streak has ended. A new one starts today!"
   },
   "map": {
     "title": "Play",
@@ -218,7 +221,8 @@
     "no_hint_levels": "Levels Without Hints",
     "total_moves": "Moves Played",
     "fastest_daily": "Best Daily Time",
-    "weeklies_completed": "Weeklies Completed"
+    "weeklies_completed": "Weeklies Completed",
+    "streak_freezes": "Streak Freezes"
   },
   "achievements": {
     "novice": "Novice",
@@ -352,6 +356,64 @@
     "halloween": "Spooky",
     "halloween_desc": "Complete a level on October 31st",
     "pi_day": "3.14",
-    "pi_day_desc": "Complete a level on March 14th"
+    "pi_day_desc": "Complete a level on March 14th",
+    "result_sharer": "Town Crier",
+    "result_sharer_desc": "Share a challenge result",
+    "frozen_save": "Saved by the Ice",
+    "frozen_save_desc": "A streak freeze protected your streak",
+    "missions_1": "Mission Accomplished",
+    "missions_1_desc": "Complete all missions of a day",
+    "missions_7": "Reliable Agent",
+    "missions_7_desc": "Complete all daily missions 7 times",
+    "missions_30": "Elite Agent",
+    "missions_30_desc": "Complete all daily missions 30 times"
+  },
+  "share": {
+    "share_result": "Share my result",
+    "title_daily": "Daily {{date}} 🧩",
+    "title_monday": "💀 Monday daily {{date}}",
+    "title_weekly": "Weekly challenge {{week}} ⚔️",
+    "moves": "{{moves}} moves (optimal {{optimal}})",
+    "streak_one": "{{count}}-day streak",
+    "streak_other": "{{count}}-day streak"
+  },
+  "missions": {
+    "title": "Missions",
+    "completed": "Daily missions complete!",
+    "reward_freeze": "+1 streak freeze ❄️",
+    "reward_full": "Freeze stock already full ❄️",
+    "reward_hint": "Complete all 3 missions to earn a streak freeze ❄️",
+    "all_done": "Well done, all of today's missions are complete!",
+    "renew": "New missions tomorrow",
+    "list": {
+      "win_3": "Complete 3 levels",
+      "win_5": "Complete 5 levels",
+      "perfect_2": "Get 3 ⭐ on 2 levels",
+      "no_hint": "Complete a level without hints",
+      "clean": "Complete a level without hints or undo",
+      "big_grid": "Complete a 7×7 or bigger level",
+      "daily": "Complete the daily challenge",
+      "moves_100": "Play 100 moves",
+      "play_10min": "Play for 10 minutes"
+    }
+  },
+  "reminders": {
+    "channel_name": "Reminders",
+    "daily_title": "Daily challenge 🧩",
+    "daily_body": "Today's challenge is waiting for you!",
+    "streak_title": "Streak in danger 🔥",
+    "streak_body_one": "Your {{count}}-day streak is in danger: complete the daily challenge before midnight!",
+    "streak_body_other": "Your {{count}}-day streak is in danger: complete the daily challenge before midnight!",
+    "weekly_title": "New weekly challenge ⚔️",
+    "weekly_body": "This week's challenge is out. Can you solve it?",
+    "setting": "Reminders",
+    "setting_desc": "Daily challenge, streak in danger, weekly challenge",
+    "hour": "Reminder time",
+    "hour_desc": "The \"streak in danger\" reminder comes 2 hours later",
+    "denied_title": "Notifications disabled",
+    "denied_body": "Allow notifications for Rush Hours in your phone settings to get reminders.",
+    "prompt_title": "A little reminder? 🔔",
+    "prompt_body": "Want a daily reminder so you never miss the daily challenge and keep your streak? You can change the time in the options.",
+    "prompt_yes": "Yes, remind me"
   }
 }

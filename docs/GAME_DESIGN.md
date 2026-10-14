@@ -31,6 +31,42 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 | Étoiles : 3 ⭐ = solution optimale, 2 ⭐ ≤ optimal + 3, sinon 1 ⭐ | `app/game.tsx` |
 | On garde le meilleur score et les meilleures étoiles | `completeLevel` |
 
+## Streak et gels
+
+Le streak compte les jours consécutifs avec le défi du jour réussi.
+
+| Règle | Implémentation |
+|---|---|
+| Un **gel** ❄️ couvre un jour manqué : le streak continue (le jour gelé ne compte pas dans le total) | `settleStreak` (`store/gameStore.ts`) |
+| Les gels sont **consommés automatiquement**, à l'ouverture de l'app ou à la réussite du défi suivant | `recordAppOpen`, `updateStreak` |
+| S'il manque plus de jours que de gels en stock, le streak est **perdu** (affiché à 0) et les gels sont **conservés** | |
+| Stock limité à **2 gels** | `MAX_STREAK_FREEZES` |
+| On gagne un gel **tous les 7 jours de streak** et en finissant les **3 missions du jour** | `updateStreak`, missions |
+| Pas de monnaie : un gel ne s'achète pas | |
+| Les jours gelés apparaissent en bleu dans le calendrier du profil | `frozenDates` |
+
+## Missions quotidiennes
+
+| Règle | Implémentation |
+|---|---|
+| **3 missions par jour**, les mêmes pour tout le monde à une date donnée, renouvelées à minuit (heure locale) | `pickMissions` (`data/missions.ts`) |
+| Jamais deux missions sur le même compteur (pas de « 3 niveaux » et « 5 niveaux » le même jour) | |
+| Les missions « niveau » ne comptent que **la carte et les niveaux personnalisés**, jamais les défis. Seule la mission « Réussis le défi du jour » porte sur un défi | `bumpMissions` (`store/gameStore.ts`) |
+| Toutes les missions sont **réalisables dès le début** du jeu (le niveau 1 est déjà en 7×7) | |
+| Récompense : finir les 3 missions donne **1 gel de streak** (rien si le stock est plein), une fois par jour | `addStreakFreeze` |
+| Les identifiants de mission sont sauvegardés pour la journée : ne jamais en renommer, seulement en ajouter | |
+
+## Rappels (notifications)
+
+| Règle | Implémentation |
+|---|---|
+| **Opt-in** : désactivés par défaut. Proposés une seule fois, après le **premier défi du jour réussi**, jamais au premier lancement | `handleWinContinue` (`app/game.tsx`) |
+| **Notifications locales uniquement** : pas de push, pas de serveur, pas de jeton. L'entitlement push iOS est retiré (builds SideStore) | `utils/notifications.ts`, `plugins/withoutPushEntitlement.js` |
+| Rappel du défi du jour à l'heure choisie (**19 h** par défaut, réglable dans les options), seulement s'il n'est pas déjà fait | `planReminders` (`utils/reminders.ts`) |
+| « Streak en danger » **2 h plus tard** (23 h au plus tard), le premier jour où le défi reste à faire | |
+| « Nouveau défi hebdo » le **lundi à 10 h** | |
+| Rien n'est envoyé quand l'app est ouverte ; tout est replanifié à chaque retour dans l'app et à chaque progrès | `useReminderSync` |
+
 ## Défi hebdomadaire — un essai unique, plus difficile
 
 Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler, progression conservée, plateau verrouillé une fois réussi jusqu'au lundi suivant), **à une exception près : il peut être recommencé**. C'est le gros puzzle de la semaine, on a le droit de repartir de zéro tant qu'il n'est pas réussi.

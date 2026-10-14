@@ -4,7 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { sampleLevels } from '../data/sampleLevels';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
-import { getLocalDateString, daysBetween, computeDayRuns } from '../utils/date';
+import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
+import { DailyMissionsState, MissionCounter, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
+import { getLocalDateString, daysBetween, computeDayRuns, addDays } from '../utils/date';
 
 /** Reserved level IDs for challenges (excluded from map progression) */
 export const DAILY_LEVEL_ID = 999999;
@@ -82,6 +84,15 @@ export interface ChallengeResult {
   score: number;
   stars: number;
   timeMs?: number;
+  /** Moves of the best result and the level's optimum, for result sharing */
+  moves?: number;
+  minMoves?: number;
+}
+
+/** Extra details recorded with a challenge result */
+export interface ChallengeDetails {
+  moves: number;
+  minMoves: number;
 }
 
 /** Lifetime player statistics */
@@ -96,6 +107,8 @@ export interface PlayerStats {
   /** Wins per grid size, keyed by size ('6', '7', '8') */
   winsByGridSize: Record<string, number>;
   levelsShared: number;
+  /** Daily / weekly results shared (Wordle-like text) */
+  resultsShared: number;
   levelsImported: number;
   /** Highest minMoves of a level ever won */
   hardestWinMoves: number;
@@ -117,6 +130,11 @@ export interface PlayerStats {
   earlyDailyWins: number;
   /** Weekly challenges won on Sunday, the last day */
   lastMinuteWeeklies: number;
+  /** Streak freezes earned and consumed */
+  freezesEarned: number;
+  freezesUsed: number;
+  /** Days with all daily missions completed */
+  missionDaysCompleted: number;
   /** Longest absence between two app opens, in days */
   longestAbsenceDays: number;
 }
@@ -181,11 +199,26 @@ interface GameState {
   isMusicEnabled: boolean;
   /** Haptics Enabled state */
   isHapticsEnabled: boolean;
+  /** Local reminders (opt-in) */
+  notificationsEnabled: boolean;
+  /** Hour of the daily challenge reminder (0-23) */
+  reminderHour: number;
+  /** The player was already asked about reminders */
+  notificationsPrompted: boolean;
 
   /** Streak tracking */
   currentStreak: number;
   bestStreak: number;
   lastStreakDate: string | null;
+  /** Streak freezes in stock: each one covers a missed day (see docs/GAME_DESIGN.md) */
+  streakFreezes: number;
+  /** Days covered by a freeze, shown in the calendar */
+  frozenDates: string[];
+
+  /** Today's missions and their counters */
+  dailyMissions: DailyMissionsState | null;
+  /** All missions of the day just completed, not shown to the player yet (not persisted) */
+  pendingMissionReward: { freezeGranted: boolean } | null;
 
   /** Last time the app was opened (ISO date YYYY-MM-DD) for comeback detection */
   lastOpenDate: string | null;
@@ -201,11 +234,12 @@ interface GameState {
   recordHintUsed: () => void;
   addPlayTime: (ms: number) => void;
   completeLevel: (levelId: number, score: number, stars: number, timeMs?: number) => void;
-  completeDailyChallenge: (dateKey: string, score: number, stars: number, timeMs?: number) => void;
-  completeWeeklyChallenge: (weekKey: string, score: number, stars: number, timeMs?: number) => void;
+  completeDailyChallenge: (dateKey: string, score: number, stars: number, timeMs?: number, details?: ChallengeDetails) => void;
+  completeWeeklyChallenge: (weekKey: string, score: number, stars: number, timeMs?: number, details?: ChallengeDetails) => void;
   checkAchievements: (options?: { silent?: boolean }) => void;
   consumeUnlockQueue: () => string[];
   recordLevelShared: () => void;
+  recordResultShared: () => void;
   addGeneratedLevel: (level: Level) => void;
   addImportedLevel: (level: Level) => void;
   saveCreatedLevel: (level: Level) => void;
@@ -215,12 +249,63 @@ interface GameState {
   purgeCustomLevels: (baseLevelCount: number) => void;
   toggleMusicEnabled: () => void;
   toggleHapticsEnabled: () => void;
+  setNotificationsEnabled: (enabled: boolean) => void;
+  setReminderHour: (hour: number) => void;
+  markNotificationsPrompted: () => void;
   unlockAllLevels: () => void;
   setGenerationState: (state: Partial<GenerationState>) => void;
   cancelGeneration: () => void;
   hardReset: () => void;
   updateStreak: (dateKey: string) => void;
-  recordAppOpen: () => { isComeback: boolean; missedDays: number };
+  recordAppOpen: () => AppOpenInfo;
+  addStreakFreeze: () => boolean;
+  consumeMissionReward: () => { freezeGranted: boolean } | null;
+}
+
+/** What happened since the last app open */
+export interface AppOpenInfo {
+  isComeback: boolean;
+  missedDays: number;
+  /** Missed days covered by streak freezes */
+  frozenDays: number;
+  /** Streak value lost because there were not enough freezes */
+  lostStreak: number;
+}
+
+export const MAX_STREAK_FREEZES = 2;
+/** A freeze is earned every this many days of streak */
+const FREEZE_STREAK_INTERVAL = 7;
+
+/**
+ * Applies the days missed since the last daily: freezes cover them if there are enough,
+ * otherwise the streak is lost (freezes are kept). Today itself can still be played.
+ */
+function settleStreak(state: Pick<GameState, 'currentStreak' | 'lastStreakDate' | 'streakFreezes' | 'frozenDates' | 'stats'>, today: string): {
+  patch: Partial<GameState>;
+  frozenDays: number;
+  lostStreak: number;
+} {
+  const { currentStreak, lastStreakDate, streakFreezes, frozenDates, stats } = state;
+  if (!lastStreakDate || currentStreak === 0) return { patch: {}, frozenDays: 0, lostStreak: 0 };
+
+  const missed = daysBetween(lastStreakDate, today) - 1;
+  if (missed <= 0) return { patch: {}, frozenDays: 0, lostStreak: 0 };
+
+  if (streakFreezes >= missed) {
+    const covered = Array.from({ length: missed }, (_, i) => addDays(lastStreakDate, i + 1));
+    return {
+      patch: {
+        streakFreezes: streakFreezes - missed,
+        frozenDates: [...frozenDates, ...covered],
+        // As if yesterday was played: today's daily continues the streak
+        lastStreakDate: addDays(today, -1),
+        stats: { ...stats, freezesUsed: stats.freezesUsed + missed },
+      },
+      frozenDays: missed,
+      lostStreak: 0,
+    };
+  }
+  return { patch: { currentStreak: 0 }, frozenDays: 0, lostStreak: currentStreak };
 }
 
 const emptyAttempt = (): AttemptStats => ({ hints: 0, undos: 0, resets: 0, elapsedMs: 0 });
@@ -234,6 +319,7 @@ const initialStats = (): PlayerStats => ({
   firstTryWins: 0,
   winsByGridSize: {},
   levelsShared: 0,
+  resultsShared: 0,
   levelsImported: 0,
   hardestWinMoves: 0,
   fastestWinMs: null,
@@ -245,6 +331,9 @@ const initialStats = (): PlayerStats => ({
   hardestPerfectMoves: 0,
   earlyDailyWins: 0,
   lastMinuteWeeklies: 0,
+  freezesEarned: 0,
+  freezesUsed: 0,
+  missionDaysCompleted: 0,
   longestAbsenceDays: 0,
 });
 
@@ -308,13 +397,18 @@ function recomputeStreak(state: Record<string, unknown>): Partial<Pick<GameState
   };
 }
 
-function mergeChallengeResult(existing: ChallengeResult | undefined, score: number, stars: number, timeMs?: number): ChallengeResult {
+function mergeChallengeResult(existing: ChallengeResult | undefined, score: number, stars: number, timeMs?: number, details?: ChallengeDetails): ChallengeResult {
   const times = [existing?.timeMs, timeMs].filter((t): t is number => t !== undefined);
+  const isBest = !existing || score >= existing.score;
+  const moves = isBest ? details?.moves ?? existing?.moves : existing?.moves;
+  const minMoves = details?.minMoves ?? existing?.minMoves;
   return {
     completed: true,
     score: Math.max(existing?.score || 0, score),
     stars: Math.max(existing?.stars || 0, stars),
     timeMs: times.length > 0 ? Math.min(...times) : undefined,
+    ...(moves !== undefined && { moves }),
+    ...(minMoves !== undefined && { minMoves }),
   };
 }
 
@@ -378,6 +472,30 @@ export const useGameStore = create<GameState>()(
         });
       };
 
+      /** Advances today's mission counters; completing them all grants a streak freeze */
+      const bumpMissions = (increments: Partial<Record<MissionCounter, number>>) => {
+        const state = get();
+        const missions = getMissionsForDay(state.dailyMissions, getLocalDateString(new Date()));
+        const counters = { ...missions.counters };
+        for (const [counter, amount] of Object.entries(increments) as [MissionCounter, number][]) {
+          if (amount) counters[counter] = (counters[counter] || 0) + amount;
+        }
+
+        const allDone = missions.ids.every(id => MISSIONS_BY_ID[id] && isMissionDone(MISSIONS_BY_ID[id], counters));
+        if (!allDone || missions.rewarded) {
+          set({ dailyMissions: { ...missions, counters } });
+          return;
+        }
+
+        set({
+          dailyMissions: { ...missions, counters, rewarded: true },
+          stats: { ...state.stats, missionDaysCompleted: state.stats.missionDaysCompleted + 1 },
+        });
+        const freezeGranted = get().addStreakFreeze();
+        set({ pendingMissionReward: { freezeGranted } });
+        get().checkAchievements();
+      };
+
       return {
       currentLevel: null,
       vehicles: [],
@@ -402,9 +520,16 @@ export const useGameStore = create<GameState>()(
       savedStates: {},
       isMusicEnabled: true,
       isHapticsEnabled: true,
+      notificationsEnabled: false,
+      reminderHour: DEFAULT_REMINDER_HOUR,
+      notificationsPrompted: false,
       currentStreak: 0,
       bestStreak: 0,
       lastStreakDate: null,
+      streakFreezes: 0,
+      frozenDates: [],
+      dailyMissions: null,
+      pendingMissionReward: null,
       lastOpenDate: null,
       totalHintsUsed: 0,
       generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
@@ -439,6 +564,7 @@ export const useGameStore = create<GameState>()(
           history: [...history, snapshot],
           stats: { ...stats, totalMoves: stats.totalMoves + 1 },
         });
+        bumpMissions({ moves: 1 });
       },
 
       undo: () => {
@@ -484,6 +610,7 @@ export const useGameStore = create<GameState>()(
           currentAttempt: { ...currentAttempt, elapsedMs: currentAttempt.elapsedMs + ms },
           stats: { ...stats, totalPlayTimeMs: stats.totalPlayTimeMs + ms },
         });
+        bumpMissions({ playMs: ms });
       },
 
       completeLevel: (levelId, score, stars, timeMs) => {
@@ -529,10 +656,19 @@ export const useGameStore = create<GameState>()(
           stats: isCurrentLevel && currentLevel ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'level') : stats,
           currentAttempt: emptyAttempt(),
         });
+        if (isCurrentLevel && currentLevel) {
+          bumpMissions({
+            levelWins: 1,
+            perfectWins: stars === 3 ? 1 : 0,
+            noHintWins: noHint ? 1 : 0,
+            cleanWins: noHelp ? 1 : 0,
+            bigGridWins: currentLevel.gridSize >= 7 ? 1 : 0,
+          });
+        }
         get().checkAchievements();
       },
 
-      completeDailyChallenge: (dateKey, score, stars, timeMs) => {
+      completeDailyChallenge: (dateKey, score, stars, timeMs, details) => {
         const { dailyChallengeProgress, savedStates, currentLevel, currentAttempt, stats } = get();
         const newSavedStates = { ...savedStates };
         delete newSavedStates[`daily-${dateKey}`];
@@ -540,7 +676,7 @@ export const useGameStore = create<GameState>()(
         set({
           dailyChallengeProgress: {
             ...dailyChallengeProgress,
-            [dateKey]: mergeChallengeResult(dailyChallengeProgress[dateKey], score, stars, timeMs),
+            [dateKey]: mergeChallengeResult(dailyChallengeProgress[dateKey], score, stars, timeMs, details),
           },
           savedStates: newSavedStates,
           stats: currentLevel?.id === DAILY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'daily') : stats,
@@ -549,11 +685,14 @@ export const useGameStore = create<GameState>()(
 
         // Update streak
         get().updateStreak(dateKey);
+        if (dateKey === getLocalDateString(new Date())) {
+          bumpMissions({ dailyDone: 1 });
+        }
 
         get().checkAchievements();
       },
 
-      completeWeeklyChallenge: (weekKey, score, stars, timeMs) => {
+      completeWeeklyChallenge: (weekKey, score, stars, timeMs, details) => {
         const { weeklyChallengeProgress, savedStates, currentLevel, currentAttempt, stats } = get();
         const newSavedStates = { ...savedStates };
         delete newSavedStates[`weekly-${weekKey}`];
@@ -561,7 +700,7 @@ export const useGameStore = create<GameState>()(
         set({
           weeklyChallengeProgress: {
             ...weeklyChallengeProgress,
-            [weekKey]: mergeChallengeResult(weeklyChallengeProgress[weekKey], score, stars, timeMs),
+            [weekKey]: mergeChallengeResult(weeklyChallengeProgress[weekKey], score, stars, timeMs, details),
           },
           savedStates: newSavedStates,
           stats: currentLevel?.id === WEEKLY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'weekly') : stats,
@@ -593,10 +732,22 @@ export const useGameStore = create<GameState>()(
         }
       },
 
+      consumeMissionReward: () => {
+        const { pendingMissionReward } = get();
+        if (pendingMissionReward) set({ pendingMissionReward: null });
+        return pendingMissionReward;
+      },
+
       consumeUnlockQueue: () => {
         const { unlockQueue } = get();
         if (unlockQueue.length > 0) set({ unlockQueue: [] });
         return unlockQueue;
+      },
+
+      recordResultShared: () => {
+        const { stats } = get();
+        set({ stats: { ...stats, resultsShared: stats.resultsShared + 1 } });
+        get().checkAchievements();
       },
 
       recordLevelShared: () => {
@@ -606,25 +757,37 @@ export const useGameStore = create<GameState>()(
       },
 
       updateStreak: (dateKey: string) => {
-        const { lastStreakDate, currentStreak, bestStreak } = get();
+        if (get().lastStreakDate === dateKey) return; // Already counted today
 
-        if (lastStreakDate === dateKey) return; // Already counted today
+        // Missed days may not have been settled yet (e.g. app opened on a deep link)
+        set(settleStreak(get(), dateKey).patch);
+        const { lastStreakDate, currentStreak, bestStreak, streakFreezes, stats } = get();
 
         // Date keys are local dates: never parse them with new Date('YYYY-MM-DD') (UTC)
-        let newStreak: number;
-        if (lastStreakDate && daysBetween(lastStreakDate, dateKey) === 1) {
-          newStreak = currentStreak + 1;
-        } else if (!lastStreakDate) {
-          newStreak = 1;
-        } else {
-          newStreak = 1; // Streak broken
-        }
+        const newStreak = lastStreakDate && daysBetween(lastStreakDate, dateKey) === 1
+          ? currentStreak + 1
+          : 1;
+        const earnsFreeze = newStreak % FREEZE_STREAK_INTERVAL === 0 && streakFreezes < MAX_STREAK_FREEZES;
 
         set({
           currentStreak: newStreak,
           bestStreak: Math.max(bestStreak, newStreak),
           lastStreakDate: dateKey,
+          ...(earnsFreeze && {
+            streakFreezes: streakFreezes + 1,
+            stats: { ...stats, freezesEarned: stats.freezesEarned + 1 },
+          }),
         });
+      },
+
+      addStreakFreeze: () => {
+        const { streakFreezes, stats } = get();
+        if (streakFreezes >= MAX_STREAK_FREEZES) return false;
+        set({
+          streakFreezes: streakFreezes + 1,
+          stats: { ...stats, freezesEarned: stats.freezesEarned + 1 },
+        });
+        return true;
       },
 
       recordAppOpen: () => {
@@ -643,8 +806,10 @@ export const useGameStore = create<GameState>()(
           lastOpenDate: today,
           stats: { ...stats, longestAbsenceDays: Math.max(stats.longestAbsenceDays, missedDays) },
         });
+        const { patch, frozenDays, lostStreak } = settleStreak(get(), today);
+        set(patch);
         get().checkAchievements();
-        return { isComeback, missedDays };
+        return { isComeback, missedDays, frozenDays, lostStreak };
       },
 
       addGeneratedLevel: (level) => {
@@ -721,6 +886,9 @@ export const useGameStore = create<GameState>()(
         const { isHapticsEnabled } = get();
         set({ isHapticsEnabled: !isHapticsEnabled });
       },
+      setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled, notificationsPrompted: true }),
+      setReminderHour: (hour) => set({ reminderHour: ((Math.round(hour) % 24) + 24) % 24 }),
+      markNotificationsPrompted: () => set({ notificationsPrompted: true }),
 
       unlockAllLevels: () => {
         const { generatedLevels } = get();
@@ -762,6 +930,10 @@ export const useGameStore = create<GameState>()(
           currentStreak: 0,
           bestStreak: 0,
           lastStreakDate: null,
+          streakFreezes: 0,
+          frozenDates: [],
+          dailyMissions: null,
+          pendingMissionReward: null,
           lastOpenDate: null,
           totalHintsUsed: 0,
         });
@@ -818,10 +990,16 @@ export const useGameStore = create<GameState>()(
         savedStates: state.savedStates,
         isMusicEnabled: state.isMusicEnabled,
         isHapticsEnabled: state.isHapticsEnabled,
+        notificationsEnabled: state.notificationsEnabled,
+        reminderHour: state.reminderHour,
+        notificationsPrompted: state.notificationsPrompted,
         generationState: state.generationState,
         currentStreak: state.currentStreak,
         bestStreak: state.bestStreak,
         lastStreakDate: state.lastStreakDate,
+        streakFreezes: state.streakFreezes,
+        frozenDates: state.frozenDates,
+        dailyMissions: state.dailyMissions,
         lastOpenDate: state.lastOpenDate,
         totalHintsUsed: state.totalHintsUsed,
       }),

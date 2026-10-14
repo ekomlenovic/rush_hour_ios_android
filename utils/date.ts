@@ -16,6 +16,12 @@ export function getDayNumber(dateKey: string): number {
   return Math.round(parseLocalDateString(dateKey).getTime() / 86400000);
 }
 
+/** YYYY-MM-DD key shifted by a number of days. */
+export function addDays(dateKey: string, days: number): string {
+  const date = parseLocalDateString(dateKey);
+  return getLocalDateString(new Date(date.getFullYear(), date.getMonth(), date.getDate() + days));
+}
+
 /** Number of days from one YYYY-MM-DD key to another (positive if `to` is later). */
 export function daysBetween(from: string, to: string): number {
   return getDayNumber(to) - getDayNumber(from);

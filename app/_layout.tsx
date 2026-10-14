@@ -4,6 +4,7 @@ import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AudioProvider } from '@/context/AudioProvider';
 import AchievementToast from '@/components/AchievementToast';
+import { useReminderSync } from '@/utils/notifications';
 import * as Linking from 'expo-linking';
 import { deserializeLevel } from '@/utils/sharing';
 import { useGameStore } from '@/store/gameStore';
@@ -17,6 +18,7 @@ export default function RootLayout() {
   const isDark = colorScheme === 'dark';
   const router = useRouter();
   const { addImportedLevel } = useGameStore();
+  useReminderSync();
 
   useEffect(() => {
     const handleDeepLink = (event: { url: string }) => {

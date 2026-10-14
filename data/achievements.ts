@@ -138,6 +138,9 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'weekly_12', icon: '🏰', category: 'daily', target: 12, value: c => c.weeklies },
   { id: 'weekly_perfect', icon: '🥇', category: 'daily', target: 1, value: c => c.perfectWeeklies },
   { id: 'daily_365', icon: '🎂', category: 'daily', target: 365, value: c => c.dailies },
+  { id: 'missions_1', icon: '🎯', category: 'daily', target: 1, value: c => c.stats.missionDaysCompleted },
+  { id: 'missions_7', icon: '📋', category: 'daily', target: 7, value: c => c.stats.missionDaysCompleted },
+  { id: 'missions_30', icon: '🗂️', category: 'daily', target: 30, value: c => c.stats.missionDaysCompleted },
   { id: 'weekend_warrior', icon: '🛋️', category: 'daily', target: 1, value: c => c.weekendDailies },
 
   // Streak
@@ -146,11 +149,13 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'streak_30', icon: '🔥', category: 'streak', target: 30, value: c => c.bestStreak },
   { id: 'streak_100', icon: '☄️', category: 'streak', target: 100, value: c => c.bestStreak },
   { id: 'streak_365', icon: '🌋', category: 'streak', target: 365, value: c => c.bestStreak },
+  { id: 'frozen_save', icon: '❄️', category: 'streak', target: 1, value: c => c.stats.freezesUsed },
 
   // Creator & sharing
   { id: 'creator_star', icon: '🎨', category: 'creator', target: 5, value: c => c.createdLevels },
   { id: 'creator_puzzle', icon: '🧩', category: 'creator', target: 20, value: c => c.hardestCreatedMoves },
   { id: 'sharer', icon: '📤', category: 'creator', target: 1, value: c => c.stats.levelsShared },
+  { id: 'result_sharer', icon: '📣', category: 'creator', target: 1, value: c => c.stats.resultsShared },
   { id: 'importer', icon: '📥', category: 'creator', target: 1, value: c => c.stats.levelsImported },
   { id: 'prolific', icon: '🏗️', category: 'creator', target: 25, value: c => c.createdLevels },
   { id: 'collector', icon: '📚', category: 'creator', target: 10, value: c => c.stats.levelsImported },

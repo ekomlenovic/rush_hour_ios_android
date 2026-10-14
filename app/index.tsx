@@ -16,6 +16,15 @@ import i18n, { changeLanguage } from '@/utils/i18n';
 import { RFValue } from '@/utils/responsive';
 import { getLocalDateString, getWeekKey, getDaysLeftInWeek } from '@/utils/date';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { requestReminderPermission } from '@/utils/notifications';
+import { MISSIONS_BY_ID, MissionDef, getMissionsForDay, getMissionProgress, countMissionsDone } from '@/data/missions';
+
+function formatMissionProgress(mission: MissionDef, progress: number): string {
+  if (mission.counter === 'playMs') {
+    return `${Math.floor(progress / 60000)}/${mission.target / 60000} min`;
+  }
+  return `${progress}/${mission.target}`;
+}
 
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -25,23 +34,26 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
-  const { maxUnlockedLevel, dailyChallengeProgress, hardReset, unlockAllLevels, isHapticsEnabled, toggleHapticsEnabled, currentStreak, recordAppOpen, weeklyChallengeProgress } = useGameStore();
+  const { maxUnlockedLevel, dailyChallengeProgress, hardReset, unlockAllLevels, isHapticsEnabled, toggleHapticsEnabled, currentStreak, recordAppOpen, weeklyChallengeProgress, streakFreezes, dailyMissions, notificationsEnabled, reminderHour, setNotificationsEnabled, setReminderHour } = useGameStore();
 
   const { toggleMusic, isPlaying: isMusicEnabled } = useAudio();
   const [isSettingsVisible, setSettingsVisible] = useState(false);
+  const [isMissionsVisible, setMissionsVisible] = useState(false);
   const insets = useSafeAreaInsets();
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
-  const [comebackInfo, setComebackInfo] = useState<{ isComeback: boolean; missedDays: number } | null>(null);
-
   useEffect(() => {
     const info = recordAppOpen();
-    if (info.isComeback) {
-      setComebackInfo(info);
+    const lines = [
+      info.isComeback ? t('home.welcome_back_desc', { days: info.missedDays }) : null,
+      info.frozenDays > 0 ? t('home.freeze_used', { count: info.frozenDays, streak: useGameStore.getState().currentStreak }) : null,
+      info.lostStreak > 0 ? t('home.streak_lost', { count: info.lostStreak }) : null,
+    ].filter(Boolean);
+    if (lines.length > 0) {
       setTimeout(() => {
         Alert.alert(
-          t('home.welcome_back'),
-          t('home.welcome_back_desc', { days: info.missedDays })
+          info.isComeback ? t('home.welcome_back') : info.frozenDays > 0 ? '❄️' : '🔥',
+          lines.join('\n\n')
         );
       }, 500);
     }
@@ -94,6 +106,18 @@ export default function HomeScreen() {
     // autoCheck();
   }, []);
 
+  const handleRemindersToggle = async (value: boolean) => {
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (value && !(await requestReminderPermission())) {
+      Alert.alert(t('reminders.denied_title'), t('reminders.denied_body'));
+      setNotificationsEnabled(false);
+      return;
+    }
+    setNotificationsEnabled(value);
+  };
+
+  const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
+
   const handleUnlockAll = () => {
     Alert.alert(
       t('home.unlock_all'),
@@ -136,6 +160,9 @@ export default function HomeScreen() {
   const dateStr = getLocalDateString(new Date());
 
   const dailyStatus = dailyChallengeProgress[dateStr];
+
+  const todayMissions = getMissionsForDay(dailyMissions, dateStr);
+  const missionsDone = countMissionsDone(todayMissions);
 
   const weekKey = getWeekKey(new Date());
   const weeklyStatus = weeklyChallengeProgress[weekKey];
@@ -212,8 +239,59 @@ export default function HomeScreen() {
           style={[styles.streakText, { color: '#F59E0B' }]}
         >
           {t('home.streak', { count: currentStreak })}
+          {streakFreezes > 0 ? `   ❄️ ×${streakFreezes}` : ''}
         </Animated.Text>
       )}
+
+      <AnimatedPressable
+        entering={FadeInDown.delay(825).springify()}
+        style={[styles.missionsPill, { backgroundColor: colors.card }]}
+        onPress={() => {
+          haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setMissionsVisible(true);
+        }}
+      >
+        <Text style={[styles.missionsPillText, { color: todayMissions.rewarded ? colors.success : colors.text }]}>
+          🎯 {t('missions.title')} {missionsDone}/{todayMissions.ids.length}
+        </Text>
+      </AnimatedPressable>
+
+      {/* Daily Missions Modal */}
+      <Modal visible={isMissionsVisible} transparent animationType="slide" onRequestClose={() => setMissionsVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <View style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF', paddingBottom: Math.max(48, insets.bottom + 24) }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>🎯 {t('missions.title')}</Text>
+              <Pressable onPress={() => setMissionsVisible(false)}>
+                <Text style={{ fontSize: RFValue(20), color: colors.sub, padding: 8 }}>✕</Text>
+              </Pressable>
+            </View>
+            <Text style={[styles.settingSub, { color: todayMissions.rewarded ? colors.success : colors.sub, marginBottom: 20 }]}>
+              {todayMissions.rewarded ? t('missions.all_done') : t('missions.reward_hint')}
+            </Text>
+            {todayMissions.ids.map((id) => {
+              const mission = MISSIONS_BY_ID[id];
+              if (!mission) return null;
+              const progress = getMissionProgress(mission, todayMissions.counters);
+              const done = progress >= mission.target;
+              return (
+                <View key={id} style={styles.missionRow}>
+                  <Text style={styles.missionIcon}>{done ? '✅' : mission.icon}</Text>
+                  <View style={styles.missionBody}>
+                    <Text style={[styles.missionLabel, { color: colors.text, opacity: done ? 0.6 : 1 }]}>{t(`missions.list.${id}`)}</Text>
+                    <View style={[styles.missionTrack, { backgroundColor: colors.card }]}>
+                      <View style={[styles.missionFill, { width: `${(progress / mission.target) * 100}%`, backgroundColor: done ? colors.success : colors.accent }]} />
+                    </View>
+                  </View>
+                  <Text style={[styles.missionCount, { color: colors.sub }]}>{formatMissionProgress(mission, progress)}</Text>
+                </View>
+              );
+            })}
+            <Text style={[styles.settingSub, { color: colors.sub, marginTop: 8, textAlign: 'center' }]}>{t('missions.renew')}</Text>
+          </View>
+        </View>
+      </Modal>
 
       <View style={styles.footerLinks}>
         <AnimatedPressable
@@ -328,6 +406,36 @@ export default function HomeScreen() {
               />
             </View>
 
+            <View style={styles.settingRow}>
+              <View style={styles.settingText}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('reminders.setting')}</Text>
+                <Text style={[styles.settingSub, { color: colors.sub }]}>{t('reminders.setting_desc')}</Text>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleRemindersToggle}
+                trackColor={{ false: '#767577', true: colors.accent }}
+              />
+            </View>
+
+            {notificationsEnabled && (
+              <View style={styles.settingRow}>
+                <View style={styles.settingText}>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>{t('reminders.hour')}</Text>
+                  <Text style={[styles.settingSub, { color: colors.sub }]}>{t('reminders.hour_desc')}</Text>
+                </View>
+                <View style={styles.hourStepper}>
+                  <Pressable onPress={() => setReminderHour(reminderHour - 1)} style={[styles.hourBtn, { backgroundColor: colors.card }]}>
+                    <Text style={[styles.hourBtnText, { color: colors.text }]}>−</Text>
+                  </Pressable>
+                  <Text style={[styles.hourValue, { color: colors.text }]}>{formatHour(reminderHour)}</Text>
+                  <Pressable onPress={() => setReminderHour(reminderHour + 1)} style={[styles.hourBtn, { backgroundColor: colors.card }]}>
+                    <Text style={[styles.hourBtnText, { color: colors.text }]}>+</Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+
             <View style={[styles.divider, { backgroundColor: colors.sub }]} />
 
             <View style={styles.versionRow}>
@@ -439,6 +547,49 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
+  missionsPill: {
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  missionsPillText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  missionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  missionIcon: {
+    fontSize: 26,
+    marginRight: 12,
+  },
+  missionBody: {
+    flex: 1,
+  },
+  missionLabel: {
+    fontSize: RFValue(15),
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  missionTrack: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  missionFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  missionCount: {
+    fontSize: RFValue(13),
+    fontWeight: '600',
+    marginLeft: 12,
+    minWidth: 56,
+    textAlign: 'right',
+  },
   footerLinks: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -496,6 +647,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 32,
+  },
+  settingText: {
+    flexShrink: 1,
+    marginRight: 12,
+  },
+  hourStepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  hourBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hourBtnText: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  hourValue: {
+    fontSize: RFValue(16),
+    fontWeight: '700',
+    minWidth: 52,
+    textAlign: 'center',
   },
   settingLabel: {
     fontSize: RFValue(18),
