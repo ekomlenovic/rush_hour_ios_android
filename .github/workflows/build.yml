@@ -10,54 +10,30 @@ on:
         required: false
         type: boolean
         default: false
-  
-      bump_version:
-        description: 'Bump patch version?'
-        required: false
-        type: boolean
-        default: true
 
 jobs:
   prepare:
     name: Prepare Version
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.bump-version.outputs.version }}
+      version: ${{ steps.read-version.outputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Bump version
-        id: bump-version
+      - name: Read version
+        id: read-version
         run: |
-          if [ "${{ inputs.bump_version }}" = "true" ]; then
-            npm version patch --no-git-tag-version
-          fi
-      
           VERSION=$(node -p "require('./package.json').version")
-      
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
   build-ios:
     name: Build iOS
     needs: prepare
-    runs-on: macos-15
+    runs-on: macos-14
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Apply Version
-        run: |
-          VERSION="${{ needs.prepare.outputs.version }}"
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
-            pkg.version = '${VERSION}';
-            app.expo.version = '${VERSION}';
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-            fs.writeFileSync('app.json', JSON.stringify(app, null, 2));
-          "
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -116,19 +92,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Apply Version
-        run: |
-          VERSION="${{ needs.prepare.outputs.version }}"
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
-            pkg.version = '${VERSION}';
-            app.expo.version = '${VERSION}';
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-            fs.writeFileSync('app.json', JSON.stringify(app, null, 2));
-          "
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -238,15 +201,6 @@ jobs:
           node -e "
             const fs = require('fs');
             
-            // Update package.json & app.json for the repo
-            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            pkg.version = '${VERSION}';
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-            
-            const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
-            app.expo.version = '${VERSION}';
-            fs.writeFileSync('app.json', JSON.stringify(app, null, 2));
-            
             // Update sidestore-source.json (iOS)
             const iosSource = JSON.parse(fs.readFileSync('sidestore-source.json', 'utf8'));
             const iosApp = iosSource.apps[0];
@@ -272,8 +226,8 @@ jobs:
           
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json app.json sidestore-source.json android-source.json
-          git commit -m "chore: bump version to ${VERSION} and update update sources [skip ci]"
+          git add sidestore-source.json android-source.json
+          git commit -m "chore: update update sources for ${VERSION} [skip ci]"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
