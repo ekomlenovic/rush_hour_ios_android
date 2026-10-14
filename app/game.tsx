@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { Image, Modal, Share, Alert, AppState } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
-import { formatDuration } from '@/utils/date';
+import { formatDuration, parseLocalDateString } from '@/utils/date';
 
 export default function GameScreen() {
   const { t } = useTranslation();
@@ -328,7 +328,7 @@ export default function GameScreen() {
   const stars = moveCount <= minMoves ? 3 : moveCount <= minMoves + 3 ? 2 : 1;
 
   if (isLoading || !currentLevel) {
-    const isMondayDaily = params.levelId === 'daily' && params.date && new Date(params.date).getDay() === 1;
+    const isMondayDaily = params.levelId === 'daily' && params.date && parseLocalDateString(params.date).getDay() === 1;
 
     return (
       <View style={[styles.container, { backgroundColor: colors.bg, justifyContent: 'center', alignItems: 'center' }]}>
@@ -455,23 +455,27 @@ export default function GameScreen() {
         </Animated.View>
       )}
 
-      {/* Action buttons - Hidden for challenges (one-shot) or if won */}
-      {!challengeKind && !won && (
+      {/* Action buttons - Daily: none, Weekly: reset only (see docs/GAME_DESIGN.md) */}
+      {challengeKind !== 'daily' && !won && !isChallengeCompleted && (
         <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.actions}>
-          <Pressable onPress={handleUndo} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
-            <Text style={[styles.actionText, { color: colors.text }]}>↩ {t('game.undo')}</Text>
-          </Pressable>
-          <Pressable 
-            onPress={handleHint} 
-            style={[styles.actionBtn, { backgroundColor: colors.hint + '22' }]}
-            disabled={isHintLoading}
-          >
-            {isHintLoading ? (
-              <ActivityIndicator size="small" color={colors.hint} />
-            ) : (
-              <Text style={[styles.actionText, { color: colors.hint }]}>💡 {t('game.hint')}</Text>
-            )}
-          </Pressable>
+          {!challengeKind && (
+            <>
+              <Pressable onPress={handleUndo} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
+                <Text style={[styles.actionText, { color: colors.text }]}>↩ {t('game.undo')}</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleHint}
+                style={[styles.actionBtn, { backgroundColor: colors.hint + '22' }]}
+                disabled={isHintLoading}
+              >
+                {isHintLoading ? (
+                  <ActivityIndicator size="small" color={colors.hint} />
+                ) : (
+                  <Text style={[styles.actionText, { color: colors.hint }]}>💡 {t('game.hint')}</Text>
+                )}
+              </Pressable>
+            </>
+          )}
            <Pressable onPress={handleReset} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
             <Text style={[styles.actionText, { color: colors.text }]}>↻ {t('common.reset')}</Text>
           </Pressable>
