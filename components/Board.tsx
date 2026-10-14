@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, useWindowDimensions } from 'react-native';
 import { Vehicle, useGameStore } from '@/store/gameStore';
 import { getMoveBounds } from '@/utils/collision';
 import Block from './Block';
@@ -23,7 +23,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const screenWidth = Dimensions.get('window').width;
+  const { width: screenWidth } = useWindowDimensions();
   const boardSize = screenWidth - BOARD_PADDING * 2;
   const cellSize = boardSize / gridSize;
 

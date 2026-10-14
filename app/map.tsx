@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, ScrollView, Dimensions, Modal, ActivityIndicator, Switch, Alert, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Pressable, ScrollView, useWindowDimensions, Modal, ActivityIndicator, Switch, Alert, Linking, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
@@ -11,9 +11,8 @@ import { DIFFICULTY_LEVELS, generateLevel } from '@/utils/generator';
 import { useTranslation } from 'react-i18next';
 import i18n, { changeLanguage } from '@/utils/i18n';
 import { RFValue } from '@/utils/responsive';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { width } = Dimensions.get('window');
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const GENERATION_TIME_MAP: Record<string, number> = {
   'EASY': 1000,
@@ -24,7 +23,7 @@ const GENERATION_TIME_MAP: Record<string, number> = {
 };
 
 // Candy crush style path generator (Bottom to Top)
-const generatePathPoints = (count: number, screenHeight: number) => {
+const generatePathPoints = (count: number, width: number, screenHeight: number) => {
   const points = [];
   const amplitude = width * 0.25;
   const centerX = width / 2;
@@ -189,12 +188,13 @@ export default function MapScreen() {
   // We add exactly 1 node at the end for the final Padlock marker indicating the end of generated levels
   const pathLength = levels.length + 1;
 
-  const screenHeight = Dimensions.get('window').height;
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   // Memoize path points and total height to avoid expensive recalculated arrays
   const { points: pathPoints, totalHeight } = useMemo(() => {
-    return generatePathPoints(pathLength, screenHeight);
-  }, [pathLength, screenHeight]);
+    return generatePathPoints(pathLength, screenWidth, screenHeight);
+  }, [pathLength, screenWidth, screenHeight]);
 
   // Synchronously calculate initial scroll position to avoid "teleportation"
   const initialY = useMemo(() => {
@@ -475,7 +475,7 @@ export default function MapScreen() {
       {/* Settings & Generator Modal */}
       <Modal visible={isSettingsVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
+          <View style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF', paddingBottom: Math.max(40, insets.bottom + 24) }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>{t('home.options')}</Text>
               <Pressable onPress={() => setSettingsVisible(false)}>
