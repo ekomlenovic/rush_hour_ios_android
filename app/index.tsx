@@ -16,6 +16,7 @@ import i18n, { changeLanguage } from '@/utils/i18n';
 import { RFValue } from '@/utils/responsive';
 import { getLocalDateString, getWeekKey, getDaysLeftInWeek } from '@/utils/date';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { requestReminderPermission } from '@/utils/notifications';
 import { MISSIONS_BY_ID, MissionDef, getMissionsForDay, getMissionProgress, countMissionsDone } from '@/data/missions';
 
 function formatMissionProgress(mission: MissionDef, progress: number): string {
@@ -33,7 +34,7 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
-  const { maxUnlockedLevel, dailyChallengeProgress, hardReset, unlockAllLevels, isHapticsEnabled, toggleHapticsEnabled, currentStreak, recordAppOpen, weeklyChallengeProgress, streakFreezes, dailyMissions } = useGameStore();
+  const { maxUnlockedLevel, dailyChallengeProgress, hardReset, unlockAllLevels, isHapticsEnabled, toggleHapticsEnabled, currentStreak, recordAppOpen, weeklyChallengeProgress, streakFreezes, dailyMissions, notificationsEnabled, reminderHour, setNotificationsEnabled, setReminderHour } = useGameStore();
 
   const { toggleMusic, isPlaying: isMusicEnabled } = useAudio();
   const [isSettingsVisible, setSettingsVisible] = useState(false);
@@ -104,6 +105,18 @@ export default function HomeScreen() {
     };
     // autoCheck();
   }, []);
+
+  const handleRemindersToggle = async (value: boolean) => {
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (value && !(await requestReminderPermission())) {
+      Alert.alert(t('reminders.denied_title'), t('reminders.denied_body'));
+      setNotificationsEnabled(false);
+      return;
+    }
+    setNotificationsEnabled(value);
+  };
+
+  const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 
   const handleUnlockAll = () => {
     Alert.alert(
@@ -393,6 +406,36 @@ export default function HomeScreen() {
               />
             </View>
 
+            <View style={styles.settingRow}>
+              <View style={styles.settingText}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('reminders.setting')}</Text>
+                <Text style={[styles.settingSub, { color: colors.sub }]}>{t('reminders.setting_desc')}</Text>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleRemindersToggle}
+                trackColor={{ false: '#767577', true: colors.accent }}
+              />
+            </View>
+
+            {notificationsEnabled && (
+              <View style={styles.settingRow}>
+                <View style={styles.settingText}>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>{t('reminders.hour')}</Text>
+                  <Text style={[styles.settingSub, { color: colors.sub }]}>{t('reminders.hour_desc')}</Text>
+                </View>
+                <View style={styles.hourStepper}>
+                  <Pressable onPress={() => setReminderHour(reminderHour - 1)} style={[styles.hourBtn, { backgroundColor: colors.card }]}>
+                    <Text style={[styles.hourBtnText, { color: colors.text }]}>−</Text>
+                  </Pressable>
+                  <Text style={[styles.hourValue, { color: colors.text }]}>{formatHour(reminderHour)}</Text>
+                  <Pressable onPress={() => setReminderHour(reminderHour + 1)} style={[styles.hourBtn, { backgroundColor: colors.card }]}>
+                    <Text style={[styles.hourBtnText, { color: colors.text }]}>+</Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+
             <View style={[styles.divider, { backgroundColor: colors.sub }]} />
 
             <View style={styles.versionRow}>
@@ -604,6 +647,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 32,
+  },
+  settingText: {
+    flexShrink: 1,
+    marginRight: 12,
+  },
+  hourStepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  hourBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hourBtnText: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  hourValue: {
+    fontSize: RFValue(16),
+    fontWeight: '700',
+    minWidth: 52,
+    textAlign: 'center',
   },
   settingLabel: {
     fontSize: RFValue(18),

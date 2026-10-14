@@ -18,6 +18,7 @@ import * as Clipboard from 'expo-clipboard';
 import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
 import { formatDuration, parseLocalDateString } from '@/utils/date';
 import { buildChallengeShareText } from '@/utils/shareResult';
+import { requestReminderPermission } from '@/utils/notifications';
 
 export default function GameScreen() {
   const { t, i18n } = useTranslation();
@@ -97,6 +98,27 @@ export default function GameScreen() {
     } catch (error) {
       console.error('Sharing failed', error);
     }
+  };
+
+  // After the first daily won, offer the reminders once (see docs/GAME_DESIGN.md)
+  const handleWinContinue = () => {
+    router.back();
+    const state = useGameStore.getState();
+    if (challengeKind !== 'daily' || state.notificationsPrompted || state.notificationsEnabled) return;
+    state.markNotificationsPrompted();
+    setTimeout(() => {
+      Alert.alert(t('reminders.prompt_title'), t('reminders.prompt_body'), [
+        { text: t('common.later'), style: 'cancel' },
+        {
+          text: t('reminders.prompt_yes'),
+          onPress: async () => {
+            if (await requestReminderPermission()) {
+              useGameStore.getState().setNotificationsEnabled(true);
+            }
+          },
+        },
+      ]);
+    }, 400);
   };
 
   const handleCopyLink = async () => {
@@ -481,7 +503,7 @@ export default function GameScreen() {
             )}
             <Pressable
               style={[styles.winButton, { backgroundColor: colors.accent }]}
-              onPress={() => router.back()}
+              onPress={handleWinContinue}
             >
              <Text style={styles.winButtonText}>{t('common.continue')}</Text>
             </Pressable>

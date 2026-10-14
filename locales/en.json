@@ -396,5 +396,24 @@
       "moves_100": "Play 100 moves",
       "play_10min": "Play for 10 minutes"
     }
+  },
+  "reminders": {
+    "channel_name": "Reminders",
+    "daily_title": "Daily challenge 🧩",
+    "daily_body": "Today's challenge is waiting for you!",
+    "streak_title": "Streak in danger 🔥",
+    "streak_body_one": "Your {{count}}-day streak is in danger: complete the daily challenge before midnight!",
+    "streak_body_other": "Your {{count}}-day streak is in danger: complete the daily challenge before midnight!",
+    "weekly_title": "New weekly challenge ⚔️",
+    "weekly_body": "This week's challenge is out. Can you solve it?",
+    "setting": "Reminders",
+    "setting_desc": "Daily challenge, streak in danger, weekly challenge",
+    "hour": "Reminder time",
+    "hour_desc": "The \"streak in danger\" reminder comes 2 hours later",
+    "denied_title": "Notifications disabled",
+    "denied_body": "Allow notifications for Rush Hours in your phone settings to get reminders.",
+    "prompt_title": "A little reminder? 🔔",
+    "prompt_body": "Want a daily reminder so you never miss the daily challenge and keep your streak? You can change the time in the options.",
+    "prompt_yes": "Yes, remind me"
   }
 }

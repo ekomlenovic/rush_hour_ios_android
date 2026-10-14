@@ -56,6 +56,17 @@ Le streak compte les jours consécutifs avec le défi du jour réussi.
 | Récompense : finir les 3 missions donne **1 gel de streak** (rien si le stock est plein), une fois par jour | `addStreakFreeze` |
 | Les identifiants de mission sont sauvegardés pour la journée : ne jamais en renommer, seulement en ajouter | |
 
+## Rappels (notifications)
+
+| Règle | Implémentation |
+|---|---|
+| **Opt-in** : désactivés par défaut. Proposés une seule fois, après le **premier défi du jour réussi**, jamais au premier lancement | `handleWinContinue` (`app/game.tsx`) |
+| **Notifications locales uniquement** : pas de push, pas de serveur, pas de jeton. L'entitlement push iOS est retiré (builds SideStore) | `utils/notifications.ts`, `plugins/withoutPushEntitlement.js` |
+| Rappel du défi du jour à l'heure choisie (**19 h** par défaut, réglable dans les options), seulement s'il n'est pas déjà fait | `planReminders` (`utils/reminders.ts`) |
+| « Streak en danger » **2 h plus tard** (23 h au plus tard), le premier jour où le défi reste à faire | |
+| « Nouveau défi hebdo » le **lundi à 10 h** | |
+| Rien n'est envoyé quand l'app est ouverte ; tout est replanifié à chaque retour dans l'app et à chaque progrès | `useReminderSync` |
+
 ## Défi hebdomadaire — un essai unique, plus difficile
 
 Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler, progression conservée, plateau verrouillé une fois réussi jusqu'au lundi suivant), **à une exception près : il peut être recommencé**. C'est le gros puzzle de la semaine, on a le droit de repartir de zéro tant qu'il n'est pas réussi.
