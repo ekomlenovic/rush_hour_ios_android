@@ -18,10 +18,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 use std::{
-    cmp::Reverse,
     fs::File,
     io::{BufWriter, Write},
-    sync::atomic::{AtomicU32, Ordering},
+    sync::atomic::{AtomicBool, AtomicU32, Ordering},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
@@ -321,18 +320,15 @@ fn mutate(board: &[VehicleData], cfg: DifficultyConfig, rng: &mut SmallRng) -> O
     let mut nb = board.to_vec();
 
     match rng.gen_range(0..8u8) {
-        // décalage de ±1 le long de la voie
+        // saut à une autre position de la voie (un décalage de ±1 serait un
+        // coup légal → même composante, donc évaluation inutile)
         0 | 1 if nb.len() > 1 => {
             let idx = rng.gen_range(1..nb.len());
             let v = &mut nb[idx];
             let max_p = gs - v.length;
-            if rng.gen_bool(0.5) {
-                if v.pos == 0 { return None; }
-                v.pos -= 1;
-            } else {
-                if v.pos >= max_p { return None; }
-                v.pos += 1;
-            }
+            if max_p == 0 { return None; }
+            let q = rng.gen_range(0..max_p);
+            v.pos = if q >= v.pos { q + 1 } else { q };
         }
         // changement de voie de ±1
         2 | 3 if nb.len() > 1 => {
@@ -445,8 +441,9 @@ fn try_restart(
     seen:     &mut FxHashSet<u64>,
     restart:  u32,
     deadline: Instant,
+    found:    &AtomicBool,
 ) -> Option<(Level, u32)> {
-    if Instant::now() >= deadline { return None; }
+    if found.load(Ordering::Relaxed) || Instant::now() >= deadline { return None; }
 
     let cfg  = task.cfg;
     let gs   = cfg.grid_size;
@@ -456,8 +453,10 @@ fn try_restart(
     let mut layers = eval(&board, gs, side, task.max_states, seen);
     let mut score  = layers.as_ref().map_or(0, |l| l.len() as u32 - 1);
 
-    // Difficulté visée pour ce restart → variété dans le palier
-    let want = rng.gen_range(cfg.min_moves..=cfg.max_moves);
+    // Difficulté visée pour ce restart, biaisée vers le bas du palier :
+    // finalize() tire ensuite la profondeur dans [want, score] → variété conservée
+    let want_hi = cfg.min_moves + (cfg.max_moves - cfg.min_moves) / 3;
+    let want = rng.gen_range(cfg.min_moves..=want_hi);
     let mut stuck = 0u32;
 
     for _ in 0..3000 {
@@ -467,7 +466,8 @@ fn try_restart(
                 return Some((level, restart + 1));
             }
         }
-        if stuck > 400 || Instant::now() >= deadline { break; }
+        if stuck > 400 || (score >= cfg.min_moves && stuck > 150) { break; }
+        if found.load(Ordering::Relaxed) || Instant::now() >= deadline { return None; }
 
         let Some(m) = mutate(&board, cfg, rng) else { stuck += 1; continue };
         let Some(ml) = eval(&m, gs, side, task.max_states, seen) else { stuck += 1; continue };
@@ -503,6 +503,7 @@ fn generate_single(task: &Task, max_restarts: u32, budget: Duration) -> Option<(
     let t0       = Instant::now();
     let deadline = t0 + budget;
     let cap      = task.max_states.min(1 << 17);
+    let found    = AtomicBool::new(false);
 
     (0..max_restarts)
         .into_par_iter()
@@ -511,7 +512,11 @@ fn generate_single(task: &Task, max_restarts: u32, budget: Duration) -> Option<(
                 SmallRng::from_entropy(),
                 FxHashSet::<u64>::with_capacity_and_hasher(cap, Default::default()),
             ),
-            |(rng, seen), r| try_restart(task, rng, seen, r, deadline),
+            |(rng, seen), r| {
+                let res = try_restart(task, rng, seen, r, deadline, &found);
+                if res.is_some() { found.store(true, Ordering::Relaxed); }
+                res
+            },
         )
         .find_map_any(|x| x)
         .map(|(level, restarts)| (level, restarts, t0.elapsed()))
@@ -551,7 +556,8 @@ fn main() {
         let max_states = match *label {
             "EASY" | "NORMAL" => base / 3,
             "HARD"            => base,
-            "EXPERT"          => base * 2,
+            // Les puzzles durs ont de petites composantes : on rejette vite les grosses
+            "EXPERT"          => base / 6,
             "MASTER"          => base * 4,
             _                 => base,
         }
@@ -579,8 +585,6 @@ fn main() {
         }
     }
 
-    // Les plus dures d'abord : évite qu'un MASTER tourne seul en fin de run
-    tasks.sort_by_key(|t| Reverse(t.cfg.min_moves));
 
     let total        = tasks.len();
     let done_counter = AtomicU32::new(0);
@@ -588,8 +592,9 @@ fn main() {
     let budget       = Duration::from_secs(cli.time_budget_secs);
     println!("  {} levels à générer sur {} threads\n", total, num_threads);
 
+    // Un level à la fois : tous les threads travaillent sur ses restarts
     let results: Vec<Option<(Level, u32, Duration)>> = tasks
-        .par_iter()
+        .iter()
         .map(|task| {
             let res  = generate_single(task, cli.max_restarts, budget);
             let done = done_counter.fetch_add(1, Ordering::Relaxed) + 1;
