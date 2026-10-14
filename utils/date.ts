@@ -11,6 +11,31 @@ export function parseLocalDateString(dateKey: string): Date {
   return new Date(year, month - 1, day);
 }
 
+/** Days since 1970 for a YYYY-MM-DD key; rounding absorbs daylight saving shifts. */
+export function getDayNumber(dateKey: string): number {
+  return Math.round(parseLocalDateString(dateKey).getTime() / 86400000);
+}
+
+/** Number of days from one YYYY-MM-DD key to another (positive if `to` is later). */
+export function daysBetween(from: string, to: string): number {
+  return getDayNumber(to) - getDayNumber(from);
+}
+
+/**
+ * Runs of consecutive days in a set of YYYY-MM-DD keys:
+ * the longest one, and the one ending on the most recent day.
+ */
+export function computeDayRuns(dateKeys: string[]): { longest: number; latest: number; latestKey: string | null } {
+  const sorted = [...new Set(dateKeys)].sort((a, b) => getDayNumber(a) - getDayNumber(b));
+  let longest = 0;
+  let run = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    run = i > 0 && daysBetween(sorted[i - 1], sorted[i]) === 1 ? run + 1 : 1;
+    longest = Math.max(longest, run);
+  }
+  return { longest, latest: run, latestKey: sorted.length > 0 ? sorted[sorted.length - 1] : null };
+}
+
 /** ISO 8601 week key, e.g. '2026-W42'. Weeks start on Monday. */
 export function getWeekKey(d: Date = new Date()): string {
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
