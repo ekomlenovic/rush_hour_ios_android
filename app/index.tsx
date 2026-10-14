@@ -14,7 +14,7 @@ import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
 import i18n, { changeLanguage } from '@/utils/i18n';
 import { RFValue } from '@/utils/responsive';
-import { getLocalDateString } from '@/utils/date';
+import { getLocalDateString, getWeekKey, getDaysLeftInWeek } from '@/utils/date';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
@@ -25,7 +25,7 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
-  const { maxUnlockedLevel, dailyChallengeProgress, hardReset, unlockAllLevels, isHapticsEnabled, toggleHapticsEnabled, currentStreak, recordAppOpen, hintTokens } = useGameStore();
+  const { maxUnlockedLevel, dailyChallengeProgress, hardReset, unlockAllLevels, isHapticsEnabled, toggleHapticsEnabled, currentStreak, recordAppOpen, weeklyChallengeProgress } = useGameStore();
 
   const { toggleMusic, isPlaying: isMusicEnabled } = useAudio();
   const [isSettingsVisible, setSettingsVisible] = useState(false);
@@ -38,12 +38,10 @@ export default function HomeScreen() {
     const info = recordAppOpen();
     if (info.isComeback) {
       setComebackInfo(info);
-      // Grant bonus hints on comeback
-      useGameStore.getState().addHintTokens(3);
       setTimeout(() => {
         Alert.alert(
           t('home.welcome_back'),
-          t('home.welcome_back_desc', { days: info.missedDays, tokens: 3 })
+          t('home.welcome_back_desc', { days: info.missedDays })
         );
       }, 500);
     }
@@ -139,9 +137,12 @@ export default function HomeScreen() {
 
   const dailyStatus = dailyChallengeProgress[dateStr];
 
+  const weekKey = getWeekKey(new Date());
+  const weeklyStatus = weeklyChallengeProgress[weekKey];
+
   const colors = isDark
-    ? { text: '#FFFFFF', sub: '#8E8EA0', accent: '#6C63FF', card: 'rgba(255,255,255,0.06)', success: '#10B981' }
-    : { text: '#1A1A2E', sub: '#6B6B80', accent: '#5A4FE0', card: 'rgba(0,0,0,0.04)', success: '#059669' };
+    ? { text: '#FFFFFF', sub: '#8E8EA0', accent: '#6C63FF', card: 'rgba(255,255,255,0.06)', success: '#10B981', weekly: '#F97316' }
+    : { text: '#1A1A2E', sub: '#6B6B80', accent: '#5A4FE0', card: 'rgba(0,0,0,0.04)', success: '#059669', weekly: '#EA580C' };
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#0F0F1A' : '#F5F5FA' }]}>
@@ -183,6 +184,26 @@ export default function HomeScreen() {
           {dailyStatus?.completed ? t('home.daily_done', { stars: dailyStatus.stars }) : t('home.daily_challenge')}
         </Text>
 
+      </AnimatedPressable>
+
+      <AnimatedPressable
+        entering={FadeInDown.delay(775).springify()}
+        style={[
+          styles.secondaryButton,
+          { borderColor: weeklyStatus?.completed ? colors.success : colors.weekly, borderWidth: 2 }
+        ]}
+        onPress={() => {
+          router.push(`/game?levelId=weekly&week=${weekKey}`);
+        }}
+      >
+        <Text style={[styles.secondaryText, { color: weeklyStatus?.completed ? colors.success : colors.weekly }]}>
+          {weeklyStatus?.completed ? t('home.weekly_done', { stars: weeklyStatus.stars }) : t('home.weekly_challenge')}
+        </Text>
+        {!weeklyStatus?.completed && (
+          <Text style={[styles.daysLeftText, { color: colors.sub }]}>
+            {t('home.weekly_days_left', { count: getDaysLeftInWeek(new Date()) })}
+          </Text>
+        )}
       </AnimatedPressable>
 
       {currentStreak > 0 && (
@@ -406,6 +427,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  daysLeftText: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
   },
   streakText: {
     fontSize: 16,

@@ -3,6 +3,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AudioProvider } from '@/context/AudioProvider';
+import AchievementToast from '@/components/AchievementToast';
 import * as Linking from 'expo-linking';
 import { deserializeLevel } from '@/utils/sharing';
 import { useGameStore } from '@/store/gameStore';
@@ -49,6 +50,7 @@ export default function RootLayout() {
             animation: 'slide_from_right',
           }}
         />
+        <AchievementToast />
       </GestureHandlerRootView>
     </AudioProvider>
   );
