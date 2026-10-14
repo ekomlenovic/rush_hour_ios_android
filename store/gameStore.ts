@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { sampleLevels } from '../data/sampleLevels';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
+import { DailyMissionsState, MissionCounter, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
 import { getLocalDateString, daysBetween, computeDayRuns, addDays } from '../utils/date';
 
 /** Reserved level IDs for challenges (excluded from map progression) */
@@ -131,6 +132,8 @@ export interface PlayerStats {
   /** Streak freezes earned and consumed */
   freezesEarned: number;
   freezesUsed: number;
+  /** Days with all daily missions completed */
+  missionDaysCompleted: number;
   /** Longest absence between two app opens, in days */
   longestAbsenceDays: number;
 }
@@ -205,6 +208,11 @@ interface GameState {
   /** Days covered by a freeze, shown in the calendar */
   frozenDates: string[];
 
+  /** Today's missions and their counters */
+  dailyMissions: DailyMissionsState | null;
+  /** All missions of the day just completed, not shown to the player yet (not persisted) */
+  pendingMissionReward: { freezeGranted: boolean } | null;
+
   /** Last time the app was opened (ISO date YYYY-MM-DD) for comeback detection */
   lastOpenDate: string | null;
 
@@ -241,6 +249,7 @@ interface GameState {
   updateStreak: (dateKey: string) => void;
   recordAppOpen: () => AppOpenInfo;
   addStreakFreeze: () => boolean;
+  consumeMissionReward: () => { freezeGranted: boolean } | null;
 }
 
 /** What happened since the last app open */
@@ -314,6 +323,7 @@ const initialStats = (): PlayerStats => ({
   lastMinuteWeeklies: 0,
   freezesEarned: 0,
   freezesUsed: 0,
+  missionDaysCompleted: 0,
   longestAbsenceDays: 0,
 });
 
@@ -452,6 +462,30 @@ export const useGameStore = create<GameState>()(
         });
       };
 
+      /** Advances today's mission counters; completing them all grants a streak freeze */
+      const bumpMissions = (increments: Partial<Record<MissionCounter, number>>) => {
+        const state = get();
+        const missions = getMissionsForDay(state.dailyMissions, getLocalDateString(new Date()));
+        const counters = { ...missions.counters };
+        for (const [counter, amount] of Object.entries(increments) as [MissionCounter, number][]) {
+          if (amount) counters[counter] = (counters[counter] || 0) + amount;
+        }
+
+        const allDone = missions.ids.every(id => MISSIONS_BY_ID[id] && isMissionDone(MISSIONS_BY_ID[id], counters));
+        if (!allDone || missions.rewarded) {
+          set({ dailyMissions: { ...missions, counters } });
+          return;
+        }
+
+        set({
+          dailyMissions: { ...missions, counters, rewarded: true },
+          stats: { ...state.stats, missionDaysCompleted: state.stats.missionDaysCompleted + 1 },
+        });
+        const freezeGranted = get().addStreakFreeze();
+        set({ pendingMissionReward: { freezeGranted } });
+        get().checkAchievements();
+      };
+
       return {
       currentLevel: null,
       vehicles: [],
@@ -481,6 +515,8 @@ export const useGameStore = create<GameState>()(
       lastStreakDate: null,
       streakFreezes: 0,
       frozenDates: [],
+      dailyMissions: null,
+      pendingMissionReward: null,
       lastOpenDate: null,
       totalHintsUsed: 0,
       generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
@@ -515,6 +551,7 @@ export const useGameStore = create<GameState>()(
           history: [...history, snapshot],
           stats: { ...stats, totalMoves: stats.totalMoves + 1 },
         });
+        bumpMissions({ moves: 1 });
       },
 
       undo: () => {
@@ -560,6 +597,7 @@ export const useGameStore = create<GameState>()(
           currentAttempt: { ...currentAttempt, elapsedMs: currentAttempt.elapsedMs + ms },
           stats: { ...stats, totalPlayTimeMs: stats.totalPlayTimeMs + ms },
         });
+        bumpMissions({ playMs: ms });
       },
 
       completeLevel: (levelId, score, stars, timeMs) => {
@@ -605,6 +643,15 @@ export const useGameStore = create<GameState>()(
           stats: isCurrentLevel && currentLevel ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'level') : stats,
           currentAttempt: emptyAttempt(),
         });
+        if (isCurrentLevel && currentLevel) {
+          bumpMissions({
+            levelWins: 1,
+            perfectWins: stars === 3 ? 1 : 0,
+            noHintWins: noHint ? 1 : 0,
+            cleanWins: noHelp ? 1 : 0,
+            bigGridWins: currentLevel.gridSize >= 7 ? 1 : 0,
+          });
+        }
         get().checkAchievements();
       },
 
@@ -625,6 +672,9 @@ export const useGameStore = create<GameState>()(
 
         // Update streak
         get().updateStreak(dateKey);
+        if (dateKey === getLocalDateString(new Date())) {
+          bumpMissions({ dailyDone: 1 });
+        }
 
         get().checkAchievements();
       },
@@ -667,6 +717,12 @@ export const useGameStore = create<GameState>()(
         if (state.isHapticsEnabled) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
+      },
+
+      consumeMissionReward: () => {
+        const { pendingMissionReward } = get();
+        if (pendingMissionReward) set({ pendingMissionReward: null });
+        return pendingMissionReward;
       },
 
       consumeUnlockQueue: () => {
@@ -860,6 +916,8 @@ export const useGameStore = create<GameState>()(
           lastStreakDate: null,
           streakFreezes: 0,
           frozenDates: [],
+          dailyMissions: null,
+          pendingMissionReward: null,
           lastOpenDate: null,
           totalHintsUsed: 0,
         });
@@ -922,6 +980,7 @@ export const useGameStore = create<GameState>()(
         lastStreakDate: state.lastStreakDate,
         streakFreezes: state.streakFreezes,
         frozenDates: state.frozenDates,
+        dailyMissions: state.dailyMissions,
         lastOpenDate: state.lastOpenDate,
         totalHintsUsed: state.totalHintsUsed,
       }),
