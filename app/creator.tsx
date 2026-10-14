@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, useColorScheme, Pressable,
-  Dimensions, Alert,
+  useWindowDimensions, Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, {
   useSharedValue, useAnimatedStyle, runOnJS, withTiming, SharedValue,
@@ -88,8 +89,8 @@ export default function LevelCreatorScreen() {
   const boardPos = useRef({ x: 0, y: 0 });
   const vehiclesRef = useRef<Vehicle[]>([]);
 
-  const screenWidth = Dimensions.get('window').width;
-  const screenHeight = Dimensions.get('window').height;
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const boardSize = Math.min(screenWidth - BOARD_PADDING * 2, screenHeight * 0.48);
   const cellSize = boardSize / gridSize;
 
@@ -623,7 +624,7 @@ export default function LevelCreatorScreen() {
         )}
 
         {/* ── Toolbox ── */}
-        <View style={[styles.toolbox, { borderTopColor: C.border, backgroundColor: C.bg }]}>
+        <View style={[styles.toolbox, { borderTopColor: C.border, backgroundColor: C.bg, paddingBottom: Math.max(34, insets.bottom + 12) }]}>
           <Text style={[styles.toolboxHeading, { color: C.sub }]}>{t('creator.vehicles_toolbox', { defaultValue: 'VEHICLES' })}</Text>
           <View style={styles.toolboxGrid}>
             {TOOLBOX_ITEMS.map((item, idx) => {

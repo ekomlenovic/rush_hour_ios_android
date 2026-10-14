@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import i18n, { changeLanguage } from '@/utils/i18n';
 import { RFValue } from '@/utils/responsive';
 import { getLocalDateString } from '@/utils/date';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -28,6 +29,7 @@ export default function HomeScreen() {
 
   const { toggleMusic, isPlaying: isMusicEnabled } = useAudio();
   const [isSettingsVisible, setSettingsVisible] = useState(false);
+  const insets = useSafeAreaInsets();
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [comebackInfo, setComebackInfo] = useState<{ isComeback: boolean; missedDays: number } | null>(null);
@@ -246,7 +248,7 @@ export default function HomeScreen() {
       <Modal visible={isSettingsVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-          <View style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
+          <View style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF', paddingBottom: Math.max(48, insets.bottom + 24) }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>{t('home.options')}</Text>
               <Pressable onPress={() => setSettingsVisible(false)}>

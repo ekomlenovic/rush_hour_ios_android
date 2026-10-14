@@ -1,13 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, Dimensions, Modal } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Pressable, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeOut, Layout, ZoomIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import Board from '@/components/Board';
 import { Vehicle, useGameStore } from '@/store/gameStore';
 import { checkWin } from '@/utils/collision';
-
-const { width } = Dimensions.get('window');
 
 const TUTORIAL_STEPS = [
   { highlight: "target" },
