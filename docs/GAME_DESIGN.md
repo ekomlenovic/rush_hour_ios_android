@@ -31,14 +31,33 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 | Étoiles : 3 ⭐ = solution optimale, 2 ⭐ ≤ optimal + 3, sinon 1 ⭐ | `app/game.tsx` |
 | On garde le meilleur score et les meilleures étoiles | `completeLevel` |
 
+## Défi hebdomadaire — un essai unique, plus difficile
+
+Le défi hebdo suit **les mêmes règles que le défi du jour** : pas d'indice, pas d'annuler, pas de recommencer, progression conservée, plateau verrouillé une fois réussi (jusqu'au lundi suivant).
+
+| Règle | Implémentation |
+|---|---|
+| Même puzzle pour tout le monde pendant une semaine ISO (lundi → dimanche) | clé `YYYY-Www` (`getWeekKey`, `utils/date.ts`) |
+| Puzzle tiré d'un **niveau difficile de la campagne** (≥ 25 coups minimum) | `generateWeeklyLevel` (`utils/generator.ts`) |
+| Le niveau est **déguisé** : une des 7 symétries non triviales (rotation / miroir) et couleurs remélangées. Le nombre minimum de coups est inchangé | `transformLevel` |
+| **Diversité** : tout le pool est parcouru avant qu'un niveau revienne, deux semaines de suite ne se ressemblent pas | pas de 23 dans le pool, symétrie qui change chaque semaine |
+| N'affecte **ni le streak ni la carte** | ID réservé `999998`, `weeklyChallengeProgress` |
+
+## Succès
+
+- Définis à un seul endroit : `data/achievements.ts`. Les **identifiants sont persistés** : ne jamais renommer un succès, seulement en ajouter.
+- Un succès ne doit jamais contredire les règles ci-dessus : aucun succès « sans indice » ou « sans annuler » sur les défis, puisqu'ils n'en ont jamais.
+- Les succès « sans aide » ne comptent que les niveaux distincts (impossible de les farmer en rejouant le même niveau).
+- Le déblocage est **visible** : dans l'écran de victoire, ou par un toast ailleurs dans l'app. Après une mise à jour, les succès déjà mérités sont débloqués silencieusement.
+
+## Statistiques
+
+- Le **temps de jeu** ne compte que le temps actif : écran de jeu ouvert, app au premier plan, niveau non résolu.
+- Indices, annulations, recommencements et temps sont suivis **par tentative** et survivent à la fermeture de l'écran (`savedStates[…].attempt`).
+
 ## Retour du joueur
 
 - Après **3 jours ou plus** d'absence : message de bienvenue (`recordAppOpen`, `app/index.tsx`).
-
-## Points ouverts
-
-- **Jetons d'indice** : il n'y en aura pas. Le code restant est du code mort à supprimer, voir l'issue #9.
-- **Défi hebdomadaire** : la logique existe dans le store mais n'a pas d'écran, voir l'issue #8. Ses règles (one-shot ou non) restent à décider.
 
 ## Roadmap
 
