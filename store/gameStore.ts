@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { sampleLevels } from '../data/sampleLevels';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
+import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
 import { DailyMissionsState, MissionCounter, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
 import { getLocalDateString, daysBetween, computeDayRuns, addDays } from '../utils/date';
 
@@ -198,6 +199,12 @@ interface GameState {
   isMusicEnabled: boolean;
   /** Haptics Enabled state */
   isHapticsEnabled: boolean;
+  /** Local reminders (opt-in) */
+  notificationsEnabled: boolean;
+  /** Hour of the daily challenge reminder (0-23) */
+  reminderHour: number;
+  /** The player was already asked about reminders */
+  notificationsPrompted: boolean;
 
   /** Streak tracking */
   currentStreak: number;
@@ -242,6 +249,9 @@ interface GameState {
   purgeCustomLevels: (baseLevelCount: number) => void;
   toggleMusicEnabled: () => void;
   toggleHapticsEnabled: () => void;
+  setNotificationsEnabled: (enabled: boolean) => void;
+  setReminderHour: (hour: number) => void;
+  markNotificationsPrompted: () => void;
   unlockAllLevels: () => void;
   setGenerationState: (state: Partial<GenerationState>) => void;
   cancelGeneration: () => void;
@@ -510,6 +520,9 @@ export const useGameStore = create<GameState>()(
       savedStates: {},
       isMusicEnabled: true,
       isHapticsEnabled: true,
+      notificationsEnabled: false,
+      reminderHour: DEFAULT_REMINDER_HOUR,
+      notificationsPrompted: false,
       currentStreak: 0,
       bestStreak: 0,
       lastStreakDate: null,
@@ -873,6 +886,9 @@ export const useGameStore = create<GameState>()(
         const { isHapticsEnabled } = get();
         set({ isHapticsEnabled: !isHapticsEnabled });
       },
+      setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled, notificationsPrompted: true }),
+      setReminderHour: (hour) => set({ reminderHour: ((Math.round(hour) % 24) + 24) % 24 }),
+      markNotificationsPrompted: () => set({ notificationsPrompted: true }),
 
       unlockAllLevels: () => {
         const { generatedLevels } = get();
@@ -974,6 +990,9 @@ export const useGameStore = create<GameState>()(
         savedStates: state.savedStates,
         isMusicEnabled: state.isMusicEnabled,
         isHapticsEnabled: state.isHapticsEnabled,
+        notificationsEnabled: state.notificationsEnabled,
+        reminderHour: state.reminderHour,
+        notificationsPrompted: state.notificationsPrompted,
         generationState: state.generationState,
         currentStreak: state.currentStreak,
         bestStreak: state.bestStreak,

@@ -396,5 +396,24 @@
       "moves_100": "Joue 100 coups",
       "play_10min": "Joue 10 minutes"
     }
+  },
+  "reminders": {
+    "channel_name": "Rappels",
+    "daily_title": "Défi du jour 🧩",
+    "daily_body": "Le défi du jour t'attend !",
+    "streak_title": "Streak en danger 🔥",
+    "streak_body_one": "Ton streak de {{count}} jour est en danger : réussis le défi du jour avant minuit !",
+    "streak_body_other": "Ton streak de {{count}} jours est en danger : réussis le défi du jour avant minuit !",
+    "weekly_title": "Nouveau défi hebdo ⚔️",
+    "weekly_body": "Le défi de la semaine est disponible. Sauras-tu le résoudre ?",
+    "setting": "Rappels",
+    "setting_desc": "Défi du jour, streak en danger, défi hebdo",
+    "hour": "Heure du rappel",
+    "hour_desc": "Le rappel « streak en danger » arrive 2 h plus tard",
+    "denied_title": "Notifications désactivées",
+    "denied_body": "Autorise les notifications de Rush Hours dans les réglages du téléphone pour recevoir les rappels.",
+    "prompt_title": "Un petit rappel ? 🔔",
+    "prompt_body": "Veux-tu un rappel chaque jour pour ne pas manquer le défi du jour et garder ton streak ? Tu peux changer l'heure dans les options.",
+    "prompt_yes": "Oui, me rappeler"
   }
 }

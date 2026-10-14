@@ -41,6 +41,13 @@
           "resizeMode": "contain",
           "backgroundColor": "#1A2B4C"
         }
+      ],
+      "./plugins/withoutPushEntitlement",
+      [
+        "expo-notifications",
+        {
+          "color": "#6C63FF"
+        }
       ]
     ],
     "extra": {
