@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, useColorScheme, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp, ZoomIn, FadeIn, FadeOut } from 'react-native-reanimated';
@@ -10,18 +10,20 @@ import { checkWin } from '@/utils/collision';
 import { sampleLevels } from '@/data/sampleLevels';
 import { Move, solvePuzzle } from '@/utils/solver';
 import { solvePuzzleAsync } from '@/utils/solver.background';
-import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel } from '@/utils/generator';
+import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel, generateWeeklyLevel } from '@/utils/generator';
 import { getShareUrl, getQRCodeUrl, deserializeLevel } from '@/utils/sharing';
 import { useTranslation } from 'react-i18next';
-import { Image, Modal, Share, Alert } from 'react-native';
+import { Image, Modal, Share, Alert, AppState } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
+import { formatDuration, parseLocalDateString } from '@/utils/date';
 
 export default function GameScreen() {
   const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
-  const params = useLocalSearchParams<{ levelId: string }>();
+  const params = useLocalSearchParams<{ levelId: string; date?: string; week?: string; data?: string }>();
 
   const currentLevel = useGameStore(s => s.currentLevel);
   const vehicles = useGameStore(s => s.vehicles);
@@ -39,9 +41,8 @@ export default function GameScreen() {
   const currentDailyLevel = useGameStore(s => s.currentDailyLevel);
   const dailyLevelDate = useGameStore(s => s.dailyLevelDate);
   const dailyChallengeProgress = useGameStore(s => s.dailyChallengeProgress);
-  const hintTokens = useGameStore(s => s.hintTokens);
-  const useHintTokenFn = useGameStore(s => s.useHintToken);
-  const addHintTokensFn = useGameStore(s => s.addHintTokens);
+  const weeklyChallengeProgress = useGameStore(s => s.weeklyChallengeProgress);
+  const recordHintUsed = useGameStore(s => s.recordHintUsed);
 
   const [won, setWon] = useState(false);
   const [isLoading, setLoading] = useState(true);
@@ -49,6 +50,8 @@ export default function GameScreen() {
   const [computedMinMoves, setComputedMinMoves] = useState<number | null>(null);
   const [hintRemainingMoves, setHintRemainingMoves] = useState<number | null>(null);
   const [isHintLoading, setIsHintLoading] = useState(false);
+  const [winTimeMs, setWinTimeMs] = useState<number | null>(null);
+  const [winUnlocks, setWinUnlocks] = useState<string[]>([]);
 
   const [isShareVisible, setShareVisible] = useState(false);
 
@@ -56,10 +59,13 @@ export default function GameScreen() {
     if (!currentLevel) return;
     const url = getShareUrl(currentLevel);
     try {
-      await Share.share({
+      const result = await Share.share({
         message: t('game.share_message', { moves: minMoves, url: url }),
         url: url,
       });
+      if (result.action === Share.sharedAction) {
+        useGameStore.getState().recordLevelShared();
+      }
     } catch (error) {
       console.error('Sharing failed', error);
     }
@@ -69,6 +75,7 @@ export default function GameScreen() {
     if (!currentLevel) return;
     const url = getShareUrl(currentLevel);
     await Clipboard.setStringAsync(url);
+    useGameStore.getState().recordLevelShared();
     haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Alert.alert(t('common.copied'), t('common.link_copied'));
   };
@@ -84,9 +91,10 @@ export default function GameScreen() {
 
     const timer = setTimeout(async () => {
       const idParam = params.levelId;
-      const dateParam = (params as any).date;
+      const dateParam = params.date;
+      const weekParam = params.week;
       const id = Number(idParam);
-      const dataParamInUrl = (params as any).data;
+      const dataParamInUrl = params.data;
 
       let level: any = null;
 
@@ -105,6 +113,19 @@ export default function GameScreen() {
             useGameStore.setState({ 
               currentDailyLevel: level, 
               dailyLevelDate: dateParam 
+            });
+          }
+        }
+      } else if (idParam === 'weekly' && weekParam) {
+        const { currentWeeklyLevel, weeklyLevelKey } = useGameStore.getState();
+        if (currentWeeklyLevel && weeklyLevelKey === weekParam) {
+          level = currentWeeklyLevel;
+        } else {
+          level = await generateWeeklyLevel(weekParam);
+          if (level) {
+            useGameStore.setState({
+              currentWeeklyLevel: level,
+              weeklyLevelKey: weekParam
             });
           }
         }
@@ -156,15 +177,47 @@ export default function GameScreen() {
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [params.levelId, (params as any).date, createdLevels, importedLevels]);
+  }, [params.levelId, params.date, params.week, createdLevels, importedLevels]);
 
+  // Daily and weekly challenges are one-shot: no hint, undo or reset (see docs/GAME_DESIGN.md)
+  const challengeKind = params.levelId === 'daily' && params.date ? 'daily'
+    : params.levelId === 'weekly' && params.week ? 'weekly'
+    : null;
+  const challengeResult = challengeKind === 'daily' ? dailyChallengeProgress[params.date!]
+    : challengeKind === 'weekly' ? weeklyChallengeProgress[params.week!]
+    : undefined;
+  const isChallengeCompleted = !!challengeResult?.completed;
 
-  const dailyDateKey = (params as any).date;
-  const dailyCompletedEntry = params.levelId === 'daily' && dailyDateKey ? dailyChallengeProgress[dailyDateKey] : null;
-  const isDailyCompleted = !!dailyCompletedEntry?.completed;
+  // Active play time: counted while this screen is open, the app in foreground and the level unsolved
+  const segmentStartRef = useRef<number | null>(null);
+  const flushPlayTime = useCallback(() => {
+    if (segmentStartRef.current === null) return;
+    const now = Date.now();
+    useGameStore.getState().addPlayTime(now - segmentStartRef.current);
+    segmentStartRef.current = now;
+  }, []);
+  const isTrackingTime = !isLoading && !!currentLevel && !won && !isChallengeCompleted;
+
+  useEffect(() => {
+    if (!isTrackingTime) return;
+    segmentStartRef.current = Date.now();
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        segmentStartRef.current = Date.now();
+      } else {
+        flushPlayTime();
+        segmentStartRef.current = null;
+      }
+    });
+    return () => {
+      subscription.remove();
+      flushPlayTime();
+      segmentStartRef.current = null;
+    };
+  }, [isTrackingTime, flushPlayTime]);
 
   const handleMoveEnd = useCallback((vehicleId: string, newRow: number, newCol: number) => {
-    if (won || isDailyCompleted) return;
+    if (won || isChallengeCompleted) return;
 
     setHintVehicleId(null); // Clear hint highlight on any move
     setHintRemainingMoves(null);
@@ -174,29 +227,31 @@ export default function GameScreen() {
     const updatedVehicles = useGameStore.getState().vehicles;
     const updatedMoveCount = useGameStore.getState().moveCount;
     if (currentLevel && checkWin(updatedVehicles, currentLevel.exitRow, currentLevel.exitCol, currentLevel.gridSize)) {
-      setWon(true);
-      haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Stop the clock before recording the win
+      flushPlayTime();
+      segmentStartRef.current = null;
+      const timeMs = useGameStore.getState().currentAttempt.elapsedMs;
 
       // Calculate and save score
       const minMoves = computedMinMoves ?? currentLevel.minMoves;
       const score = calculateScore(updatedMoveCount, minMoves);
       const stars = updatedMoveCount <= minMoves ? 3 : updatedMoveCount <= minMoves + 3 ? 2 : 1;
-      
-      const idParam = params.levelId;
-      const dateParam = (params as any).date;
 
-      if (idParam === 'daily' && dateParam) {
-        useGameStore.getState().completeDailyChallenge(dateParam, score, stars);
+      if (challengeKind === 'daily') {
+        useGameStore.getState().completeDailyChallenge(params.date!, score, stars, timeMs);
+      } else if (challengeKind === 'weekly') {
+        useGameStore.getState().completeWeeklyChallenge(params.week!, score, stars, timeMs);
       } else {
-        completeLevel(currentLevel.id, score, stars);
+        completeLevel(currentLevel.id, score, stars, timeMs);
       }
 
-      // Reward hint tokens for 3-star completion
-      if (stars === 3) {
-        addHintTokensFn(1);
-      }
+      // Unlocked achievements are shown in the win modal instead of the global toast
+      setWinUnlocks(useGameStore.getState().consumeUnlockQueue());
+      setWinTimeMs(timeMs);
+      setWon(true);
+      haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-  }, [won, moveVehicle, currentLevel, computedMinMoves, completeLevel, params.levelId, (params as any).date, addHintTokensFn]);
+  }, [won, isChallengeCompleted, moveVehicle, currentLevel, computedMinMoves, completeLevel, challengeKind, params.date, params.week, flushPlayTime]);
 
   const handleUndo = useCallback(() => {
     undo();
@@ -216,8 +271,8 @@ export default function GameScreen() {
   const handleHint = useCallback(async () => {
     if (!currentLevel || won || isHintLoading) return;
 
-    // Track hint usage (unlimited hints)
-    useHintTokenFn();
+    // Hints are unlimited, only counted for stats (see docs/GAME_DESIGN.md)
+    recordHintUsed();
 
     const startTime = Date.now();
     setIsHintLoading(true);
@@ -260,7 +315,7 @@ export default function GameScreen() {
     } finally {
       setIsHintLoading(false);
     }
-  }, [vehicles, currentLevel, won, isHintLoading]);
+  }, [vehicles, currentLevel, won, isHintLoading, recordHintUsed]);
 
   const minMoves = computedMinMoves ?? currentLevel?.minMoves ?? 0;
   const score = calculateScore(moveCount, minMoves);
@@ -273,7 +328,7 @@ export default function GameScreen() {
   const stars = moveCount <= minMoves ? 3 : moveCount <= minMoves + 3 ? 2 : 1;
 
   if (isLoading || !currentLevel) {
-    const isMondayDaily = params.levelId === 'daily' && (params as any).date && new Date((params as any).date).getDay() === 1;
+    const isMondayDaily = params.levelId === 'daily' && params.date && parseLocalDateString(params.date).getDay() === 1;
 
     return (
       <View style={[styles.container, { backgroundColor: colors.bg, justifyContent: 'center', alignItems: 'center' }]}>
@@ -301,7 +356,9 @@ export default function GameScreen() {
           <Text style={[styles.backText, { color: colors.sub }]}>← {t('common.map')}</Text>
         </Pressable>
         <Text style={[styles.levelTitle, { color: colors.text }]}>
-          {params.levelId === 'daily' ? t('home.daily_challenge') : t('game.level_count', { id: currentLevel.id })}
+          {challengeKind === 'daily' ? t('home.daily_challenge')
+            : challengeKind === 'weekly' ? t('home.weekly_challenge')
+            : t('game.level_count', { id: currentLevel.id })}
         </Text>
         <Pressable onPress={() => setShareVisible(true)} style={styles.shareHeaderBtn}>
           <Text style={{ fontSize: 22 }}>📤</Text>
@@ -335,7 +392,7 @@ export default function GameScreen() {
         entering={FadeInDown.delay(300).springify()} 
         style={styles.boardWrapper}
       >
-        <View style={isDailyCompleted ? { opacity: 0.7 } : undefined}>
+        <View style={isChallengeCompleted ? { opacity: 0.7 } : undefined}>
           <Board
             gridSize={currentLevel.gridSize}
             vehicles={vehicles}
@@ -343,7 +400,7 @@ export default function GameScreen() {
             exitCol={currentLevel.exitCol}
             onMoveEnd={handleMoveEnd}
             hintVehicleId={hintVehicleId}
-            disabled={isDailyCompleted}
+            disabled={isChallengeCompleted}
           />
         </View>
       </Animated.View>
@@ -361,6 +418,21 @@ export default function GameScreen() {
             <Text style={[styles.winScore, { color: colors.text }]}>
               {t('game.win_stats', { moves: moveCount, best: minMoves, score: score })}
             </Text>
+            {winTimeMs !== null && winTimeMs > 0 && (
+              <Text style={[styles.winTime, { color: colors.sub }]}>
+                ⏱️ {formatDuration(winTimeMs)}
+              </Text>
+            )}
+            {winUnlocks.length > 0 && (
+              <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
+                <Text style={styles.winUnlocksTitle}>{t('achievements.unlocked')}</Text>
+                {winUnlocks.map((id) => (
+                  <Text key={id} style={[styles.winUnlockItem, { color: colors.text }]}>
+                    {ACHIEVEMENTS_BY_ID[id]?.icon} {t(`achievements.${id}`)}
+                  </Text>
+                ))}
+              </View>
+            )}
             <Pressable
               style={[styles.winButton, { backgroundColor: colors.accent }]}
               onPress={() => router.back()}
@@ -383,31 +455,35 @@ export default function GameScreen() {
         </Animated.View>
       )}
 
-      {/* Action buttons - Hidden for daily challenge or if won */}
-      {params.levelId !== 'daily' && !won && (
+      {/* Action buttons - Daily: none, Weekly: reset only (see docs/GAME_DESIGN.md) */}
+      {challengeKind !== 'daily' && !won && !isChallengeCompleted && (
         <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.actions}>
-          <Pressable onPress={handleUndo} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
-            <Text style={[styles.actionText, { color: colors.text }]}>↩ {t('game.undo')}</Text>
-          </Pressable>
-          <Pressable 
-            onPress={handleHint} 
-            style={[styles.actionBtn, { backgroundColor: colors.hint + '22' }]}
-            disabled={isHintLoading}
-          >
-            {isHintLoading ? (
-              <ActivityIndicator size="small" color={colors.hint} />
-            ) : (
-              <Text style={[styles.actionText, { color: colors.hint }]}>💡 {t('game.hint')}</Text>
-            )}
-          </Pressable>
+          {!challengeKind && (
+            <>
+              <Pressable onPress={handleUndo} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
+                <Text style={[styles.actionText, { color: colors.text }]}>↩ {t('game.undo')}</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleHint}
+                style={[styles.actionBtn, { backgroundColor: colors.hint + '22' }]}
+                disabled={isHintLoading}
+              >
+                {isHintLoading ? (
+                  <ActivityIndicator size="small" color={colors.hint} />
+                ) : (
+                  <Text style={[styles.actionText, { color: colors.hint }]}>💡 {t('game.hint')}</Text>
+                )}
+              </Pressable>
+            </>
+          )}
            <Pressable onPress={handleReset} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
             <Text style={[styles.actionText, { color: colors.text }]}>↻ {t('common.reset')}</Text>
           </Pressable>
         </Animated.View>
       )}
 
-      {/* Completed Daily Challenge Banner */}
-      {isDailyCompleted && (
+      {/* Completed Challenge Banner */}
+      {isChallengeCompleted && (
         <Animated.View
           entering={FadeInDown.delay(350).springify()}
           style={[
@@ -425,16 +501,16 @@ export default function GameScreen() {
         >
           <Text style={{ fontSize: 24, marginBottom: 4 }}>✅</Text>
           <Text style={{ color: isDark ? '#34D399' : '#059669', fontWeight: '800', fontSize: 16, textAlign: 'center' }}>
-            {t('home.daily_done', { stars: dailyCompletedEntry?.stars ?? 3 })}
+            {t(challengeKind === 'weekly' ? 'home.weekly_done' : 'home.daily_done', { stars: challengeResult?.stars ?? 3 })}
           </Text>
           <Text style={{ color: colors.sub, fontSize: 13, textAlign: 'center', marginTop: 4 }}>
-            {t('game.daily_already_completed')}
+            {t(challengeKind === 'weekly' ? 'game.weekly_already_completed' : 'game.daily_already_completed')}
           </Text>
         </Animated.View>
       )}
 
       {/* Goal text for Level 1 */}
-      {currentLevel.id === 1 && params.levelId !== 'daily' && !won && (
+      {currentLevel.id === 1 && !challengeKind && !won && (
         <Animated.View entering={FadeInDown.delay(500).springify()} style={styles.goalContainer}>
           <Text style={[styles.goalHeader, { color: colors.accent }]}>🎯 {t('game.goal_title')}</Text>
           <Text style={[styles.goalText, { color: colors.sub }]}>{t('game.goal_desc')}</Text>
@@ -606,6 +682,33 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 24,
     textAlign: 'center',
+  },
+  winTime: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: -16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  winUnlocks: {
+    alignSelf: 'stretch',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  winUnlocksTitle: {
+    color: '#F59E0B',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  winUnlockItem: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginVertical: 2,
   },
   winButton: {
     paddingVertical: 14,
