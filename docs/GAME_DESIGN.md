@@ -33,7 +33,7 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 
 ## Défi hebdomadaire — un essai unique, plus difficile
 
-Le défi hebdo suit **les mêmes règles que le défi du jour** : pas d'indice, pas d'annuler, pas de recommencer, progression conservée, plateau verrouillé une fois réussi (jusqu'au lundi suivant).
+Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler, progression conservée, plateau verrouillé une fois réussi jusqu'au lundi suivant), **à une exception près : il peut être recommencé**. C'est le gros puzzle de la semaine, on a le droit de repartir de zéro tant qu'il n'est pas réussi.
 
 | Règle | Implémentation |
 |---|---|
@@ -41,12 +41,17 @@ Le défi hebdo suit **les mêmes règles que le défi du jour** : pas d'indice, 
 | Puzzle tiré d'un **niveau difficile de la campagne** (≥ 25 coups minimum) | `generateWeeklyLevel` (`utils/generator.ts`) |
 | Le niveau est **déguisé** : une des 7 symétries non triviales (rotation / miroir) et couleurs remélangées. Le nombre minimum de coups est inchangé | `transformLevel` |
 | **Diversité** : tout le pool est parcouru avant qu'un niveau revienne, deux semaines de suite ne se ressemblent pas | pas de 23 dans le pool, symétrie qui change chaque semaine |
+| **Recommencer** est le seul bouton d'action ; il remet les coups à zéro | `resetLevel`, boutons dans `app/game.tsx` |
 | N'affecte **ni le streak ni la carte** | ID réservé `999998`, `weeklyChallengeProgress` |
 
 ## Succès
 
 - Définis à un seul endroit : `data/achievements.ts`. Les **identifiants sont persistés** : ne jamais renommer un succès, seulement en ajouter.
 - Un succès ne doit jamais contredire les règles ci-dessus : aucun succès « sans indice » ou « sans annuler » sur les défis, puisqu'ils n'en ont jamais.
+
+## Dates
+
+- Les dates des défis sont des clés `YYYY-MM-DD` en **heure locale**. Ne jamais les relire avec `new Date('YYYY-MM-DD')`, que JavaScript interprète en UTC (décalage d'un jour à l'ouest de l'heure UTC) : utiliser `parseLocalDateString`.
 - Les succès « sans aide » ne comptent que les niveaux distincts (impossible de les farmer en rejouant le même niveau).
 - Le déblocage est **visible** : dans l'écran de victoire, ou par un toast ailleurs dans l'app. Après une mise à jour, les succès déjà mérités sont débloqués silencieusement.
 
