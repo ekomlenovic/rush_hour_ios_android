@@ -138,6 +138,9 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'weekly_12', icon: '🏰', category: 'daily', target: 12, value: c => c.weeklies },
   { id: 'weekly_perfect', icon: '🥇', category: 'daily', target: 1, value: c => c.perfectWeeklies },
   { id: 'daily_365', icon: '🎂', category: 'daily', target: 365, value: c => c.dailies },
+  { id: 'missions_1', icon: '🎯', category: 'daily', target: 1, value: c => c.stats.missionDaysCompleted },
+  { id: 'missions_7', icon: '📋', category: 'daily', target: 7, value: c => c.stats.missionDaysCompleted },
+  { id: 'missions_30', icon: '🗂️', category: 'daily', target: 30, value: c => c.stats.missionDaysCompleted },
   { id: 'weekend_warrior', icon: '🛋️', category: 'daily', target: 1, value: c => c.weekendDailies },
 
   // Streak

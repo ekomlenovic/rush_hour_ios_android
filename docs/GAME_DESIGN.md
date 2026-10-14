@@ -45,6 +45,17 @@ Le streak compte les jours consécutifs avec le défi du jour réussi.
 | Pas de monnaie : un gel ne s'achète pas | |
 | Les jours gelés apparaissent en bleu dans le calendrier du profil | `frozenDates` |
 
+## Missions quotidiennes
+
+| Règle | Implémentation |
+|---|---|
+| **3 missions par jour**, les mêmes pour tout le monde à une date donnée, renouvelées à minuit (heure locale) | `pickMissions` (`data/missions.ts`) |
+| Jamais deux missions sur le même compteur (pas de « 3 niveaux » et « 5 niveaux » le même jour) | |
+| Les missions « niveau » ne comptent que **la carte et les niveaux personnalisés**, jamais les défis. Seule la mission « Réussis le défi du jour » porte sur un défi | `bumpMissions` (`store/gameStore.ts`) |
+| Toutes les missions sont **réalisables dès le début** du jeu (le niveau 1 est déjà en 7×7) | |
+| Récompense : finir les 3 missions donne **1 gel de streak** (rien si le stock est plein), une fois par jour | `addStreakFreeze` |
+| Les identifiants de mission sont sauvegardés pour la journée : ne jamais en renommer, seulement en ajouter | |
+
 ## Défi hebdomadaire — un essai unique, plus difficile
 
 Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler, progression conservée, plateau verrouillé une fois réussi jusqu'au lundi suivant), **à une exception près : il peut être recommencé**. C'est le gros puzzle de la semaine, on a le droit de repartir de zéro tant qu'il n'est pas réussi.

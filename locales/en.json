@@ -360,7 +360,13 @@
     "result_sharer": "Town Crier",
     "result_sharer_desc": "Share a challenge result",
     "frozen_save": "Saved by the Ice",
-    "frozen_save_desc": "A streak freeze protected your streak"
+    "frozen_save_desc": "A streak freeze protected your streak",
+    "missions_1": "Mission Accomplished",
+    "missions_1_desc": "Complete all missions of a day",
+    "missions_7": "Reliable Agent",
+    "missions_7_desc": "Complete all daily missions 7 times",
+    "missions_30": "Elite Agent",
+    "missions_30_desc": "Complete all daily missions 30 times"
   },
   "share": {
     "share_result": "Share my result",
@@ -370,5 +376,25 @@
     "moves": "{{moves}} moves (optimal {{optimal}})",
     "streak_one": "{{count}}-day streak",
     "streak_other": "{{count}}-day streak"
+  },
+  "missions": {
+    "title": "Missions",
+    "completed": "Daily missions complete!",
+    "reward_freeze": "+1 streak freeze ❄️",
+    "reward_full": "Freeze stock already full ❄️",
+    "reward_hint": "Complete all 3 missions to earn a streak freeze ❄️",
+    "all_done": "Well done, all of today's missions are complete!",
+    "renew": "New missions tomorrow",
+    "list": {
+      "win_3": "Complete 3 levels",
+      "win_5": "Complete 5 levels",
+      "perfect_2": "Get 3 ⭐ on 2 levels",
+      "no_hint": "Complete a level without hints",
+      "clean": "Complete a level without hints or undo",
+      "big_grid": "Complete a 7×7 or bigger level",
+      "daily": "Complete the daily challenge",
+      "moves_100": "Play 100 moves",
+      "play_10min": "Play for 10 minutes"
+    }
   }
 }

@@ -53,6 +53,7 @@ export default function GameScreen() {
   const [isHintLoading, setIsHintLoading] = useState(false);
   const [winTimeMs, setWinTimeMs] = useState<number | null>(null);
   const [winUnlocks, setWinUnlocks] = useState<string[]>([]);
+  const [winMissionReward, setWinMissionReward] = useState<{ freezeGranted: boolean } | null>(null);
 
   const [isShareVisible, setShareVisible] = useState(false);
 
@@ -275,6 +276,7 @@ export default function GameScreen() {
 
       // Unlocked achievements are shown in the win modal instead of the global toast
       setWinUnlocks(useGameStore.getState().consumeUnlockQueue());
+      setWinMissionReward(useGameStore.getState().consumeMissionReward());
       setWinTimeMs(timeMs);
       setWon(true);
       haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -459,6 +461,14 @@ export default function GameScreen() {
                     {ACHIEVEMENTS_BY_ID[id]?.icon} {t(`achievements.${id}`)}
                   </Text>
                 ))}
+              </View>
+            )}
+            {winMissionReward && (
+              <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
+                <Text style={styles.winUnlocksTitle}>🎯 {t('missions.completed')}</Text>
+                <Text style={[styles.winUnlockItem, { color: colors.text }]}>
+                  {winMissionReward.freezeGranted ? t('missions.reward_freeze') : t('missions.reward_full')}
+                </Text>
               </View>
             )}
             {challengeKind && (
