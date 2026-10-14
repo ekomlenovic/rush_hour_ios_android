@@ -37,5 +37,9 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 
 ## Points ouverts
 
-- **Jetons d'indice** : il n'y en aura pas. Le code restant est du code mort à supprimer, voir `docs/roadmap/07-supprimer-jetons-indice.md`.
-- **Défi hebdomadaire** : la logique existe dans le store mais n'a pas d'écran, voir `docs/roadmap/01-defi-hebdomadaire.md`. Ses règles (one-shot ou non) restent à décider.
+- **Jetons d'indice** : il n'y en aura pas. Le code restant est du code mort à supprimer, voir l'issue #9.
+- **Défi hebdomadaire** : la logique existe dans le store mais n'a pas d'écran, voir l'issue #8. Ses règles (one-shot ou non) restent à décider.
+
+## Roadmap
+
+Les évolutions prévues sont suivies dans l'epic #19 sur GitHub. Chacune doit respecter les règles ci-dessus.
