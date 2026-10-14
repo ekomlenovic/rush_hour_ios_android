@@ -2,13 +2,14 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, useColorScheme, Pressable, ScrollView } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import { useGameStore } from '@/store/gameStore';
+import { useGameStore, MAX_STREAK_FREEZES } from '@/store/gameStore';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { getLocalDateString, formatDuration } from '@/utils/date';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, buildAchievementContext } from '@/data/achievements';
 
 const DAILY_STAR_COLORS: Record<number, string> = { 1: '#A5D6A7', 2: '#66BB6A', 3: '#2E7D32' };
+const FROZEN_DAY_COLOR = '#7DD3FC';
 
 
 function getCalendarDays() {
@@ -60,6 +61,9 @@ export default function ProfileScreen() {
   const weeklyChallengeProgress = useGameStore((state) => state.weeklyChallengeProgress || {});
   const createdLevels = useGameStore((state) => state.createdLevels);
   const stats = useGameStore((state) => state.stats);
+  const streakFreezes = useGameStore((state) => state.streakFreezes);
+  const frozenDates = useGameStore((state) => state.frozenDates);
+  const frozenSet = useMemo(() => new Set(frozenDates), [frozenDates]);
 
   const totalStars = useMemo(() => progress.reduce((sum, p) => sum + (p.stars || 0), 0), [progress]);
   const context = useMemo(
@@ -107,6 +111,10 @@ export default function ProfileScreen() {
             <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
               <Text style={[styles.statValue, { color: textColor }]}>{bestStreak}</Text>
               <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.best_streak', 'Best Streak')}</Text>
+            </View>
+            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
+              <Text style={[styles.statValue, { color: textColor }]}>❄️ {streakFreezes}/{MAX_STREAK_FREEZES}</Text>
+              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.streak_freezes')}</Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
               <Text style={[styles.statValue, { color: textColor }]}>{context.dailies}</Text>
@@ -162,6 +170,7 @@ export default function ProfileScreen() {
                   const daily = dailyChallengeProgress?.[day.dateString];
                   const cellBgColor = daily?.completed
                     ? DAILY_STAR_COLORS[daily.stars] ?? DAILY_STAR_COLORS[3]
+                    : frozenSet.has(day.dateString) ? FROZEN_DAY_COLOR
                     : (isDark ? '#2D2D3A' : '#E0E0E8');
                   return (
                     <View
