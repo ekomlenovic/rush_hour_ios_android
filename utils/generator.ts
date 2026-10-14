@@ -1,6 +1,7 @@
 import { Vehicle, Level, DAILY_LEVEL_ID, WEEKLY_LEVEL_ID } from '../store/gameStore';
 import { solvePuzzle } from './solver';
 import { sampleLevels } from '../data/sampleLevels';
+import { parseLocalDateString } from './date';
 
 export interface DifficultyConfig {
   gridSize: number;
@@ -58,8 +59,7 @@ function seededRandom() {
  * Now asynchronous to prevent UI blocking during the multi-attempt trial process.
  */
 export async function generateDailyLevel(dateStr: string): Promise<Level | null> {
-  const date = new Date(dateStr);
-  const isMonday = date.getDay() === 1;
+  const isMonday = parseLocalDateString(dateStr).getDay() === 1;
 
   // Use a fixed difficulty for Daily Challenge: NORMAL usually, HARD on Mondays
   const difficulty = isMonday ? DIFFICULTY_LEVELS.HARD : DIFFICULTY_LEVELS.NORMAL;

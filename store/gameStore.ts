@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { sampleLevels } from '../data/sampleLevels';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
-import { getLocalDateString } from '../utils/date';
+import { getLocalDateString, daysBetween, computeDayRuns } from '../utils/date';
 
 /** Reserved level IDs for challenges (excluded from map progression) */
 export const DAILY_LEVEL_ID = 999999;
@@ -256,6 +256,20 @@ function withWinStats(stats: PlayerStats, level: Level, attempt: AttemptStats, t
       : stats.fastestWinMs,
     nightWins: stats.nightWins + (now.getHours() < 5 ? 1 : 0),
     newYearWins: stats.newYearWins + (now.getMonth() === 0 && now.getDate() === 1 ? 1 : 0),
+  };
+}
+
+/** Streak rebuilt from the completed daily challenges, never lower than the saved best */
+function recomputeStreak(state: Record<string, unknown>): Partial<Pick<GameState, 'currentStreak' | 'bestStreak' | 'lastStreakDate'>> {
+  const dailies = (state.dailyChallengeProgress || {}) as Record<string, ChallengeResult>;
+  const completedKeys = Object.keys(dailies).filter(k => dailies[k]?.completed);
+  if (completedKeys.length === 0) return {};
+
+  const runs = computeDayRuns(completedKeys);
+  return {
+    currentStreak: runs.latest,
+    bestStreak: Math.max(Number(state.bestStreak) || 0, runs.longest),
+    lastStreakDate: runs.latestKey,
   };
 }
 
@@ -525,13 +539,9 @@ export const useGameStore = create<GameState>()(
 
         if (lastStreakDate === dateKey) return; // Already counted today
 
-        const today = new Date(dateKey);
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = getLocalDateString(yesterday);
-
+        // Date keys are local dates: never parse them with new Date('YYYY-MM-DD') (UTC)
         let newStreak: number;
-        if (lastStreakDate === yesterdayStr) {
+        if (lastStreakDate && daysBetween(lastStreakDate, dateKey) === 1) {
           newStreak = currentStreak + 1;
         } else if (!lastStreakDate) {
           newStreak = 1;
@@ -554,10 +564,7 @@ export const useGameStore = create<GameState>()(
         let missedDays = 0;
 
         if (lastOpenDate) {
-          const last = new Date(lastOpenDate);
-          const now = new Date(today);
-          const diffMs = now.getTime() - last.getTime();
-          missedDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          missedDays = Math.max(0, daysBetween(lastOpenDate, today));
           isComeback = missedDays >= 3;
         }
 
@@ -693,7 +700,7 @@ export const useGameStore = create<GameState>()(
     {
       name: 'rush-hour-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 1,
+      version: 2,
       migrate: (persistedState, version) => {
         const state = (persistedState || {}) as Record<string, unknown>;
         if (version < 1) {
@@ -701,6 +708,10 @@ export const useGameStore = create<GameState>()(
           delete state.hintTokens;
           // v1: the weekly challenge was never reachable, replaced by weeklyChallengeProgress
           delete state.weeklyChallenge;
+        }
+        if (version < 2) {
+          // v2: streaks were broken west of UTC (dates parsed as UTC), rebuild them from the dailies
+          Object.assign(state, recomputeStreak(state));
         }
         return state as unknown as GameState;
       },

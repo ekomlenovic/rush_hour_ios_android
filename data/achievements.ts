@@ -1,5 +1,5 @@
 import type { ChallengeResult, Level, LevelProgress, PlayerStats } from '../store/gameStore';
-import { parseLocalDateString } from '../utils/date';
+import { computeDayRuns, parseLocalDateString } from '../utils/date';
 
 export type AchievementCategory = 'progress' | 'mastery' | 'purity' | 'speed' | 'daily' | 'streak' | 'creator' | 'secret';
 
@@ -47,21 +47,6 @@ export interface AchievementContext {
   stats: PlayerStats;
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-function longestConsecutiveDayRun(dateKeys: string[]): number {
-  const days = dateKeys
-    .map(k => Math.round(parseLocalDateString(k).getTime() / DAY_MS))
-    .sort((a, b) => a - b);
-  let best = 0;
-  let run = 0;
-  for (let i = 0; i < days.length; i++) {
-    run = i > 0 && days[i] === days[i - 1] + 1 ? run + 1 : 1;
-    best = Math.max(best, run);
-  }
-  return best;
-}
-
 export function buildAchievementContext(s: AchievementSource): AchievementContext {
   const completed = s.progress.filter(p => p.completed);
   const dailyEntries = Object.entries(s.dailyChallengeProgress).filter(([, r]) => r.completed);
@@ -75,7 +60,7 @@ export function buildAchievementContext(s: AchievementSource): AchievementContex
     noHelpLevels: completed.filter(p => p.noHelp).length,
     dailies: dailyEntries.length,
     perfectDailies: perfectDailyKeys.length,
-    perfectDailyRun: longestConsecutiveDayRun(perfectDailyKeys),
+    perfectDailyRun: computeDayRuns(perfectDailyKeys).longest,
     mondayDailies: dailyEntries.filter(([k]) => parseLocalDateString(k).getDay() === 1).length,
     fastestDailyMs: dailyTimes.length > 0 ? Math.min(...dailyTimes) : null,
     weeklies: Object.values(s.weeklyChallengeProgress).filter(r => r.completed).length,
