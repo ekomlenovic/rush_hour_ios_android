@@ -91,7 +91,7 @@ export default function ProfileScreen() {
       <View style={[styles.header, { borderBottomColor: borderColor }]}>
         <Text style={[styles.title, { color: textColor }]} accessibilityRole="header">{t('profile.title', 'Profile')}</Text>
         <Pressable onPress={() => router.back()} style={styles.closeButton} accessibilityRole="button" hitSlop={8}>
-          <Text style={{ color: colors.primaryText, fontSize: RFValue(16), fontWeight: '600' }}>{t('common.close', 'Close')}</Text>
+          <Text style={{ color: colors.primaryText, fontSize: RFValue(16), fontWeight: '600' }}>{t('common.close')}</Text>
         </Pressable>
       </View>
 
