@@ -16,7 +16,7 @@ If you turn reminders on, the app schedules **local notifications** on your devi
 
 ## 3. Save Export and Import
 
-You can export your progress as a text code (Options → Save) to move it to another device. The code is created on your device and only goes where you choose to share or paste it: nothing is sent to the developer or to a server. Importing a code reads it from your clipboard only when you tap the import button.
+You can export your progress as a file or a text code (Options → Save) to move it to another device. It is created on your device and only goes where you choose to share or save it: nothing is sent to the developer or to a server. Importing reads only the file you pick, or your clipboard when you tap the paste button.
 
 ## 4. Third-Party Services
 
