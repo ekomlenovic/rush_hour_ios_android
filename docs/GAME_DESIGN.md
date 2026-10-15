@@ -105,6 +105,18 @@ Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler
 
 Les évolutions prévues sont suivies dans l'epic #19 sur GitHub. Chacune doit respecter les règles ci-dessus.
 
+## Tests
+
+Les règles ci-dessus sont vérifiées par les tests de `__tests__/` (Jest). Toute évolution d'une règle doit mettre à jour son test.
+
+| Commande | Usage |
+|---|---|
+| `npm test` | tous les tests |
+| `npm run test:tz` | les tests dans trois fuseaux horaires (New York, Paris, Auckland) : un bug de date peut ne se voir qu'à l'ouest de l'heure UTC (#20) |
+| `npm run typecheck` | vérification TypeScript |
+
+La CI (`.github/workflows/tests.yml`) lance le typecheck et les tests dans les trois fuseaux sur chaque pull request.
+
 ## Conventions
 
 Les **commits** et les **titres d'issues** suivent les [Semantic Commit Messages](https://www.conventionalcommits.org/) : `type(scope optionnel): description`.
