@@ -4,11 +4,11 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useTranslation } from 'react-i18next';
 import { getQRCodeUrl } from '@/utils/sharing';
-import { GameColors } from './colors';
+import { fixedColors, type UiColors } from '@/theme';
 
 interface Props {
   visible: boolean;
-  colors: GameColors;
+  colors: UiColors;
   isDark: boolean;
   shareUrl: string;
   onShare: () => void;
@@ -23,11 +23,11 @@ export default function ShareLevelModal({ visible, colors, isDark, shareUrl, onS
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.modalOverlay}>
         <BlurView intensity={30} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-        <Animated.View entering={FadeInDown.springify()} style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
+        <Animated.View entering={FadeInDown.springify()} style={[styles.modalContent, { backgroundColor: colors.surface }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: colors.text }]} accessibilityRole="header">{t('game.share_level')}</Text>
             <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('a11y.close')} hitSlop={8}>
-              <Text style={{ fontSize: 20, color: colors.sub, padding: 8 }}>✕</Text>
+              <Text style={{ fontSize: 20, color: colors.textMuted, padding: 8 }}>✕</Text>
             </Pressable>
           </View>
 
@@ -38,19 +38,19 @@ export default function ShareLevelModal({ visible, colors, isDark, shareUrl, onS
                   accessible={false}
                    style={styles.qrCode}
               />
-              <Text style={[styles.qrHint, { color: colors.sub }]}>{t('game.qr_hint')}</Text>
+              <Text style={[styles.qrHint, { color: colors.textMuted }]}>{t('game.qr_hint')}</Text>
           </View>
 
           <View style={styles.shareButtonsRow}>
               <Pressable
-                style={[styles.mainBtn, { backgroundColor: colors.accent, flex: 1 }]}
+                style={[styles.mainBtn, { backgroundColor: colors.primary, flex: 1 }]}
                 onPress={onShare}
                 accessibilityRole="button"
               >
                  <Text style={styles.mainBtnText}>{t('game.share_link')}</Text>
               </Pressable>
               <Pressable
-                style={[styles.mainBtn, { backgroundColor: colors.sub, flex: 1 }]}
+                style={[styles.mainBtn, { backgroundColor: colors.textMuted, flex: 1 }]}
                 onPress={onCopyLink}
                 accessibilityRole="button"
               >
@@ -68,13 +68,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: fixedColors.overlay,
   },
   modalContent: {
     width: '85%',
     borderRadius: 24,
     padding: 24,
-    shadowColor: '#000',
+    shadowColor: fixedColors.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 16,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     height: 250,
     borderRadius: 20,
     marginBottom: 16,
-    backgroundColor: '#FFF',
+    backgroundColor: fixedColors.qrBackground,
   },
   qrHint: {
     fontSize: 14,
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mainBtnText: {
-    color: '#FFF',
+    color: fixedColors.onPrimary,
     fontSize: 16,
     fontWeight: '700',
   },

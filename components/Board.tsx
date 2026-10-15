@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, useColorScheme, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { Vehicle, useGameStore } from '@/store/gameStore';
 import { getMoveBounds } from '@/utils/collision';
 import Block, { BlockA11yStrings } from './Block';
 import { useTranslation } from 'react-i18next';
 import { getVehicleLetters, describeVehicle, describePosition, describeExit } from '@/utils/accessibility';
+import { useTheme } from '@/theme';
 
 
 interface BoardProps {
@@ -24,16 +25,15 @@ const BOARD_PADDING = 24;
 
 const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hintVehicleId, disabled = false, readOnly = false }: BoardProps) => {
 
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { colors, board } = useTheme();
 
   const { width: screenWidth } = useWindowDimensions();
   const boardSize = screenWidth - BOARD_PADDING * 2;
   const cellSize = boardSize / gridSize;
 
-  const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
-  const boardBg = isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)';
-  const exitColor = '#EF4444';
+  const gridColor = board.grid;
+  const boardBg = board.background;
+  const exitColor = board.exit;
 
   const { t } = useTranslation();
   const showVehicleLetters = useGameStore(s => s.showVehicleLetters);
@@ -98,7 +98,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
           width: boardSize,
           height: boardSize,
           backgroundColor: boardBg,
-          borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+          borderColor: board.frame,
         },
       ]}
     >
@@ -163,7 +163,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
                 { 
                   backgroundColor: exitColor, 
                   ...indicatorStyle,
-                  borderColor: '#000',
+                  borderColor: board.exitOutline,
                   borderWidth: 1,
                   zIndex: 60, // Ensure it's above vehicles
                 }
@@ -189,7 +189,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
           style={[
             StyleSheet.absoluteFill, 
             { 
-              backgroundColor: isDark ? 'rgba(15, 15, 26, 0.72)' : 'rgba(255,255,255,0.45)', 
+              backgroundColor: board.winVeil,
               zIndex: 100,
               justifyContent: 'center',
               alignItems: 'center',
@@ -198,13 +198,13 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
         >
           <View
             style={{
-              backgroundColor: isDark ? 'rgba(30, 30, 50, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+              backgroundColor: board.winBadge,
               paddingHorizontal: 16,
               paddingVertical: 10,
               borderRadius: 20,
               borderWidth: 1,
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
-              shadowColor: '#000',
+              borderColor: board.winBadgeBorder,
+              shadowColor: colors.shadow,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 8,

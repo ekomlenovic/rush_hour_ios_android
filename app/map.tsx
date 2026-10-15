@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
@@ -7,7 +7,7 @@ import { haptics, Haptics } from '@/utils/haptics';
 import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
 import { useTranslation } from 'react-i18next';
-import { getMapColors } from '@/components/map/colors';
+import { useTheme } from '@/theme';
 import { generatePathPoints } from '@/components/map/path';
 import LevelNode from '@/components/map/LevelNode';
 import PathLine from '@/components/map/PathLine';
@@ -16,8 +16,7 @@ import MapSettingsSheet from '@/components/map/MapSettingsSheet';
 
 export default function MapScreen() {
   const { t } = useTranslation();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { colors, board, isDark } = useTheme();
   const router = useRouter();
 
   const maxUnlockedLevel = useGameStore(s => s.maxUnlockedLevel);
@@ -31,8 +30,6 @@ export default function MapScreen() {
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const [scrollY, setScrollY] = useState(0); // Will be updated in useMemo or effect
   const [isReady, setIsReady] = useState(false);
-
-  const colors = getMapColors(isDark);
 
   // Combine static levels + dynamically generated levels
   const levels = [...sampleLevels, ...generatedLevels];
@@ -108,15 +105,15 @@ export default function MapScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <Animated.View entering={FadeInUp.delay(100).springify()} style={[styles.header, { backgroundColor: isDark ? 'rgba(15,15,26,0.85)' : 'rgba(245,245,250,0.85)' }]}>
+      <Animated.View entering={FadeInUp.delay(100).springify()} style={[styles.header, { backgroundColor: colors.backgroundTranslucent }]}>
         <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
-          <Text style={[styles.backText, { color: colors.sub }]}>← {t('common.home')}</Text>
+          <Text style={[styles.backText, { color: colors.textMuted }]}>← {t('common.home')}</Text>
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.text }]} accessibilityRole="header">{t('map.title')}</Text>
-        <Pressable onPress={() => setSettingsVisible(true)} style={styles.settingsButton} accessibilityRole="button" accessibilityLabel={t('a11y.settings')}>
+        <Pressable onPress={() => setSettingsVisible(true)} style={[styles.settingsButton, { backgroundColor: colors.card }]} accessibilityRole="button" accessibilityLabel={t('a11y.settings')}>
           <Text style={{ fontSize: 24, color: colors.text }}>⚙️</Text>
         </Pressable>
       </Animated.View>
@@ -147,7 +144,7 @@ export default function MapScreen() {
                   key={`line-${point.id}`}
                   from={point}
                   to={nextPoint}
-                  color={isUnlockedLine ? colors.accent : colors.line}
+                  color={isUnlockedLine ? colors.primary : colors.divider}
                 />
               );
             })}
@@ -182,7 +179,7 @@ export default function MapScreen() {
                   stars={stars}
                   onPress={handleLevelPress}
                   colors={colors}
-                  isDark={isDark}
+                  board={board}
                 />
               );
             })}
@@ -197,7 +194,7 @@ export default function MapScreen() {
         onClose={() => setSettingsVisible(false)}
       />
 
-      {isGenerating && <GenerationPill colors={colors} isDark={isDark} />}
+      {isGenerating && <GenerationPill colors={colors} />}
     </View>
   );
 }
@@ -236,7 +233,6 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 22,
   },
 });

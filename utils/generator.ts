@@ -2,6 +2,7 @@ import { Vehicle, Level, DAILY_LEVEL_ID, WEEKLY_LEVEL_ID } from '../store/gameSt
 import { solvePuzzle } from './solver';
 import { sampleLevels } from '../data/sampleLevels';
 import { parseLocalDateString } from './date';
+import { GENERATOR_VEHICLE_COLORS, TARGET_CAR_COLOR } from '../theme/board';
 
 export interface DifficultyConfig {
   gridSize: number;
@@ -19,10 +20,7 @@ export const DIFFICULTY_LEVELS: Record<string, DifficultyConfig> = {
   MASTER: { gridSize: 7, minVehicles: 14, maxVehicles: 20, minMovesRequired: 40, maxMovesRequired: 80 },
 };
 
-const COLORS = [
-  '#F59E0B', '#10B981', '#3B82F6', '#EC4899',
-  '#06B6D4', '#8B5CF6', '#F97316', '#64748B', '#14B8A6',
-];
+const COLORS = GENERATOR_VEHICLE_COLORS;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SEEDED RNG (Linear Congruential Generator)
@@ -245,7 +243,7 @@ export function generateScrambledLevel(id: number, config: DifficultyConfig, ret
     length: 2,
     orientation: targetOrientation,
     isTarget: true,
-    color: '#EF4444',
+    color: TARGET_CAR_COLOR,
   }];
 
   // 2. Add random vehicles
@@ -403,7 +401,7 @@ export function generateLevel(id: number, config: DifficultyConfig): Level | nul
       length: 2,
       orientation: targetOrientation,
       isTarget: true,
-      color: '#EF4444',
+      color: TARGET_CAR_COLOR,
     });
 
     // Place blockers perpendicular to the target's path

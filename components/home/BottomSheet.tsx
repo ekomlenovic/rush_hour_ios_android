@@ -4,12 +4,12 @@ import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
-import { HomeColors } from './colors';
+import { fixedColors, type UiColors } from '@/theme';
 
 interface Props {
   visible: boolean;
   title: string;
-  colors: HomeColors;
+  colors: UiColors;
   isDark: boolean;
   onClose: () => void;
   /** Android back button; not set, the back button does not close the sheet */
@@ -25,11 +25,11 @@ export default function BottomSheet({ visible, title, colors, isDark, onClose, o
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onRequestClose}>
       <View style={styles.modalOverlay}>
         <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-        <View style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF', paddingBottom: Math.max(48, insets.bottom + 24) }]}>
+        <View style={[styles.modalContent, { backgroundColor: colors.surface, paddingBottom: Math.max(48, insets.bottom + 24) }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: colors.text }]} accessibilityRole="header">{title}</Text>
             <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('a11y.close')} hitSlop={8}>
-              <Text style={{ fontSize: RFValue(20), color: colors.sub, padding: 8 }}>✕</Text>
+              <Text style={{ fontSize: RFValue(20), color: colors.textMuted, padding: 8 }}>✕</Text>
             </Pressable>
           </View>
           {children}
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     padding: 24,
     paddingBottom: 48,
-    shadowColor: '#000',
+    shadowColor: fixedColors.shadow,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,

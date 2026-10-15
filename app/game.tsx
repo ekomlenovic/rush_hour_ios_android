@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, Share, Alert, AccessibilityInfo } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Share, Alert, AccessibilityInfo } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { haptics, Haptics } from '@/utils/haptics';
@@ -17,7 +17,7 @@ import { calculateScore, getStars } from '@/utils/scoring';
 import { resolveLevel, GameRouteParams } from '@/utils/levelResolver';
 import { useActivePlayTime } from '@/hooks/useActivePlayTime';
 import { describeVehicle, getVehicleLetters, getMoveDirection } from '@/utils/accessibility';
-import { getGameColors } from '@/components/game/colors';
+import { useTheme } from '@/theme';
 import GameLoading from '@/components/game/GameLoading';
 import GameStatsBar from '@/components/game/GameStatsBar';
 import GameActions from '@/components/game/GameActions';
@@ -29,8 +29,7 @@ import SolutionPlayer from '@/components/game/SolutionPlayer';
 
 export default function GameScreen() {
   const { t, i18n } = useTranslation();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { colors, isDark } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ levelId: string; date?: string; week?: string; data?: string }>();
 
@@ -299,7 +298,6 @@ export default function GameScreen() {
 
   const minMoves = computedMinMoves ?? currentLevel?.minMoves ?? 0;
   const score = calculateScore(moveCount, minMoves);
-  const colors = getGameColors(isDark);
   const stars = getStars(moveCount, minMoves);
 
   if (isLoading || !currentLevel) {
@@ -308,11 +306,11 @@ export default function GameScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
-          <Text style={[styles.backText, { color: colors.sub }]}>← {t('common.map')}</Text>
+          <Text style={[styles.backText, { color: colors.textMuted }]}>← {t('common.map')}</Text>
         </Pressable>
         <Text style={[styles.levelTitle, { color: colors.text }]} accessibilityRole="header">
           {challengeKind === 'daily' ? t('home.daily_challenge')
@@ -353,7 +351,6 @@ export default function GameScreen() {
       <WinModal
         visible={won && !isSolutionVisible}
         colors={colors}
-        isDark={isDark}
         stars={stars}
         moveCount={moveCount}
         minMoves={minMoves}
@@ -369,7 +366,7 @@ export default function GameScreen() {
         onRequestClose={() => router.back()}
       />
 
-      {isHintLoading && <HintLoadingPill colors={colors} isDark={isDark} />}
+      {isHintLoading && <HintLoadingPill colors={colors} />}
 
       {/* Action buttons - Daily: none, Weekly: reset only (see docs/GAME_DESIGN.md) */}
       {challengeKind !== 'daily' && !won && !isChallengeCompleted && (
@@ -386,7 +383,6 @@ export default function GameScreen() {
       {isChallengeCompleted && (
         <ChallengeDoneBanner
           colors={colors}
-          isDark={isDark}
           kind={challengeKind}
           stars={challengeResult?.stars ?? 3}
           onShareResult={handleShareResult}
@@ -397,8 +393,8 @@ export default function GameScreen() {
       {/* Goal text for Level 1 */}
       {currentLevel.id === 1 && !challengeKind && !won && (
         <Animated.View entering={FadeInDown.delay(500).springify()} style={styles.goalContainer}>
-          <Text style={[styles.goalHeader, { color: colors.accent }]}>🎯 {t('game.goal_title')}</Text>
-          <Text style={[styles.goalText, { color: colors.sub }]}>{t('game.goal_desc')}</Text>
+          <Text style={[styles.goalHeader, { color: colors.primaryText }]}>🎯 {t('game.goal_title')}</Text>
+          <Text style={[styles.goalText, { color: colors.textMuted }]}>{t('game.goal_desc')}</Text>
         </Animated.View>
       )}
 
@@ -406,7 +402,6 @@ export default function GameScreen() {
         visible={isSolutionVisible}
         level={currentLevel}
         colors={colors}
-        isDark={isDark}
         onClose={() => setSolutionVisible(false)}
       />
 

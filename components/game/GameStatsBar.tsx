@@ -2,10 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { GameColors } from './colors';
+import type { UiColors } from '@/theme';
 
 interface Props {
-  colors: GameColors;
+  colors: UiColors;
   moveCount: number;
   minMoves: number;
   score: number;
@@ -19,21 +19,21 @@ export default function GameStatsBar({ colors, moveCount, minMoves, score, hintR
     <Animated.View entering={FadeInUp.delay(200).springify()} style={[styles.statsBar, { backgroundColor: colors.card }]}>
       <View style={styles.statsPanel}>
         <View style={styles.statBox} accessible>
-          <Text style={[styles.statLabel, { color: colors.sub }]}>{t('game.moves')}</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('game.moves')}</Text>
           <Text style={[styles.statValue, { color: colors.text }]}>{moveCount}</Text>
         </View>
         <View style={styles.statBox} accessible>
-          <Text style={[styles.statLabel, { color: colors.sub }]}>{t('game.best')}</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('game.best')}</Text>
           <Text style={[styles.statValue, { color: colors.text }]}>
             {minMoves}
-            {hintRemainingMoves ? <Text style={{ color: colors.hint, fontSize: 13 }}> ({t('game.hint_left', { count: hintRemainingMoves })})</Text> : null}
+            {hintRemainingMoves ? <Text style={{ color: colors.warning, fontSize: 13 }}> ({t('game.hint_left', { count: hintRemainingMoves })})</Text> : null}
           </Text>
         </View>
       </View>
-      <View style={[styles.divider, { backgroundColor: colors.sub }]} />
+      <View style={[styles.divider, { backgroundColor: colors.textMuted }]} />
       <View style={styles.stat} accessible>
-        <Text style={[styles.statLabel, { color: colors.sub }]}>{t('game.score')}</Text>
-        <Text style={[styles.statValue, { color: score > 0 ? '#10B981' : colors.sub }]}>{score}</Text>
+        <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('game.score')}</Text>
+        <Text style={[styles.statValue, { color: score > 0 ? colors.success : colors.textMuted }]}>{score}</Text>
       </View>
     </Animated.View>
   );

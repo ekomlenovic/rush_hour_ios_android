@@ -2,11 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { GameColors } from './colors';
+import type { UiColors } from '@/theme';
 
 interface Props {
-  colors: GameColors;
-  isDark: boolean;
+  colors: UiColors;
   kind: 'daily' | 'weekly' | null;
   stars: number;
   onShareResult: () => void;
@@ -15,17 +14,17 @@ interface Props {
 }
 
 /** A challenge already won: the board stays locked until the next one */
-export default function ChallengeDoneBanner({ colors, isDark, kind, stars, onShareResult, onShowSolution }: Props) {
+export default function ChallengeDoneBanner({ colors, kind, stars, onShareResult, onShowSolution }: Props) {
   const { t } = useTranslation();
-  const green = isDark ? '#34D399' : '#059669';
+  const green = colors.success;
   return (
     <Animated.View
       entering={FadeInDown.delay(350).springify()}
       style={[
         styles.banner,
         {
-          backgroundColor: isDark ? 'rgba(16, 185, 129, 0.12)' : 'rgba(5, 150, 105, 0.08)',
-          borderColor: isDark ? 'rgba(16, 185, 129, 0.35)' : 'rgba(5, 150, 105, 0.25)',
+          backgroundColor: colors.successSoft,
+          borderColor: colors.successBorder,
         }
       ]}
     >
@@ -33,7 +32,7 @@ export default function ChallengeDoneBanner({ colors, isDark, kind, stars, onSha
       <Text style={{ color: green, fontWeight: '800', fontSize: 16, textAlign: 'center' }}>
         {t(kind === 'weekly' ? 'home.weekly_done' : 'home.daily_done', { stars })}
       </Text>
-      <Text style={{ color: colors.sub, fontSize: 13, textAlign: 'center', marginTop: 4 }}>
+      <Text style={{ color: colors.textMuted, fontSize: 13, textAlign: 'center', marginTop: 4 }}>
         {t(kind === 'weekly' ? 'game.weekly_already_completed' : 'game.daily_already_completed')}
       </Text>
       <View style={styles.bannerButtons}>

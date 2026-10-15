@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, FlatList, Alert, Share } from 'react-native';
+import { View, Text, StyleSheet, Pressable, FlatList, Alert, Share } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -8,19 +8,15 @@ import { useGameStore } from '@/store/gameStore';
 import { haptics, Haptics } from '@/utils/haptics';
 import { deserializeLevel, getShareUrl } from '@/utils/sharing';
 import { TextInput } from 'react-native';
+import { fixedColors, useTheme } from '@/theme';
 
 export default function CustomLevelsScreen() {
     const { t } = useTranslation();
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
+    const { colors } = useTheme();
     const router = useRouter();
     const { createdLevels, importedLevels, deleteCustomLevel, toggleFavorite } = useGameStore();
     const [activeTab, setActiveTab] = useState<'created' | 'imported' | 'favorites'>('created');
     const [importUrl, setImportUrl] = useState('');
-
-    const colors = isDark
-        ? { bg: '#0F0F1A', text: '#FFFFFF', sub: '#8E8EA0', accent: '#6C63FF', card: 'rgba(255,255,255,0.06)', danger: '#EF4444', star: '#FFD700' }
-        : { bg: '#F5F5FA', text: '#1A1A2E', sub: '#6B6B80', accent: '#5A4FE0', card: 'rgba(0,0,0,0.04)', danger: '#EF4444', star: '#FFB800' };
 
     const sortedCreated = [...createdLevels].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
     const sortedImported = [...importedLevels].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
@@ -92,7 +88,7 @@ export default function CustomLevelsScreen() {
             >
                 <View style={styles.levelInfo}>
                     <Text style={[styles.levelTitle, { color: colors.text }]}>{t('game.level_count', { id: item.id })}</Text>
-                    <Text style={[styles.levelSub, { color: colors.sub }]}>{t('custom_levels.level_stats', { count: item.vehicles.length, moves: item.minMoves })}</Text>
+                    <Text style={[styles.levelSub, { color: colors.textMuted }]}>{t('custom_levels.level_stats', { count: item.vehicles.length, moves: item.minMoves })}</Text>
                 </View>
                 <View style={styles.actions}>
                     <Pressable
@@ -102,7 +98,7 @@ export default function CustomLevelsScreen() {
                         accessibilityLabel={item.isFavorite ? t('a11y.favorite_remove') : t('a11y.favorite_add')}
                         accessibilityState={{ selected: !!item.isFavorite }}
                     >
-                        <Text style={{ fontSize: 20, color: item.isFavorite ? colors.star : colors.sub }}>{item.isFavorite ? '★' : '☆'}</Text>
+                        <Text style={{ fontSize: 20, color: item.isFavorite ? colors.star : colors.textMuted }}>{item.isFavorite ? '★' : '☆'}</Text>
                     </Pressable>
                     <Pressable
                         onPress={() => handleShare(item)}
@@ -110,18 +106,18 @@ export default function CustomLevelsScreen() {
                         accessibilityRole="button"
                         accessibilityLabel={t('a11y.share_link')}
                     >
-                        <Text style={{ fontSize: 18, color: colors.accent }}>🔗</Text>
+                        <Text style={{ fontSize: 18, color: colors.primaryText }}>🔗</Text>
                     </Pressable>
                     <Pressable
                         onPress={() => router.push(`/game?levelId=${item.id}`)}
-                        style={[styles.actionBtn, { backgroundColor: colors.accent }]}
+                        style={[styles.actionBtn, { backgroundColor: colors.primary }]}
                         accessibilityRole="button"
                     >
                         <Text style={styles.actionText}>{t('common.play')}</Text>
                     </Pressable>
                     <Pressable
                         onPress={() => router.push(`/creator?levelId=${item.id}`)}
-                        style={[styles.actionBtn, { backgroundColor: colors.sub }]}
+                        style={[styles.actionBtn, { backgroundColor: colors.textMuted }]}
                         accessibilityRole="button"
                     >
                         <Text style={styles.actionText}>{t('common.edit')}</Text>
@@ -140,10 +136,10 @@ export default function CustomLevelsScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.bg }]}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
              <View style={styles.header}>
                 <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
-                    <Text style={[styles.backText, { color: colors.sub }]}>← {t('common.home')}</Text>
+                    <Text style={[styles.backText, { color: colors.textMuted }]}>← {t('common.home')}</Text>
                 </Pressable>
                 <Text style={[styles.headerTitle, { color: colors.text }]}>{t('home.my_levels')}</Text>
                 <View style={{ width: 60 }} />
@@ -152,27 +148,27 @@ export default function CustomLevelsScreen() {
             <View style={styles.tabs}>
                 <Pressable
                     onPress={() => setActiveTab('created')}
-                    style={[styles.tab, activeTab === 'created' && { borderBottomColor: colors.accent, borderBottomWidth: 3 }]}
+                    style={[styles.tab, activeTab === 'created' && { borderBottomColor: colors.primary, borderBottomWidth: 3 }]}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: activeTab === 'created' }}
                 >
-                    <Text style={[styles.tabText, { color: activeTab === 'created' ? colors.text : colors.sub }]}>{t('custom_levels.tabs.created')}</Text>
+                    <Text style={[styles.tabText, { color: activeTab === 'created' ? colors.text : colors.textMuted }]}>{t('custom_levels.tabs.created')}</Text>
                 </Pressable>
                 <Pressable
                     onPress={() => setActiveTab('imported')}
-                    style={[styles.tab, activeTab === 'imported' && { borderBottomColor: colors.accent, borderBottomWidth: 3 }]}
+                    style={[styles.tab, activeTab === 'imported' && { borderBottomColor: colors.primary, borderBottomWidth: 3 }]}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: activeTab === 'imported' }}
                 >
-                    <Text style={[styles.tabText, { color: activeTab === 'imported' ? colors.text : colors.sub }]}>{t('custom_levels.tabs.imported')}</Text>
+                    <Text style={[styles.tabText, { color: activeTab === 'imported' ? colors.text : colors.textMuted }]}>{t('custom_levels.tabs.imported')}</Text>
                 </Pressable>
                 <Pressable
                     onPress={() => setActiveTab('favorites')}
-                    style={[styles.tab, activeTab === 'favorites' && { borderBottomColor: colors.accent, borderBottomWidth: 3 }]}
+                    style={[styles.tab, activeTab === 'favorites' && { borderBottomColor: colors.primary, borderBottomWidth: 3 }]}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: activeTab === 'favorites' }}
                 >
-                    <Text style={[styles.tabText, { color: activeTab === 'favorites' ? colors.text : colors.sub }]}>{t('custom_levels.tabs.favorites')}</Text>
+                    <Text style={[styles.tabText, { color: activeTab === 'favorites' ? colors.text : colors.textMuted }]}>{t('custom_levels.tabs.favorites')}</Text>
                 </Pressable>
             </View>
 
@@ -180,24 +176,24 @@ export default function CustomLevelsScreen() {
                 <View style={[styles.importSection, { backgroundColor: colors.card }]}>
                     <View style={styles.inputContainer}>
                          <TextInput
-                            style={[styles.input, { color: colors.text, borderColor: colors.sub + '22' }]}
+                            style={[styles.input, { color: colors.text, borderColor: colors.textMuted + '22' }]}
                             placeholder={t('custom_levels.import_placeholder')}
-                            placeholderTextColor={colors.sub}
+                            placeholderTextColor={colors.textMuted}
                             accessibilityLabel={t('custom_levels.import_placeholder')}
                             value={importUrl}
                             onChangeText={setImportUrl}
                         />
                         <Pressable
                              onPress={handlePaste}
-                            style={[styles.pasteBtn, { backgroundColor: colors.sub + '22' }]}
+                            style={[styles.pasteBtn, { backgroundColor: colors.textMuted + '22' }]}
                             accessibilityRole="button"
                         >
-                            <Text style={[styles.pasteBtnText, { color: colors.accent }]}>{t('common.paste')}</Text>
+                            <Text style={[styles.pasteBtnText, { color: colors.primaryText }]}>{t('common.paste')}</Text>
                         </Pressable>
                     </View>
                     <Pressable
                          onPress={handleManualImport}
-                        style={[styles.importBtn, { backgroundColor: colors.accent }]}
+                        style={[styles.importBtn, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
                         accessibilityRole="button"
                     >
                         <Text style={styles.importBtnText}>{t('common.import')}</Text>
@@ -212,13 +208,13 @@ export default function CustomLevelsScreen() {
                 contentContainerStyle={styles.listContent}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                         <Text style={[styles.emptyText, { color: colors.sub }]}>
+                         <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                             {activeTab === 'created' ? t('custom_levels.empty_created') : activeTab === 'imported' ? t('custom_levels.empty_imported') : t('custom_levels.empty_favorites')}
                         </Text>
                         {activeTab === 'created' && (
                             <Pressable
                                  onPress={() => router.push('/creator')}
-                                style={[styles.createBtn, { backgroundColor: colors.accent }]}
+                                style={[styles.createBtn, { backgroundColor: colors.primary }]}
                                 accessibilityRole="button"
                             >
                                 <Text style={styles.createBtnText}>{t('custom_levels.create_new')}</Text>
@@ -262,18 +258,18 @@ const styles = StyleSheet.create({
     actions: { flexDirection: 'row', gap: 6, alignItems: 'center' },
     actionBtn: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10 },
     iconBtn: { padding: 4 },
-    actionText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
+    actionText: { color: fixedColors.onPrimary, fontWeight: '700', fontSize: 13 },
     emptyState: { alignItems: 'center', marginTop: 100 },
     emptyText: { fontSize: 16, marginBottom: 20 },
     createBtn: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16 },
-    createBtnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+    createBtnText: { color: fixedColors.onPrimary, fontSize: 16, fontWeight: '700' },
     importSection: {
         marginHorizontal: 20,
         marginBottom: 20,
         padding: 16,
         borderRadius: 20,
         gap: 12,
-        shadowColor: '#000',
+        shadowColor: fixedColors.shadow,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.05,
         shadowRadius: 10,
@@ -291,7 +287,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         paddingHorizontal: 16,
         fontSize: 15,
-        backgroundColor: 'rgba(0,0,0,0.02)',
+        backgroundColor: fixedColors.neutralSoft,
     },
     pasteBtn: {
         paddingHorizontal: 12,
@@ -310,10 +306,9 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#6C63FF',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
     },
-    importBtnText: { color: '#FFF', fontWeight: '800', fontSize: 16 }
+    importBtnText: { color: fixedColors.onPrimary, fontWeight: '800', fontSize: 16 }
 });
