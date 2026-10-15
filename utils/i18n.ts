@@ -13,23 +13,31 @@ const resources = {
 
 const LANGUAGE_KEY = 'user_language';
 
-const initI18n = async () => {
-  const savedLanguage = await AsyncStorage.getItem(LANGUAGE_KEY);
-  const systemLanguage = Localization.getLocales()[0].languageCode ?? 'en';
-  
-  await i18n
-    .use(initReactI18next)
-    .init({
-      resources,
-      lng: savedLanguage || systemLanguage,
-      fallbackLng: 'en',
-      interpolation: {
-        escapeValue: false,
-      },
-    });
-};
+const systemLanguage = Localization.getLocales()[0]?.languageCode ?? 'en';
 
-initI18n();
+// Initialise synchronously at import time so the very first render already has
+// translations. Waiting on AsyncStorage before calling init() let screens render
+// raw keys (e.g. "home.world_map") whenever the storage read was slow.
+i18n.use(initReactI18next).init({
+  resources,
+  lng: systemLanguage,
+  fallbackLng: 'en',
+  supportedLngs: ['en', 'fr'],
+  nonExplicitSupportedLngs: true,
+  initAsync: false,
+  interpolation: {
+    escapeValue: false,
+  },
+});
+
+// Then apply the language the user picked in the settings, if any.
+AsyncStorage.getItem(LANGUAGE_KEY)
+  .then((savedLanguage) => {
+    if (savedLanguage && savedLanguage !== i18n.language) {
+      return i18n.changeLanguage(savedLanguage);
+    }
+  })
+  .catch(() => {});
 
 export const changeLanguage = async (lng: string) => {
   await i18n.changeLanguage(lng);
