@@ -1,8 +1,8 @@
 name: Build iOS & Android (Unsigned)
 
+# Manual only (Actions > Run workflow): builds, publishes a release and updates the
+# update sources. Pull requests and pushes only run the tests (tests.yml).
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       build_android:
@@ -131,6 +131,8 @@ jobs:
   release:
     name: Create Release
     needs: [prepare, build-ios] # Android is optional, so we don't 'need' it to start release logic
+    # A run on another branch only builds: no release, no update sources pointing to it
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -160,7 +162,6 @@ jobs:
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
-        if: github.ref == 'refs/heads/main'
         with:
           tag_name: v${{ needs.prepare.outputs.version }}-b${{ github.run_number }}
           name: Rush Hours v${{ needs.prepare.outputs.version }} (Build ${{ github.run_number }})

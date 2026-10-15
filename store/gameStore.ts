@@ -6,138 +6,20 @@ import { sampleLevels } from '../data/sampleLevels';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
 import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
 import { DailyMissionsState, MissionCounter, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
-import { getLocalDateString, daysBetween, computeDayRuns, addDays } from '../utils/date';
+import { getLocalDateString, daysBetween } from '../utils/date';
+import type {
+  AppOpenInfo, AttemptStats, ChallengeDetails, ChallengeResult, Level, LevelProgress, LevelSaveState, PlayerStats, Vehicle,
+} from './types';
+import { MAX_STREAK_FREEZES, settleStreak, advanceStreak } from './streak';
+import { emptyAttempt, initialStats, withWinStats, mergeChallengeResult } from './stats';
+import { STORE_VERSION, migrateState, relocateGeneratedLevels } from './migrations';
+
+export type * from './types';
+export { MAX_STREAK_FREEZES };
 
 /** Reserved level IDs for challenges (excluded from map progression) */
 export const DAILY_LEVEL_ID = 999999;
 export const WEEKLY_LEVEL_ID = 999998;
-
-/** Describes a single vehicle/block on the grid */
-export interface Vehicle {
-  id: string;
-  /** Row (for vertical) or Row (for horizontal) — top-left cell */
-  row: number;
-  /** Column — top-left cell */
-  col: number;
-  /** Number of cells this vehicle occupies (2 or 3 typically) */
-  length: number;
-  /** Movement axis */
-  orientation: 'horizontal' | 'vertical';
-  /** Whether this is the target vehicle that must exit */
-  isTarget: boolean;
-  /** Color used for rendering */
-  color: string;
-}
-
-/** Describes a level */
-export interface Level {
-  id: number;
-  /** Grid dimensions (e.g. 6 for 6×6, 7 for 7×7, etc.) */
-  gridSize: number;
-  /** Initial vehicle placements */
-  vehicles: Vehicle[];
-  /** Exit position: row & col of the exit cell on the grid edge */
-  exitRow: number;
-  exitCol: number;
-  /** Minimum number of moves to solve (computed by BFS solver) */
-  minMoves: number;
-  /** Timestamp of creation/last modification */
-  updatedAt: number;
-  /** Whether the level is marked as a favorite */
-  isFavorite?: boolean;
-}
-
-/** Player progress for a specific level */
-export interface LevelProgress {
-  levelId: number;
-  completed: boolean;
-  bestScore: number;
-  stars?: number;
-  /** Fastest win, in milliseconds of active play */
-  bestTimeMs?: number;
-  /** Won at least once without using a hint */
-  noHint?: boolean;
-  /** Won at least once without hint nor undo */
-  noHelp?: boolean;
-}
-
-/** Help used during the current attempt of a level */
-export interface AttemptStats {
-  hints: number;
-  undos: number;
-  resets: number;
-  /** Active play time (app in foreground, game screen open) */
-  elapsedMs: number;
-}
-
-/** Saved state for an ongoing level session */
-export interface LevelSaveState {
-  vehicles: Vehicle[];
-  moveCount: number;
-  history: Vehicle[][];
-  attempt?: AttemptStats;
-}
-
-/** Result of a daily or weekly challenge */
-export interface ChallengeResult {
-  completed: boolean;
-  score: number;
-  stars: number;
-  timeMs?: number;
-  /** Moves of the best result and the level's optimum, for result sharing */
-  moves?: number;
-  minMoves?: number;
-}
-
-/** Extra details recorded with a challenge result */
-export interface ChallengeDetails {
-  moves: number;
-  minMoves: number;
-}
-
-/** Lifetime player statistics */
-export interface PlayerStats {
-  totalPlayTimeMs: number;
-  totalMoves: number;
-  totalUndos: number;
-  totalResets: number;
-  totalWins: number;
-  /** Wins without any reset during the attempt */
-  firstTryWins: number;
-  /** Wins per grid size, keyed by size ('6', '7', '8') */
-  winsByGridSize: Record<string, number>;
-  levelsShared: number;
-  /** Daily / weekly results shared (Wordle-like text) */
-  resultsShared: number;
-  levelsImported: number;
-  /** Highest minMoves of a level ever won */
-  hardestWinMoves: number;
-  /** Fastest win on a level of at least 10 optimal moves */
-  fastestWinMs: number | null;
-  /** Wins between midnight and 5 AM */
-  nightWins: number;
-  /** Wins on January 1st */
-  newYearWins: number;
-  /** Wins on special days, keyed by 'MM-DD' (e.g. '12-25') or 'fri13' */
-  specialDayWins: Record<string, number>;
-  /** Longest active time spent on a level before winning it */
-  longestWinMs: number;
-  /** Most resets during a winning attempt */
-  maxResetsBeforeWin: number;
-  /** Highest minMoves of a level won with 3 stars */
-  hardestPerfectMoves: number;
-  /** Daily challenges won between 5 and 7 AM */
-  earlyDailyWins: number;
-  /** Weekly challenges won on Sunday, the last day */
-  lastMinuteWeeklies: number;
-  /** Streak freezes earned and consumed */
-  freezesEarned: number;
-  freezesUsed: number;
-  /** Days with all daily missions completed */
-  missionDaysCompleted: number;
-  /** Longest absence between two app opens, in days */
-  longestAbsenceDays: number;
-}
 
 interface GenerationState {
   isRunning: boolean;
@@ -199,6 +81,8 @@ interface GameState {
   isMusicEnabled: boolean;
   /** Haptics Enabled state */
   isHapticsEnabled: boolean;
+  /** Letters on the vehicles, to tell them apart without colors (accessibility) */
+  showVehicleLetters: boolean;
   /** Local reminders (opt-in) */
   notificationsEnabled: boolean;
   /** Hour of the daily challenge reminder (0-23) */
@@ -249,6 +133,7 @@ interface GameState {
   purgeCustomLevels: (baseLevelCount: number) => void;
   toggleMusicEnabled: () => void;
   toggleHapticsEnabled: () => void;
+  toggleVehicleLetters: () => void;
   setNotificationsEnabled: (enabled: boolean) => void;
   setReminderHour: (hour: number) => void;
   markNotificationsPrompted: () => void;
@@ -262,190 +147,11 @@ interface GameState {
   consumeMissionReward: () => { freezeGranted: boolean } | null;
 }
 
-/** What happened since the last app open */
-export interface AppOpenInfo {
-  isComeback: boolean;
-  missedDays: number;
-  /** Missed days covered by streak freezes */
-  frozenDays: number;
-  /** Streak value lost because there were not enough freezes */
-  lostStreak: number;
-}
-
-export const MAX_STREAK_FREEZES = 2;
-/** A freeze is earned every this many days of streak */
-const FREEZE_STREAK_INTERVAL = 7;
-
-/**
- * Applies the days missed since the last daily: freezes cover them if there are enough,
- * otherwise the streak is lost (freezes are kept). Today itself can still be played.
- */
-function settleStreak(state: Pick<GameState, 'currentStreak' | 'lastStreakDate' | 'streakFreezes' | 'frozenDates' | 'stats'>, today: string): {
-  patch: Partial<GameState>;
-  frozenDays: number;
-  lostStreak: number;
-} {
-  const { currentStreak, lastStreakDate, streakFreezes, frozenDates, stats } = state;
-  if (!lastStreakDate || currentStreak === 0) return { patch: {}, frozenDays: 0, lostStreak: 0 };
-
-  const missed = daysBetween(lastStreakDate, today) - 1;
-  if (missed <= 0) return { patch: {}, frozenDays: 0, lostStreak: 0 };
-
-  if (streakFreezes >= missed) {
-    const covered = Array.from({ length: missed }, (_, i) => addDays(lastStreakDate, i + 1));
-    return {
-      patch: {
-        streakFreezes: streakFreezes - missed,
-        frozenDates: [...frozenDates, ...covered],
-        // As if yesterday was played: today's daily continues the streak
-        lastStreakDate: addDays(today, -1),
-        stats: { ...stats, freezesUsed: stats.freezesUsed + missed },
-      },
-      frozenDays: missed,
-      lostStreak: 0,
-    };
-  }
-  return { patch: { currentStreak: 0 }, frozenDays: 0, lostStreak: currentStreak };
-}
-
-const emptyAttempt = (): AttemptStats => ({ hints: 0, undos: 0, resets: 0, elapsedMs: 0 });
-
-const initialStats = (): PlayerStats => ({
-  totalPlayTimeMs: 0,
-  totalMoves: 0,
-  totalUndos: 0,
-  totalResets: 0,
-  totalWins: 0,
-  firstTryWins: 0,
-  winsByGridSize: {},
-  levelsShared: 0,
-  resultsShared: 0,
-  levelsImported: 0,
-  hardestWinMoves: 0,
-  fastestWinMs: null,
-  nightWins: 0,
-  newYearWins: 0,
-  specialDayWins: {},
-  longestWinMs: 0,
-  maxResetsBeforeWin: 0,
-  hardestPerfectMoves: 0,
-  earlyDailyWins: 0,
-  lastMinuteWeeklies: 0,
-  freezesEarned: 0,
-  freezesUsed: 0,
-  missionDaysCompleted: 0,
-  longestAbsenceDays: 0,
-});
-
-/** Below this many optimal moves, a fast win is too easy to count for the speed record */
-const SPEED_RECORD_MIN_MOVES = 10;
-
 /** Key under which a level's in-progress state is saved */
 function getLevelKey(level: Level, dailyLevelDate: string | null, weeklyLevelKey: string | null): string | number {
   if (level.id === DAILY_LEVEL_ID && dailyLevelDate) return `daily-${dailyLevelDate}`;
   if (level.id === WEEKLY_LEVEL_ID && weeklyLevelKey) return `weekly-${weeklyLevelKey}`;
   return level.id;
-}
-
-/** Special days counted for secret achievements */
-function getSpecialDayKeys(now: Date): string[] {
-  const keys = [`${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`];
-  if (now.getDay() === 5 && now.getDate() === 13) keys.push('fri13');
-  return keys;
-}
-
-type WinKind = 'level' | 'daily' | 'weekly';
-
-/** Stats after winning the current level with the given attempt */
-function withWinStats(stats: PlayerStats, level: Level, attempt: AttemptStats, timeMs: number | undefined, stars: number, kind: WinKind): PlayerStats {
-  const now = new Date();
-  const gridKey = String(level.gridSize);
-  const countsForSpeed = timeMs !== undefined && level.minMoves >= SPEED_RECORD_MIN_MOVES;
-  const specialDayWins = { ...stats.specialDayWins };
-  for (const key of getSpecialDayKeys(now)) specialDayWins[key] = (specialDayWins[key] || 0) + 1;
-  return {
-    ...stats,
-    totalWins: stats.totalWins + 1,
-    firstTryWins: stats.firstTryWins + (attempt.resets === 0 ? 1 : 0),
-    winsByGridSize: { ...stats.winsByGridSize, [gridKey]: (stats.winsByGridSize[gridKey] || 0) + 1 },
-    hardestWinMoves: Math.max(stats.hardestWinMoves, level.minMoves),
-    fastestWinMs: countsForSpeed
-      ? Math.min(stats.fastestWinMs ?? Infinity, timeMs)
-      : stats.fastestWinMs,
-    nightWins: stats.nightWins + (now.getHours() < 5 ? 1 : 0),
-    newYearWins: stats.newYearWins + (now.getMonth() === 0 && now.getDate() === 1 ? 1 : 0),
-    specialDayWins,
-    longestWinMs: Math.max(stats.longestWinMs, timeMs ?? 0),
-    maxResetsBeforeWin: Math.max(stats.maxResetsBeforeWin, attempt.resets),
-    hardestPerfectMoves: stars === 3 ? Math.max(stats.hardestPerfectMoves, level.minMoves) : stats.hardestPerfectMoves,
-    earlyDailyWins: stats.earlyDailyWins + (kind === 'daily' && now.getHours() >= 5 && now.getHours() < 7 ? 1 : 0),
-    lastMinuteWeeklies: stats.lastMinuteWeeklies + (kind === 'weekly' && now.getDay() === 0 ? 1 : 0),
-  };
-}
-
-/** Streak rebuilt from the completed daily challenges, never lower than the saved best */
-function recomputeStreak(state: Record<string, unknown>): Partial<Pick<GameState, 'currentStreak' | 'bestStreak' | 'lastStreakDate'>> {
-  const dailies = (state.dailyChallengeProgress || {}) as Record<string, ChallengeResult>;
-  const completedKeys = Object.keys(dailies).filter(k => dailies[k]?.completed);
-  if (completedKeys.length === 0) return {};
-
-  const runs = computeDayRuns(completedKeys);
-  return {
-    currentStreak: runs.latest,
-    bestStreak: Math.max(Number(state.bestStreak) || 0, runs.longest),
-    lastStreakDate: runs.latestKey,
-  };
-}
-
-function mergeChallengeResult(existing: ChallengeResult | undefined, score: number, stars: number, timeMs?: number, details?: ChallengeDetails): ChallengeResult {
-  const times = [existing?.timeMs, timeMs].filter((t): t is number => t !== undefined);
-  const isBest = !existing || score >= existing.score;
-  const moves = isBest ? details?.moves ?? existing?.moves : existing?.moves;
-  const minMoves = details?.minMoves ?? existing?.minMoves;
-  return {
-    completed: true,
-    score: Math.max(existing?.score || 0, score),
-    stars: Math.max(existing?.stars || 0, stars),
-    timeMs: times.length > 0 ? Math.min(...times) : undefined,
-    ...(moves !== undefined && { moves }),
-    ...(minMoves !== undefined && { minMoves }),
-  };
-}
-
-/**
- * Generated levels take ids right after the official pack. When an update adds
- * official levels, previously generated levels collide with the new ids: shift
- * them (and the progress/save/unlock state tied to them) past the new pack.
- */
-function relocateGeneratedLevels(state: Partial<GameState>): Partial<GameState> {
-  const generated = state.generatedLevels ?? [];
-  if (generated.length === 0) return state;
-
-  const firstId = Math.min(...generated.map((l) => l.id));
-  const offset = sampleLevels.length + 1 - firstId;
-  if (offset <= 0) return state;
-
-  const generatedIds = new Set(generated.map((l) => l.id));
-  const oldBaseCount = firstId - 1;
-  const shift = (id: number) => (generatedIds.has(id) ? id + offset : id);
-
-  const savedStates: Record<string | number, LevelSaveState> = {};
-  for (const [key, value] of Object.entries(state.savedStates ?? {})) {
-    const numericKey = Number(key);
-    savedStates[Number.isInteger(numericKey) ? shift(numericKey) : key] = value;
-  }
-
-  return {
-    ...state,
-    generatedLevels: generated.map((l) => ({ ...l, id: l.id + offset })),
-    progress: (state.progress ?? []).map((p) => ({ ...p, levelId: shift(p.levelId) })),
-    savedStates,
-    lastPlayedLevelId: state.lastPlayedLevelId != null ? shift(state.lastPlayedLevelId) : state.lastPlayedLevelId,
-    maxUnlockedLevel:
-      state.maxUnlockedLevel != null && state.maxUnlockedLevel > oldBaseCount && state.maxUnlockedLevel < 900000
-        ? state.maxUnlockedLevel + offset
-        : state.maxUnlockedLevel,
-  };
 }
 
 export const useGameStore = create<GameState>()(
@@ -520,6 +226,7 @@ export const useGameStore = create<GameState>()(
       savedStates: {},
       isMusicEnabled: true,
       isHapticsEnabled: true,
+      showVehicleLetters: false,
       notificationsEnabled: false,
       reminderHour: DEFAULT_REMINDER_HOUR,
       notificationsPrompted: false,
@@ -757,27 +464,7 @@ export const useGameStore = create<GameState>()(
       },
 
       updateStreak: (dateKey: string) => {
-        if (get().lastStreakDate === dateKey) return; // Already counted today
-
-        // Missed days may not have been settled yet (e.g. app opened on a deep link)
-        set(settleStreak(get(), dateKey).patch);
-        const { lastStreakDate, currentStreak, bestStreak, streakFreezes, stats } = get();
-
-        // Date keys are local dates: never parse them with new Date('YYYY-MM-DD') (UTC)
-        const newStreak = lastStreakDate && daysBetween(lastStreakDate, dateKey) === 1
-          ? currentStreak + 1
-          : 1;
-        const earnsFreeze = newStreak % FREEZE_STREAK_INTERVAL === 0 && streakFreezes < MAX_STREAK_FREEZES;
-
-        set({
-          currentStreak: newStreak,
-          bestStreak: Math.max(bestStreak, newStreak),
-          lastStreakDate: dateKey,
-          ...(earnsFreeze && {
-            streakFreezes: streakFreezes + 1,
-            stats: { ...stats, freezesEarned: stats.freezesEarned + 1 },
-          }),
-        });
+        set(advanceStreak(get(), dateKey));
       },
 
       addStreakFreeze: () => {
@@ -886,6 +573,7 @@ export const useGameStore = create<GameState>()(
         const { isHapticsEnabled } = get();
         set({ isHapticsEnabled: !isHapticsEnabled });
       },
+      toggleVehicleLetters: () => set({ showVehicleLetters: !get().showVehicleLetters }),
       setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled, notificationsPrompted: true }),
       setReminderHour: (hour) => set({ reminderHour: ((Math.round(hour) % 24) + 24) % 24 }),
       markNotificationsPrompted: () => set({ notificationsPrompted: true }),
@@ -943,21 +631,8 @@ export const useGameStore = create<GameState>()(
     {
       name: 'rush-hour-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 2,
-      migrate: (persistedState, version) => {
-        const state = (persistedState || {}) as Record<string, unknown>;
-        if (version < 1) {
-          // v1: hints are unlimited, the token economy is gone (see docs/GAME_DESIGN.md)
-          delete state.hintTokens;
-          // v1: the weekly challenge was never reachable, replaced by weeklyChallengeProgress
-          delete state.weeklyChallenge;
-        }
-        if (version < 2) {
-          // v2: streaks were broken west of UTC (dates parsed as UTC), rebuild them from the dailies
-          Object.assign(state, recomputeStreak(state));
-        }
-        return state as unknown as GameState;
-      },
+      version: STORE_VERSION,
+      migrate: (persistedState, version) => migrateState(persistedState, version) as unknown as GameState,
       // Relocate generated levels if the official pack grew, and deep-merge stats
       // so fields added in later versions get their defaults
       merge: (persistedState, currentState) => {
@@ -990,6 +665,7 @@ export const useGameStore = create<GameState>()(
         savedStates: state.savedStates,
         isMusicEnabled: state.isMusicEnabled,
         isHapticsEnabled: state.isHapticsEnabled,
+        showVehicleLetters: state.showVehicleLetters,
         notificationsEnabled: state.notificationsEnabled,
         reminderHour: state.reminderHour,
         notificationsPrompted: state.notificationsPrompted,
