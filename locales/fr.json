@@ -86,7 +86,7 @@
     "request_github": "Demander de nouveaux niveaux sur GitHub",
     "hard_reset_progress": "Réinitialiser la progression",
     "grid_size_label": "Taille de la grille :",
-    "generator_warning": "⚠️ Note : La génération de niveaux complexes (Expert/Master) peut être intensive pour les ressources sur les appareils mobiles.",
+    "generator_warning": "⚠️ Les niveaux Expert peuvent prendre quelques secondes à générer. Les grilles 7×7 et 8×8 ne sont proposées qu'en Facile.",
     "grid_size": "Taille de la grille : {{size}}x{{size}}",
     "amount_to_create": "Nombre à créer : {{amount}}",
     "generating": "⏳ Génération en cours...",
