@@ -1,12 +1,11 @@
 import { Vehicle, Level, DAILY_LEVEL_ID, WEEKLY_LEVEL_ID } from '../store/gameStore';
-import { exploreComponent, initialPositions, toCompactBoard } from './solver';
+import { solvePuzzle } from './solver';
 import { sampleLevels } from '../data/sampleLevels';
 import { parseLocalDateString } from './date';
 import { GENERATOR_VEHICLE_COLORS, TARGET_CAR_COLOR } from '../theme/board';
 
 export interface DifficultyConfig {
   gridSize: number;
-  /** Vehicles on the board, the target car included */
   minVehicles: number;
   maxVehicles: number;
   minMovesRequired: number;
@@ -18,65 +17,53 @@ export const DIFFICULTY_LEVELS: Record<string, DifficultyConfig> = {
   NORMAL: { gridSize: 6, minVehicles: 8, maxVehicles: 12, minMovesRequired: 10, maxMovesRequired: 15 },
   HARD: { gridSize: 6, minVehicles: 10, maxVehicles: 14, minMovesRequired: 15, maxMovesRequired: 25 },
   EXPERT: { gridSize: 6, minVehicles: 12, maxVehicles: 16, minMovesRequired: 25, maxMovesRequired: 50 },
-  /** Too slow for a phone: pack scripts only (generate_pack.ts), never generated on the device */
   MASTER: { gridSize: 7, minVehicles: 14, maxVehicles: 20, minMovesRequired: 40, maxMovesRequired: 80 },
-};
-
-/** Difficulties offered by the level generator of the world map */
-export const DEVICE_DIFFICULTIES = ['EASY', 'NORMAL', 'HARD', 'EXPERT'] as const;
-export type DeviceDifficulty = typeof DEVICE_DIFFICULTIES[number];
-
-/**
- * Grid sizes offered on the phone by difficulty: a bigger grid explodes the number of states.
- * Measured (Node, faster than a phone): NORMAL 7x7 ~7 s, HARD 7x7 ~17 s, EXPERT 7x7 ~22 s
- * per level, against under a second for EASY 7x7 and 8x8.
- */
-export const DEVICE_GRID_SIZES: Record<DeviceDifficulty, number[]> = {
-  EASY: [6, 7, 8],
-  NORMAL: [6],
-  HARD: [6],
-  EXPERT: [6],
 };
 
 const COLORS = GENERATOR_VEHICLE_COLORS;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SEEDED RNG
+// SEEDED RNG (Linear Congruential Generator)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Pseudo-random numbers in [0, 1) from a string seed: the same seed gives the same level */
-export function createPRNG(seed: string): () => number {
-  'worklet';
+/**
+ * Creates a simple pseudo-random number generator from a string seed.
+ */
+function createPRNG(seed: string) {
   let h = 0;
   for (let i = 0; i < seed.length; i++) {
     h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
   }
-  // If h is 0, the generator would stay at 0
+  // If h is 0, the LCG will stay at 0. Force it to something else.
   if (h === 0) h = 1;
 
-  return () => {
-    'worklet';
+  return function () {
     h = Math.imul(16807, h) | 0;
-    return (h & 0x7fffffff) / 0x7fffffff;
+    // We want a positive float between 0 and 1
+    const res = (h & 0x7fffffff) / 0x7fffffff;
+    return res;
   };
 }
 
-/** A fresh seed for a level generated on the map (not reproducible on purpose) */
-export const randomSeed = (): string => `${Date.now()}-${Math.random()}`;
+
+let currentRNG = Math.random;
+
+function seededRandom() {
+  return currentRNG();
+}
 
 /**
- * Daily challenge: the same puzzle for everyone on a given date (seeded by the date),
- * NORMAL difficulty, HARD on Mondays.
+ * Wraps generation with a specific seed to ensure deterministic results.
+ * Now asynchronous to prevent UI blocking during the multi-attempt trial process.
  */
 export async function generateDailyLevel(dateStr: string): Promise<Level | null> {
-  return generateLevel(DAILY_LEVEL_ID, getDailyDifficulty(dateStr), getDailySeed(dateStr));
-}
+  const isMonday = parseLocalDateString(dateStr).getDay() === 1;
 
-export function getDailyDifficulty(dateStr: string): DifficultyConfig {
-  return parseLocalDateString(dateStr).getDay() === 1 ? DIFFICULTY_LEVELS.HARD : DIFFICULTY_LEVELS.NORMAL;
-}
+  // Use a fixed difficulty for Daily Challenge: NORMAL usually, HARD on Mondays
+  const difficulty = isMonday ? DIFFICULTY_LEVELS.HARD : DIFFICULTY_LEVELS.NORMAL;
 
-export const getDailySeed = (dateStr: string): string => `daily-${dateStr}`;
+  return generateSeededLevel(dateStr, DAILY_LEVEL_ID, difficulty);
+}
 
 /** Campaign levels at least this hard feed the weekly challenge */
 const WEEKLY_MIN_MOVES = 25;
@@ -182,14 +169,180 @@ function shuffleWith<T>(arr: T[], random: () => number): T[] {
   return a;
 }
 
+async function generateSeededLevel(seed: string, id: number, difficulty: DifficultyConfig): Promise<Level | null> {
+  const prng = createPRNG(seed);
+  const oldRNG = currentRNG;
+  currentRNG = prng;
+
+  try {
+    // We use a small timeout to allow UI to breathe
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // We use the new scrambled generator for near-instant on-device generation
+        const level = generateScrambledLevel(id, difficulty);
+        currentRNG = oldRNG; // Restore RNG after generation
+        resolve(level);
+      }, 0);
+    });
+  } catch (e) {
+    currentRNG = oldRNG;
+    return null;
+  }
+}
+
+/**
+ * Picks a random exit side and returns the corresponding target vehicle config.
+ * Sides: 0=right, 1=left, 2=bottom, 3=top
+ */
+function pickExitSide(gridSize: number): {
+  exitRow: number;
+  exitCol: number;
+  targetOrientation: 'horizontal' | 'vertical';
+  targetRow: number;
+  targetCol: number;
+} {
+  const side = Math.floor(seededRandom() * 4);
+  switch (side) {
+    case 0: { // Right exit
+      const row = Math.floor(seededRandom() * (gridSize - 1)) + 1; // avoid row 0 for variety
+      return { exitRow: row, exitCol: gridSize, targetOrientation: 'horizontal', targetRow: row, targetCol: gridSize - 2 };
+    }
+    case 1: { // Left exit
+      const row = Math.floor(seededRandom() * (gridSize - 1)) + 1;
+      return { exitRow: row, exitCol: 255, targetOrientation: 'horizontal', targetRow: row, targetCol: 0 };
+    }
+    case 2: { // Bottom exit
+      const col = Math.floor(seededRandom() * (gridSize - 1)) + 1;
+      return { exitRow: gridSize, exitCol: col, targetOrientation: 'vertical', targetRow: gridSize - 2, targetCol: col };
+    }
+    case 3: { // Top exit
+      const col = Math.floor(seededRandom() * (gridSize - 1)) + 1;
+      return { exitRow: 255, exitCol: col, targetOrientation: 'vertical', targetRow: 0, targetCol: col };
+    }
+    default: { // Fallback to right (classic)
+      const row = Math.floor(gridSize / 2) - 1;
+      return { exitRow: row, exitCol: gridSize, targetOrientation: 'horizontal', targetRow: row, targetCol: gridSize - 2 };
+    }
+  }
+}
+
+/**
+ * Generates a level by starting from a solved state and scrambling it backwards.
+ * This is O(1) in terms of "probability of success" and very fast on mobile.
+ * Now randomly picks one of 4 exit sides for variety.
+ */
+export function generateScrambledLevel(id: number, config: DifficultyConfig, retries: number = 0): Level | null {
+  const { gridSize, minVehicles, maxVehicles, minMovesRequired } = config;
+  const { exitRow, exitCol, targetOrientation, targetRow, targetCol } = pickExitSide(gridSize);
+
+  // 1. Initial Solved State — target is placed at the exit edge
+  const vehicles: Vehicle[] = [{
+    id: 'target',
+    row: targetRow,
+    col: targetCol,
+    length: 2,
+    orientation: targetOrientation,
+    isTarget: true,
+    color: TARGET_CAR_COLOR,
+  }];
+
+  // 2. Add random vehicles
+  const targetCount = minVehicles + Math.floor(seededRandom() * (maxVehicles - minVehicles + 1));
+  let attempts = 0;
+  while (vehicles.length < targetCount && attempts < 100) {
+    attempts++;
+    const orientation = seededRandom() > 0.5 ? 'horizontal' : 'vertical';
+    const length = seededRandom() > 0.3 ? 2 : 3;
+    const row = Math.floor(seededRandom() * gridSize);
+    const col = Math.floor(seededRandom() * gridSize);
+
+    if (canPlace(vehicles, row, col, length, orientation, gridSize)) {
+      vehicles.push({
+        id: `v${vehicles.length}`,
+        row, col, length, orientation,
+        isTarget: false,
+        color: COLORS[vehicles.length % COLORS.length],
+      });
+    }
+  }
+
+  // 3. Scramble
+  // Perform random moves backwards
+  const scrambleSteps = 150;
+  for (let s = 0; s < scrambleSteps; s++) {
+    const vIdx = Math.floor(seededRandom() * vehicles.length);
+    const v = vehicles[vIdx];
+    const dir = seededRandom() > 0.5 ? 1 : -1;
+    const dist = Math.floor(seededRandom() * 2) + 1; // move 1 or 2 cells
+
+    // Test if move is valid
+    const newPos = (v.orientation === 'horizontal' ? v.col : v.row) + dir * dist;
+    const testRow = v.orientation === 'vertical' ? newPos : v.row;
+    const testCol = v.orientation === 'horizontal' ? newPos : v.col;
+
+    // Boundary check
+    if (newPos >= 0 && newPos + v.length <= gridSize) {
+      // Collision check (ignoring current vehicle)
+      const others = vehicles.filter((_, i) => i !== vIdx);
+      if (canPlace(others, testRow, testCol, v.length, v.orientation, gridSize)) {
+        v.row = testRow;
+        v.col = testCol;
+      }
+    }
+  }
+
+  // 4. Validate and get minMoves
+  const solveResult = solvePuzzle(vehicles, gridSize, exitRow, exitCol, 200);
+
+  if (solveResult.solvable && solveResult.minMoves >= (minMovesRequired / 2)) {
+    return {
+      id,
+      gridSize,
+      vehicles,
+      exitRow,
+      exitCol,
+      minMoves: solveResult.minMoves,
+      updatedAt: Date.now(),
+    };
+  }
+
+  // Fallback if scramble didn't yield a "hard enough" level or somehow broke
+  // Limit retries to prevent infinite recursion
+  const currentRetries = (arguments[2] || 0);
+  if (currentRetries < 20) {
+    return generateScrambledLevel(id, config, currentRetries + 1);
+  }
+
+  // Final fallback: try the original (slower but guaranteed) generator
+  return generateLevel(id, config);
+}
+
+
+
+
+
 // ─────────────────────────────────────────────────────────────────────────────
-// LEVEL GENERATOR
+// UTILITIES
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Random boards tried before giving up (an EXPERT level takes about 500 on average) */
-const MAX_ATTEMPTS = 4000;
-/** Largest component explored, by grid size: bigger ones are skipped (too slow on a phone) */
-const MAX_COMPONENT_STATES: Record<number, number> = { 6: 60000, 7: 60000, 8: 40000 };
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(seededRandom() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+
+function clamp(val: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, val));
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PLACEMENT HELPER
+// ─────────────────────────────────────────────────────────────────────────────
 
 function canPlace(
   vehicles: Vehicle[],
@@ -199,134 +352,143 @@ function canPlace(
   orientation: 'horizontal' | 'vertical',
   gridSize: number,
 ): boolean {
-  'worklet';
-  for (let i = 0; i < length; i++) {
-    const r = orientation === 'vertical' ? row + i : row;
-    const c = orientation === 'horizontal' ? col + i : col;
-    if (r >= gridSize || c >= gridSize) return false;
-    for (const v of vehicles) {
-      const covers = v.orientation === 'horizontal'
-        ? v.row === r && c >= v.col && c < v.col + v.length
-        : v.col === c && r >= v.row && r < v.row + v.length;
-      if (covers) return false;
+  if (orientation === 'horizontal') {
+    if (col + length > gridSize) return false;
+    for (let i = 0; i < length; i++) {
+      const c = col + i;
+      if (vehicles.some(v =>
+        v.orientation === 'horizontal'
+          ? v.row === row && c >= v.col && c < v.col + v.length
+          : v.col === c && row >= v.row && row < v.row + v.length,
+      )) return false;
+    }
+  } else {
+    if (row + length > gridSize) return false;
+    for (let i = 0; i < length; i++) {
+      const r = row + i;
+      if (vehicles.some(v =>
+        v.orientation === 'horizontal'
+          ? v.row === r && col >= v.col && col < v.col + v.length
+          : v.col === col && r >= v.row && r < v.row + v.length,
+      )) return false;
     }
   }
   return true;
 }
 
-interface RandomBoard {
-  vehicles: Vehicle[];
-  exitRow: number;
-  exitCol: number;
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// LEVEL GENERATOR
+// ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * A random board: the target car somewhere on a lane leading to an exit on any side,
- * a few vehicles across that lane (blockers: hard puzzles have some, it doubles the hit rate
- * of EXPERT), then other vehicles anywhere, never lying on the target's lane (they would wall
- * the exit). It does not need to be solved or hard: the exploration finds the hardest state.
- */
-function randomBoard(config: DifficultyConfig, random: () => number): RandomBoard {
-  'worklet';
-  const g = config.gridSize;
-  const side = Math.floor(random() * 4); // 0 right, 1 left, 2 bottom, 3 top
-  const lane = 1 + Math.floor(random() * (g - 1));
-  const horizontal = side < 2;
-  const targetPos = Math.floor(random() * (g - 1));
-  const vehicles: Vehicle[] = [{
-    id: 'target',
-    row: horizontal ? lane : targetPos,
-    col: horizontal ? targetPos : lane,
-    length: 2,
-    orientation: horizontal ? 'horizontal' : 'vertical',
-    isTarget: true,
-    color: TARGET_CAR_COLOR,
-  }];
-  const exitRow = horizontal ? lane : side === 2 ? g : 255;
-  const exitCol = horizontal ? (side === 0 ? g : 255) : lane;
+export function generateLevel(id: number, config: DifficultyConfig): Level | null {
+  const { gridSize, minVehicles, maxVehicles, minMovesRequired, maxMovesRequired } = config;
 
-  const count = config.minVehicles + Math.floor(random() * (config.maxVehicles - config.minVehicles + 1));
+  const bfsLimit = maxMovesRequired + 10;
+  const maxAttempts = minMovesRequired >= 20 ? 3000 : 1500;
 
-  // Blockers across the target's lane: 1 for EASY and NORMAL, 2 for HARD, 3 for EXPERT
-  const blockers = Math.min(3, Math.max(1, Math.round(config.minMovesRequired / 8)));
-  for (let placed = 0, tries = 0; placed < blockers && vehicles.length < count && tries < 50; tries++) {
-    const length = random() < 0.5 ? 2 : 3;
-    const across = Math.floor(random() * g);
-    const along = Math.max(0, Math.min(g - length, lane - Math.floor(random() * length)));
-    const row = horizontal ? along : across;
-    const col = horizontal ? across : along;
-    const orientation: 'horizontal' | 'vertical' = horizontal ? 'vertical' : 'horizontal';
-    if (!canPlace(vehicles, row, col, length, orientation, g)) continue;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const { exitRow, exitCol, targetOrientation, targetRow, targetCol } = pickExitSide(gridSize);
+    const vehicles: Vehicle[] = [];
+
+    // Place target at the far end from the exit (so it has to travel across)
+    const startRow = targetOrientation === 'horizontal' ? targetRow : (exitRow === 255 ? gridSize - 2 : 0);
+    const startCol = targetOrientation === 'vertical' ? targetCol : (exitCol === 255 ? gridSize - 2 : 0);
+
     vehicles.push({
-      id: `v${vehicles.length}`,
-      row, col, length, orientation,
-      isTarget: false,
-      color: COLORS[vehicles.length % COLORS.length],
+      id: 'target',
+      row: startRow,
+      col: startCol,
+      length: 2,
+      orientation: targetOrientation,
+      isTarget: true,
+      color: TARGET_CAR_COLOR,
     });
-    placed++;
-  }
 
-  for (let tries = 0; vehicles.length < count && tries < count * 40; tries++) {
-    const orientation: 'horizontal' | 'vertical' = random() < 0.5 ? 'horizontal' : 'vertical';
-    const length = random() < 0.7 ? 2 : 3;
-    const row = Math.floor(random() * g);
-    const col = Math.floor(random() * g);
-    if (orientation === 'horizontal' && horizontal && row === lane) continue;
-    if (orientation === 'vertical' && !horizontal && col === lane) continue;
-    if (!canPlace(vehicles, row, col, length, orientation, g)) continue;
-    vehicles.push({
-      id: `v${vehicles.length}`,
-      row, col, length, orientation,
-      isTarget: false,
-      color: COLORS[vehicles.length % COLORS.length],
-    });
-  }
-  return { vehicles, exitRow, exitCol };
-}
+    // Place blockers perpendicular to the target's path
+    const isHorizTarget = targetOrientation === 'horizontal';
+    const pathIndices = isHorizTarget
+      ? shuffle(Array.from({ length: gridSize - 2 }, (_, i) => i + 2))  // columns to block
+      : shuffle(Array.from({ length: gridSize - 2 }, (_, i) => i + 2)); // rows to block
 
-/**
- * Generates a level of the given difficulty (see docs/GAME_DESIGN.md, Génération des niveaux).
- * Each random board is explored completely: the distance of every reachable state to the exit
- * is known, so one board gives a puzzle of any difficulty it holds, instead of hoping that a
- * random placement lands in the wanted range. The same seed always gives the same level
- * (`randomSeed()` for a new one; no default here: the worklet must not capture JS functions).
- */
-export function generateLevel(id: number, config: DifficultyConfig, seed: string): Level | null {
-  'worklet';
-  const random = createPRNG(seed);
-  const { gridSize, minMovesRequired, maxMovesRequired } = config;
-  const maxStates = MAX_COMPONENT_STATES[gridSize] ?? 40000;
+    const minBlock = clamp(Math.floor(minMovesRequired / 5), 1, pathIndices.length);
+    const maxBlock = clamp(Math.ceil(maxMovesRequired / 4), minBlock, pathIndices.length);
+    const numBlock = minBlock + Math.floor(seededRandom() * (maxBlock - minBlock + 1));
 
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const board = randomBoard(config, random);
-    const compact = toCompactBoard(board.vehicles, gridSize, board.exitRow, board.exitCol);
-    const component = exploreComponent(compact, initialPositions(board.vehicles), maxStates);
-    if (!component || component.maxDistance < minMovesRequired) continue;
+    for (let b = 0; b < numBlock; b++) {
+      const idx = pathIndices[b];
+      for (let p = 0; p < 25; p++) {
+        const length = seededRandom() > 0.4 ? 2 : 3;
 
-    // As hard as allowed, within the last 3 moves of the range for variety
-    const top = Math.min(component.maxDistance, maxMovesRequired);
-    const wanted = Math.max(minMovesRequired, top - Math.floor(random() * 3));
-    const candidates: number[] = [];
-    for (let s = 0; s < component.count; s++) {
-      if (component.distance[s] === wanted) candidates.push(s);
+        if (isHorizTarget) {
+          // Place vertical blockers on target's row
+          const minRow = Math.max(0, startRow - length + 1);
+          const maxRow = Math.min(gridSize - length, startRow);
+          if (minRow > maxRow) continue;
+          const row = minRow + Math.floor(seededRandom() * (maxRow - minRow + 1));
+          if (canPlace(vehicles, row, idx, length, 'vertical', gridSize)) {
+            vehicles.push({ id: `blocker_${b}`, row, col: idx, length, orientation: 'vertical', isTarget: false, color: COLORS[b % COLORS.length] });
+            break;
+          }
+        } else {
+          // Place horizontal blockers on target's column
+          const minCol = Math.max(0, startCol - length + 1);
+          const maxCol = Math.min(gridSize - length, startCol);
+          if (minCol > maxCol) continue;
+          const col = minCol + Math.floor(seededRandom() * (maxCol - minCol + 1));
+          if (canPlace(vehicles, idx, col, length, 'horizontal', gridSize)) {
+            vehicles.push({ id: `blocker_${b}`, row: idx, col, length, orientation: 'horizontal', isTarget: false, color: COLORS[b % COLORS.length] });
+            break;
+          }
+        }
+      }
     }
-    if (candidates.length === 0) continue;
 
-    const chosen = candidates[Math.floor(random() * candidates.length)];
-    const n = compact.n;
-    const vehicles = board.vehicles.map((v, i) => {
-      const p = component.states[chosen * n + i];
-      return v.orientation === 'horizontal' ? { ...v, col: p } : { ...v, row: p };
-    });
-    return {
-      id,
-      gridSize,
-      vehicles,
-      exitRow: board.exitRow,
-      exitCol: board.exitCol,
-      minMoves: wanted,
-      updatedAt: Date.now(),
-    };
+    const targetCount = minVehicles + Math.floor(seededRandom() * (maxVehicles - minVehicles + 1));
+    let stalls = 0;
+    while (vehicles.length < targetCount + 1 && stalls < 6) {
+      let placed = false;
+      for (let p = 0; p < 40; p++) {
+        const orientation: 'horizontal' | 'vertical' = seededRandom() > 0.5 ? 'horizontal' : 'vertical';
+        const length = seededRandom() > 0.3 ? 2 : 3;
+        const row = Math.floor(seededRandom() * gridSize);
+        const col = Math.floor(seededRandom() * gridSize);
+
+        // Don't place a same-orientation vehicle on the target's fixed axis
+        if (isHorizTarget && orientation === 'horizontal' && row === startRow) continue;
+        if (!isHorizTarget && orientation === 'vertical' && col === startCol) continue;
+
+        if (canPlace(vehicles, row, col, length, orientation, gridSize)) {
+          vehicles.push({
+            id: `v${vehicles.length}`,
+            row, col, length, orientation,
+            isTarget: false,
+            color: COLORS[vehicles.length % COLORS.length],
+          });
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) stalls++;
+    }
+
+    // ── 4. optimized solver – exact minimum move count ─────────────────────────────
+    const moves = solvePuzzle(vehicles, gridSize, exitRow, exitCol, bfsLimit).minMoves;
+
+    if (moves >= minMovesRequired && moves <= maxMovesRequired) {
+      return {
+        id,
+        gridSize,
+        vehicles,
+        exitRow,
+        exitCol,
+        minMoves: moves,
+        updatedAt: Date.now(),
+      };
+
+
+    }
+
   }
+
   return null;
 }

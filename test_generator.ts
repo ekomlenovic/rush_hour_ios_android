@@ -1,7 +1,7 @@
-import { generateLevel, randomSeed, DIFFICULTY_LEVELS } from './utils/generator';
+import { generateLevel, DIFFICULTY_LEVELS } from './utils/generator';
 
 console.log('Generating Easy Level...');
-const easy = generateLevel(3, DIFFICULTY_LEVELS.EASY, randomSeed());
+const easy = generateLevel(3, DIFFICULTY_LEVELS.EASY);
 if (easy) {
   console.log(`Success! Easy Level generated requiring ${easy.minMoves} moves.`);
 } else {
@@ -9,7 +9,7 @@ if (easy) {
 }
 
 console.log('Generating Normal Level...');
-const normal = generateLevel(4, DIFFICULTY_LEVELS.NORMAL, randomSeed());
+const normal = generateLevel(4, DIFFICULTY_LEVELS.NORMAL);
 if (normal) {
   console.log(`Success! Normal Level generated requiring ${normal.minMoves} moves.`);
 } else {
@@ -17,7 +17,7 @@ if (normal) {
 }
 
 console.log('Generating Hard Level...');
-const hard = generateLevel(5, DIFFICULTY_LEVELS.HARD, randomSeed());
+const hard = generateLevel(5, DIFFICULTY_LEVELS.HARD);
 if (hard) {
   console.log(`Success! Hard Level generated requiring ${hard.minMoves} moves.`);
 } else {
