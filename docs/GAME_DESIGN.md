@@ -28,7 +28,7 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 | **Annuler compte comme un coup** | `undo` incrémente `moveCount` : annuler n'est pas gratuit pour le score |
 | **Recommencer** remet le compteur à zéro | `resetLevel` |
 | Progression sauvegardée par niveau | `savedStates[levelId]` |
-| Étoiles : 3 ⭐ = solution optimale, 2 ⭐ ≤ optimal + 3, sinon 1 ⭐ | `app/game.tsx` |
+| Étoiles : 3 ⭐ = solution optimale, 2 ⭐ ≤ optimal + 3, sinon 1 ⭐ | `getStars` (`utils/scoring.ts`) |
 | On garde le meilleur score et les meilleures étoiles | `completeLevel` |
 
 ## Streak et gels
@@ -37,11 +37,11 @@ Le streak compte les jours consécutifs avec le défi du jour réussi.
 
 | Règle | Implémentation |
 |---|---|
-| Un **gel** ❄️ couvre un jour manqué : le streak continue (le jour gelé ne compte pas dans le total) | `settleStreak` (`store/gameStore.ts`) |
+| Un **gel** ❄️ couvre un jour manqué : le streak continue (le jour gelé ne compte pas dans le total) | `settleStreak` (`store/streak.ts`) |
 | Les gels sont **consommés automatiquement**, à l'ouverture de l'app ou à la réussite du défi suivant | `recordAppOpen`, `updateStreak` |
 | S'il manque plus de jours que de gels en stock, le streak est **perdu** (affiché à 0) et les gels sont **conservés** | |
 | Stock limité à **2 gels** | `MAX_STREAK_FREEZES` |
-| On gagne un gel **tous les 7 jours de streak** et en finissant les **3 missions du jour** | `updateStreak`, missions |
+| On gagne un gel **tous les 7 jours de streak** et en finissant les **3 missions du jour** | `advanceStreak` (`store/streak.ts`), missions |
 | Pas de monnaie : un gel ne s'achète pas | |
 | Les jours gelés apparaissent en bleu dans le calendrier du profil | `frozenDates` |
 
@@ -78,7 +78,7 @@ Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler
 | Le niveau est **déguisé** : une des 7 symétries non triviales (rotation / miroir) et couleurs remélangées. Le nombre minimum de coups est inchangé | `transformLevel` |
 | **Diversité** : tout le pool est parcouru avant qu'un niveau revienne, deux semaines de suite ne se ressemblent pas | pas de 23 dans le pool, symétrie qui change chaque semaine |
 | Ajouter des niveaux à la campagne agrandit le pool et **change le tirage des semaines suivantes**. La semaine en cours ne bouge pas : son niveau est en cache pour sa clé de semaine | `currentWeeklyLevel` / `weeklyLevelKey` |
-| **Recommencer** est le seul bouton d'action ; il remet les coups à zéro | `resetLevel`, boutons dans `app/game.tsx` |
+| **Recommencer** est le seul bouton d'action ; il remet les coups à zéro | `resetLevel`, `components/game/GameActions.tsx` |
 | N'affecte **ni le streak ni la carte** | ID réservé `999998`, `weeklyChallengeProgress` |
 
 ## Succès
@@ -99,7 +99,7 @@ Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler
 
 ## Retour du joueur
 
-- Après **3 jours ou plus** d'absence : message de bienvenue (`recordAppOpen`, `app/index.tsx`).
+- Après **3 jours ou plus** d'absence : message de bienvenue (`recordAppOpen`, `hooks/useAppOpenAlert.ts`).
 
 ## Roadmap
 
