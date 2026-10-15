@@ -10,7 +10,7 @@ import { getLocalDateString, getWeekKey } from './date';
 /**
  * Export / import of the player's progress, without any server (see docs/GAME_DESIGN.md, Sauvegarde).
  *
- * A save is a text code: `RHSAVE1.<checksum>.<base64 of the JSON>`. Without a server, cheating cannot
+ * A save is a text code: `RHSAVE1.<checksum>.<base64 of the JSON>`, shared as is or in a .rushsave file. Without a server, cheating cannot
  * be prevented (anything the app checks, someone reading its code can redo): a cheater only fools
  * themselves, there is no leaderboard nor currency. The code only stops casual edits and broken files:
  * unreadable format, checksum, consistency checks, and values recomputed rather than trusted.
@@ -154,6 +154,9 @@ export function exportProgress(now: Date = new Date()): string {
 
   return encodeSave({ version: STORE_VERSION, exportedAt: getLocalDateString(now), state });
 }
+
+/** Name of an exported save file, dated so that several saves can be told apart */
+export const saveFileName = (now: Date = new Date()): string => `rush-hours-${getLocalDateString(now)}.rushsave`;
 
 // ─── Import ───────────────────────────────────────────────────────────────────
 
