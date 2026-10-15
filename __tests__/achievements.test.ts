@@ -84,6 +84,28 @@ describe('achievements in the store', () => {
     expect(state().achievements).toEqual(expect.arrayContaining(['weekly_warrior', 'weekly_perfect']));
   });
 
+  it('minimum-moves achievements follow the hardest level won, and won with 3 stars', () => {
+    const hard = sampleLevels.find(l => l.minMoves >= 30 && l.minMoves < 40)!;
+    winMapLevel(hard, { stars: 2 });
+    expect(state().achievements).toEqual(expect.arrayContaining(['min_moves_20', 'min_moves_30']));
+    expect(state().achievements).not.toContain('optimal_20');
+    expect(state().achievements).not.toContain('min_moves_50');
+
+    winMapLevel(hard);
+    expect(state().achievements).toEqual(expect.arrayContaining(['optimal_20', 'optimal_30']));
+    expect(state().achievements).not.toContain('optimal_50');
+  });
+
+  it('"optimal hard" counts distinct map levels of 30+ minimum moves won with 3 stars', () => {
+    const hardLevels = sampleLevels.filter(l => l.minMoves >= 30);
+    for (let i = 0; i < 9; i++) winMapLevel(hardLevels[i]);
+    winMapLevel(hardLevels[0]);
+    winMapLevel(sampleLevels.find(l => l.minMoves < 30)!);
+    expect(state().achievements).not.toContain('optimal_hard_10');
+    winMapLevel(hardLevels[9]);
+    expect(state().achievements).toContain('optimal_hard_10');
+  });
+
   it('secret: a win on Halloween', () => {
     setToday('2026-10-31');
     winMapLevel();
