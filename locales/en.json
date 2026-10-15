@@ -637,5 +637,29 @@
       "fireworks": "Fireworks",
       "speed": "Speed trail"
     }
+  },
+  "save": {
+    "title": "Save",
+    "desc": "Switch phones without losing your progress: export it to a file (or a code), then import it on the other phone. Nothing is sent over the internet.",
+    "export_btn": "Export my progress",
+    "import_btn": "Import a file",
+    "import_hint": "Copy a save code first",
+    "share_title": "My Rush Hours save",
+    "copied_title": "Code copied",
+    "copied_body": "Your save code is in the clipboard. Keep it somewhere safe (notes, email…).",
+    "confirm_title": "Replace your progress?",
+    "confirm_body": "Save from {{date}}: level {{level}}, {{levels}} levels won, {{stars}} ⭐, {{streak}}-day streak.\n\nYour current progress on this phone will be replaced.",
+    "confirm_btn": "Replace",
+    "success_title": "Progress imported",
+    "success_body": "Welcome back on the road!",
+    "error_title": "Import failed",
+    "error_empty": "The clipboard is empty: copy your save code first.",
+    "error_invalid": "This is not a Rush Hours save code.",
+    "error_corrupted": "This code is incomplete or was modified. Copy it again in full.",
+    "error_too_new": "This save comes from a newer version of the game: update the app first.",
+    "error_inconsistent": "This save contains inconsistent data and cannot be imported.",
+    "copy_code_btn": "Copy as code",
+    "paste_code_btn": "Paste a code",
+    "error_read": "This file could not be read."
   }
 }
