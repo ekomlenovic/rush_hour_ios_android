@@ -1,7 +1,6 @@
-import { useGameStore, Level, DAILY_LEVEL_ID } from '@/store/gameStore';
+import { useGameStore, Level } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
-import { DIFFICULTY_LEVELS, generateWeeklyLevel, getDailyDifficulty, getDailySeed } from '@/utils/generator';
-import { generateLevelAsync } from '@/utils/solver.background';
+import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel, generateWeeklyLevel } from '@/utils/generator';
 import { deserializeLevel } from '@/utils/sharing';
 
 export interface GameRouteParams {
@@ -15,7 +14,22 @@ export interface GameRouteParams {
  * Finds the level a game route points to: daily / weekly challenge (cached in the store),
  * campaign, generated, created or imported level, or a level generated on the fly.
  */
+/** Resolves once the saved state is loaded from the device storage */
+function waitForHydration(): Promise<void> {
+  if (useGameStore.persist.hasHydrated()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const unsubscribe = useGameStore.persist.onFinishHydration(() => {
+      unsubscribe();
+      resolve();
+    });
+  });
+}
+
 export async function resolveLevel(params: GameRouteParams): Promise<Level | null> {
+  // Opened right at launch (deep link, notification), the cached daily / weekly level
+  // may not be loaded yet: regenerating it could give another puzzle than the saved game
+  await waitForHydration();
+
   const { levelId: idParam, date: dateParam, week: weekParam, data: dataParamInUrl } = params;
   const id = Number(idParam);
   const state = useGameStore.getState();
@@ -32,8 +46,7 @@ export async function resolveLevel(params: GameRouteParams): Promise<Level | nul
     if (state.currentDailyLevel && state.dailyLevelDate === dateParam) {
       level = state.currentDailyLevel;
     } else {
-      // Same seed as generateDailyLevel: the same puzzle for everyone, computed off the JS thread
-      level = await generateLevelAsync(DAILY_LEVEL_ID, getDailyDifficulty(dateParam), getDailySeed(dateParam));
+      level = await generateDailyLevel(dateParam);
       if (level) {
         useGameStore.setState({ currentDailyLevel: level, dailyLevelDate: dateParam });
       }
@@ -67,12 +80,12 @@ export async function resolveLevel(params: GameRouteParams): Promise<Level | nul
     // Adjust difficulty based on level ID range
     if (!level && id > 0 && id <= 2000) {
       let difficulty = DIFFICULTY_LEVELS.EASY;
-      // Never MASTER on the phone (too slow, see docs/GAME_DESIGN.md)
-      if (id > 800) difficulty = DIFFICULTY_LEVELS.EXPERT;
+      if (id > 1500) difficulty = DIFFICULTY_LEVELS.MASTER;
+      else if (id > 800) difficulty = DIFFICULTY_LEVELS.EXPERT;
       else if (id > 400) difficulty = DIFFICULTY_LEVELS.HARD;
       else if (id > 100) difficulty = DIFFICULTY_LEVELS.NORMAL;
 
-      level = (await generateLevelAsync(id || 1, difficulty)) || sampleLevels[0];
+      level = generateLevel(id || 1, difficulty) || sampleLevels[0];
       if (level && level.id !== sampleLevels[0].id) {
         state.addGeneratedLevel(level);
       }

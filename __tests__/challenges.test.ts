@@ -1,4 +1,4 @@
-import { DIFFICULTY_LEVELS, generateDailyLevel, generateWeeklyLevel, transformLevel } from '../utils/generator';
+import { DIFFICULTY_LEVELS, generateDailyLevel, generateLevel, generateWeeklyLevel, transformLevel } from '../utils/generator';
 import { solvePuzzle } from '../utils/solver';
 import { checkWin } from '../utils/collision';
 import { sampleLevels } from '../data/sampleLevels';
@@ -15,6 +15,13 @@ describe('daily challenge', () => {
     expect(a).not.toBeNull();
     expect(puzzle(a!)).toEqual(puzzle(b!));
     expect(a!.id).toBe(DAILY_LEVEL_ID);
+  });
+
+  it('stays the same when another level is generated meanwhile (map generator)', async () => {
+    const reference = await generateDailyLevel('2026-10-14');
+    const pending = generateDailyLevel('2026-10-14');
+    generateLevel(5, DIFFICULTY_LEVELS.EASY);
+    expect(puzzle((await pending)!)).toEqual(puzzle(reference!));
   });
 
   it('changes from one day to the next', async () => {
