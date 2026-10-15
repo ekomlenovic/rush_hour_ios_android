@@ -3,6 +3,7 @@ import { addDays, computeDayRuns, daysBetween } from '../utils/date';
 
 /** Streak rules: see docs/GAME_DESIGN.md (Streak et gels) */
 
+/** Freeze slots of a new player: the player level adds more (data/progression.ts) */
 export const MAX_STREAK_FREEZES = 2;
 /** A freeze is earned every this many days of streak */
 export const FREEZE_STREAK_INTERVAL = 7;
@@ -50,7 +51,7 @@ export function settleStreak(state: Omit<StreakState, 'bestStreak'>, today: stri
 }
 
 /** The streak after winning the daily of `dateKey` (missed days settled first) */
-export function advanceStreak(state: StreakState, dateKey: string): Partial<StreakState> {
+export function advanceStreak(state: StreakState, dateKey: string, maxFreezes = MAX_STREAK_FREEZES): Partial<StreakState> {
   if (state.lastStreakDate === dateKey) return {}; // Already counted today
 
   // Missed days may not have been settled yet (e.g. app opened on a deep link)
@@ -61,7 +62,7 @@ export function advanceStreak(state: StreakState, dateKey: string): Partial<Stre
   const newStreak = lastStreakDate && daysBetween(lastStreakDate, dateKey) === 1
     ? currentStreak + 1
     : 1;
-  const earnsFreeze = newStreak % FREEZE_STREAK_INTERVAL === 0 && streakFreezes < MAX_STREAK_FREEZES;
+  const earnsFreeze = newStreak % FREEZE_STREAK_INTERVAL === 0 && streakFreezes < maxFreezes;
 
   return {
     ...settled,

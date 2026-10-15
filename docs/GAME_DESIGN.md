@@ -43,8 +43,8 @@ Le streak compte les jours consécutifs avec le défi du jour réussi.
 | Un **gel** ❄️ couvre un jour manqué : le streak continue (le jour gelé ne compte pas dans le total) | `settleStreak` (`store/streak.ts`) |
 | Les gels sont **consommés automatiquement**, à l'ouverture de l'app ou à la réussite du défi suivant | `recordAppOpen`, `updateStreak` |
 | S'il manque plus de jours que de gels en stock, le streak est **perdu** (affiché à 0) et les gels sont **conservés** | |
-| Stock limité à **2 gels** | `MAX_STREAK_FREEZES` |
-| On gagne un gel **tous les 7 jours de streak** et en finissant les **3 missions du jour** | `advanceStreak` (`store/streak.ts`), missions |
+| Stock limité à **2 gels** au départ, **+1 emplacement** aux niveaux joueur 5, 10, 20 et 30 (6 au maximum) | `getFreezeCapacity` (`data/progression.ts`) |
+| On gagne un gel **tous les 7 jours de streak**, en finissant les **3 missions du jour** et à **chaque niveau joueur atteint** (rien si le stock est plein) | `advanceStreak` (`store/streak.ts`), missions, `addXp` (`store/gameStore.ts`) |
 | Pas de monnaie : un gel ne s'achète pas | |
 | Les jours gelés apparaissent en bleu dans le calendrier du profil | `frozenDates` |
 
@@ -83,6 +83,40 @@ Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler
 | Ajouter des niveaux à la campagne agrandit le pool et **change le tirage des semaines suivantes**. La semaine en cours ne bouge pas : son niveau est en cache pour sa clé de semaine | `currentWeeklyLevel` / `weeklyLevelKey` |
 | **Recommencer** est le seul bouton d'action ; il remet les coups à zéro | `resetLevel`, `components/game/GameActions.tsx` |
 | N'affecte **ni le streak ni la carte** | ID réservé `999998`, `weeklyChallengeProgress` |
+
+## Niveau joueur et XP
+
+Chaque victoire fait avancer une barre d'XP : la progression se voit même sur une partie courte. La courbe est **volontairement exigeante** : les premiers niveaux viennent en quelques jours, le niveau 10 demande environ un mois et demi de jeu quotidien, le niveau 20 environ un an.
+
+| Règle | Implémentation |
+|---|---|
+| XP pour passer du niveau `n` au niveau `n + 1` : `150 × n^1,6` | `xpToNextLevel` (`data/progression.ts`) |
+| Niveau de la carte ou personnalisé : `10 + 2 × coups minimum` (plafonné à 60 coups), × 0,5 / 0,75 / 1 selon les étoiles | `levelWinXp` |
+| Un niveau **déjà réussi** ne rapporte que **25 %** : rejouer fait progresser, sans permettre de farmer | `REPLAY_XP_FACTOR` |
+| Défi du jour : `60 + 20 × étoiles` ; défi hebdo : `150 + 50 × étoiles`, **une seule fois** par défi | `dailyWinXp`, `weeklyWinXp` |
+| 3 missions du jour terminées : **100 XP** ; chaque succès débloqué : **50 XP** | `MISSIONS_XP`, `ACHIEVEMENT_XP` |
+| Le tutoriel ne rapporte rien | `completeLevel` (niveau non chargé) |
+| Titre par palier : Apprenti, Chauffeur (5), Pilote (10), Navigateur (15), As de la route (20), Maître du trafic (30), Légende (40) | `PLAYER_TITLES` |
+| Récompenses d'un niveau atteint : **1 gel**, un **emplacement de gel** aux niveaux 5, 10, 20 et 30, un **cosmétique** tous les 5 niveaux jusqu'au 35 | `getLevelRewardLines` (`components/progression/rewards.ts`) |
+| Affichage : badge sur l'accueil, carte dans le profil (avec les récompenses du prochain niveau), barre animée et montée de niveau sur l'écran de victoire, toast ailleurs | `PlayerLevelBadge`, `PlayerLevelCard`, `WinModal`, `AchievementToast` |
+| Profil → « Voir toute la progression » : chaque niveau avec ses récompenses (aperçu des cosmétiques), puis les cosmétiques débloqués autrement, avec leur condition et l'avancement | `app/progression.tsx` |
+| Les joueurs existants reçoivent l'XP de leur progression passée (chaque victoire une fois, sans les récompenses de niveau) | migration v3 (`store/migrations.ts`) |
+| Pas de monnaie : l'XP ne se dépense pas | |
+
+## Cosmétiques
+
+Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dans le **Garage** (accueil → Garage), avec un aperçu (même pour un style verrouillé).
+
+| Règle | Implémentation |
+|---|---|
+| 4 types : **thème de plateau**, **skin de la voiture cible**, **palette des autres véhicules**, **effet de victoire** | `COSMETICS` (`data/cosmetics.ts`), `theme/board.ts` |
+| Déblocage **en jouant uniquement**, jamais par achat : paliers d'étoiles, niveau joueur, défis hebdo réussis, succès, défi du jour réussi en hiver (déc. à fév.) pour la Neige | `isCosmeticUnlocked` |
+| Le déblocage est calculé à partir de la progression : rien n'est perdu, rien ne se « dépense » | `buildCosmeticContext` |
+| Un style choisi mais plus débloqué (réinitialisation) revient au style par défaut | `sanitizeSelection` |
+| La palette recolore les véhicules dans l'ordre du niveau ; la voiture cible garde sa skin. Le lecteur d'écran annonce la couleur affichée | `applyPalette`, `components/Board.tsx` |
+| Les effets de victoire ne se jouent pas avec « Réduire les animations » | `WinEffect` (`components/effects/WinEffect.tsx`) |
+| Les identifiants des cosmétiques sont sauvegardés : ne jamais en renommer, seulement en ajouter | |
+| Les nouveautés sont signalées sur le lien Garage jusqu'à la prochaine visite | `seenCosmetics` |
 
 ## Succès
 

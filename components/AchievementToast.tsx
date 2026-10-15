@@ -9,7 +9,7 @@ import { fixedColors, useTheme } from '@/theme';
 
 const DISPLAY_MS = 3000;
 
-type ToastItem = { kind: 'achievement'; id: string } | { kind: 'missions'; freezeGranted: boolean };
+type ToastItem = { kind: 'achievement'; id: string } | { kind: 'missions'; freezeGranted: boolean } | { kind: 'levelUp'; level: number };
 
 /**
  * Shows unlocked achievements and completed daily missions one at a time at the top of the screen.
@@ -22,9 +22,10 @@ export default function AchievementToast() {
   const insets = useSafeAreaInsets();
   const unlockQueue = useGameStore(s => s.unlockQueue);
   const pendingMissionReward = useGameStore(s => s.pendingMissionReward);
+  const levelUpQueue = useGameStore(s => s.levelUpQueue);
   const [current, setCurrent] = useState<ToastItem | null>(null);
 
-  // Take the next item once the previous one is gone: missions first, then achievements
+  // Take the next item once the previous one is gone: missions first, then level ups, then achievements
   useEffect(() => {
     if (current) return;
     const reward = useGameStore.getState().consumeMissionReward();
@@ -32,18 +33,26 @@ export default function AchievementToast() {
       setCurrent({ kind: 'missions', freezeGranted: reward.freezeGranted });
       return;
     }
+    if (levelUpQueue.length > 0) {
+      const [level, ...rest] = levelUpQueue;
+      useGameStore.setState({ levelUpQueue: rest });
+      setCurrent({ kind: 'levelUp', level });
+      return;
+    }
     if (unlockQueue.length === 0) return;
     const [next, ...rest] = unlockQueue;
     useGameStore.setState({ unlockQueue: rest });
     setCurrent({ kind: 'achievement', id: next });
-  }, [unlockQueue, pendingMissionReward, current]);
+  }, [unlockQueue, pendingMissionReward, levelUpQueue, current]);
 
   useEffect(() => {
     if (!current) return;
     // Screen readers: the toast is announced, it may vanish before the player reaches it
     const announced = current.kind === 'achievement'
       ? `${t('achievements.unlocked')} ${t(`achievements.${current.id}`)}`
-      : `${t('missions.completed')} ${current.freezeGranted ? t('missions.reward_freeze') : t('missions.reward_full')}`;
+      : current.kind === 'levelUp'
+        ? t('progression.level_up', { level: current.level })
+        : `${t('missions.completed')} ${current.freezeGranted ? t('missions.reward_freeze') : t('missions.reward_full')}`;
     AccessibilityInfo.announceForAccessibility(announced);
     const timer = setTimeout(() => setCurrent(null), DISPLAY_MS);
     return () => clearTimeout(timer);
@@ -53,16 +62,19 @@ export default function AchievementToast() {
   const achievement = current.kind === 'achievement' ? ACHIEVEMENTS_BY_ID[current.id] : null;
   if (current.kind === 'achievement' && !achievement) return null;
 
-  const icon = achievement ? achievement.icon : '🎯';
-  const label = achievement ? t('achievements.unlocked') : t('missions.completed');
+  const icon = achievement ? achievement.icon : current.kind === 'levelUp' ? '🎉' : '🎯';
+  const label = achievement ? t('achievements.unlocked')
+    : current.kind === 'levelUp' ? t('progression.level_up_label')
+    : t('missions.completed');
   const name = achievement
     ? t(`achievements.${achievement.id}`)
+    : current.kind === 'levelUp' ? t('progression.level', { level: current.level })
     : current.kind === 'missions' && current.freezeGranted ? t('missions.reward_freeze') : t('missions.reward_full');
 
   return (
     <View style={[styles.container, { top: insets.top + 8 }]} pointerEvents="box-none">
       <Animated.View
-        key={achievement ? achievement.id : 'missions'}
+        key={achievement ? achievement.id : current.kind === 'levelUp' ? `level-${current.level}` : 'missions'}
         entering={FadeInUp.springify()}
         exiting={FadeOutUp.duration(250)}
       >

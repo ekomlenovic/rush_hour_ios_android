@@ -2,7 +2,9 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import { useGameStore, MAX_STREAK_FREEZES } from '@/store/gameStore';
+import { useGameStore } from '@/store/gameStore';
+import { getFreezeCapacity, getPlayerLevel } from '@/data/progression';
+import PlayerLevelCard from '@/components/progression/PlayerLevelCard';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { getLocalDateString, formatDuration } from '@/utils/date';
@@ -61,6 +63,8 @@ export default function ProfileScreen() {
   const streakFreezes = useGameStore((state) => state.streakFreezes);
   const frozenDates = useGameStore((state) => state.frozenDates);
   const frozenSet = useMemo(() => new Set(frozenDates), [frozenDates]);
+  const xp = useGameStore((state) => state.xp);
+  const freezeCapacity = getFreezeCapacity(getPlayerLevel(xp));
 
   const totalStars = useMemo(() => progress.reduce((sum, p) => sum + (p.stars || 0), 0), [progress]);
   const context = useMemo(
@@ -90,6 +94,11 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <Animated.View entering={FadeInDown.delay(50).duration(400)} style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>{t('progression.player_level')}</Text>
+          <PlayerLevelCard colors={colors} onSeeAll={() => router.push('/progression')} />
+        </Animated.View>
+
         <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.section}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>{t('profile.stats', 'Statistics')}</Text>
           <View style={styles.statsGrid}>
@@ -110,7 +119,7 @@ export default function ProfileScreen() {
               <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.best_streak', 'Best Streak')}</Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>❄️ {streakFreezes}/{MAX_STREAK_FREEZES}</Text>
+              <Text style={[styles.statValue, { color: textColor }]}>❄️ {streakFreezes}/{freezeCapacity}</Text>
               <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.streak_freezes')}</Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
