@@ -4,10 +4,10 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
 import { RFValue } from '@/utils/responsive';
-import { MapColors } from './colors';
+import { fixedColors, type UiColors } from '@/theme';
 
 /** Floating generation progress pill, pinned below the header, with a cancel button */
-export default function GenerationPill({ colors, isDark }: { colors: MapColors; isDark: boolean }) {
+export default function GenerationPill({ colors }: { colors: UiColors }) {
   const { t } = useTranslation();
   const generationState = useGameStore(s => s.generationState);
   const cancelGeneration = useGameStore(s => s.cancelGeneration);
@@ -18,14 +18,14 @@ export default function GenerationPill({ colors, isDark }: { colors: MapColors; 
       accessibilityLiveRegion="polite"
       style={[
         styles.generationPill,
-        { backgroundColor: isDark ? 'rgba(22,20,40,0.96)' : 'rgba(255,255,255,0.96)' }
+        { backgroundColor: colors.floating, borderColor: colors.primaryBorder }
       ]}
     >
       {/* Top row: title + cancel */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <ActivityIndicator color={generationState.shouldCancel ? '#EF4444' : colors.accent} size="small" />
-          <Text style={[styles.pillTitle, { color: generationState.shouldCancel ? '#EF4444' : colors.text }]}>
+          <ActivityIndicator color={generationState.shouldCancel ? colors.danger : colors.primary} size="small" />
+          <Text style={[styles.pillTitle, { color: generationState.shouldCancel ? colors.danger : colors.text }]}>
             {generationState.shouldCancel ? t('map.canceling') : t('map.generating_levels')}
           </Text>
         </View>
@@ -35,9 +35,9 @@ export default function GenerationPill({ colors, isDark }: { colors: MapColors; 
             hitSlop={15}
             accessibilityRole="button"
             accessibilityLabel={t('common.cancel')}
-            style={[styles.pillCancelBtn, { backgroundColor: isDark ? 'rgba(239,68,68,0.18)' : 'rgba(239,68,68,0.1)' }]}
+            style={[styles.pillCancelBtn, { backgroundColor: colors.dangerSoft }]}
           >
-            <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: RFValue(13) }}>✕ {t('common.cancel')}</Text>
+            <Text style={{ color: colors.danger, fontWeight: '700', fontSize: RFValue(13) }}>✕ {t('common.cancel')}</Text>
           </Pressable>
         )}
       </View>
@@ -48,7 +48,7 @@ export default function GenerationPill({ colors, isDark }: { colors: MapColors; 
           style={[
             styles.pillBarFill,
             {
-              backgroundColor: colors.accent,
+              backgroundColor: colors.primary,
               width: `${Math.round((generationState.current / Math.max(generationState.total, 1)) * 100)}%`,
             }
           ]}
@@ -57,11 +57,11 @@ export default function GenerationPill({ colors, isDark }: { colors: MapColors; 
 
       {/* Count and time */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={[styles.pillSub, { color: colors.sub }]}>
+        <Text style={[styles.pillSub, { color: colors.textMuted }]}>
           {t('map.generation_progress', { current: generationState.current, total: generationState.total })}
         </Text>
         {generationState.estimatedRemainingSeconds > 0 && !generationState.shouldCancel && (
-          <Text style={[styles.pillSub, { color: colors.accent, fontWeight: '600' }]}>
+          <Text style={[styles.pillSub, { color: colors.primaryText, fontWeight: '600' }]}>
             ~{t('map.time_left', { seconds: generationState.estimatedRemainingSeconds })}
           </Text>
         )}
@@ -79,14 +79,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 18,
     borderRadius: 20,
-    shadowColor: '#000',
+    shadowColor: fixedColors.shadow,
     shadowOpacity: 0.2,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 4 },
     elevation: 12,
     zIndex: 200,
     borderWidth: 1,
-    borderColor: 'rgba(108,99,255,0.2)',
   },
   pillTitle: {
     fontSize: RFValue(14),
@@ -95,7 +94,7 @@ const styles = StyleSheet.create({
   pillBarTrack: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(128,128,128,0.2)',
+    backgroundColor: fixedColors.neutralSoft,
     overflow: 'hidden',
     marginTop: 2,
   },

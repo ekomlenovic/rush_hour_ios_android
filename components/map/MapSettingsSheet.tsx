@@ -11,13 +11,14 @@ import { haptics, Haptics } from '@/utils/haptics';
 import i18n, { changeLanguage } from '@/utils/i18n';
 import { RFValue } from '@/utils/responsive';
 import { useLevelGenerator, GENERATION_TIME_MAP, DifficultyKey } from '@/hooks/useLevelGenerator';
-import { MapColors } from './colors';
+import { fixedColors, type UiColors } from '@/theme';
+import ThemeModeSetting from '../ThemeModeSetting';
 
 const REQUEST_LEVELS_URL = 'https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?title=Request:%20New%20Complex%20Levels&body=I%20would%20like%20to%20see%20more%20high-difficulty%20levels%21';
 
 interface Props {
   visible: boolean;
-  colors: MapColors;
+  colors: UiColors;
   isDark: boolean;
   onClose: () => void;
 }
@@ -92,11 +93,11 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF', paddingBottom: Math.max(40, insets.bottom + 24) }]}>
+        <View style={[styles.modalContent, { backgroundColor: colors.surface, paddingBottom: Math.max(40, insets.bottom + 24) }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: colors.text }]} accessibilityRole="header">{t('home.options')}</Text>
             <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('a11y.close')} hitSlop={8}>
-              <Text style={{ fontSize: RFValue(20), color: colors.sub, padding: 8 }}>✕</Text>
+              <Text style={{ fontSize: RFValue(20), color: colors.textMuted, padding: 8 }}>✕</Text>
             </Pressable>
           </View>
 
@@ -115,40 +116,42 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
             <View style={styles.settingRow}>
               <View>
                 <Text style={[styles.settingLabel, { color: colors.text }]}>{t('common.language')}</Text>
-                <Text style={[styles.settingSub, { color: colors.sub }]}>{i18n.language === 'en' ? t('common.en') : t('common.fr')}</Text>
+                <Text style={[styles.settingSub, { color: colors.textMuted }]}>{i18n.language === 'en' ? t('common.en') : t('common.fr')}</Text>
               </View>
               <View style={styles.languageBtns}>
                 <Pressable
                   onPress={() => changeLanguage('en')}
-                  style={[styles.langBtn, i18n.language === 'en' && { backgroundColor: colors.accent }]}
+                  style={[styles.langBtn, i18n.language === 'en' && { backgroundColor: colors.primary }]}
                   accessibilityRole="button"
                   accessibilityLabel={t('common.en')}
                   accessibilityState={{ selected: i18n.language === 'en' }}
                 >
-                  <Text style={[styles.langBtnText, { color: i18n.language === 'en' ? '#FFF' : colors.text }]}>EN</Text>
+                  <Text style={[styles.langBtnText, { color: i18n.language === 'en' ? colors.onPrimary : colors.text }]}>EN</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => changeLanguage('fr')}
-                  style={[styles.langBtn, i18n.language === 'fr' && { backgroundColor: colors.accent }]}
+                  style={[styles.langBtn, i18n.language === 'fr' && { backgroundColor: colors.primary }]}
                   accessibilityRole="button"
                   accessibilityLabel={t('common.fr')}
                   accessibilityState={{ selected: i18n.language === 'fr' }}
                 >
-                  <Text style={[styles.langBtnText, { color: i18n.language === 'fr' ? '#FFF' : colors.text }]}>FR</Text>
+                  <Text style={[styles.langBtnText, { color: i18n.language === 'fr' ? colors.onPrimary : colors.text }]}>FR</Text>
                 </Pressable>
               </View>
             </View>
+
+            <ThemeModeSetting colors={colors} labelStyle={styles.settingLabel} />
 
             {/* Music Toggle */}
             <View style={styles.settingRow}>
               <View>
                 <Text style={[styles.settingLabel, { color: colors.text }]}>{t('map.background_music')}</Text>
-                <Text style={[styles.settingSub, { color: colors.sub }]}>{t('map.music_name')}</Text>
+                <Text style={[styles.settingSub, { color: colors.textMuted }]}>{t('map.music_name')}</Text>
               </View>
               <Switch
                 value={isMusicEnabled}
                 onValueChange={toggleMusic}
-                trackColor={{ false: '#767577', true: colors.accent }}
+                trackColor={{ false: colors.switchTrackOff, true: colors.primary }}
                 accessibilityLabel={t('map.background_music')}
               />
             </View>
@@ -156,7 +159,7 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
             <View style={styles.settingRow}>
               <View>
                 <Text style={[styles.settingLabel, { color: colors.text }]}>{t('map.haptic_feedback')}</Text>
-                <Text style={[styles.settingSub, { color: colors.sub }]}>{t('map.vibrate_interactions')}</Text>
+                <Text style={[styles.settingSub, { color: colors.textMuted }]}>{t('map.vibrate_interactions')}</Text>
               </View>
               <Switch
                 value={isHapticsEnabled}
@@ -164,17 +167,17 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
                   toggleHapticsEnabled();
                   haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
-                trackColor={{ false: '#767577', true: colors.accent }}
+                trackColor={{ false: colors.switchTrackOff, true: colors.primary }}
                 accessibilityLabel={t('map.haptic_feedback')}
               />
             </View>
 
-            <View style={[styles.divider, { backgroundColor: colors.sub }]} />
+            <View style={[styles.divider, { backgroundColor: colors.textMuted }]} />
 
             {/* Generator Setttings */}
-            <Text style={[styles.sectionTitle, { color: colors.accent }]}>{t('map.level_generator')}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.primaryText }]}>{t('map.level_generator')}</Text>
 
-            <Text style={[styles.settingSub, { color: '#F59E0B', marginBottom: 16, fontWeight: '600' }]}>
+            <Text style={[styles.settingSub, { color: colors.warning, marginBottom: 16, fontWeight: '600' }]}>
               {t('map.generator_warning')}
             </Text>
 
@@ -188,12 +191,12 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
                       setGenDifficulty(diff);
                       setGenGridSize(DIFFICULTY_LEVELS[diff].gridSize);
                     }}
-                    style={[styles.segmentBtn, genDifficulty === diff && { backgroundColor: colors.accent }]}
+                    style={[styles.segmentBtn, genDifficulty === diff && { backgroundColor: colors.primary }]}
                     accessibilityRole="button"
                     accessibilityState={{ selected: genDifficulty === diff }}
                   >
                     <Text
-                      style={[styles.segmentText, { color: genDifficulty === diff ? '#FFF' : colors.text }]}
+                      style={[styles.segmentText, { color: genDifficulty === diff ? colors.onPrimary : colors.text }]}
                       numberOfLines={1}
                       adjustsFontSizeToFit
                     >
@@ -211,11 +214,11 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
                   <Pressable
                     key={size}
                     onPress={() => setGenGridSize(size)}
-                    style={[styles.segmentBtn, genGridSize === size && { backgroundColor: colors.accent }]}
+                    style={[styles.segmentBtn, genGridSize === size && { backgroundColor: colors.primary }]}
                     accessibilityRole="button"
                     accessibilityState={{ selected: genGridSize === size }}
                   >
-                    <Text style={[styles.segmentText, { color: genGridSize === size ? '#FFF' : colors.text }]}>
+                    <Text style={[styles.segmentText, { color: genGridSize === size ? colors.onPrimary : colors.text }]}>
                       {size}x{size}
                     </Text>
                   </Pressable>
@@ -230,11 +233,11 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
                   <Pressable
                     key={amt}
                     onPress={() => setGenAmount(amt)}
-                    style={[styles.segmentBtn, genAmount === amt && { backgroundColor: colors.accent }]}
+                    style={[styles.segmentBtn, genAmount === amt && { backgroundColor: colors.primary }]}
                     accessibilityRole="button"
                     accessibilityState={{ selected: genAmount === amt }}
                   >
-                    <Text style={[styles.segmentText, { color: genAmount === amt ? '#FFF' : colors.text }]}>
+                    <Text style={[styles.segmentText, { color: genAmount === amt ? colors.onPrimary : colors.text }]}>
                       {amt}
                     </Text>
                   </Pressable>
@@ -245,7 +248,7 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
             {/* Generation Actions */}
             <View style={{ marginTop: 24, gap: 12 }}>
               <Pressable
-                style={[styles.mainBtn, { backgroundColor: colors.accent, opacity: isGenerating ? 0.5 : 1 }]}
+                style={[styles.mainBtn, { backgroundColor: colors.primary, opacity: isGenerating ? 0.5 : 1 }]}
                 onPress={handleGenerateCustomLevels}
                 disabled={isGenerating}
                 accessibilityRole="button"
@@ -258,19 +261,19 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
 
               {!isGenerating && generatedLevels.length > 0 && (
                 <Pressable
-                  style={[styles.resetBtn, { borderColor: '#EF4444' }]}
+                  style={[styles.resetBtn, { borderColor: colors.danger }]}
                   onPress={handleResetLevels}
                   accessibilityRole="button"
                 >
-                  <Text style={[styles.resetBtnText, { color: '#EF4444' }]}>{t('map.reset_custom')}</Text>
+                  <Text style={[styles.resetBtnText, { color: colors.danger }]}>{t('map.reset_custom')}</Text>
                 </Pressable>
               )}
 
-              <View style={[styles.divider, { backgroundColor: colors.sub, marginVertical: 12 }]} />
+              <View style={[styles.divider, { backgroundColor: colors.textMuted, marginVertical: 12 }]} />
 
-              <Text style={[styles.sectionTitle, { color: colors.accent, marginBottom: 8 }]}>{t('map.community_levels')}</Text>
+              <Text style={[styles.sectionTitle, { color: colors.primaryText, marginBottom: 8 }]}>{t('map.community_levels')}</Text>
               <Pressable
-                style={[styles.mainBtn, { backgroundColor: '#24292e', marginBottom: 12 }]}
+                style={[styles.mainBtn, { backgroundColor: colors.github, marginBottom: 12 }]}
                 onPress={() => Linking.openURL(REQUEST_LEVELS_URL)}
                 accessibilityRole="link"
               >
@@ -278,27 +281,27 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
               </Pressable>
 
               <Pressable
-                style={[styles.resetBtn, { borderColor: colors.accent, backgroundColor: colors.bg, marginTop: 12 }]}
+                style={[styles.resetBtn, { borderColor: colors.primary, backgroundColor: colors.background, marginTop: 12 }]}
                 onPress={handleUnlockAll}
                 accessibilityRole="button"
                 accessibilityLabel={t('home.unlock_all')}
               >
-                <Text style={[styles.resetBtnText, { color: colors.accent, fontWeight: '700' }]}>🔓 {t('home.unlock_all')}</Text>
+                <Text style={[styles.resetBtnText, { color: colors.primaryText, fontWeight: '700' }]}>🔓 {t('home.unlock_all')}</Text>
               </Pressable>
 
               <Pressable
-                style={[styles.resetBtn, { borderColor: colors.sub, borderStyle: 'dotted', marginTop: 12 }]}
+                style={[styles.resetBtn, { borderColor: colors.textMuted, borderStyle: 'dotted', marginTop: 12 }]}
                 onPress={handleHardReset}
                 accessibilityRole="button"
               >
-                <Text style={[styles.resetBtnText, { color: colors.sub }]}>{t('map.hard_reset_progress')}</Text>
+                <Text style={[styles.resetBtnText, { color: colors.textMuted }]}>{t('map.hard_reset_progress')}</Text>
               </Pressable>
             </View>
           </ScrollView>
 
           {!settingsScrolledToBottom && (
             <Animated.View entering={FadeInDown} style={styles.scrollHint} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-              <Text style={{ color: colors.accent, fontWeight: '700', fontSize: RFValue(12) }}>{t('map.scroll_hint')}</Text>
+              <Text style={{ color: colors.primaryText, fontWeight: '700', fontSize: RFValue(12) }}>{t('map.scroll_hint')}</Text>
             </Animated.View>
           )}
         </View>
@@ -310,7 +313,7 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: fixedColors.overlayStrong,
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -318,7 +321,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     padding: 24,
     paddingBottom: 40,
-    shadowColor: '#000',
+    shadowColor: fixedColors.shadow,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -352,7 +355,7 @@ const styles = StyleSheet.create({
   languageBtns: {
     flexDirection: 'row',
     gap: 8,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: fixedColors.neutralSoft,
     padding: 4,
     borderRadius: 12
   },
@@ -388,7 +391,7 @@ const styles = StyleSheet.create({
   segmentBtn: {
     flex: 1,
     paddingVertical: 10,
-    backgroundColor: 'rgba(150,150,150,0.1)',
+    backgroundColor: fixedColors.neutralSoft,
     borderRadius: 12,
     alignItems: 'center',
   },
@@ -400,14 +403,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: fixedColors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   mainBtnText: {
-    color: '#FFF',
+    color: fixedColors.onPrimary,
     fontSize: RFValue(16),
     fontWeight: '800',
   },

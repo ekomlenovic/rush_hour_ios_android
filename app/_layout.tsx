@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { Stack, useRouter } from 'expo-router';
-import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ReducedMotionConfig, ReduceMotion } from 'react-native-reanimated';
 import { AudioProvider } from '@/context/AudioProvider';
@@ -10,13 +9,11 @@ import * as Linking from 'expo-linking';
 import { deserializeLevel } from '@/utils/sharing';
 import { useGameStore } from '@/store/gameStore';
 import '@/utils/i18n';
-
-const DARK_BG = '#0F0F1A';
-const LIGHT_BG = '#F5F5FA';
+import { useTheme, useAppearanceSync } from '@/theme';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { colors } = useTheme();
+  useAppearanceSync();
   const router = useRouter();
   const { addImportedLevel } = useGameStore();
   useReminderSync();
@@ -45,11 +42,11 @@ export default function RootLayout() {
 
   return (
     <AudioProvider>
-      <GestureHandlerRootView style={{ flex: 1, backgroundColor: isDark ? DARK_BG : LIGHT_BG }}>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: isDark ? DARK_BG : LIGHT_BG },
+            contentStyle: { backgroundColor: colors.background },
             animation: 'slide_from_right',
           }}
         />

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { Level } from '@/store/gameStore';
-import { MapColors } from './colors';
+import { fixedColors, type BoardColors, type UiColors } from '@/theme';
 import { PathPoint } from './path';
 
 interface LevelNodeProps {
@@ -16,8 +16,8 @@ interface LevelNodeProps {
   isTutorial: boolean;
   stars: number;
   onPress: (id: number, unlocked: boolean, custom: boolean) => void;
-  colors: MapColors;
-  isDark: boolean;
+  colors: UiColors;
+  board: BoardColors;
 }
 
 const LevelNode = React.memo(({
@@ -31,27 +31,27 @@ const LevelNode = React.memo(({
   stars,
   onPress,
   colors,
-  isDark,
+  board,
 }: LevelNodeProps) => {
   const { t } = useTranslation();
   const getCustomColor = () => {
-    if (!levelData) return '#8B5CF6';
-    if (levelData.minMoves < 14) return '#10B981';
-    if (levelData.minMoves < 23) return '#F59E0B';
-    return '#EF4444';
+    if (!levelData) return colors.levelUnknown;
+    if (levelData.minMoves < 14) return colors.levelEasy;
+    if (levelData.minMoves < 23) return colors.levelMedium;
+    return colors.levelHard;
   };
 
-  let carColor = colors.locked;
+  let carColor = colors.inactive;
   if (isPadlockNode) {
-    carColor = colors.locked;
+    carColor = colors.inactive;
   } else if (isTutorial) {
-    carColor = '#3B82F6'; // Distinct blue for tutorial
+    carColor = colors.levelTutorial; // Distinct blue for tutorial
   } else if (isCurrent) {
-    carColor = '#EF4444';
+    carColor = board.targetCar;
   } else if (isCustom) {
     carColor = getCustomColor();
   } else {
-    carColor = '#5A4FE0';
+    carColor = colors.levelCustom;
   }
 
   const nodeOpacity = (isUnlocked || isPadlockNode || isTutorial) ? 1 : 0.4;
@@ -81,16 +81,16 @@ const LevelNode = React.memo(({
         accessibilityState={{ disabled: !isUnlocked && !isCustom && !isTutorial }}
         style={({ pressed }) => [
           styles.carNode,
-          { backgroundColor: carColor, borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)', opacity: nodeOpacity },
+          { backgroundColor: carColor, borderColor: board.vehicleBorder, opacity: nodeOpacity },
           isCurrent && { transform: [{ scale: 1.15 }], shadowColor: carColor, shadowOpacity: 0.6, shadowRadius: 12, elevation: 12 },
-          isCustom && { borderRadius: 24, borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)', shadowColor: carColor },
+          isCustom && { borderRadius: 24, borderWidth: 2, borderColor: board.dragBorder, shadowColor: carColor },
           { transform: [{ scale: pressed && (isUnlocked || isTutorial) ? 0.9 : (isCurrent ? 1.15 : 1) }] }
         ]}
       >
-        <View style={[styles.carShine, { backgroundColor: (isUnlocked || isTutorial) ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)' }]} />
+        <View style={[styles.carShine, { backgroundColor: (isUnlocked || isTutorial) ? colors.shine : colors.shineFaint }]} />
 
         {isPadlockNode ? (
-          <Text style={[styles.lockedIcon, { color: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)' }]}>🔒</Text>
+          <Text style={[styles.lockedIcon, { color: board.vehicleBorder }]}>🔒</Text>
         ) : (
           <View style={{ alignItems: 'center' }}>
             <Text style={styles.nodeText}>
@@ -110,9 +110,9 @@ const LevelNode = React.memo(({
               {'⭐'.repeat(stars)}
             </Text>
           ) : isCurrent ? (
-            <Text style={[styles.currentText, { color: colors.accent }]}>{t('map.next')}</Text>
+            <Text style={[styles.currentText, { color: colors.primaryText }]}>{t('map.next')}</Text>
           ) : isTutorial ? (
-            <Text style={[styles.currentText, { color: colors.accent, fontSize: 10 }]}>{t('tutorial.title')}</Text>
+            <Text style={[styles.currentText, { color: colors.primaryText, fontSize: 10 }]}>{t('tutorial.title')}</Text>
           ) : null}
         </View>
       )}
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: fixedColors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 6,
@@ -155,9 +155,9 @@ const styles = StyleSheet.create({
   nodeText: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: fixedColors.onPrimary,
     zIndex: 2,
-    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowColor: fixedColors.textShadow,
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },

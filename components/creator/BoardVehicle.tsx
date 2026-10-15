@@ -5,6 +5,7 @@ import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { Vehicle } from '@/store/gameStore';
 import { SNAP } from './snap';
 import { vehicleStyles as styles } from './vehicleStyles';
+import { useTheme } from '@/theme';
 
 type BoardVehicleProps = {
   vehicle: Vehicle;
@@ -23,6 +24,7 @@ type BoardVehicleProps = {
 
 /** A vehicle on the creator board: drag to move, tap to pivot, long press to remove */
 const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, cellSize, isGhost, onDragStart, onDragMove, onDragEnd, onRemove, onPress, a11yLabel, a11yValue, a11yStrings }: BoardVehicleProps) {
+  const { board } = useTheme();
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
   const sc = useSharedValue(1);
@@ -93,13 +95,13 @@ const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, cellSize, is
         onAccessibilityAction={e => (e.nativeEvent.actionName === 'activate' ? onPress() : onRemove())}
         style={[
         styles.vehicleBlock, animStyle,
-        { top: v.row * cellSize + 2, left: v.col * cellSize + 2, width: w, height: h, backgroundColor: v.color },
+        { top: v.row * cellSize + 2, left: v.col * cellSize + 2, width: w, height: h, backgroundColor: v.isTarget ? board.targetCar : v.color },
       ]}>
-        <View style={[styles.vehicleShine, v.orientation === 'vertical' && styles.vehicleShineV]} />
+        <View style={[styles.vehicleShine, { backgroundColor: board.vehicleShine }, v.orientation === 'vertical' && styles.vehicleShineV]} />
         {v.isTarget
           ? <Text style={styles.targetIcon}>🚗</Text>
           : <View style={[styles.vehicleGrip, v.orientation === 'vertical' && { flexDirection: 'column' }]}>
-            <View style={styles.gripDot} /><View style={styles.gripDot} />
+            <View style={[styles.gripDot, { backgroundColor: board.vehicleGrip }]} /><View style={[styles.gripDot, { backgroundColor: board.vehicleGrip }]} />
           </View>
         }
       </Animated.View>

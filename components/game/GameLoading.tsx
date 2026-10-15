@@ -2,19 +2,19 @@ import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { GameColors } from './colors';
+import type { UiColors } from '@/theme';
 
 /** Shown while the puzzle is prepared; the Monday daily warns that it is harder */
-export default function GameLoading({ colors, isMondayDaily }: { colors: GameColors; isMondayDaily: boolean }) {
+export default function GameLoading({ colors, isMondayDaily }: { colors: UiColors; isMondayDaily: boolean }) {
   const { t } = useTranslation();
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Animated.View entering={FadeIn.duration(400)} style={{ alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={colors.accent} />
-        <Text style={[styles.loadingText, { color: colors.sub }]}>{t('game.preparing_puzzle')}</Text>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textMuted }]}>{t('game.preparing_puzzle')}</Text>
         {isMondayDaily && (
           <Animated.View entering={FadeInDown.delay(1000)}>
-            <Text style={[styles.mondayWarning, { color: colors.sub }]}>
+            <Text style={[styles.mondayWarning, { color: colors.textMuted }]}>
               {t('game.monday_warning')}
             </Text>
           </Animated.View>

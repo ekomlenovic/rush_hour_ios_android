@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useGameStore, MAX_STREAK_FREEZES } from '@/store/gameStore';
@@ -7,9 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { getLocalDateString, formatDuration } from '@/utils/date';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, buildAchievementContext } from '@/data/achievements';
-
-const DAILY_STAR_COLORS: Record<number, string> = { 1: '#A5D6A7', 2: '#66BB6A', 3: '#2E7D32' };
-const FROZEN_DAY_COLOR = '#7DD3FC';
+import { fixedColors, useTheme } from '@/theme';
 
 
 function getCalendarDays() {
@@ -41,16 +39,15 @@ function getCalendarDays() {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
   const { t } = useTranslation();
   
-  const isDark = colorScheme === 'dark';
-  const bgColor = isDark ? '#0F0F1A' : '#F5F5FA';
-  const textColor = isDark ? '#FFFFFF' : '#1A1A24';
-  const secondaryTextColor = isDark ? '#A0A0B0' : '#606070';
-  const cardColor = isDark ? '#1C1C28' : '#FFFFFF';
-  const borderColor = isDark ? '#2D2D3A' : '#E0E0E8';
-  const accentColor = isDark ? '#6C63FF' : '#5A4FE0';
+  const { colors } = useTheme();
+  const bgColor = colors.background;
+  const textColor = colors.text;
+  const secondaryTextColor = colors.textMuted;
+  const cardColor = colors.surface;
+  const borderColor = colors.border;
+  const accentColor = colors.primary;
 
   const progress = useGameStore((state) => state.progress || []);
   const currentStreak = useGameStore((state) => state.currentStreak || 0);
@@ -88,7 +85,7 @@ export default function ProfileScreen() {
       <View style={[styles.header, { borderBottomColor: borderColor }]}>
         <Text style={[styles.title, { color: textColor }]} accessibilityRole="header">{t('profile.title', 'Profile')}</Text>
         <Pressable onPress={() => router.back()} style={styles.closeButton} accessibilityRole="button" hitSlop={8}>
-          <Text style={{ color: accentColor, fontSize: RFValue(16), fontWeight: '600' }}>{t('common.close', 'Close')}</Text>
+          <Text style={{ color: colors.primaryText, fontSize: RFValue(16), fontWeight: '600' }}>{t('common.close', 'Close')}</Text>
         </Pressable>
       </View>
 
@@ -169,9 +166,9 @@ export default function ProfileScreen() {
                   }
                   const daily = dailyChallengeProgress?.[day.dateString];
                   const cellBgColor = daily?.completed
-                    ? DAILY_STAR_COLORS[daily.stars] ?? DAILY_STAR_COLORS[3]
-                    : frozenSet.has(day.dateString) ? FROZEN_DAY_COLOR
-                    : (isDark ? '#2D2D3A' : '#E0E0E8');
+                    ? colors.dailyStars[daily.stars - 1] ?? colors.dailyStars[2]
+                    : frozenSet.has(day.dateString) ? colors.frozen
+                    : borderColor;
                   return (
                     <View
                       key={day.dateString}
@@ -287,7 +284,7 @@ const styles = StyleSheet.create({
     marginBottom: RFValue(12),
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: fixedColors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -306,7 +303,7 @@ const styles = StyleSheet.create({
     padding: RFValue(12),
     borderRadius: RFValue(12),
     borderWidth: 1,
-    shadowColor: '#000',
+    shadowColor: fixedColors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -372,7 +369,7 @@ const styles = StyleSheet.create({
     width: RFValue(48),
     height: RFValue(48),
     borderRadius: RFValue(24),
-    backgroundColor: 'rgba(128, 128, 128, 0.1)',
+    backgroundColor: fixedColors.neutralSoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: RFValue(16),

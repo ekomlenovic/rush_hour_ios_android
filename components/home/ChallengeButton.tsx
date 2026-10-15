@@ -1,12 +1,12 @@
 import React from 'react';
 import { Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { HomeColors } from './colors';
+import type { UiColors } from '@/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface Props {
-  colors: HomeColors;
+  colors: UiColors;
   label: string;
   /** Border and text color while the challenge is still to do */
   color: string;
@@ -30,7 +30,7 @@ export default function ChallengeButton({ colors, label, color, done, detail, en
     >
       <Text style={[styles.secondaryText, { color: tint }]}>{label}</Text>
       {detail ? (
-        <Text style={[styles.daysLeftText, { color: colors.sub }]}>{detail}</Text>
+        <Text style={[styles.daysLeftText, { color: colors.textMuted }]}>{detail}</Text>
       ) : null}
     </AnimatedPressable>
   );

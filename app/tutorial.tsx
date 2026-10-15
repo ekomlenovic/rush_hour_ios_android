@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, Modal } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeOut, Layout, ZoomIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import Board from '@/components/Board';
 import { Vehicle, useGameStore } from '@/store/gameStore';
 import { checkWin } from '@/utils/collision';
+import { fixedColors, useTheme, CLASSIC_VEHICLE_COLORS, TARGET_CAR_COLOR } from '@/theme';
 
 const TUTORIAL_STEPS = [
   { highlight: "target" },
@@ -21,7 +22,7 @@ const TUTORIAL_VEHICLES: Vehicle[] = [
     length: 2,
     orientation: 'horizontal',
     isTarget: true,
-    color: '#EF4444',
+    color: TARGET_CAR_COLOR,
   },
   {
     id: 'v1',
@@ -30,14 +31,13 @@ const TUTORIAL_VEHICLES: Vehicle[] = [
     length: 3,
     orientation: 'vertical',
     isTarget: false,
-    color: '#10B981',
+    color: CLASSIC_VEHICLE_COLORS[1],
   },
 ];
 
 export default function TutorialScreen() {
   const { t } = useTranslation();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { colors, isDark } = useTheme();
   const router = useRouter();
 
   const [step, setStep] = useState(0);
@@ -46,10 +46,6 @@ export default function TutorialScreen() {
 
   // Whether the current step's dialog has been acknowledged (for step 1 and 2)
   const [dialogDismissed, setDialogDismissed] = useState(false);
-
-  const colors = isDark
-    ? { bg: '#0F0F1A', text: '#FFFFFF', sub: '#8E8EA0', accent: '#6C63FF', card: '#1A1A2E' }
-    : { bg: '#F5F5FA', text: '#1A1A2E', sub: '#6B6B80', accent: '#5A4FE0', card: '#FFFFFF' };
 
   // Board is disabled (grayed) until the dialog for the current step is dismissed
   // At step 0, it is ALWAYS locked because step 0 is pure presentation
@@ -84,11 +80,11 @@ export default function TutorialScreen() {
   }, [step, vehicles]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
        <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" hitSlop={8}>
-          <Text style={[styles.backText, { color: colors.sub }]}>{t('tutorial.skip')}</Text>
+          <Text style={[styles.backText, { color: colors.textMuted }]}>{t('tutorial.skip')}</Text>
         </Pressable>
         <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('tutorial.title')}</Text>
         <View style={{ width: 60 }} />
@@ -113,7 +109,7 @@ export default function TutorialScreen() {
               exiting={FadeOut.duration(200)}
               style={[
                 styles.boardOverlay,
-                { backgroundColor: isDark ? 'rgba(15,15,26,0.6)' : 'rgba(245,245,250,0.6)' }
+                { backgroundColor: colors.backgroundVeil }
               ]}
               pointerEvents="none"
             />
@@ -128,9 +124,9 @@ export default function TutorialScreen() {
         style={[
           styles.card,
           {
-            backgroundColor: colors.card,
-            shadowColor: isDark ? '#6C63FF' : '#000',
-            borderColor: isBoardLocked ? colors.accent : 'transparent',
+            backgroundColor: colors.surface,
+            shadowColor: isDark ? colors.primary : colors.shadow,
+            borderColor: isBoardLocked ? colors.primary : 'transparent',
           }
         ]}
       >
@@ -142,7 +138,7 @@ export default function TutorialScreen() {
               style={[
                 styles.dot,
                 {
-                  backgroundColor: i <= step ? colors.accent : (isDark ? '#2A2A3A' : '#D0D0D8'),
+                  backgroundColor: i <= step ? colors.primary : colors.inactive,
                   width: i === step ? 24 : 8,
                 }
               ]}
@@ -150,7 +146,7 @@ export default function TutorialScreen() {
           ))}
         </View>
 
-        <Text style={[styles.cardTitle, { color: colors.accent }]}>
+        <Text style={[styles.cardTitle, { color: colors.primaryText }]}>
           {t(`tutorial.step${step}_title`)}
         </Text>
         <Text style={[styles.cardDesc, { color: colors.text }]}>
@@ -160,7 +156,7 @@ export default function TutorialScreen() {
         {/* Show "Got it" button until dialog is dismissed */}
         {isBoardLocked && (
           <Pressable 
-            style={[styles.nextBtn, { backgroundColor: colors.accent }]}
+            style={[styles.nextBtn, { backgroundColor: colors.primary }]}
             onPress={handleDismissDialog}
             accessibilityRole="button"
           >
@@ -170,8 +166,8 @@ export default function TutorialScreen() {
 
         {/* After dismissal, show a subtle reminder of what to do */}
         {dialogDismissed && !completed && (
-          <View style={[styles.actionHint, { backgroundColor: isDark ? 'rgba(108,99,255,0.1)' : 'rgba(90,79,224,0.08)' }]}>
-            <Text style={[styles.actionHintText, { color: colors.accent }]}>
+          <View style={[styles.actionHint, { backgroundColor: colors.primarySoft }]}>
+            <Text style={[styles.actionHintText, { color: colors.primaryText }]}>
               👆 {step === 1 ? t('tutorial.step1_desc') : t('tutorial.step2_desc')}
             </Text>
           </View>
@@ -181,12 +177,12 @@ export default function TutorialScreen() {
       {/* Completion Overlay */}
       <Modal visible={completed} transparent animationType="fade" onRequestClose={() => router.replace('/map')}>
         <View style={styles.overlay}>
-          <View style={[styles.winCard, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
+          <View style={[styles.winCard, { backgroundColor: colors.surface }]}>
             <Text style={styles.emoji}>🎉</Text>
-            <Text style={[styles.winTitle, { color: colors.accent }]}>{t('common.excellent')}</Text>
+            <Text style={[styles.winTitle, { color: colors.primaryText }]}>{t('common.excellent')}</Text>
             <Text style={[styles.winDesc, { color: colors.text }]}>{t('tutorial.ready_desc')}</Text>
             <Pressable 
-              style={[styles.playBtn, { backgroundColor: colors.accent }]}
+              style={[styles.playBtn, { backgroundColor: colors.primary }]}
               onPress={() => router.replace('/map')}
               accessibilityRole="button"
             >
@@ -276,7 +272,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   nextBtnText: {
-    color: '#FFF',
+    color: fixedColors.onPrimary,
     fontSize: 17,
     fontWeight: '700',
   },
@@ -292,7 +288,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: fixedColors.overlayStrong,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
@@ -323,7 +319,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   playBtnText: {
-    color: '#FFF',
+    color: fixedColors.onPrimary,
     fontSize: 18,
     fontWeight: '700',
   },

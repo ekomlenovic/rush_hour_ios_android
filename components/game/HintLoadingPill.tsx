@@ -2,20 +2,20 @@ import React from 'react';
 import { Text, StyleSheet, ActivityIndicator } from 'react-native';
 import Animated, { FadeInUp, FadeOut } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { GameColors } from './colors';
+import type { UiColors } from '@/theme';
 
 /** Floating "analyzing" pill while the solver computes a hint */
-export default function HintLoadingPill({ colors, isDark }: { colors: GameColors; isDark: boolean }) {
+export default function HintLoadingPill({ colors }: { colors: UiColors }) {
   const { t } = useTranslation();
   return (
     <Animated.View
       entering={FadeInUp.duration(300)}
       exiting={FadeOut.duration(300)}
       accessibilityLiveRegion="polite"
-      style={[styles.hintPill, { backgroundColor: isDark ? 'rgba(245,158,11,0.15)' : 'rgba(217,119,6,0.1)' }]}
+      style={[styles.hintPill, { backgroundColor: colors.warningSoft }]}
     >
-      <ActivityIndicator size="small" color={colors.hint} />
-      <Text style={[styles.hintPillText, { color: colors.hint }]}>{t('game.analyzing')}</Text>
+      <ActivityIndicator size="small" color={colors.warning} />
+      <Text style={[styles.hintPillText, { color: colors.warning }]}>{t('game.analyzing')}</Text>
     </Animated.View>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, useColorScheme, Pressable,
+  View, Text, StyleSheet, Pressable,
   useWindowDimensions, Alert, AccessibilityInfo,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,13 +16,14 @@ import {
 } from '@/utils/creatorGeometry';
 import { describeVehicle, describePosition, getVehicleLetters } from '@/utils/accessibility';
 import {
-  ActiveDrag, BOARD_PADDING, CAR_PALETTE, GRID_SIZES, TOOLBOX_ITEMS, VehicleTemplate, getCreatorColors,
+  ActiveDrag, BOARD_PADDING, CAR_PALETTE, GRID_SIZES, TOOLBOX_ITEMS, VehicleTemplate,
 } from '@/components/creator/constants';
 import BoardVehicle from '@/components/creator/BoardVehicle';
 import ToolboxItem from '@/components/creator/ToolboxItem';
 import ExitMarker from '@/components/creator/ExitMarker';
 import PillSelector from '@/components/creator/PillSelector';
 import { vehicleStyles } from '@/components/creator/vehicleStyles';
+import { useTheme, fixedColors, TARGET_CAR_COLOR } from '@/theme';
 
 const EXIT_SIDES = ['Right', 'Left', 'Top', 'Bottom'] as const;
 
@@ -30,8 +31,7 @@ const EXIT_SIDES = ['Right', 'Left', 'Top', 'Bottom'] as const;
 
 export default function LevelCreatorScreen() {
   const { t } = useTranslation();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { colors: C, board } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ levelId: string }>();
   const saveCreatedLevel = useGameStore(s => s.saveCreatedLevel);
@@ -87,7 +87,7 @@ export default function LevelCreatorScreen() {
     setExitCol(6);
     setVehicles([{
       id: 'target', row: 2, col: 0, length: 2,
-      orientation: 'horizontal', isTarget: true, color: '#EF4444',
+      orientation: 'horizontal', isTarget: true, color: TARGET_CAR_COLOR,
     }]);
   }, []);
 
@@ -323,9 +323,7 @@ export default function LevelCreatorScreen() {
   // ── Couleurs Dynamiques ──
   const usedColors = vehicles.map(v => v.color);
 
-  // ── Theme & Rendering Data ──
-  const C = getCreatorColors(isDark);
-
+  // ── Rendering Data ──
   const ghostCells = useMemo(() => {
     if (!activeDrag) return [];
     return vehicleCells(activeDrag.targetRow, activeDrag.targetCol, activeDrag.orientation, activeDrag.length);
@@ -354,20 +352,20 @@ export default function LevelCreatorScreen() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={[styles.container, { backgroundColor: C.bg }]}>
+      <View style={[styles.container, { backgroundColor: C.background }]}>
 
         {/* ── Header ── */}
-        <View style={[styles.header, { backgroundColor: C.bg }]}>
+        <View style={[styles.header, { backgroundColor: C.background }]}>
           <Pressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('a11y.back')}>
-            <Text style={[styles.backArrow, { color: C.sub }]}>←</Text>
+            <Text style={[styles.backArrow, { color: C.textMuted }]}>←</Text>
           </Pressable>
           <Text style={[styles.title, { color: C.text }]} numberOfLines={1} accessibilityRole="header">{t('creator.title')}</Text>
           <View style={styles.headerRight}>
-            <Pressable onPress={handleTest} style={[styles.pill, { borderColor: C.accent, borderWidth: 1.5 }]} accessibilityRole="button" hitSlop={6}>
-              <Text style={[styles.pillText, { color: C.accent }]}>{t('creator.test')}</Text>
+            <Pressable onPress={handleTest} style={[styles.pill, { borderColor: C.primary, borderWidth: 1.5 }]} accessibilityRole="button" hitSlop={6}>
+              <Text style={[styles.pillText, { color: C.primaryText }]}>{t('creator.test')}</Text>
             </Pressable>
-            <Pressable onPress={handleSave} style={[styles.pill, { backgroundColor: C.accent }]} accessibilityRole="button" hitSlop={6}>
-              <Text style={[styles.pillText, { color: '#FFF' }]}>{t('creator.save')}</Text>
+            <Pressable onPress={handleSave} style={[styles.pill, { backgroundColor: C.primary }]} accessibilityRole="button" hitSlop={6}>
+              <Text style={[styles.pillText, { color: C.onPrimary }]}>{t('creator.save')}</Text>
             </Pressable>
           </View>
         </View>
@@ -390,12 +388,12 @@ export default function LevelCreatorScreen() {
           <View
             ref={boardRef}
             onLayout={() => requestAnimationFrame(measureBoard)}
-            style={[styles.board, { width: boardSize, height: boardSize, borderColor: C.border, backgroundColor: C.boardBg }]}
+            style={[styles.board, { width: boardSize, height: boardSize, borderColor: board.frame, backgroundColor: board.background }]}
           >
             {Array.from({ length: gridSize + 1 }).map((_, i) => (
               <React.Fragment key={i}>
-                <View style={[styles.gridH, { top: i * cellSize, backgroundColor: C.grid }]} />
-                <View style={[styles.gridV, { left: i * cellSize, backgroundColor: C.grid }]} />
+                <View style={[styles.gridH, { top: i * cellSize, backgroundColor: board.grid }]} />
+                <View style={[styles.gridV, { left: i * cellSize, backgroundColor: board.grid }]} />
               </React.Fragment>
             ))}
 
@@ -404,8 +402,8 @@ export default function LevelCreatorScreen() {
                 key={`ghost-${i}`} pointerEvents="none"
                 style={[styles.ghostCell, {
                   top: r * cellSize + 2, left: c * cellSize + 2, width: cellSize - 4, height: cellSize - 4,
-                  backgroundColor: activeDrag?.isValid ? 'rgba(74,222,128,0.28)' : 'rgba(248,113,113,0.28)',
-                  borderColor: activeDrag?.isValid ? 'rgba(74,222,128,0.75)' : 'rgba(248,113,113,0.75)',
+                  backgroundColor: activeDrag?.isValid ? board.dropValid : board.dropInvalid,
+                  borderColor: activeDrag?.isValid ? board.dropValidBorder : board.dropInvalidBorder,
                 }]}
               />
             ))}
@@ -437,7 +435,7 @@ export default function LevelCreatorScreen() {
             ))}
           </View>
           </View>
-          <Text style={[styles.hint, { color: C.sub }]}>{t('creator.hint_text')}</Text>
+          <Text style={[styles.hint, { color: C.textMuted }]}>{t('creator.hint_text')}</Text>
         </View>
 
         {/* ── Exit Side Selector ── */}
@@ -464,17 +462,18 @@ export default function LevelCreatorScreen() {
                 width: floatW,
                 height: floatH,
                 backgroundColor: floatingTemplate.color,
+                borderColor: board.dragBorder,
               },
               floatAnimStyle,
             ]}
           >
-            <View style={[vehicleStyles.vehicleShine, floatingTemplate.orientation === 'vertical' && vehicleStyles.vehicleShineV]} />
+            <View style={[vehicleStyles.vehicleShine, { backgroundColor: board.vehicleShine }, floatingTemplate.orientation === 'vertical' && vehicleStyles.vehicleShineV]} />
           </Animated.View>
         )}
 
         {/* ── Toolbox ── */}
-        <View style={[styles.toolbox, { borderTopColor: C.border, backgroundColor: C.bg, paddingBottom: Math.max(34, insets.bottom + 12) }]}>
-          <Text style={[styles.toolboxHeading, { color: C.sub }]}>{t('creator.vehicles_toolbox', { defaultValue: 'VEHICLES' })}</Text>
+        <View style={[styles.toolbox, { borderTopColor: C.border, backgroundColor: C.background, paddingBottom: Math.max(34, insets.bottom + 12) }]}>
+          <Text style={[styles.toolboxHeading, { color: C.textMuted }]}>{t('creator.vehicles_toolbox', { defaultValue: 'VEHICLES' })}</Text>
           <View style={styles.toolboxGrid}>
             {TOOLBOX_ITEMS.map((item, idx) => {
               const dynamicColor = getNextAvailableColor(usedColors, item.color, CAR_PALETTE);
@@ -533,7 +532,7 @@ const styles = StyleSheet.create({
 
   ghostCell: { position: 'absolute', borderWidth: 2, borderRadius: 7 },
 
-  floatingPreview: { position: 'absolute', top: 0, left: 0, borderRadius: 9, opacity: 0.9, shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 18, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)', overflow: 'hidden', zIndex: 999 },
+  floatingPreview: { position: 'absolute', top: 0, left: 0, borderRadius: 9, opacity: 0.9, shadowColor: fixedColors.shadow, shadowOpacity: 0.45, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 18, borderWidth: 1.5, overflow: 'hidden', zIndex: 999 },
 
   hint: { marginTop: 10, fontSize: 12, fontStyle: 'italic', opacity: 0.75, letterSpacing: 0.2 },
 

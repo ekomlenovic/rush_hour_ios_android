@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { CreatorColors } from './constants';
+import { fixedColors, type UiColors } from '@/theme';
 
 interface Props<T> {
   title: string;
@@ -8,14 +8,14 @@ interface Props<T> {
   isActive: (option: T) => boolean;
   getLabel: (option: T) => string;
   onSelect: (option: T) => void;
-  colors: CreatorColors;
+  colors: UiColors;
 }
 
 /** Row of pills under a small title (grid size, exit side) */
 export default function PillSelector<T extends string | number>({ title, options, isActive, getLabel, onSelect, colors }: Props<T>) {
   return (
     <View style={styles.subHeader}>
-      <Text style={[styles.subTitle, { color: colors.sub }]}>{title}</Text>
+      <Text style={[styles.subTitle, { color: colors.textMuted }]}>{title}</Text>
       <View style={styles.gridSizeSelector}>
         {options.map(option => {
           const active = isActive(option);
@@ -23,12 +23,12 @@ export default function PillSelector<T extends string | number>({ title, options
             <Pressable
               key={option}
               onPress={() => onSelect(option)}
-              style={[styles.sizePill, active && { backgroundColor: colors.accent }]}
+              style={[styles.sizePill, active && { backgroundColor: colors.primary }]}
               accessibilityRole="button"
               accessibilityLabel={`${title} ${getLabel(option)}`}
               accessibilityState={{ selected: active }}
             >
-              <Text style={[styles.sizePillText, { color: active ? '#FFF' : colors.sub }]}>{getLabel(option)}</Text>
+              <Text style={[styles.sizePillText, { color: active ? colors.onPrimary : colors.textMuted }]}>{getLabel(option)}</Text>
             </Pressable>
           );
         })}
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   gridSizeSelector: {
     flexDirection: 'row',
     gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: fixedColors.neutralSoft,
     padding: 2,
     borderRadius: 20,
   },
