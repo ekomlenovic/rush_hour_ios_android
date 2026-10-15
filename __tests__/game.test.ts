@@ -1,4 +1,4 @@
-import { useGameStore, DAILY_LEVEL_ID } from '../store/gameStore';
+import { useGameStore, DAILY_LEVEL_ID, isSaveForLevel } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
 import { solvePuzzle, getHint } from '../utils/solver';
 import { checkWin } from '../utils/collision';
@@ -85,6 +85,23 @@ describe('map levels: training mode (rules in docs/GAME_DESIGN.md)', () => {
   });
 });
 
+describe('isSaveForLevel', () => {
+  it('accepts the level moved along its lanes', () => {
+    const moved = level.vehicles.map(v => (v.id === mover.id
+      ? (v.orientation === 'horizontal' ? { ...v, col: v.col === 0 ? 1 : 0 } : { ...v, row: v.row === 0 ? 1 : 0 })
+      : v));
+    expect(isSaveForLevel(level, { vehicles: moved })).toBe(true);
+  });
+
+  it('refuses another puzzle or a vehicle off its lane', () => {
+    expect(isSaveForLevel(level, { vehicles: sampleLevels[5].vehicles })).toBe(false);
+    const offLane = level.vehicles.map(v => (v.id === mover.id
+      ? (v.orientation === 'horizontal' ? { ...v, row: (v.row + 1) % level.gridSize } : { ...v, col: (v.col + 1) % level.gridSize })
+      : v));
+    expect(isSaveForLevel(level, { vehicles: offLane })).toBe(false);
+  });
+});
+
 describe('daily challenge in the store', () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -106,6 +123,20 @@ describe('daily challenge in the store', () => {
     state().loadLevel(sampleLevels[1]);
     state().loadLevel(daily);
     expect(state().moveCount).toBe(1);
+  });
+
+  it("never replays the save of another puzzle of the same day: the puzzle starts fresh", () => {
+    useGameStore.setState({ dailyLevelDate: '2026-10-14' });
+    // Saved on another version of the day's puzzle (other generator, cache miss)
+    const other = sampleLevels[5];
+    useGameStore.setState({
+      savedStates: { 'daily-2026-10-14': { vehicles: other.vehicles, moveCount: 2, history: [other.vehicles, other.vehicles] } },
+    });
+    const daily = { ...level, id: DAILY_LEVEL_ID };
+    state().loadLevel(daily);
+    expect(state().vehicles).toEqual(daily.vehicles);
+    expect(state().moveCount).toBe(0);
+    expect(state().savedStates['daily-2026-10-14']).toBeUndefined();
   });
 
   it('does not affect the map progression', () => {
