@@ -1,24 +1,29 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, useColorScheme, Pressable, Share, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import Animated, { FadeInDown, FadeInUp, ZoomIn, FadeIn, FadeOut } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { haptics, Haptics } from '@/utils/haptics';
 import Board from '@/components/Board';
 import { useGameStore } from '@/store/gameStore';
 import { checkWin } from '@/utils/collision';
-import { sampleLevels } from '@/data/sampleLevels';
-import { Move, solvePuzzle } from '@/utils/solver';
 import { solvePuzzleAsync } from '@/utils/solver.background';
-import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel, generateWeeklyLevel } from '@/utils/generator';
-import { getShareUrl, getQRCodeUrl, deserializeLevel } from '@/utils/sharing';
+import { getShareUrl } from '@/utils/sharing';
 import { useTranslation } from 'react-i18next';
-import { Image, Modal, Share, Alert, AppState } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
-import { formatDuration, parseLocalDateString } from '@/utils/date';
+import { parseLocalDateString } from '@/utils/date';
 import { buildChallengeShareText } from '@/utils/shareResult';
 import { requestReminderPermission } from '@/utils/notifications';
+import { calculateScore, getStars } from '@/utils/scoring';
+import { resolveLevel, GameRouteParams } from '@/utils/levelResolver';
+import { useActivePlayTime } from '@/hooks/useActivePlayTime';
+import { getGameColors } from '@/components/game/colors';
+import GameLoading from '@/components/game/GameLoading';
+import GameStatsBar from '@/components/game/GameStatsBar';
+import GameActions from '@/components/game/GameActions';
+import WinModal from '@/components/game/WinModal';
+import ShareLevelModal from '@/components/game/ShareLevelModal';
+import ChallengeDoneBanner from '@/components/game/ChallengeDoneBanner';
+import HintLoadingPill from '@/components/game/HintLoadingPill';
 
 export default function GameScreen() {
   const { t, i18n } = useTranslation();
@@ -35,13 +40,9 @@ export default function GameScreen() {
   const undo = useGameStore(s => s.undo);
   const resetLevel = useGameStore(s => s.resetLevel);
   const completeLevel = useGameStore(s => s.completeLevel);
-  const generatedLevels = useGameStore(s => s.generatedLevels);
   const createdLevels = useGameStore(s => s.createdLevels);
   const importedLevels = useGameStore(s => s.importedLevels);
-  const addGeneratedLevel = useGameStore(s => s.addGeneratedLevel);
   const cancelGeneration = useGameStore(s => s.cancelGeneration);
-  const currentDailyLevel = useGameStore(s => s.currentDailyLevel);
-  const dailyLevelDate = useGameStore(s => s.dailyLevelDate);
   const dailyChallengeProgress = useGameStore(s => s.dailyChallengeProgress);
   const weeklyChallengeProgress = useGameStore(s => s.weeklyChallengeProgress);
   const recordHintUsed = useGameStore(s => s.recordHintUsed);
@@ -57,6 +58,15 @@ export default function GameScreen() {
   const [winMissionReward, setWinMissionReward] = useState<{ freezeGranted: boolean } | null>(null);
 
   const [isShareVisible, setShareVisible] = useState(false);
+
+  // Daily and weekly challenges are one-shot: no hint, undo or reset (see docs/GAME_DESIGN.md)
+  const challengeKind = params.levelId === 'daily' && params.date ? 'daily'
+    : params.levelId === 'weekly' && params.week ? 'weekly'
+    : null;
+  const challengeResult = challengeKind === 'daily' ? dailyChallengeProgress[params.date!]
+    : challengeKind === 'weekly' ? weeklyChallengeProgress[params.week!]
+    : undefined;
+  const isChallengeCompleted = !!challengeResult?.completed;
 
   const handleShare = async () => {
     if (!currentLevel) return;
@@ -140,86 +150,17 @@ export default function GameScreen() {
     cancelGeneration();
 
     const timer = setTimeout(async () => {
-      const idParam = params.levelId;
-      const dateParam = params.date;
-      const weekParam = params.week;
-      const id = Number(idParam);
-      const dataParamInUrl = params.data;
+      const level = await resolveLevel(params as GameRouteParams);
 
-      let level: any = null;
-
-      // 0. Primary: Check if level data is passed directly in URL (Deep Link fallback)
-      if (dataParamInUrl) {
-        level = deserializeLevel(dataParamInUrl as string);
-      }
-
-      if (idParam === 'daily' && dateParam) {
-        // Use cache if available and date matches
-        if (currentDailyLevel && dailyLevelDate === dateParam) {
-          level = currentDailyLevel;
-        } else {
-          level = await generateDailyLevel(dateParam);
-          if (level) {
-            useGameStore.setState({ 
-              currentDailyLevel: level, 
-              dailyLevelDate: dateParam 
-            });
-          }
-        }
-      } else if (idParam === 'weekly' && weekParam) {
-        const { currentWeeklyLevel, weeklyLevelKey } = useGameStore.getState();
-        if (currentWeeklyLevel && weeklyLevelKey === weekParam) {
-          level = currentWeeklyLevel;
-        } else {
-          level = await generateWeeklyLevel(weekParam);
-          if (level) {
-            useGameStore.setState({
-              currentWeeklyLevel: level,
-              weeklyLevelKey: weekParam
-            });
-          }
-        }
-      } else {
-        // 1. Try to find it in the pre-baked JSON
-        level = sampleLevels.find((l) => l.id === id);
-        
-        // 2. Try to find it in the generated Zustand memory cache
-        if (!level) {
-          level = generatedLevels.find((l) => l.id === id);
-        }
-
-        // 3. Try to find it in created or imported levels (use string comparison for robustness)
-        if (!level && id) {
-          const state = useGameStore.getState();
-          level = state.createdLevels.find((l) => String(l.id) === String(id)) || 
-                  state.importedLevels.find((l) => String(l.id) === String(id));
-        }
-
-        // 4. Fallback: Generate it right now (Infinite Map support)
-        // Adjust difficulty based on level ID range
-        if (!level && id > 0 && id <= 2000) {
-          let difficulty = DIFFICULTY_LEVELS.EASY;
-          if (id > 1500) difficulty = DIFFICULTY_LEVELS.MASTER;
-          else if (id > 800) difficulty = DIFFICULTY_LEVELS.EXPERT;
-          else if (id > 400) difficulty = DIFFICULTY_LEVELS.HARD;
-          else if (id > 100) difficulty = DIFFICULTY_LEVELS.NORMAL;
-
-          level = generateLevel(id || 1, difficulty) || sampleLevels[0];
-          if (level && level.id !== sampleLevels[0].id) {
-            addGeneratedLevel(level);
-          }
-        }
-      }
-
-      if (level && level.vehicles && level.vehicles.length > 0) {
+      if (level) {
         loadLevel(level);
         setComputedMinMoves(level.minMoves > 0 ? level.minMoves : null);
         setLoading(false);
       } else {
         // If level not found, don't just hang or show empty grid
         // Redirect back or show error
-        console.error("Level not found for ID:", id);
-        if (idParam) {
+        console.error("Level not found for ID:", params.levelId);
+        if (params.levelId) {
           Alert.alert(t('common.error'), t('game.load_error'));
           router.back();
         }
@@ -229,42 +170,7 @@ export default function GameScreen() {
     return () => clearTimeout(timer);
   }, [params.levelId, params.date, params.week, createdLevels, importedLevels]);
 
-  // Daily and weekly challenges are one-shot: no hint, undo or reset (see docs/GAME_DESIGN.md)
-  const challengeKind = params.levelId === 'daily' && params.date ? 'daily'
-    : params.levelId === 'weekly' && params.week ? 'weekly'
-    : null;
-  const challengeResult = challengeKind === 'daily' ? dailyChallengeProgress[params.date!]
-    : challengeKind === 'weekly' ? weeklyChallengeProgress[params.week!]
-    : undefined;
-  const isChallengeCompleted = !!challengeResult?.completed;
-
-  // Active play time: counted while this screen is open, the app in foreground and the level unsolved
-  const segmentStartRef = useRef<number | null>(null);
-  const flushPlayTime = useCallback(() => {
-    if (segmentStartRef.current === null) return;
-    const now = Date.now();
-    useGameStore.getState().addPlayTime(now - segmentStartRef.current);
-    segmentStartRef.current = now;
-  }, []);
-  const isTrackingTime = !isLoading && !!currentLevel && !won && !isChallengeCompleted;
-
-  useEffect(() => {
-    if (!isTrackingTime) return;
-    segmentStartRef.current = Date.now();
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active') {
-        segmentStartRef.current = Date.now();
-      } else {
-        flushPlayTime();
-        segmentStartRef.current = null;
-      }
-    });
-    return () => {
-      subscription.remove();
-      flushPlayTime();
-      segmentStartRef.current = null;
-    };
-  }, [isTrackingTime, flushPlayTime]);
+  const playTime = useActivePlayTime(!isLoading && !!currentLevel && !won && !isChallengeCompleted);
 
   const handleMoveEnd = useCallback((vehicleId: string, newRow: number, newCol: number) => {
     if (won || isChallengeCompleted) return;
@@ -278,14 +184,13 @@ export default function GameScreen() {
     const updatedMoveCount = useGameStore.getState().moveCount;
     if (currentLevel && checkWin(updatedVehicles, currentLevel.exitRow, currentLevel.exitCol, currentLevel.gridSize)) {
       // Stop the clock before recording the win
-      flushPlayTime();
-      segmentStartRef.current = null;
+      playTime.stop();
       const timeMs = useGameStore.getState().currentAttempt.elapsedMs;
 
       // Calculate and save score
       const minMoves = computedMinMoves ?? currentLevel.minMoves;
       const score = calculateScore(updatedMoveCount, minMoves);
-      const stars = updatedMoveCount <= minMoves ? 3 : updatedMoveCount <= minMoves + 3 ? 2 : 1;
+      const stars = getStars(updatedMoveCount, minMoves);
 
       const details = { moves: updatedMoveCount, minMoves };
       if (challengeKind === 'daily') {
@@ -303,7 +208,7 @@ export default function GameScreen() {
       setWon(true);
       haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-  }, [won, isChallengeCompleted, moveVehicle, currentLevel, computedMinMoves, completeLevel, challengeKind, params.date, params.week, flushPlayTime]);
+  }, [won, isChallengeCompleted, moveVehicle, currentLevel, computedMinMoves, completeLevel, challengeKind, params.date, params.week, playTime.stop]);
 
   const handleUndo = useCallback(() => {
     undo();
@@ -328,7 +233,7 @@ export default function GameScreen() {
 
     const startTime = Date.now();
     setIsHintLoading(true);
-    
+
     // Give React and UI thread time to render the loading indicator
     // before the UI thread potentially gets blocked by the solver worklet
     await new Promise(resolve => setTimeout(resolve, 150));
@@ -371,34 +276,13 @@ export default function GameScreen() {
 
   const minMoves = computedMinMoves ?? currentLevel?.minMoves ?? 0;
   const score = calculateScore(moveCount, minMoves);
-
-  const colors = isDark
-    ? { bg: '#0F0F1A', text: '#FFFFFF', sub: '#8E8EA0', card: 'rgba(255,255,255,0.06)', accent: '#6C63FF', hint: '#F59E0B' }
-    : { bg: '#F5F5FA', text: '#1A1A2E', sub: '#6B6B80', card: 'rgba(0,0,0,0.04)', accent: '#5A4FE0', hint: '#D97706' };
-
-  // Star rating
-  const stars = moveCount <= minMoves ? 3 : moveCount <= minMoves + 3 ? 2 : 1;
+  const colors = getGameColors(isDark);
+  const stars = getStars(moveCount, minMoves);
 
   if (isLoading || !currentLevel) {
-    const isMondayDaily = params.levelId === 'daily' && params.date && parseLocalDateString(params.date).getDay() === 1;
-
-    return (
-      <View style={[styles.container, { backgroundColor: colors.bg, justifyContent: 'center', alignItems: 'center' }]}>
-        <Animated.View entering={FadeIn.duration(400)} style={{ alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={[styles.loadingText, { color: colors.sub }]}>{t('game.preparing_puzzle')}</Text>
-          {isMondayDaily && (
-            <Animated.View entering={FadeInDown.delay(1000)}>
-              <Text style={[styles.mondayWarning, { color: colors.sub }]}>
-                {t('game.monday_warning')}
-              </Text>
-            </Animated.View>
-          )}
-        </Animated.View>
-      </View>
-    );
+    const isMondayDaily = params.levelId === 'daily' && !!params.date && parseLocalDateString(params.date).getDay() === 1;
+    return <GameLoading colors={colors} isMondayDaily={isMondayDaily} />;
   }
-
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -417,31 +301,17 @@ export default function GameScreen() {
         </Pressable>
       </Animated.View>
 
-      {/* Stats bar */}
-      <Animated.View entering={FadeInUp.delay(200).springify()} style={[styles.statsBar, { backgroundColor: colors.card }]}>
-        <View style={styles.statsPanel}>
-          <View style={styles.statBox}>
-            <Text style={[styles.statLabel, { color: colors.sub }]}>{t('game.moves')}</Text>
-            <Text style={[styles.statValue, { color: colors.text }]}>{moveCount}</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={[styles.statLabel, { color: colors.sub }]}>{t('game.best')}</Text>
-            <Text style={[styles.statValue, { color: colors.text }]}>
-              {minMoves}
-              {hintRemainingMoves ? <Text style={{ color: colors.hint, fontSize: 13 }}> ({t('game.hint_left', { count: hintRemainingMoves })})</Text> : null}
-            </Text>
-          </View>
-        </View>
-        <View style={[styles.divider, { backgroundColor: colors.sub }]} />
-        <View style={styles.stat}>
-          <Text style={[styles.statLabel, { color: colors.sub }]}>{t('game.score')}</Text>
-          <Text style={[styles.statValue, { color: score > 0 ? '#10B981' : colors.sub }]}>{score}</Text>
-        </View>
-      </Animated.View>
+      <GameStatsBar
+        colors={colors}
+        moveCount={moveCount}
+        minMoves={minMoves}
+        score={score}
+        hintRemainingMoves={hintRemainingMoves}
+      />
 
       {/* Board */}
-      <Animated.View 
-        entering={FadeInDown.delay(300).springify()} 
+      <Animated.View
+        entering={FadeInDown.delay(300).springify()}
         style={styles.boardWrapper}
       >
         <View style={isChallengeCompleted ? { opacity: 0.7 } : undefined}>
@@ -457,127 +327,45 @@ export default function GameScreen() {
         </View>
       </Animated.View>
 
-      {/* Win overlay */}
-      <Modal visible={won} transparent animationType="fade" onRequestClose={() => router.back()}>
-        <View style={styles.winOverlay}>
-          <View
-            style={[styles.winCard, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}
-          >
-            <Text style={styles.winStars}>
-              {'⭐'.repeat(stars)}{'☆'.repeat(3 - stars)}
-            </Text>
-            <Text style={[styles.winTitle, { color: colors.accent }]}>{t('game.level_complete')}</Text>
-            <Text style={[styles.winScore, { color: colors.text }]}>
-              {t('game.win_stats', { moves: moveCount, best: minMoves, score: score })}
-            </Text>
-            {winTimeMs !== null && winTimeMs > 0 && (
-              <Text style={[styles.winTime, { color: colors.sub }]}>
-                ⏱️ {formatDuration(winTimeMs)}
-              </Text>
-            )}
-            {winUnlocks.length > 0 && (
-              <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
-                <Text style={styles.winUnlocksTitle}>{t('achievements.unlocked')}</Text>
-                {winUnlocks.map((id) => (
-                  <Text key={id} style={[styles.winUnlockItem, { color: colors.text }]}>
-                    {ACHIEVEMENTS_BY_ID[id]?.icon} {t(`achievements.${id}`)}
-                  </Text>
-                ))}
-              </View>
-            )}
-            {winMissionReward && (
-              <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
-                <Text style={styles.winUnlocksTitle}>🎯 {t('missions.completed')}</Text>
-                <Text style={[styles.winUnlockItem, { color: colors.text }]}>
-                  {winMissionReward.freezeGranted ? t('missions.reward_freeze') : t('missions.reward_full')}
-                </Text>
-              </View>
-            )}
-            {challengeKind && (
-              <Pressable
-                style={[styles.winButton, styles.winShareButton, { borderColor: colors.accent }]}
-                onPress={handleShareResult}
-              >
-                <Text style={[styles.winButtonText, { color: colors.accent }]}>📤 {t('share.share_result')}</Text>
-              </Pressable>
-            )}
-            <Pressable
-              style={[styles.winButton, { backgroundColor: colors.accent }]}
-              onPress={handleWinContinue}
-            >
-             <Text style={styles.winButtonText}>{t('common.continue')}</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+      <WinModal
+        visible={won}
+        colors={colors}
+        isDark={isDark}
+        stars={stars}
+        moveCount={moveCount}
+        minMoves={minMoves}
+        score={score}
+        timeMs={winTimeMs}
+        unlocks={winUnlocks}
+        missionReward={winMissionReward}
+        canShareResult={!!challengeKind}
+        onShareResult={handleShareResult}
+        onContinue={handleWinContinue}
+        onRequestClose={() => router.back()}
+      />
 
-      {/* Hint Loading Pill */}
-      {isHintLoading && (
-        <Animated.View 
-          entering={FadeInUp.duration(300)} 
-          exiting={FadeOut.duration(300)} 
-          style={[styles.hintPill, { backgroundColor: isDark ? 'rgba(245,158,11,0.15)' : 'rgba(217,119,6,0.1)' }]}
-        >
-          <ActivityIndicator size="small" color={colors.hint} />
-          <Text style={[styles.hintPillText, { color: colors.hint }]}>{t('game.analyzing')}</Text>
-        </Animated.View>
-      )}
+      {isHintLoading && <HintLoadingPill colors={colors} isDark={isDark} />}
 
       {/* Action buttons - Daily: none, Weekly: reset only (see docs/GAME_DESIGN.md) */}
       {challengeKind !== 'daily' && !won && !isChallengeCompleted && (
-        <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.actions}>
-          {!challengeKind && (
-            <>
-              <Pressable onPress={handleUndo} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
-                <Text style={[styles.actionText, { color: colors.text }]}>↩ {t('game.undo')}</Text>
-              </Pressable>
-              <Pressable
-                onPress={handleHint}
-                style={[styles.actionBtn, { backgroundColor: colors.hint + '22' }]}
-                disabled={isHintLoading}
-              >
-                {isHintLoading ? (
-                  <ActivityIndicator size="small" color={colors.hint} />
-                ) : (
-                  <Text style={[styles.actionText, { color: colors.hint }]}>💡 {t('game.hint')}</Text>
-                )}
-              </Pressable>
-            </>
-          )}
-           <Pressable onPress={handleReset} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
-            <Text style={[styles.actionText, { color: colors.text }]}>↻ {t('common.reset')}</Text>
-          </Pressable>
-        </Animated.View>
+        <GameActions
+          colors={colors}
+          showUndoAndHint={!challengeKind}
+          isHintLoading={isHintLoading}
+          onUndo={handleUndo}
+          onHint={handleHint}
+          onReset={handleReset}
+        />
       )}
 
-      {/* Completed Challenge Banner */}
       {isChallengeCompleted && (
-        <Animated.View
-          entering={FadeInDown.delay(350).springify()}
-          style={[
-            styles.goalContainer,
-            {
-              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.12)' : 'rgba(5, 150, 105, 0.08)',
-              borderColor: isDark ? 'rgba(16, 185, 129, 0.35)' : 'rgba(5, 150, 105, 0.25)',
-              borderWidth: 1.5,
-              borderRadius: 16,
-              padding: 16,
-              marginTop: 16,
-              alignItems: 'center',
-            }
-          ]}
-        >
-          <Text style={{ fontSize: 24, marginBottom: 4 }}>✅</Text>
-          <Text style={{ color: isDark ? '#34D399' : '#059669', fontWeight: '800', fontSize: 16, textAlign: 'center' }}>
-            {t(challengeKind === 'weekly' ? 'home.weekly_done' : 'home.daily_done', { stars: challengeResult?.stars ?? 3 })}
-          </Text>
-          <Text style={{ color: colors.sub, fontSize: 13, textAlign: 'center', marginTop: 4 }}>
-            {t(challengeKind === 'weekly' ? 'game.weekly_already_completed' : 'game.daily_already_completed')}
-          </Text>
-          <Pressable onPress={handleShareResult} style={[styles.bannerShareButton, { borderColor: isDark ? '#34D399' : '#059669' }]}>
-            <Text style={{ color: isDark ? '#34D399' : '#059669', fontWeight: '700', fontSize: 14 }}>📤 {t('share.share_result')}</Text>
-          </Pressable>
-        </Animated.View>
+        <ChallengeDoneBanner
+          colors={colors}
+          isDark={isDark}
+          kind={challengeKind}
+          stars={challengeResult?.stars ?? 3}
+          onShareResult={handleShareResult}
+        />
       )}
 
       {/* Goal text for Level 1 */}
@@ -588,56 +376,18 @@ export default function GameScreen() {
         </Animated.View>
       )}
 
-      {/* Share Modal */}
-      <Modal visible={isShareVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <BlurView intensity={30} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-          <Animated.View entering={FadeInDown.springify()} style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('game.share_level')}</Text>
-              <Pressable onPress={() => setShareVisible(false)}>
-                <Text style={{ fontSize: 20, color: colors.sub, padding: 8 }}>✕</Text>
-              </Pressable>
-            </View>
-
-            <View style={styles.qrContainer}>
-                <Image 
-                    source={{ uri: getQRCodeUrl(getShareUrl(currentLevel)) }} 
-                     style={styles.qrCode} 
-                />
-                <Text style={[styles.qrHint, { color: colors.sub }]}>{t('game.qr_hint')}</Text>
-            </View>
-
-            <View style={styles.shareButtonsRow}>
-                <Pressable
-                  style={[styles.mainBtn, { backgroundColor: colors.accent, flex: 1 }]}
-                  onPress={handleShare}
-                >
-                   <Text style={styles.mainBtnText}>{t('game.share_link')}</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.mainBtn, { backgroundColor: colors.sub, flex: 1 }]}
-                  onPress={handleCopyLink}
-                >
-                   <Text style={styles.mainBtnText}>{t('game.copy_url')}</Text>
-                </Pressable>
-            </View>
-          </Animated.View>
-        </View>
-      </Modal>
+      <ShareLevelModal
+        visible={isShareVisible}
+        colors={colors}
+        isDark={isDark}
+        shareUrl={getShareUrl(currentLevel)}
+        onShare={handleShare}
+        onCopyLink={handleCopyLink}
+        onClose={() => setShareVisible(false)}
+      />
     </View>
 
   );
-}
-
-/**
- * Calculate the score based on moves vs optimal.
- * Perfect play = max score. Each extra move costs 15 points.
- */
-function calculateScore(moveCount: number, minMoves: number): number {
-  const maxScore = minMoves * 100;
-  const penalty = Math.max(0, moveCount - minMoves) * 15;
-  return Math.max(0, maxScore - penalty);
 }
 
 const styles = StyleSheet.create({
@@ -664,238 +414,15 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: -0.5,
   },
-  statsBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 24,
-  },
-  statsPanel: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statBox: {
-    alignItems: 'center',
-  },
-  stat: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: '800',
-    marginTop: 2,
-  },
-  divider: {
-    width: 1,
-    height: 28,
-    opacity: 0.2,
-  },
   boardWrapper: {
     alignItems: 'center',
     marginBottom: 24,
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  actionBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    minWidth: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  winOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  winCard: {
-    padding: 32,
-    borderRadius: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 12,
-    minWidth: 280,
-  },
-  winStars: {
-    fontSize: 36,
-    marginBottom: 8,
-  },
-  winTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    marginBottom: 8,
-  },
-  winScore: {
-    fontSize: 15,
-    fontWeight: '500',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  winShareButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    marginBottom: 12,
-  },
-  bannerShareButton: {
-    marginTop: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1.5,
-  },
-  winTime: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: -16,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  winUnlocks: {
-    alignSelf: 'stretch',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  winUnlocksTitle: {
-    color: '#F59E0B',
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  },
-  winUnlockItem: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginVertical: 2,
-  },
-  winButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 48,
-    borderRadius: 14,
-  },
-  winButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.5,
   },
   shareHeaderBtn: {
     width: 60,
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    width: '85%',
-    borderRadius: 24,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  qrContainer: {
-    alignItems: 'center',
-    padding: 10,
-  },
-  qrCode: {
-    width: 250,
-    height: 250,
-    borderRadius: 20,
-    marginBottom: 16,
-    backgroundColor: '#FFF',
-  },
-  qrHint: {
-    fontSize: 14,
-    textAlign: 'center',
-    paddingHorizontal: 20,
-  },
-  mainBtn: {
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  mainBtnText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  shareButtonsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
-  },
-  hintPill: {
-    position: 'absolute',
-    top: 110,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    zIndex: 100,
-  },
-  hintPillText: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  mondayWarning: {
-    marginTop: 12,
-    fontSize: 14,
-    textAlign: 'center',
-    paddingHorizontal: 40,
-    opacity: 0.7,
-    fontStyle: 'italic',
   },
   goalContainer: {
     marginTop: 20,
@@ -916,4 +443,3 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   }
 });
-
