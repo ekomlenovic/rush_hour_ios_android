@@ -130,6 +130,7 @@ Le téléphone génère le défi du jour, les niveaux demandés dans les options
 | Une même graine donne toujours le même niveau | `createPRNG`, `randomSeed` |
 | **Jamais de MASTER sur le téléphone** : trop lent. Le générateur de la carte propose EASY à EXPERT ; les niveaux de carte manquants s'arrêtent à EXPERT. MASTER reste disponible pour les scripts de pack (`generate_pack.ts`) | `DEVICE_DIFFICULTIES` |
 | Un plateau dont l'exploration dépasse un plafond d'états est abandonné (trop long sur téléphone) | `MAX_COMPONENT_STATES` |
+| Grilles 7×7 et 8×8 **uniquement en EASY** dans le générateur de la carte : au-delà, un niveau prend des dizaines de secondes | `DEVICE_GRID_SIZES` |
 | Solveur, indices, solution et génération tournent sur un **thread de fond** (runtime worklet dédié), jamais sur les threads JS ou UI | `utils/solver.background.ts` |
 | Annuler la génération s'applique juste après le niveau en cours | `useLevelGenerator` |
 | Le solveur doit trouver le nombre de coups annoncé de **chaque** niveau de la campagne | `__tests__/generator.test.ts` |

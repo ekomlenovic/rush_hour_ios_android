@@ -3,7 +3,7 @@ import { View, Text, Pressable, Alert, Linking } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
-import { DEVICE_DIFFICULTIES, DIFFICULTY_LEVELS, type DeviceDifficulty } from '@/utils/generator';
+import { DEVICE_DIFFICULTIES, DEVICE_GRID_SIZES, DIFFICULTY_LEVELS, type DeviceDifficulty } from '@/utils/generator';
 import { haptics, Haptics } from '@/utils/haptics';
 import { useLevelGenerator, EXPECTED_GENERATION_MS } from '@/hooks/useLevelGenerator';
 import type { UiColors } from '@/theme';
@@ -94,7 +94,7 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
       <View style={{ marginBottom: 20 }}>
         <Text style={[styles.settingLabel, { color: colors.text }]}>{t('map.grid_size', { size: genGridSize })}</Text>
         <View style={styles.segmentGroup}>
-          {[6, 7, 8].map(size => segment(size, genGridSize, `${size}x${size}`, () => setGenGridSize(size)))}
+          {DEVICE_GRID_SIZES[genDifficulty].map(size => segment(size, genGridSize, `${size}x${size}`, () => setGenGridSize(size)))}
         </View>
       </View>
 

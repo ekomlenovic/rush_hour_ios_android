@@ -1,5 +1,5 @@
 import {
-  DEVICE_DIFFICULTIES, DIFFICULTY_LEVELS, generateDailyLevel, generateLevel,
+  DEVICE_DIFFICULTIES, DEVICE_GRID_SIZES, DIFFICULTY_LEVELS, generateDailyLevel, generateLevel,
 } from '../utils/generator';
 import { exploreComponent, initialPositions, solvePuzzle, toCompactBoard } from '../utils/solver';
 import { sampleLevels } from '../data/sampleLevels';
@@ -32,6 +32,14 @@ describe('solver (rules in docs/GAME_DESIGN.md)', () => {
 describe('level generator', () => {
   it('never offers MASTER on the phone', () => {
     expect(DEVICE_DIFFICULTIES).not.toContain('MASTER');
+  });
+
+  it('offers bigger grids for EASY only, and always the default grid of each difficulty', () => {
+    expect(DEVICE_GRID_SIZES.EASY).toEqual([6, 7, 8]);
+    for (const difficulty of DEVICE_DIFFICULTIES) {
+      expect(DEVICE_GRID_SIZES[difficulty]).toContain(DIFFICULTY_LEVELS[difficulty].gridSize);
+      if (difficulty !== 'EASY') expect(DEVICE_GRID_SIZES[difficulty]).toEqual([6]);
+    }
   });
 
   it('the same seed gives the same level', () => {
