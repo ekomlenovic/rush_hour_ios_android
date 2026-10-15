@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { getExitSide } from '@/utils/creatorGeometry';
-
-const EXIT_COLOR = '#EF4444';
+import { useTheme } from '@/theme';
 
 interface Props {
   exitRow: number;
@@ -13,6 +12,8 @@ interface Props {
 
 /** "EXIT" label, gate and glow on the side of the board where the target car leaves */
 export default function ExitMarker({ exitRow, exitCol, gridSize, cellSize }: Props) {
+  const { board } = useTheme();
+  const exitColor = board.exit;
   const side = getExitSide(exitRow, exitCol, gridSize);
 
   // Gate styles
@@ -49,13 +50,13 @@ export default function ExitMarker({ exitRow, exitCol, gridSize, cellSize }: Pro
     <>
       {/* Label */}
       <View style={[styles.exitLabelWrap, labelStyle]}>
-        <Text style={styles.exitLabel}>EXIT</Text>
-        <Text style={styles.exitArrow}>{arrow}</Text>
+        <Text style={[styles.exitLabel, { color: exitColor }]}>EXIT</Text>
+        <Text style={[styles.exitArrow, { color: exitColor }]}>{arrow}</Text>
       </View>
 
       {/* Indicator & Glow */}
-      {indicatorStyle && <View style={[styles.exitIndicator, { backgroundColor: EXIT_COLOR, ...indicatorStyle }]} />}
-      {glowStyle && <View style={{ position: 'absolute', backgroundColor: EXIT_COLOR, ...glowStyle }} />}
+      {indicatorStyle && <View style={[styles.exitIndicator, { backgroundColor: exitColor, ...indicatorStyle }]} />}
+      {glowStyle && <View style={{ position: 'absolute', backgroundColor: exitColor, ...glowStyle }} />}
     </>
   );
 }
@@ -68,6 +69,6 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     zIndex: 10,
   },
-  exitLabel: { fontSize: 7, fontWeight: '800', color: EXIT_COLOR, letterSpacing: 0.8 },
-  exitArrow: { fontSize: 11, color: EXIT_COLOR },
+  exitLabel: { fontSize: 7, fontWeight: '800', letterSpacing: 0.8 },
+  exitArrow: { fontSize: 11 },
 });

@@ -3,12 +3,11 @@ import { View, Text, StyleSheet, Pressable, Modal, AccessibilityInfo } from 'rea
 import { useTranslation } from 'react-i18next';
 import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
 import { formatDuration } from '@/utils/date';
-import { GameColors } from './colors';
+import { fixedColors, type UiColors } from '@/theme';
 
 interface Props {
   visible: boolean;
-  colors: GameColors;
-  isDark: boolean;
+  colors: UiColors;
   stars: number;
   moveCount: number;
   minMoves: number;
@@ -28,7 +27,7 @@ interface Props {
 }
 
 export default function WinModal({
-  visible, colors, isDark, stars, moveCount, minMoves, score, timeMs, unlocks, missionReward,
+  visible, colors, stars, moveCount, minMoves, score, timeMs, unlocks, missionReward,
   canShareResult, onShareResult, onShowSolution, onRetry, onContinue, onRequestClose,
 }: Props) {
   const isOptimal = moveCount <= minMoves;
@@ -48,28 +47,28 @@ export default function WinModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onRequestClose}>
       <View style={styles.winOverlay}>
         <View
-          style={[styles.winCard, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}
+          style={[styles.winCard, { backgroundColor: colors.surface }]}
         >
           <Text style={styles.winStars} accessibilityLabel={t('a11y.level_stars', { count: stars })}>
             {'⭐'.repeat(stars)}{'☆'.repeat(3 - stars)}
           </Text>
-          <Text style={[styles.winTitle, { color: colors.accent }]} accessibilityRole="header">{t('game.level_complete')}</Text>
+          <Text style={[styles.winTitle, { color: colors.primaryText }]} accessibilityRole="header">{t('game.level_complete')}</Text>
           <Text style={[styles.winScore, { color: colors.text }]}>
             {t('game.win_stats', { moves: moveCount, best: minMoves, score: score })}
           </Text>
           {!isOptimal && (
-            <Text style={[styles.notOptimal, { color: colors.hint }]}>
+            <Text style={[styles.notOptimal, { color: colors.warning }]}>
               {t('solution.not_optimal', { best: minMoves, moves: moveCount })}
             </Text>
           )}
           {timeMs !== null && timeMs > 0 && (
-            <Text style={[styles.winTime, { color: colors.sub }]}>
+            <Text style={[styles.winTime, { color: colors.textMuted }]}>
               ⏱️ {formatDuration(timeMs)}
             </Text>
           )}
           {unlocks.length > 0 && (
             <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
-              <Text style={styles.winUnlocksTitle}>{t('achievements.unlocked')}</Text>
+              <Text style={[styles.winUnlocksTitle, { color: colors.warning }]}>{t('achievements.unlocked')}</Text>
               {unlocks.map((id) => (
                 <Text key={id} style={[styles.winUnlockItem, { color: colors.text }]}>
                   {ACHIEVEMENTS_BY_ID[id]?.icon} {t(`achievements.${id}`)}
@@ -79,7 +78,7 @@ export default function WinModal({
           )}
           {missionReward && (
             <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
-              <Text style={styles.winUnlocksTitle}>🎯 {t('missions.completed')}</Text>
+              <Text style={[styles.winUnlocksTitle, { color: colors.warning }]}>🎯 {t('missions.completed')}</Text>
               <Text style={[styles.winUnlockItem, { color: colors.text }]}>
                 {missionReward.freezeGranted ? t('missions.reward_freeze') : t('missions.reward_full')}
               </Text>
@@ -91,7 +90,7 @@ export default function WinModal({
               onPress={onShowSolution}
               accessibilityRole="button"
             >
-              <Text style={[styles.smallButtonText, { color: colors.accent }]}>🎬 {t('solution.show')}</Text>
+              <Text style={[styles.smallButtonText, { color: colors.primaryText }]}>🎬 {t('solution.show')}</Text>
             </Pressable>
             {onRetry && !isOptimal && (
               <Pressable
@@ -99,21 +98,21 @@ export default function WinModal({
                 onPress={onRetry}
                 accessibilityRole="button"
               >
-                <Text style={[styles.smallButtonText, { color: colors.accent }]}>↻ {t('solution.retry')}</Text>
+                <Text style={[styles.smallButtonText, { color: colors.primaryText }]}>↻ {t('solution.retry')}</Text>
               </Pressable>
             )}
           </View>
           {canShareResult && (
             <Pressable
-              style={[styles.winButton, styles.winShareButton, { borderColor: colors.accent }]}
+              style={[styles.winButton, styles.winShareButton, { borderColor: colors.primary }]}
               onPress={onShareResult}
               accessibilityRole="button"
             >
-              <Text style={[styles.winButtonText, { color: colors.accent }]}>📤 {t('share.share_result')}</Text>
+              <Text style={[styles.winButtonText, { color: colors.primaryText }]}>📤 {t('share.share_result')}</Text>
             </Pressable>
           )}
           <Pressable
-            style={[styles.winButton, { backgroundColor: colors.accent }]}
+            style={[styles.winButton, { backgroundColor: colors.primary }]}
             onPress={onContinue}
             accessibilityRole="button"
           >
@@ -130,13 +129,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: fixedColors.overlay,
   },
   winCard: {
     padding: 32,
     borderRadius: 20,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: fixedColors.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
@@ -201,7 +200,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   winUnlocksTitle: {
-    color: '#F59E0B',
     fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -219,7 +217,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   winButtonText: {
-    color: '#FFFFFF',
+    color: fixedColors.onPrimary,
     fontSize: 18,
     fontWeight: '700',
   },

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, AccessibilityInfo } from 'react-native';
+import { View, Text, StyleSheet, Pressable, AccessibilityInfo } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
 import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
+import { fixedColors, useTheme } from '@/theme';
 
 const DISPLAY_MS = 3000;
 
@@ -17,7 +18,7 @@ type ToastItem = { kind: 'achievement'; id: string } | { kind: 'missions'; freez
  */
 export default function AchievementToast() {
   const { t } = useTranslation();
-  const isDark = useColorScheme() === 'dark';
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const unlockQueue = useGameStore(s => s.unlockQueue);
   const pendingMissionReward = useGameStore(s => s.pendingMissionReward);
@@ -70,12 +71,12 @@ export default function AchievementToast() {
           accessibilityRole="button"
           accessibilityLabel={`${label} ${name}`}
           accessibilityHint={t('a11y.close')}
-          style={[styles.toast, { backgroundColor: isDark ? '#1C1C28' : '#FFFFFF', borderColor: '#F59E0B' }]}
+          style={[styles.toast, { backgroundColor: colors.surface, borderColor: colors.warning }]}
         >
           <Text style={styles.icon}>{icon}</Text>
           <View style={styles.textContainer}>
-            <Text style={styles.label}>{label}</Text>
-            <Text style={[styles.name, { color: isDark ? '#FFFFFF' : '#1A1A2E' }]}>{name}</Text>
+            <Text style={[styles.label, { color: colors.warning }]}>{label}</Text>
+            <Text style={[styles.name, { color: colors.text }]}>{name}</Text>
           </View>
         </Pressable>
       </Animated.View>
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 16,
     borderWidth: 1.5,
-    shadowColor: '#000',
+    shadowColor: fixedColors.shadow,
     shadowOpacity: 0.2,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -112,7 +113,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   label: {
-    color: '#F59E0B',
     fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',

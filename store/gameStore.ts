@@ -8,7 +8,7 @@ import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
 import { DailyMissionsState, MissionCounter, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
 import { getLocalDateString, daysBetween } from '../utils/date';
 import type {
-  AppOpenInfo, AttemptStats, ChallengeDetails, ChallengeResult, Level, LevelProgress, LevelSaveState, PlayerStats, Vehicle,
+  AppOpenInfo, AttemptStats, ChallengeDetails, ChallengeResult, Level, LevelProgress, LevelSaveState, PlayerStats, ThemeMode, Vehicle,
 } from './types';
 import { MAX_STREAK_FREEZES, settleStreak, advanceStreak } from './streak';
 import { emptyAttempt, initialStats, withWinStats, mergeChallengeResult } from './stats';
@@ -83,6 +83,8 @@ interface GameState {
   isHapticsEnabled: boolean;
   /** Letters on the vehicles, to tell them apart without colors (accessibility) */
   showVehicleLetters: boolean;
+  /** Light / dark choice of the interface */
+  themeMode: ThemeMode;
   /** Local reminders (opt-in) */
   notificationsEnabled: boolean;
   /** Hour of the daily challenge reminder (0-23) */
@@ -134,6 +136,7 @@ interface GameState {
   toggleMusicEnabled: () => void;
   toggleHapticsEnabled: () => void;
   toggleVehicleLetters: () => void;
+  setThemeMode: (mode: ThemeMode) => void;
   setNotificationsEnabled: (enabled: boolean) => void;
   setReminderHour: (hour: number) => void;
   markNotificationsPrompted: () => void;
@@ -227,6 +230,7 @@ export const useGameStore = create<GameState>()(
       isMusicEnabled: true,
       isHapticsEnabled: true,
       showVehicleLetters: false,
+      themeMode: 'system',
       notificationsEnabled: false,
       reminderHour: DEFAULT_REMINDER_HOUR,
       notificationsPrompted: false,
@@ -574,6 +578,7 @@ export const useGameStore = create<GameState>()(
         set({ isHapticsEnabled: !isHapticsEnabled });
       },
       toggleVehicleLetters: () => set({ showVehicleLetters: !get().showVehicleLetters }),
+      setThemeMode: (mode) => set({ themeMode: mode }),
       setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled, notificationsPrompted: true }),
       setReminderHour: (hour) => set({ reminderHour: ((Math.round(hour) % 24) + 24) % 24 }),
       markNotificationsPrompted: () => set({ notificationsPrompted: true }),
@@ -666,6 +671,7 @@ export const useGameStore = create<GameState>()(
         isMusicEnabled: state.isMusicEnabled,
         isHapticsEnabled: state.isHapticsEnabled,
         showVehicleLetters: state.showVehicleLetters,
+        themeMode: state.themeMode,
         notificationsEnabled: state.notificationsEnabled,
         reminderHour: state.reminderHour,
         notificationsPrompted: state.notificationsPrompted,

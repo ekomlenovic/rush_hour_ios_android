@@ -11,13 +11,14 @@ import i18n, { changeLanguage } from '@/utils/i18n';
 import { RFValue } from '@/utils/responsive';
 import { requestReminderPermission } from '@/utils/notifications';
 import BottomSheet from './BottomSheet';
-import { HomeColors } from './colors';
+import ThemeModeSetting from '../ThemeModeSetting';
+import { fixedColors, type UiColors } from '@/theme';
 
 const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 
 interface Props {
   visible: boolean;
-  colors: HomeColors;
+  colors: UiColors;
   isDark: boolean;
   onClose: () => void;
 }
@@ -115,34 +116,36 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
       <View style={styles.settingRow}>
         <View>
           <Text style={[styles.settingLabel, { color: colors.text }]}>{t('common.language')}</Text>
-          <Text style={[styles.settingSub, { color: colors.sub }]}>{i18n.language === 'en' ? t('common.en') : t('common.fr')}</Text>
+          <Text style={[styles.settingSub, { color: colors.textMuted }]}>{i18n.language === 'en' ? t('common.en') : t('common.fr')}</Text>
         </View>
         <View style={styles.languageBtns}>
           <Pressable
             onPress={() => changeLanguage('en')}
-            style={[styles.langBtn, i18n.language === 'en' && { backgroundColor: colors.accent }]}
+            style={[styles.langBtn, i18n.language === 'en' && { backgroundColor: colors.primary }]}
             accessibilityRole="button"
             accessibilityLabel={t('common.en')}
             accessibilityState={{ selected: i18n.language === 'en' }}
           >
-            <Text style={[styles.langBtnText, { color: i18n.language === 'en' ? '#FFF' : colors.text }]}>EN</Text>
+            <Text style={[styles.langBtnText, { color: i18n.language === 'en' ? colors.onPrimary : colors.text }]}>EN</Text>
           </Pressable>
           <Pressable
             onPress={() => changeLanguage('fr')}
-            style={[styles.langBtn, i18n.language === 'fr' && { backgroundColor: colors.accent }]}
+            style={[styles.langBtn, i18n.language === 'fr' && { backgroundColor: colors.primary }]}
             accessibilityRole="button"
             accessibilityLabel={t('common.fr')}
             accessibilityState={{ selected: i18n.language === 'fr' }}
           >
-            <Text style={[styles.langBtnText, { color: i18n.language === 'fr' ? '#FFF' : colors.text }]}>FR</Text>
+            <Text style={[styles.langBtnText, { color: i18n.language === 'fr' ? colors.onPrimary : colors.text }]}>FR</Text>
           </Pressable>
         </View>
       </View>
 
+      <ThemeModeSetting colors={colors} labelStyle={styles.settingLabel} />
+
       <View style={styles.settingRow}>
         <View>
           <Text style={[styles.settingLabel, { color: colors.text }]}>{t('home.background_music')}</Text>
-          <Text style={[styles.settingSub, { color: colors.sub }]}>{t('home.music_desc')}</Text>
+          <Text style={[styles.settingSub, { color: colors.textMuted }]}>{t('home.music_desc')}</Text>
         </View>
         <Switch
           value={isMusicEnabled}
@@ -150,7 +153,7 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
             toggleMusic();
             haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }}
-          trackColor={{ false: '#767577', true: colors.accent }}
+          trackColor={{ false: colors.switchTrackOff, true: colors.primary }}
           accessibilityLabel={t('home.background_music')}
         />
       </View>
@@ -158,7 +161,7 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
       <View style={styles.settingRow}>
         <View>
           <Text style={[styles.settingLabel, { color: colors.text }]}>{t('home.haptic_feedback')}</Text>
-          <Text style={[styles.settingSub, { color: colors.sub }]}>{t('home.haptic_desc')}</Text>
+          <Text style={[styles.settingSub, { color: colors.textMuted }]}>{t('home.haptic_desc')}</Text>
         </View>
         <Switch
           value={isHapticsEnabled}
@@ -166,7 +169,7 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
             toggleHapticsEnabled();
             haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }}
-          trackColor={{ false: '#767577', true: colors.accent }}
+          trackColor={{ false: colors.switchTrackOff, true: colors.primary }}
           accessibilityLabel={t('home.haptic_feedback')}
         />
       </View>
@@ -174,7 +177,7 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
       <View style={styles.settingRow}>
         <View style={styles.settingText}>
           <Text style={[styles.settingLabel, { color: colors.text }]}>{t('a11y.vehicle_letters')}</Text>
-          <Text style={[styles.settingSub, { color: colors.sub }]}>{t('a11y.vehicle_letters_desc')}</Text>
+          <Text style={[styles.settingSub, { color: colors.textMuted }]}>{t('a11y.vehicle_letters_desc')}</Text>
         </View>
         <Switch
           value={showVehicleLetters}
@@ -182,7 +185,7 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
             toggleVehicleLetters();
             haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }}
-          trackColor={{ false: '#767577', true: colors.accent }}
+          trackColor={{ false: colors.switchTrackOff, true: colors.primary }}
           accessibilityLabel={t('a11y.vehicle_letters')}
         />
       </View>
@@ -190,12 +193,12 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
       <View style={styles.settingRow}>
         <View style={styles.settingText}>
           <Text style={[styles.settingLabel, { color: colors.text }]}>{t('reminders.setting')}</Text>
-          <Text style={[styles.settingSub, { color: colors.sub }]}>{t('reminders.setting_desc')}</Text>
+          <Text style={[styles.settingSub, { color: colors.textMuted }]}>{t('reminders.setting_desc')}</Text>
         </View>
         <Switch
           value={notificationsEnabled}
           onValueChange={handleRemindersToggle}
-          trackColor={{ false: '#767577', true: colors.accent }}
+          trackColor={{ false: colors.switchTrackOff, true: colors.primary }}
           accessibilityLabel={t('reminders.setting')}
         />
       </View>
@@ -204,7 +207,7 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
         <View style={styles.settingRow}>
           <View style={styles.settingText}>
             <Text style={[styles.settingLabel, { color: colors.text }]}>{t('reminders.hour')}</Text>
-            <Text style={[styles.settingSub, { color: colors.sub }]}>{t('reminders.hour_desc')}</Text>
+            <Text style={[styles.settingSub, { color: colors.textMuted }]}>{t('reminders.hour_desc')}</Text>
           </View>
           <View style={styles.hourStepper}>
             <Pressable onPress={() => setReminderHour(reminderHour - 1)} style={[styles.hourBtn, { backgroundColor: colors.card }]} accessibilityRole="button" accessibilityLabel={t('a11y.hour_less')} hitSlop={4}>
@@ -218,12 +221,12 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
         </View>
       )}
 
-      <View style={[styles.divider, { backgroundColor: colors.sub }]} />
+      <View style={[styles.divider, { backgroundColor: colors.textMuted }]} />
 
       <View style={styles.versionRow}>
         <View>
           <Text style={[styles.settingLabel, { color: colors.text }]}>{t('home.version')}</Text>
-          <Text style={[styles.settingSub, { color: colors.sub }]}>{Constants.expoConfig?.version || '1.0.0'}</Text>
+          <Text style={[styles.settingSub, { color: colors.textMuted }]}>{Constants.expoConfig?.version || '1.0.0'}</Text>
         </View>
         <Pressable
           onPress={handleUpdateCheck}
@@ -232,33 +235,33 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
           accessibilityState={{ disabled: isCheckingUpdate, busy: isCheckingUpdate }}
           style={[styles.updateButton, { backgroundColor: colors.card }]}
         >
-          <Text style={[styles.updateButtonText, { color: colors.accent }]}>
+          <Text style={[styles.updateButtonText, { color: colors.primaryText }]}>
             {isCheckingUpdate ? t('common.checking') : t('home.check_for_update')}
           </Text>
         </Pressable>
       </View>
 
-      <View style={[styles.divider, { backgroundColor: colors.sub }]} />
+      <View style={[styles.divider, { backgroundColor: colors.textMuted }]} />
 
       <Pressable
-        style={[styles.resetBtn, { borderColor: colors.accent, backgroundColor: colors.card, marginBottom: 12 }]}
+        style={[styles.resetBtn, { borderColor: colors.primary, backgroundColor: colors.card, marginBottom: 12 }]}
         onPress={handleUnlockAll}
         accessibilityRole="button"
         accessibilityLabel={t('home.unlock_all')}
       >
-        <Text style={[styles.resetBtnText, { color: colors.accent, fontWeight: '700' }]}>🔓 {t('home.unlock_all')}</Text>
+        <Text style={[styles.resetBtnText, { color: colors.primaryText, fontWeight: '700' }]}>🔓 {t('home.unlock_all')}</Text>
       </Pressable>
 
       <Pressable
-        style={[styles.resetBtn, { borderColor: colors.sub, borderStyle: 'dotted', marginBottom: 24 }]}
+        style={[styles.resetBtn, { borderColor: colors.textMuted, borderStyle: 'dotted', marginBottom: 24 }]}
         onPress={handleHardReset}
         accessibilityRole="button"
       >
-        <Text style={[styles.resetBtnText, { color: colors.sub }]}>{t('home.hard_reset_progress')}</Text>
+        <Text style={[styles.resetBtnText, { color: colors.textMuted }]}>{t('home.hard_reset_progress')}</Text>
       </Pressable>
 
       <Pressable
-        style={[styles.closeButton, { backgroundColor: colors.accent }]}
+        style={[styles.closeButton, { backgroundColor: colors.primary }]}
         onPress={onClose}
         accessibilityRole="button"
       >
@@ -312,7 +315,7 @@ const styles = StyleSheet.create({
   languageBtns: {
     flexDirection: 'row',
     gap: 8,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: fixedColors.neutralSoft,
     padding: 4,
     borderRadius: 12
   },
@@ -331,7 +334,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeButtonText: {
-    color: '#FFFFFF',
+    color: fixedColors.onPrimary,
     fontSize: RFValue(18),
     fontWeight: '700',
   },

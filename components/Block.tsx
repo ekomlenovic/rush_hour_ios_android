@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, StyleSheet, useColorScheme, Text, AccessibilityActionEvent, AccessibilityInfo } from 'react-native';
+import { View, StyleSheet, Text, AccessibilityActionEvent, AccessibilityInfo } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -13,6 +13,7 @@ import Animated, {
 import { haptics, Haptics } from '@/utils/haptics';
 import { Vehicle } from '@/store/gameStore';
 import { stepVehicle } from '@/utils/accessibility';
+import { useTheme } from '@/theme';
 
 interface BlockProps {
   vehicle: Vehicle;
@@ -57,8 +58,8 @@ const BOUNCE_SPRING = {
 
 function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, disabled = false, a11yLabel, a11yValue, a11yStrings, letter }: BlockProps) {
 
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { board } = useTheme();
+  const fillColor = vehicle.isTarget ? board.targetCar : vehicle.color;
 
   const width = vehicle.orientation === 'horizontal' ? cellSize * vehicle.length : cellSize;
   const height = vehicle.orientation === 'vertical' ? cellSize * vehicle.length : cellSize;
@@ -242,7 +243,7 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
     }
   }, [vehicle.col, vehicle.row, cellSize, isDragging]);
 
-  const shadowColor = vehicle.isTarget ? '#EF4444' : vehicle.color;
+  const shadowColor = fillColor;
 
   return (
     <GestureDetector gesture={panGesture.enabled(!disabled)}>
@@ -262,10 +263,10 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
           {
             width: width - 4,
             height: height - 4,
-            backgroundColor: vehicle.color,
+            backgroundColor: fillColor,
             borderRadius: cellSize * 0.18,
             shadowColor,
-            borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)',
+            borderColor: board.vehicleBorder,
           },
           vehicle.isTarget && styles.targetBlock,
           animatedStyle,
@@ -276,10 +277,10 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
             style={[
               StyleSheet.absoluteFill,
               {
-                borderColor: '#F59E0B',
+                borderColor: board.hint,
                 borderRadius: cellSize * 0.18,
                 zIndex: 20,
-                shadowColor: '#000',
+                shadowColor: board.hintOutline,
                 shadowOpacity: 1,
                 shadowRadius: 0,
                 shadowOffset: { width: 0, height: 0 },
@@ -292,7 +293,7 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
                 StyleSheet.absoluteFill, 
                 { 
                   borderWidth: 1, 
-                  borderColor: '#000', 
+                  borderColor: board.hintOutline,
                   borderRadius: cellSize * 0.18,
                   margin: -1,
                 }
@@ -303,11 +304,11 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
         <View
           style={[
             styles.shine,
-            { borderRadius: cellSize * 0.14 },
+            { borderRadius: cellSize * 0.14, backgroundColor: board.vehicleShine },
           ]}
         />
         {letter !== undefined && (
-          <Text style={[styles.letter, { fontSize: cellSize * 0.42 }]}>{letter}</Text>
+          <Text style={[styles.letter, { fontSize: cellSize * 0.42, color: board.vehicleLabel, textShadowColor: board.vehicleLabelShadow }]}>{letter}</Text>
         )}
       </Animated.View>
 
@@ -335,9 +336,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   letter: {
-    color: '#FFFFFF',
     fontWeight: '900',
-    textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
@@ -347,7 +346,6 @@ const styles = StyleSheet.create({
     left: 2,
     right: 2,
     height: '45%',
-    backgroundColor: 'rgba(255,255,255,0.18)',
   },
 });
 

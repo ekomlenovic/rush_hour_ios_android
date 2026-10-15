@@ -8,7 +8,7 @@ import { Move } from '@/utils/solver';
 import { solvePuzzleAsync } from '@/utils/solver.background';
 import { vehiclesAtStep } from '@/utils/solutionReplay';
 import { describeVehicle, getMoveDirection, getVehicleLetters } from '@/utils/accessibility';
-import { GameColors } from './colors';
+import type { UiColors } from '@/theme';
 
 /** Time between two moves while the solution plays */
 const STEP_MS = 900;
@@ -18,8 +18,7 @@ const noop = () => {};
 interface Props {
   visible: boolean;
   level: Level;
-  colors: GameColors;
-  isDark: boolean;
+  colors: UiColors;
   onClose: () => void;
 }
 
@@ -27,7 +26,7 @@ interface Props {
  * Replays the optimal solution of a level from its starting position: it plays by itself,
  * and the player can go back and forth move by move (see docs/GAME_DESIGN.md).
  */
-export default function SolutionPlayer({ visible, level, colors, isDark, onClose }: Props) {
+export default function SolutionPlayer({ visible, level, colors, onClose }: Props) {
   const { t } = useTranslation();
   const [moves, setMoves] = useState<Move[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -121,12 +120,12 @@ export default function SolutionPlayer({ visible, level, colors, isDark, onClose
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       {/* A modal is a new root on Android: the board's gesture detectors need their own root view */}
-      <GestureHandlerRootView style={[styles.container, { backgroundColor: colors.bg }]}>
+      <GestureHandlerRootView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
           <View style={{ width: 44 }} />
           <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('solution.title')}</Text>
           <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel={t('a11y.close')} hitSlop={8}>
-            <Text style={{ fontSize: 22, color: colors.sub }}>✕</Text>
+            <Text style={{ fontSize: 22, color: colors.textMuted }}>✕</Text>
           </Pressable>
         </View>
 
@@ -143,19 +142,19 @@ export default function SolutionPlayer({ visible, level, colors, isDark, onClose
         </View>
 
         {failed ? (
-          <Text style={[styles.status, { color: colors.sub }]}>{t('solution.unsolvable')}</Text>
+          <Text style={[styles.status, { color: colors.textMuted }]}>{t('solution.unsolvable')}</Text>
         ) : !moves ? (
           <View style={styles.loading}>
-            <ActivityIndicator color={colors.accent} />
-            <Text style={[styles.status, { color: colors.sub }]}>{t('solution.computing')}</Text>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={[styles.status, { color: colors.textMuted }]}>{t('solution.computing')}</Text>
           </View>
         ) : (
           <>
             <View style={[styles.progressTrack, { backgroundColor: colors.card }]}>
-              <View style={[styles.progressFill, { backgroundColor: colors.accent, width: `${(step / total) * 100}%` }]} />
+              <View style={[styles.progressFill, { backgroundColor: colors.primary, width: `${(step / total) * 100}%` }]} />
             </View>
             <Text style={[styles.stepText, { color: colors.text }]}>{t('solution.step', { step, total })}</Text>
-            <Text style={[styles.moveText, { color: colors.sub }]} numberOfLines={2}>{lastMove}</Text>
+            <Text style={[styles.moveText, { color: colors.textMuted }]} numberOfLines={2}>{lastMove}</Text>
 
             <View style={styles.controls}>
               {controls.map((c, i) => (
@@ -163,12 +162,12 @@ export default function SolutionPlayer({ visible, level, colors, isDark, onClose
                   key={i}
                   onPress={c.onPress}
                   disabled={c.disabled}
-                  style={[styles.controlBtn, { backgroundColor: c.primary ? colors.accent : colors.card, opacity: c.disabled ? 0.35 : 1 }]}
+                  style={[styles.controlBtn, { backgroundColor: c.primary ? colors.primary : colors.card, opacity: c.disabled ? 0.35 : 1 }]}
                   accessibilityRole="button"
                   accessibilityLabel={c.label}
                   accessibilityState={{ disabled: c.disabled }}
                 >
-                  <Text style={[styles.controlIcon, { color: c.primary ? '#FFFFFF' : colors.text }]}>{c.icon}</Text>
+                  <Text style={[styles.controlIcon, { color: c.primary ? colors.onPrimary : colors.text }]}>{c.icon}</Text>
                 </Pressable>
               ))}
             </View>
