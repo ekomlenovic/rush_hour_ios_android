@@ -12,7 +12,7 @@ import { generatePathPoints } from '@/components/map/path';
 import LevelNode from '@/components/map/LevelNode';
 import PathLine from '@/components/map/PathLine';
 import GenerationPill from '@/components/map/GenerationPill';
-import MapSettingsSheet from '@/components/map/MapSettingsSheet';
+import OptionsSheet from '@/components/settings/OptionsSheet';
 
 export default function MapScreen() {
   const { t } = useTranslation();
@@ -187,10 +187,10 @@ export default function MapScreen() {
         )}
       </ScrollView>
 
-      <MapSettingsSheet
+      <OptionsSheet
         visible={isSettingsVisible}
         colors={colors}
-        isDark={isDark}
+        showMapLevels
         onClose={() => setSettingsVisible(false)}
       />
 
