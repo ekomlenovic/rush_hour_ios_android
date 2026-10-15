@@ -56,6 +56,20 @@ export interface UiColors {
   levelUnknown: string;
   levelTutorial: string;
   levelCustom: string;
+  /** World map: road, its edges and the dashes of its center line */
+  mapRoad: string;
+  mapRoadEdge: string;
+  mapRoadDash: string;
+  /** World map: locked level token and its number */
+  mapLocked: string;
+  mapLockedText: string;
+  /** World map: darker rim under a level token (3D button) */
+  mapNodeDepth: string;
+  /** World map: halo pulsing around the next level */
+  mapHalo: string;
+  /** World map: accent of each zone, and the soft tint of its background band */
+  mapZoneAccents: string[];
+  mapZoneTints: string[];
   /** Dimmed backdrop behind a modal */
   overlay: string;
   overlayStrong: string;
@@ -86,6 +100,8 @@ export const fixedColors = {
   levelUnknown: '#8B5CF6',
   levelTutorial: '#3B82F6',
   levelCustom: '#5A4FE0',
+  mapNodeDepth: 'rgba(0,0,0,0.28)',
+  mapZoneAccents: ['#6366F1', '#10B981', '#06B6D4', '#16A34A', '#F59E0B', '#64748B', '#38BDF8', '#EC4899', '#8B5CF6'],
   overlay: 'rgba(0,0,0,0.5)',
   overlayStrong: 'rgba(0,0,0,0.6)',
   shadow: '#000000',
@@ -124,6 +140,17 @@ export const darkColors: UiColors = {
   dangerSoft: 'rgba(239,68,68,0.18)',
   weekly: '#F97316',
   star: '#FFD700',
+  mapRoad: '#262639',
+  mapRoadEdge: 'rgba(255,255,255,0.07)',
+  mapRoadDash: 'rgba(255,255,255,0.32)',
+  mapLocked: '#25253A',
+  mapLockedText: '#6E6E86',
+  mapHalo: 'rgba(239,68,68,0.35)',
+  mapZoneTints: [
+    'rgba(99,102,241,0.08)', 'rgba(16,185,129,0.07)', 'rgba(6,182,212,0.08)', 'rgba(22,163,74,0.08)',
+    'rgba(245,158,11,0.07)', 'rgba(148,163,184,0.07)', 'rgba(56,189,248,0.08)', 'rgba(236,72,153,0.08)',
+    'rgba(139,92,246,0.08)',
+  ],
 };
 
 export const lightColors: UiColors = {
@@ -152,6 +179,17 @@ export const lightColors: UiColors = {
   dangerSoft: 'rgba(239,68,68,0.1)',
   weekly: '#C2410C',
   star: '#FFB800',
+  mapRoad: '#D4D4E2',
+  mapRoadEdge: 'rgba(0,0,0,0.05)',
+  mapRoadDash: 'rgba(255,255,255,0.95)',
+  mapLocked: '#E4E4EE',
+  mapLockedText: '#9A9AAE',
+  mapHalo: 'rgba(239,68,68,0.25)',
+  mapZoneTints: [
+    'rgba(99,102,241,0.07)', 'rgba(16,185,129,0.07)', 'rgba(6,182,212,0.08)', 'rgba(22,163,74,0.07)',
+    'rgba(245,158,11,0.08)', 'rgba(100,116,139,0.07)', 'rgba(56,189,248,0.08)', 'rgba(236,72,153,0.06)',
+    'rgba(139,92,246,0.07)',
+  ],
 };
 
 /** Light or dark, from the player's choice ('system' follows the device) */

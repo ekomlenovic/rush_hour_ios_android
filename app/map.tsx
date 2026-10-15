@@ -1,21 +1,28 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
+import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeInUp } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
 import { haptics, Haptics } from '@/utils/haptics';
 import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
-import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/theme';
-import { generatePathPoints } from '@/components/map/path';
+import { createMapLayout, generateRoadSegments } from '@/components/map/path';
+import { buildZones, zoneOf } from '@/components/map/zones';
 import LevelNode from '@/components/map/LevelNode';
-import PathLine from '@/components/map/PathLine';
+import Road from '@/components/map/Road';
+import ZoneLayer from '@/components/map/ZoneLayer';
+import MapHeader from '@/components/map/MapHeader';
+import JumpButton from '@/components/map/JumpButton';
 import GenerationPill from '@/components/map/GenerationPill';
 import OptionsSheet from '@/components/settings/OptionsSheet';
 
+/** Height of the blurred header over the map */
+const HEADER_HEIGHT = 140;
+/** The scroll position is rounded to this step before re-rendering the visible part of the map */
+const SCROLL_STEP = 100;
+/** Part of the map drawn above and under the screen */
+const DRAW_MARGIN = 1200;
+
 export default function MapScreen() {
-  const { t } = useTranslation();
   const { colors, board, isDark } = useTheme();
   const router = useRouter();
 
@@ -28,21 +35,42 @@ export default function MapScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [isSettingsVisible, setSettingsVisible] = useState(false);
-  const [scrollY, setScrollY] = useState(0); // Will be updated in useMemo or effect
+  const [scrollY, setScrollY] = useState(0); // Rounded to SCROLL_STEP
   const [isReady, setIsReady] = useState(false);
 
   // Combine static levels + dynamically generated levels
-  const levels = [...sampleLevels, ...generatedLevels];
+  const levels = useMemo(() => [...sampleLevels, ...generatedLevels], [generatedLevels]);
 
   // We add exactly 1 node at the end for the final Padlock marker indicating the end of generated levels
   const pathLength = levels.length + 1;
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
-  // Memoize path points and total height to avoid expensive recalculated arrays
-  const { points: pathPoints, totalHeight } = useMemo(() => {
-    return generatePathPoints(pathLength, screenWidth, screenHeight);
-  }, [pathLength, screenWidth, screenHeight]);
+  const zones = useMemo(() => buildZones(sampleLevels.length, generatedLevels.length), [generatedLevels.length]);
+
+  // Memoize the map geometry to avoid expensive recalculated arrays
+  const layout = useMemo(
+    () => createMapLayout(pathLength, screenWidth, screenHeight, zones.slice(1).map(z => z.firstId)),
+    [pathLength, screenWidth, screenHeight, zones],
+  );
+  const { points: pathPoints, totalHeight } = layout;
+
+  const roadSegments = useMemo(() => generateRoadSegments(layout), [layout]);
+
+  // Best stars by level, and their sum per zone and over the whole map
+  const { starsById, zoneStars, totalStars } = useMemo(() => {
+    const byId = new Map<number, number>();
+    for (const p of progress) byId.set(p.levelId, p.stars || 0);
+    const perZone: Record<number, number> = {};
+    let total = 0;
+    for (const zone of zones) {
+      let sum = 0;
+      for (let id = zone.firstId; id <= zone.lastId; id++) sum += byId.get(id) ?? 0;
+      perZone[zone.number] = sum;
+      total += sum;
+    }
+    return { starsById: byId, zoneStars: perZone, totalStars: total };
+  }, [progress, zones]);
 
   // Synchronously calculate initial scroll position to avoid "teleportation"
   const initialY = useMemo(() => {
@@ -57,7 +85,7 @@ export default function MapScreen() {
 
   // Set initial scroll state
   useEffect(() => {
-    setScrollY(initialY);
+    setScrollY(Math.round(initialY / SCROLL_STEP) * SCROLL_STEP);
     // Force scroll after a short delay once ready
     if (isReady) {
       const timer = setTimeout(() => {
@@ -85,11 +113,30 @@ export default function MapScreen() {
     setGenerationState({ isRunning: false, shouldCancel: false, estimatedRemainingSeconds: 0 });
   }, []);
 
-  const isVisible = (y: number) => {
-    return y >= scrollY - 1200 && y <= scrollY + screenHeight + 1200;
+  const minY = scrollY - DRAW_MARGIN;
+  const maxY = scrollY + screenHeight + DRAW_MARGIN;
+  const isVisible = (y: number) => y >= minY && y <= maxY;
+
+  const visibleSegments = useMemo(
+    () => roadSegments.filter(s => (s.y1 >= minY && s.y1 <= maxY) || (s.y2 >= minY && s.y2 <= maxY)),
+    [roadSegments, minY, maxY],
+  );
+
+  // Zone in the middle of the screen, named in the header
+  const middleId = Math.max(1, Math.round(layout.tAt(scrollY + (screenHeight + HEADER_HEIGHT) / 2)) + 1);
+  const currentZone = zoneOf(zones, middleId);
+
+  // Next level to play (the padlock once every level is beaten), and whether it is out of sight
+  const nextNode = pathPoints.find(p => p.id === maxUnlockedLevel) ?? pathPoints[pathPoints.length - 1];
+  const nextAbove = nextNode.y < scrollY + HEADER_HEIGHT;
+  const nextBelow = nextNode.y > scrollY + screenHeight - 60;
+
+  const jumpToNext = () => {
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    scrollViewRef.current?.scrollTo({ y: Math.max(0, nextNode.y - screenHeight / 2 + 50), animated: true });
   };
 
-  const handleLevelPress = (levelId: number, isUnlocked: boolean, isCustom: boolean) => {
+  const handleLevelPress = useCallback((levelId: number, isUnlocked: boolean, isCustom: boolean) => {
     if (levelId === 0) {
       haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       router.push('/tutorial');
@@ -102,21 +149,19 @@ export default function MapScreen() {
     }
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push(`/game?levelId=${levelId}`);
-  };
+  }, [router]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <Animated.View entering={FadeInUp.delay(100).springify()} style={[styles.header, { backgroundColor: colors.backgroundTranslucent }]}>
-        <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-        <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
-          <Text style={[styles.backText, { color: colors.textMuted }]}>← {t('common.home')}</Text>
-        </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]} accessibilityRole="header">{t('map.title')}</Text>
-        <Pressable onPress={() => setSettingsVisible(true)} style={[styles.settingsButton, { backgroundColor: colors.card }]} accessibilityRole="button" accessibilityLabel={t('a11y.settings')}>
-          <Text style={{ fontSize: 24, color: colors.text }}>⚙️</Text>
-        </Pressable>
-      </Animated.View>
+      <MapHeader
+        colors={colors}
+        isDark={isDark}
+        zone={currentZone}
+        stars={totalStars}
+        maxStars={levels.length * 3}
+        onBack={() => router.back()}
+        onSettings={() => setSettingsVisible(true)}
+      />
 
       <ScrollView
         ref={scrollViewRef}
@@ -125,31 +170,28 @@ export default function MapScreen() {
         scrollEventThrottle={16}
         decelerationRate={0.9}
         contentOffset={{ x: 0, y: initialY }}
-        onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+        onScroll={(e) => {
+          const rounded = Math.round(e.nativeEvent.contentOffset.y / SCROLL_STEP) * SCROLL_STEP;
+          if (rounded !== scrollY) setScrollY(rounded);
+        }}
       >
         {!isReady ? (
           <View style={{ flex: 1, height: totalHeight }} />
         ) : (
           <>
-            {/* Path connections, only where at least one end is visible */}
-            {pathPoints.map((point, index) => {
-              if (index === pathPoints.length - 1) return null;
+            <ZoneLayer
+              zones={zones}
+              zoneStars={zoneStars}
+              layout={layout}
+              width={screenWidth}
+              minY={minY}
+              maxY={maxY}
+              colors={colors}
+              isDark={isDark}
+            />
 
-              const nextPoint = pathPoints[index + 1];
-              if (!isVisible(point.y) && !isVisible(nextPoint.y)) return null;
+            <Road segments={visibleSegments} maxUnlockedLevel={maxUnlockedLevel} colors={colors} />
 
-              const isUnlockedLine = maxUnlockedLevel > point.id;
-              return (
-                <PathLine
-                  key={`line-${point.id}`}
-                  from={point}
-                  to={nextPoint}
-                  color={isUnlockedLine ? colors.primary : colors.divider}
-                />
-              );
-            })}
-
-            {/* Draw Nodes */}
             {pathPoints.map((point, index) => {
               if (!isVisible(point.y)) return null;
 
@@ -163,9 +205,6 @@ export default function MapScreen() {
               const isCurrent = point.id === maxUnlockedLevel;
               const isCustom = !isTutorial && !isPadlockNode && point.id > sampleLevels.length;
 
-              const levelProgress = progress.find(p => p.levelId === point.id);
-              const stars = levelProgress?.stars || 0;
-
               return (
                 <LevelNode
                   key={`node-${point.id}`}
@@ -176,7 +215,7 @@ export default function MapScreen() {
                   isCustom={isCustom}
                   isPadlockNode={isPadlockNode}
                   isTutorial={isTutorial}
-                  stars={stars}
+                  stars={starsById.get(point.id) ?? 0}
                   onPress={handleLevelPress}
                   colors={colors}
                   board={board}
@@ -186,6 +225,10 @@ export default function MapScreen() {
           </>
         )}
       </ScrollView>
+
+      {isReady && (nextAbove || nextBelow) && !isGenerating && (
+        <JumpButton levelId={nextNode.id} below={nextBelow} colors={colors} onPress={jumpToNext} />
+      )}
 
       <OptionsSheet
         visible={isSettingsVisible}
@@ -202,37 +245,5 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 60,
-    paddingBottom: 16,
-    paddingHorizontal: 24,
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
-  },
-  backButton: {
-    width: 60,
-  },
-  backText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  settingsButton: {
-    width: 60,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 22,
   },
 });
