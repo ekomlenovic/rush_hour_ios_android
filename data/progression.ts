@@ -73,6 +73,8 @@ export function levelWinXp(minMoves: number, stars: number, firstWin: boolean): 
 
 export const dailyWinXp = (stars: number): number => 60 + 20 * stars;
 export const weeklyWinXp = (stars: number): number => 150 + 50 * stars;
+/** A past daily replayed from the archives: XP of a replayed level, so years of archives can't be farmed */
+export const archiveWinXp = (minMoves: number, stars: number): number => levelWinXp(minMoves, stars, false);
 /** All 3 missions of the day done */
 export const MISSIONS_XP = 100;
 export const ACHIEVEMENT_XP = 50;

@@ -73,6 +73,8 @@ export default function GameScreen() {
     : challengeKind === 'weekly' ? weeklyChallengeProgress[params.week!]
     : undefined;
   const isChallengeCompleted = !!challengeResult?.completed;
+  // A past daily replayed from the archives: training, played like a map level
+  const isArchive = params.levelId === 'archive' && !!params.date;
 
   const handleShare = async () => {
     if (!currentLevel) return;
@@ -203,6 +205,8 @@ export default function GameScreen() {
         useGameStore.getState().completeDailyChallenge(params.date!, score, stars, timeMs, details);
       } else if (challengeKind === 'weekly') {
         useGameStore.getState().completeWeeklyChallenge(params.week!, score, stars, timeMs, details);
+      } else if (isArchive) {
+        useGameStore.getState().completeArchiveChallenge(params.date!, score, stars, timeMs, details);
       } else {
         completeLevel(currentLevel.id, score, stars, timeMs);
       }
@@ -216,7 +220,7 @@ export default function GameScreen() {
       setWon(true);
       haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-  }, [won, isChallengeCompleted, moveVehicle, currentLevel, computedMinMoves, completeLevel, challengeKind, params.date, params.week, playTime.stop]);
+  }, [won, isChallengeCompleted, moveVehicle, currentLevel, computedMinMoves, completeLevel, challengeKind, isArchive, params.date, params.week, playTime.stop]);
 
   const handleUndo = useCallback(() => {
     undo();
@@ -307,7 +311,7 @@ export default function GameScreen() {
   const stars = getStars(moveCount, minMoves);
 
   if (isLoading || !currentLevel) {
-    const isMondayDaily = params.levelId === 'daily' && !!params.date && parseLocalDateString(params.date).getDay() === 1;
+    const isMondayDaily = (params.levelId === 'daily' || isArchive) && !!params.date && parseLocalDateString(params.date).getDay() === 1;
     return <GameLoading colors={colors} isMondayDaily={isMondayDaily} />;
   }
 
@@ -321,6 +325,9 @@ export default function GameScreen() {
         <Text style={[styles.levelTitle, { color: colors.text }]} accessibilityRole="header">
           {challengeKind === 'daily' ? t('home.daily_challenge')
             : challengeKind === 'weekly' ? t('home.weekly_challenge')
+            : isArchive ? t('game.archive_title', {
+                date: parseLocalDateString(params.date!).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' }),
+              })
             : t('game.level_count', { id: currentLevel.id })}
         </Text>
         <Pressable onPress={() => setShareVisible(true)} style={styles.shareHeaderBtn} accessibilityRole="button" accessibilityLabel={t('a11y.share_level')}>

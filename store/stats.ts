@@ -39,7 +39,7 @@ export function getSpecialDayKeys(now: Date): string[] {
   return keys;
 }
 
-export type WinKind = 'level' | 'daily' | 'weekly';
+export type WinKind = 'level' | 'daily' | 'weekly' | 'archive';
 
 /** Stats after winning the current level with the given attempt */
 export function withWinStats(stats: PlayerStats, level: Level, attempt: AttemptStats, timeMs: number | undefined, stars: number, kind: WinKind): PlayerStats {
