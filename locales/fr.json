@@ -529,7 +529,18 @@
       "road_expert": "As de la route",
       "traffic_master": "Maître du trafic",
       "legend": "Légende"
-    }
+    },
+    "see_all": "Voir toute la progression",
+    "screen_title": "Progression",
+    "levels_title": "Niveaux joueur",
+    "other_unlocks": "Autres déblocages",
+    "other_unlocks_desc": "Gagnés avec les étoiles, les défis hebdo et les succès, quel que soit ton niveau.",
+    "new_title": "Nouveau titre : {{title}}",
+    "from_xp": "{{xp}} XP au total",
+    "reached": "Atteint",
+    "current": "Tu es ici",
+    "a11y_level_row": "Niveau {{level}}, {{state}}. {{rewards}}",
+    "locked": "À venir"
   },
   "cosmetics": {
     "garage": "Garage",

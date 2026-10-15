@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
 import { getFreezeCapacity, getLevelInfo, getPlayerTitle } from '@/data/progression';
@@ -8,8 +8,16 @@ import type { UiColors } from '@/theme';
 import XpBar from './XpBar';
 import { getLevelRewardLines } from './rewards';
 
+interface Props {
+  colors: UiColors;
+  /** Shows the rewards of the next level */
+  showNext?: boolean;
+  /** "See the whole progression" link */
+  onSeeAll?: () => void;
+}
+
 /** Player level of the profile: title, XP bar and the rewards of the next level */
-export default function PlayerLevelCard({ colors }: { colors: UiColors }) {
+export default function PlayerLevelCard({ colors, showNext = true, onSeeAll }: Props) {
   const { t } = useTranslation();
   const xp = useGameStore(s => s.xp);
   const info = getLevelInfo(xp);
@@ -31,13 +39,26 @@ export default function PlayerLevelCard({ colors }: { colors: UiColors }) {
         </Text>
       </View>
 
-      <Text style={[styles.subTitle, { color: colors.textMuted }]}>{t('progression.next_level', { level: info.level + 1 })}</Text>
-      {getLevelRewardLines(t, info.level + 1).map(line => (
-        <Text key={line} style={[styles.reward, { color: colors.text }]}>• {line}</Text>
-      ))}
+      {showNext && (
+        <>
+          <Text style={[styles.subTitle, { color: colors.textMuted }]}>{t('progression.next_level', { level: info.level + 1 })}</Text>
+          {getLevelRewardLines(t, info.level + 1).map(line => (
+            <Text key={line} style={[styles.reward, { color: colors.text }]}>• {line}</Text>
+          ))}
+        </>
+      )}
       <Text style={[styles.capacity, { color: colors.textMuted }]}>
         {t('progression.freeze_capacity')} : {getFreezeCapacity(info.level)} ❄️
       </Text>
+      {onSeeAll && (
+        <Pressable
+          onPress={onSeeAll}
+          style={[styles.seeAll, { backgroundColor: colors.primarySoft }]}
+          accessibilityRole="button"
+        >
+          <Text style={[styles.seeAllText, { color: colors.primaryText }]}>{t('progression.see_all')} →</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -51,4 +72,6 @@ const styles = StyleSheet.create({
   subTitle: { fontSize: RFValue(12), fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 10 },
   reward: { fontSize: RFValue(14) },
   capacity: { fontSize: RFValue(12), marginTop: 8 },
+  seeAll: { marginTop: 10, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
+  seeAllText: { fontSize: RFValue(14), fontWeight: '700' },
 });

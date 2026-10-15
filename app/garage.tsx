@@ -3,13 +3,11 @@ import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } fr
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
 import { useGameStore } from '@/store/gameStore';
 import {
   COSMETICS, cosmeticKey, isCosmeticUnlocked, unlockProgress,
-  type CosmeticContext, type CosmeticDef, type CosmeticKind, type CosmeticSelection,
+  type CosmeticDef, type CosmeticKind, type CosmeticSelection,
 } from '@/data/cosmetics';
-import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
 import { useCosmetics } from '@/hooks/useCosmetics';
 import { haptics, Haptics } from '@/utils/haptics';
 import { RFValue } from '@/utils/responsive';
@@ -17,24 +15,10 @@ import { fixedColors, useTheme } from '@/theme';
 import BoardPreview from '@/components/garage/BoardPreview';
 import WinEffect from '@/components/effects/WinEffect';
 import XpBar from '@/components/progression/XpBar';
+import CosmeticThumb from '@/components/garage/CosmeticThumb';
+import { describeUnlock } from '@/components/garage/describeUnlock';
 
 const KINDS: CosmeticKind[] = ['board', 'skin', 'palette', 'effect'];
-
-/** How to unlock a cosmetic, with the current progress */
-function describeUnlock(t: TFunction, def: CosmeticDef, c: CosmeticContext): string {
-  const rule = def.unlock;
-  switch (rule.type) {
-    case 'default': return t('cosmetics.unlock.default');
-    case 'level': return t('cosmetics.unlock.level', { level: rule.level });
-    case 'stars': return t('cosmetics.unlock.stars', { count: rule.count, current: c.totalStars });
-    case 'weeklies': return t('cosmetics.unlock.weeklies', { count: rule.count, current: c.weeklies });
-    case 'achievement': {
-      const achievement = ACHIEVEMENTS_BY_ID[rule.id];
-      return t('cosmetics.unlock.achievement', { name: `${achievement?.icon ?? ''} ${t(`achievements.${rule.id}`)}` });
-    }
-    case 'winter': return t('cosmetics.unlock.winter');
-  }
-}
 
 /** Customization: board themes, target car skins, vehicle palettes and win effects (#7) */
 export default function GarageScreen() {
@@ -151,7 +135,7 @@ export default function GarageScreen() {
                 accessibilityLabel={t('cosmetics.a11y_item', { name, state })}
                 accessibilityState={{ selected: isSelected }}
               >
-                <Text style={[styles.itemIcon, !isUnlocked && styles.itemLocked]}>{def.icon}</Text>
+                <CosmeticThumb def={def} scheme={scheme} size={56} locked={!isUnlocked} />
                 <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>{name}</Text>
                 {isSelected ? (
                   <Text style={[styles.itemState, { color: colors.primaryText }]}>✓ {t('cosmetics.selected')}</Text>
@@ -200,8 +184,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   itemSelected: { borderWidth: 2.5 },
-  itemIcon: { fontSize: 28 },
-  itemLocked: { opacity: 0.35 },
   itemName: { fontSize: RFValue(14), fontWeight: '700' },
   itemState: { fontSize: RFValue(12), fontWeight: '700' },
   itemCondition: { fontSize: RFValue(11), fontWeight: '500' },

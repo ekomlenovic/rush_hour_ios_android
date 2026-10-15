@@ -529,7 +529,18 @@
       "road_expert": "Road expert",
       "traffic_master": "Traffic master",
       "legend": "Legend"
-    }
+    },
+    "see_all": "See the whole progression",
+    "screen_title": "Progression",
+    "levels_title": "Player levels",
+    "other_unlocks": "Other unlocks",
+    "other_unlocks_desc": "Earned with stars, weekly challenges and achievements, whatever your level.",
+    "new_title": "New title: {{title}}",
+    "from_xp": "{{xp}} XP in total",
+    "reached": "Reached",
+    "current": "You are here",
+    "a11y_level_row": "Level {{level}}, {{state}}. {{rewards}}",
+    "locked": "Locked"
   },
   "cosmetics": {
     "garage": "Garage",

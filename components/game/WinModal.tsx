@@ -66,7 +66,7 @@ export default function WinModal({
         <View
           style={[styles.winCard, { backgroundColor: colors.surface }]}
         >
-          <ScrollView contentContainerStyle={styles.winContent} showsVerticalScrollIndicator={false}>
+          <ScrollView style={styles.winScroll} contentContainerStyle={styles.winContent} showsVerticalScrollIndicator={false} bounces={false}>
           <Text style={styles.winStars} accessibilityLabel={t('a11y.level_stars', { count: stars })}>
             {'⭐'.repeat(stars)}{'☆'.repeat(3 - stars)}
           </Text>
@@ -175,13 +175,18 @@ const styles = StyleSheet.create({
   winCard: {
     borderRadius: 20,
     maxHeight: '88%',
-    maxWidth: '92%',
+    width: '88%',
+    maxWidth: 420,
     shadowColor: fixedColors.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 12,
     minWidth: 280,
+  },
+  // A ScrollView grows by default: it would stretch the card to its max height
+  winScroll: {
+    flexGrow: 0,
   },
   winContent: {
     padding: 32,
