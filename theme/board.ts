@@ -279,7 +279,8 @@ export const CAR_SKINS: Record<CarSkinId, CarSkin> = {
   taxi: { color: '#FACC15', icon: '🚕' },
   bus: { color: '#F59E0B', icon: '🚌' },
   police: { color: '#1E3A8A', icon: '🚓' },
-  sport: { color: '#DC2626', icon: '🏎️' },
+  // British racing green, the red emoji disappeared on a red body
+  sport: { color: '#15803D', icon: '🏎️' },
   rocket: { color: '#7C3AED', icon: '🚀' },
   gold: { color: '#EAB308', icon: '👑' },
 };
