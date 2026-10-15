@@ -30,15 +30,11 @@ jobs:
   build-ios:
     name: Build iOS
     needs: prepare
-    runs-on: macos-14
+    # Expo SDK 57 needs Xcode 26 (expo-modules-jsi is a swift-tools-version 6.2 package)
+    runs-on: macos-26
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Select Xcode 16.1
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '16.1'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -64,6 +60,7 @@ jobs:
       - name: Build iOS unsigned archive (xcodebuild)
         working-directory: ios
         run: |
+          set -o pipefail
           xcodebuild archive \
             -workspace RushHours.xcworkspace \
             -scheme RushHours \
@@ -74,7 +71,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" \
             -allowProvisioningUpdates \
-            | xcpretty --color || true
+            | xcbeautify
 
       - name: Package unsigned IPA
         run: |
