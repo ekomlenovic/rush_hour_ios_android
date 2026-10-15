@@ -659,5 +659,29 @@
     "day_archive": "{{date}}, réussi en archive",
     "day_none": "{{date}}, jamais réussi",
     "day_hint": "Rejouer ce défi"
+  },
+  "save": {
+    "title": "Sauvegarde",
+    "desc": "Change de téléphone sans perdre ta progression : exporte-la dans un fichier (ou un code), puis importe-la sur l'autre téléphone. Rien n'est envoyé sur internet.",
+    "export_btn": "Exporter ma progression",
+    "import_btn": "Importer un fichier",
+    "import_hint": "Copie d'abord un code de sauvegarde",
+    "share_title": "Ma sauvegarde Rush Hours",
+    "copied_title": "Code copié",
+    "copied_body": "Le code de ta sauvegarde est dans le presse-papiers. Garde-le en lieu sûr (notes, e-mail…).",
+    "confirm_title": "Remplacer ta progression ?",
+    "confirm_body": "Sauvegarde du {{date}} : niveau {{level}}, {{levels}} niveaux réussis, {{stars}} ⭐, streak de {{streak}}.\n\nTa progression actuelle sur ce téléphone sera remplacée.",
+    "confirm_btn": "Remplacer",
+    "success_title": "Progression importée",
+    "success_body": "Bon retour sur la route !",
+    "error_title": "Import impossible",
+    "error_empty": "Le presse-papiers est vide : copie d'abord le code de ta sauvegarde.",
+    "error_invalid": "Ce n'est pas un code de sauvegarde Rush Hours.",
+    "error_corrupted": "Ce code est incomplet ou a été modifié. Copie-le à nouveau en entier.",
+    "error_too_new": "Cette sauvegarde vient d'une version plus récente du jeu : mets d'abord l'app à jour.",
+    "error_inconsistent": "Cette sauvegarde contient des données incohérentes et ne peut pas être importée.",
+    "copy_code_btn": "Copier en code",
+    "paste_code_btn": "Coller un code",
+    "error_read": "Impossible de lire ce fichier."
   }
 }
