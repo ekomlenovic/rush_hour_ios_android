@@ -1,7 +1,8 @@
-import { useGameStore, Level } from '@/store/gameStore';
+import { useGameStore, Level, ARCHIVE_LEVEL_ID } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
 import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel, generateWeeklyLevel } from '@/utils/generator';
 import { deserializeLevel } from '@/utils/sharing';
+import { isArchiveDateAvailable } from '@/utils/archives';
 
 export interface GameRouteParams {
   levelId: string;
@@ -10,10 +11,6 @@ export interface GameRouteParams {
   data?: string;
 }
 
-/**
- * Finds the level a game route points to: daily / weekly challenge (cached in the store),
- * campaign, generated, created or imported level, or a level generated on the fly.
- */
 /** Resolves once the saved state is loaded from the device storage */
 function waitForHydration(): Promise<void> {
   if (useGameStore.persist.hasHydrated()) return Promise.resolve();
@@ -25,6 +22,35 @@ function waitForHydration(): Promise<void> {
   });
 }
 
+/**
+ * A past daily from the archives, or null for today and the future (see docs/GAME_DESIGN.md).
+ * Generated once per date and cached: the puzzle of a day never changes once played.
+ */
+export async function resolveArchiveLevel(dateKey: string): Promise<Level | null> {
+  if (!isArchiveDateAvailable(dateKey)) return null;
+  const state = useGameStore.getState();
+
+  let level: Level | null = state.archiveLevels[dateKey] ?? null;
+  if (!level) {
+    // The daily really played that day, if it is still cached
+    const daily = state.currentDailyLevel && state.dailyLevelDate === dateKey
+      ? state.currentDailyLevel
+      : await generateDailyLevel(dateKey);
+    if (!daily) return null;
+    level = { ...daily, id: ARCHIVE_LEVEL_ID };
+    // Days too old to be replayed leave the cache
+    const cached = Object.entries(useGameStore.getState().archiveLevels).filter(([date]) => isArchiveDateAvailable(date));
+    useGameStore.setState({ archiveLevels: { ...Object.fromEntries(cached), [dateKey]: level } });
+  }
+  // The save of an archive is keyed by its date
+  useGameStore.setState({ archiveDate: dateKey });
+  return level;
+}
+
+/**
+ * Finds the level a game route points to: daily / weekly challenge (cached in the store),
+ * archive, campaign, generated, created or imported level, or a level generated on the fly.
+ */
 export async function resolveLevel(params: GameRouteParams): Promise<Level | null> {
   // Opened right at launch (deep link, notification), the cached daily / weekly level
   // may not be loaded yet: regenerating it could give another puzzle than the saved game
@@ -51,6 +77,8 @@ export async function resolveLevel(params: GameRouteParams): Promise<Level | nul
         useGameStore.setState({ currentDailyLevel: level, dailyLevelDate: dateParam });
       }
     }
+  } else if (idParam === 'archive' && dateParam) {
+    level = await resolveArchiveLevel(dateParam);
   } else if (idParam === 'weekly' && weekParam) {
     if (state.currentWeeklyLevel && state.weeklyLevelKey === weekParam) {
       level = state.currentWeeklyLevel;

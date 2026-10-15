@@ -12,8 +12,9 @@ import type {
 } from './types';
 import { MAX_STREAK_FREEZES, settleStreak, advanceStreak } from './streak';
 import {
-  ACHIEVEMENT_XP, MISSIONS_XP, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, weeklyWinXp,
+  ACHIEVEMENT_XP, MISSIONS_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, weeklyWinXp,
 } from '../data/progression';
+import { isArchiveDateAvailable } from '../utils/archives';
 import {
   CosmeticKind, CosmeticSelection, COSMETICS_BY_KEY, DEFAULT_COSMETICS, buildCosmeticContext, isCosmeticUnlocked, sanitizeSelection,
 } from '../data/cosmetics';
@@ -26,6 +27,8 @@ export { MAX_STREAK_FREEZES };
 /** Reserved level IDs for challenges (excluded from map progression) */
 export const DAILY_LEVEL_ID = 999999;
 export const WEEKLY_LEVEL_ID = 999998;
+/** A past daily replayed from the archives (see docs/GAME_DESIGN.md) */
+export const ARCHIVE_LEVEL_ID = 999997;
 
 interface GenerationState {
   isRunning: boolean;
@@ -63,6 +66,8 @@ interface GameState {
   dailyChallengeProgress: Record<string, ChallengeResult>;
   /** Weekly progress: keyed by ISO week (YYYY-Www) */
   weeklyChallengeProgress: Record<string, ChallengeResult>;
+  /** Past dailies won from the archives, keyed by date (YYYY-MM-DD). Never mixed with dailyChallengeProgress */
+  archiveProgress: Record<string, ChallengeResult>;
 
   /** List of unlocked achievement IDs */
   achievements: string[];
@@ -78,9 +83,13 @@ interface GameState {
   /** Weekly challenge state for caching */
   currentWeeklyLevel: Level | null;
   weeklyLevelKey: string | null;
+  /** Archive levels already generated, keyed by date: the puzzle of a day never changes once played */
+  archiveLevels: Record<string, Level>;
+  /** Date of the archive being played (not persisted) */
+  archiveDate: string | null;
   generationState: GenerationState;
 
-  /** Per-level saved state (to prevent reset on leave), keyed by levelId, "daily-YYYY-MM-DD" or "weekly-YYYY-Www" */
+  /** Per-level saved state (to prevent reset on leave), keyed by levelId, "daily-YYYY-MM-DD", "weekly-YYYY-Www" or "archive-YYYY-MM-DD" */
   savedStates: Record<string | number, LevelSaveState>;
 
   /** Audio Enabled state */
@@ -139,6 +148,8 @@ interface GameState {
   completeLevel: (levelId: number, score: number, stars: number, timeMs?: number) => void;
   completeDailyChallenge: (dateKey: string, score: number, stars: number, timeMs?: number, details?: ChallengeDetails) => void;
   completeWeeklyChallenge: (weekKey: string, score: number, stars: number, timeMs?: number, details?: ChallengeDetails) => void;
+  /** Wins a past daily from the archives: training only, no streak, daily missions or daily achievements */
+  completeArchiveChallenge: (dateKey: string, score: number, stars: number, timeMs?: number, details?: ChallengeDetails) => void;
   checkAchievements: (options?: { silent?: boolean }) => void;
   consumeUnlockQueue: () => string[];
   recordLevelShared: () => void;
@@ -171,9 +182,10 @@ interface GameState {
 }
 
 /** Key under which a level's in-progress state is saved */
-function getLevelKey(level: Level, dailyLevelDate: string | null, weeklyLevelKey: string | null): string | number {
-  if (level.id === DAILY_LEVEL_ID && dailyLevelDate) return `daily-${dailyLevelDate}`;
-  if (level.id === WEEKLY_LEVEL_ID && weeklyLevelKey) return `weekly-${weeklyLevelKey}`;
+function getLevelKey(level: Level, state: Pick<GameState, 'dailyLevelDate' | 'weeklyLevelKey' | 'archiveDate'>): string | number {
+  if (level.id === DAILY_LEVEL_ID && state.dailyLevelDate) return `daily-${state.dailyLevelDate}`;
+  if (level.id === WEEKLY_LEVEL_ID && state.weeklyLevelKey) return `weekly-${state.weeklyLevelKey}`;
+  if (level.id === ARCHIVE_LEVEL_ID && state.archiveDate) return `archive-${state.archiveDate}`;
   return level.id;
 }
 
@@ -200,7 +212,7 @@ export const useGameStore = create<GameState>()(
         const state = get();
         if (!state.currentLevel) return;
         const next = { ...state, ...partial };
-        const levelKey = getLevelKey(state.currentLevel, state.dailyLevelDate, state.weeklyLevelKey);
+        const levelKey = getLevelKey(state.currentLevel, state);
 
         set({
           ...partial,
@@ -273,6 +285,7 @@ export const useGameStore = create<GameState>()(
       createdLevels: [],
       dailyChallengeProgress: {},
       weeklyChallengeProgress: {},
+      archiveProgress: {},
       achievements: [],
       unlockQueue: [],
       stats: initialStats(),
@@ -280,6 +293,8 @@ export const useGameStore = create<GameState>()(
       dailyLevelDate: null,
       currentWeeklyLevel: null,
       weeklyLevelKey: null,
+      archiveLevels: {},
+      archiveDate: null,
       savedStates: {},
       isMusicEnabled: true,
       isHapticsEnabled: true,
@@ -306,7 +321,7 @@ export const useGameStore = create<GameState>()(
 
       loadLevel: (level, savedState) => {
         const state = get();
-        const levelKey = getLevelKey(level, state.dailyLevelDate, state.weeklyLevelKey);
+        const levelKey = getLevelKey(level, state);
         const stored = state.savedStates[levelKey];
         // Never replay the save of another puzzle on this one: start it fresh instead
         const storedIsValid = !!stored && isSaveForLevel(level, stored);
@@ -490,6 +505,31 @@ export const useGameStore = create<GameState>()(
           currentAttempt: emptyAttempt(),
         });
         if (firstWin) addXp(weeklyWinXp(stars));
+        get().checkAchievements();
+        recordXpGain(xpBefore);
+      },
+
+      completeArchiveChallenge: (dateKey, score, stars, timeMs, details) => {
+        // Only past days: today's daily is a one-shot challenge, never an archive
+        if (!isArchiveDateAvailable(dateKey, getLocalDateString(new Date()))) return;
+        const { archiveProgress, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
+        const firstWin = !archiveProgress[dateKey]?.completed;
+        const newSavedStates = { ...savedStates };
+        delete newSavedStates[`archive-${dateKey}`];
+        const isCurrentLevel = currentLevel?.id === ARCHIVE_LEVEL_ID;
+
+        set({
+          archiveProgress: {
+            ...archiveProgress,
+            [dateKey]: mergeChallengeResult(archiveProgress[dateKey], score, stars, timeMs, details),
+          },
+          savedStates: newSavedStates,
+          stats: isCurrentLevel ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'archive') : stats,
+          currentAttempt: emptyAttempt(),
+        });
+
+        // No streak, freeze or mission: playing a missed day afterwards does not make up for it
+        if (firstWin) addXp(archiveWinXp(details?.minMoves ?? currentLevel?.minMoves ?? 0, stars));
         get().checkAchievements();
         recordXpGain(xpBefore);
       },
@@ -709,6 +749,7 @@ export const useGameStore = create<GameState>()(
           generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
           dailyChallengeProgress: {},
           weeklyChallengeProgress: {},
+          archiveProgress: {},
           achievements: [],
           unlockQueue: [],
           stats: initialStats(),
@@ -716,6 +757,8 @@ export const useGameStore = create<GameState>()(
           dailyLevelDate: null,
           currentWeeklyLevel: null,
           weeklyLevelKey: null,
+          archiveLevels: {},
+          archiveDate: null,
           savedStates: {},
           currentStreak: 0,
           bestStreak: 0,
@@ -765,12 +808,14 @@ export const useGameStore = create<GameState>()(
         createdLevels: state.createdLevels,
         dailyChallengeProgress: state.dailyChallengeProgress,
         weeklyChallengeProgress: state.weeklyChallengeProgress,
+        archiveProgress: state.archiveProgress,
         achievements: state.achievements,
         stats: state.stats,
         currentDailyLevel: state.currentDailyLevel,
         dailyLevelDate: state.dailyLevelDate,
         currentWeeklyLevel: state.currentWeeklyLevel,
         weeklyLevelKey: state.weeklyLevelKey,
+        archiveLevels: state.archiveLevels,
         savedStates: state.savedStates,
         isMusicEnabled: state.isMusicEnabled,
         isHapticsEnabled: state.isHapticsEnabled,

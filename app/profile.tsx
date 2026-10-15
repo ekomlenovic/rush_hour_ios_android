@@ -7,7 +7,8 @@ import { getFreezeCapacity, getPlayerLevel } from '@/data/progression';
 import PlayerLevelCard from '@/components/progression/PlayerLevelCard';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
-import { getLocalDateString, formatDuration } from '@/utils/date';
+import { getLocalDateString, formatDuration, parseLocalDateString } from '@/utils/date';
+import { isArchiveDateAvailable } from '@/utils/archives';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, buildAchievementContext } from '@/data/achievements';
 import { fixedColors, useTheme } from '@/theme';
 
@@ -41,7 +42,7 @@ function getCalendarDays() {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   const { colors } = useTheme();
   const bgColor = colors.background;
@@ -58,6 +59,7 @@ export default function ProfileScreen() {
   const totalHintsUsed = useGameStore((state) => state.totalHintsUsed || 0);
   const achievements = useGameStore((state) => state.achievements || []);
   const weeklyChallengeProgress = useGameStore((state) => state.weeklyChallengeProgress || {});
+  const archiveProgress = useGameStore((state) => state.archiveProgress || {});
   const createdLevels = useGameStore((state) => state.createdLevels);
   const stats = useGameStore((state) => state.stats);
   const streakFreezes = useGameStore((state) => state.streakFreezes);
@@ -68,8 +70,8 @@ export default function ProfileScreen() {
 
   const totalStars = useMemo(() => progress.reduce((sum, p) => sum + (p.stars || 0), 0), [progress]);
   const context = useMemo(
-    () => buildAchievementContext({ progress, dailyChallengeProgress, weeklyChallengeProgress, createdLevels, bestStreak, totalHintsUsed, stats }),
-    [progress, dailyChallengeProgress, weeklyChallengeProgress, createdLevels, bestStreak, totalHintsUsed, stats]
+    () => buildAchievementContext({ progress, dailyChallengeProgress, weeklyChallengeProgress, archiveProgress, createdLevels, bestStreak, totalHintsUsed, stats }),
+    [progress, dailyChallengeProgress, weeklyChallengeProgress, archiveProgress, createdLevels, bestStreak, totalHintsUsed, stats]
   );
   const perfectRate = context.completedLevels > 0 ? Math.round((context.perfectLevels / context.completedLevels) * 100) : 0;
 
@@ -178,23 +180,40 @@ export default function ProfileScreen() {
                     ? colors.dailyStars[daily.stars - 1] ?? colors.dailyStars[2]
                     : frozenSet.has(day.dateString) ? colors.frozen
                     : borderColor;
+                  const cellStyle = [
+                    styles.calendarCell,
+                    {
+                      backgroundColor: cellBgColor,
+                      borderColor: day.isToday ? accentColor : 'transparent',
+                      borderWidth: day.isToday ? 2 : 0,
+                    },
+                  ];
+                  // A past day opens its daily from the archives
+                  if (!isArchiveDateAvailable(day.dateString)) {
+                    return <View key={day.dateString} style={cellStyle} />;
+                  }
                   return (
-                    <View
+                    <Pressable
                       key={day.dateString}
-                      style={[
-                        styles.calendarCell,
-                        {
-                          backgroundColor: cellBgColor,
-                          borderColor: day.isToday ? accentColor : 'transparent',
-                          borderWidth: day.isToday ? 2 : 0,
-                        },
-                      ]}
+                      onPress={() => router.push(`/game?levelId=archive&date=${day.dateString}`)}
+                      style={({ pressed }) => [...cellStyle, pressed && { opacity: 0.6 }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={parseLocalDateString(day.dateString).toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' })}
+                      accessibilityHint={t('archives.day_hint')}
                     />
                   );
                 })}
               </View>
             ))}
+            <Text style={[styles.calendarHint, { color: secondaryTextColor }]}>{t('profile.calendar_hint')}</Text>
           </View>
+          <Pressable
+            onPress={() => router.push('/archives')}
+            style={({ pressed }) => [styles.archivesButton, { backgroundColor: cardColor, borderColor, opacity: pressed ? 0.7 : 1 }]}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.archivesButtonText, { color: colors.primaryText }]}>🗄️ {t('profile.archives')} →</Text>
+          </Pressable>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(300).duration(400)} style={[styles.section, { paddingBottom: RFValue(40) }]}>
@@ -333,6 +352,22 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: RFValue(4),
     marginHorizontal: RFValue(2),
+  },
+  calendarHint: {
+    fontSize: RFValue(12),
+    textAlign: 'center',
+    marginTop: RFValue(6),
+  },
+  archivesButton: {
+    marginTop: RFValue(12),
+    padding: RFValue(14),
+    borderRadius: RFValue(12),
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  archivesButtonText: {
+    fontSize: RFValue(15),
+    fontWeight: '700',
   },
   achievementCategory: {
     marginBottom: RFValue(16),
