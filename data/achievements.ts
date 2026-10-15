@@ -1,6 +1,12 @@
 import type { ChallengeResult, Level, LevelProgress, PlayerStats } from '../store/gameStore';
+import { sampleLevels } from './sampleLevels';
 import { computeDayRuns, getLocalDateString, parseLocalDateString } from '../utils/date';
 const HOUR_MS = 60 * 60 * 1000;
+
+/** Minimum moves from which a map level counts as hard for the "hard perfect" achievements */
+export const HARD_LEVEL_MIN_MOVES = 30;
+
+const MAP_MIN_MOVES = new Map(sampleLevels.map(l => [l.id, l.minMoves]));
 
 export type AchievementCategory = 'progress' | 'mastery' | 'purity' | 'speed' | 'daily' | 'streak' | 'creator' | 'secret';
 
@@ -34,6 +40,8 @@ export interface AchievementSource {
 export interface AchievementContext {
   completedLevels: number;
   perfectLevels: number;
+  /** Distinct map levels of HARD_LEVEL_MIN_MOVES+ minimum moves won with 3 stars */
+  hardPerfectLevels: number;
   noHintLevels: number;
   noHelpLevels: number;
   dailies: number;
@@ -70,6 +78,7 @@ export function buildAchievementContext(s: AchievementSource): AchievementContex
   return {
     completedLevels: completed.length,
     perfectLevels: completed.filter(p => p.stars === 3).length,
+    hardPerfectLevels: completed.filter(p => p.stars === 3 && (MAP_MIN_MOVES.get(p.levelId) ?? 0) >= HARD_LEVEL_MIN_MOVES).length,
     noHintLevels: completed.filter(p => p.noHint).length,
     noHelpLevels: completed.filter(p => p.noHelp).length,
     dailies: dailyEntries.length,
@@ -114,6 +123,17 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'big_grid', icon: '🗺️', category: 'mastery', target: 1, value: c => c.stats.winsByGridSize['8'] || 0 },
   { id: 'grid_explorer', icon: '🧭', category: 'mastery', target: 3, value: c => ['6', '7', '8'].filter(g => (c.stats.winsByGridSize[g] || 0) > 0).length },
   { id: 'perfect_master', icon: '💎', category: 'mastery', target: 40, value: c => c.stats.hardestPerfectMoves },
+  // Minimum moves of the hardest level won, then won with 3 stars (the optimal solution)
+  { id: 'min_moves_20', icon: '🚦', category: 'mastery', target: 20, value: c => c.stats.hardestWinMoves },
+  { id: 'min_moves_30', icon: '🚧', category: 'mastery', target: 30, value: c => c.stats.hardestWinMoves },
+  { id: 'min_moves_50', icon: '🏔️', category: 'mastery', target: 50, value: c => c.stats.hardestWinMoves },
+  { id: 'min_moves_60', icon: '🐉', category: 'mastery', target: 60, value: c => c.stats.hardestWinMoves },
+  { id: 'optimal_20', icon: '📐', category: 'mastery', target: 20, value: c => c.stats.hardestPerfectMoves },
+  { id: 'optimal_30', icon: '🎼', category: 'mastery', target: 30, value: c => c.stats.hardestPerfectMoves },
+  { id: 'optimal_50', icon: '🔮', category: 'mastery', target: 50, value: c => c.stats.hardestPerfectMoves },
+  { id: 'optimal_60', icon: '🪐', category: 'mastery', target: 60, value: c => c.stats.hardestPerfectMoves },
+  { id: 'optimal_hard_10', icon: '🧮', category: 'mastery', target: 10, value: c => c.hardPerfectLevels },
+  { id: 'optimal_hard_25', icon: '♟️', category: 'mastery', target: 25, value: c => c.hardPerfectLevels },
 
   // Purity (map and custom levels only: the daily never has hints)
   { id: 'clean_run', icon: '🎯', category: 'purity', target: 1, value: c => c.noHelpLevels },
