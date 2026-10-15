@@ -174,8 +174,8 @@ function shuffleWith<T>(arr: T[], random: () => number): T[] {
 // LEVEL GENERATOR
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Random boards tried before giving up */
-const MAX_ATTEMPTS = 600;
+/** Random boards tried before giving up (an EXPERT level takes about 500 on average) */
+const MAX_ATTEMPTS = 4000;
 /** Largest component explored, by grid size: bigger ones are skipped (too slow on a phone) */
 const MAX_COMPONENT_STATES: Record<number, number> = { 6: 60000, 7: 60000, 8: 40000 };
 
@@ -210,8 +210,9 @@ interface RandomBoard {
 
 /**
  * A random board: the target car somewhere on a lane leading to an exit on any side,
- * then other vehicles anywhere (never lying on the target's lane, they would wall the exit).
- * It does not need to be solved or hard: the exploration finds the hardest state of it.
+ * a few vehicles across that lane (blockers: hard puzzles have some, it doubles the hit rate
+ * of EXPERT), then other vehicles anywhere, never lying on the target's lane (they would wall
+ * the exit). It does not need to be solved or hard: the exploration finds the hardest state.
  */
 function randomBoard(config: DifficultyConfig, random: () => number): RandomBoard {
   'worklet';
@@ -233,6 +234,26 @@ function randomBoard(config: DifficultyConfig, random: () => number): RandomBoar
   const exitCol = horizontal ? (side === 0 ? g : 255) : lane;
 
   const count = config.minVehicles + Math.floor(random() * (config.maxVehicles - config.minVehicles + 1));
+
+  // Blockers across the target's lane: 1 for EASY and NORMAL, 2 for HARD, 3 for EXPERT
+  const blockers = Math.min(3, Math.max(1, Math.round(config.minMovesRequired / 8)));
+  for (let placed = 0, tries = 0; placed < blockers && vehicles.length < count && tries < 50; tries++) {
+    const length = random() < 0.5 ? 2 : 3;
+    const across = Math.floor(random() * g);
+    const along = Math.max(0, Math.min(g - length, lane - Math.floor(random() * length)));
+    const row = horizontal ? along : across;
+    const col = horizontal ? across : along;
+    const orientation: 'horizontal' | 'vertical' = horizontal ? 'vertical' : 'horizontal';
+    if (!canPlace(vehicles, row, col, length, orientation, g)) continue;
+    vehicles.push({
+      id: `v${vehicles.length}`,
+      row, col, length, orientation,
+      isTarget: false,
+      color: COLORS[vehicles.length % COLORS.length],
+    });
+    placed++;
+  }
+
   for (let tries = 0; vehicles.length < count && tries < count * 40; tries++) {
     const orientation: 'horizontal' | 'vertical' = random() < 0.5 ? 'horizontal' : 'vertical';
     const length = random() < 0.7 ? 2 : 3;
