@@ -26,6 +26,18 @@ export const DIFFICULTY_LEVELS: Record<string, DifficultyConfig> = {
 export const DEVICE_DIFFICULTIES = ['EASY', 'NORMAL', 'HARD', 'EXPERT'] as const;
 export type DeviceDifficulty = typeof DEVICE_DIFFICULTIES[number];
 
+/**
+ * Grid sizes offered on the phone by difficulty: a bigger grid explodes the number of states.
+ * Measured (Node, faster than a phone): NORMAL 7x7 ~7 s, HARD 7x7 ~17 s, EXPERT 7x7 ~22 s
+ * per level, against under a second for EASY 7x7 and 8x8.
+ */
+export const DEVICE_GRID_SIZES: Record<DeviceDifficulty, number[]> = {
+  EASY: [6, 7, 8],
+  NORMAL: [6],
+  HARD: [6],
+  EXPERT: [6],
+};
+
 const COLORS = GENERATOR_VEHICLE_COLORS;
 
 // ─────────────────────────────────────────────────────────────────────────────
