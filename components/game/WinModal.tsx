@@ -20,14 +20,18 @@ interface Props {
   /** Daily / weekly challenge: the result can be shared */
   canShareResult: boolean;
   onShareResult: () => void;
+  onShowSolution: () => void;
+  /** Map and custom levels only, when not optimal: replay the level for 3 stars */
+  onRetry?: () => void;
   onContinue: () => void;
   onRequestClose: () => void;
 }
 
 export default function WinModal({
   visible, colors, isDark, stars, moveCount, minMoves, score, timeMs, unlocks, missionReward,
-  canShareResult, onShareResult, onContinue, onRequestClose,
+  canShareResult, onShareResult, onShowSolution, onRetry, onContinue, onRequestClose,
 }: Props) {
+  const isOptimal = moveCount <= minMoves;
   const { t } = useTranslation();
 
   // Screen readers: the win is announced at once, before the player explores the card
@@ -53,6 +57,11 @@ export default function WinModal({
           <Text style={[styles.winScore, { color: colors.text }]}>
             {t('game.win_stats', { moves: moveCount, best: minMoves, score: score })}
           </Text>
+          {!isOptimal && (
+            <Text style={[styles.notOptimal, { color: colors.hint }]}>
+              {t('solution.not_optimal', { best: minMoves, moves: moveCount })}
+            </Text>
+          )}
           {timeMs !== null && timeMs > 0 && (
             <Text style={[styles.winTime, { color: colors.sub }]}>
               ⏱️ {formatDuration(timeMs)}
@@ -76,6 +85,24 @@ export default function WinModal({
               </Text>
             </View>
           )}
+          <View style={styles.solutionRow}>
+            <Pressable
+              style={[styles.smallButton, { backgroundColor: colors.card }]}
+              onPress={onShowSolution}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.smallButtonText, { color: colors.accent }]}>🎬 {t('solution.show')}</Text>
+            </Pressable>
+            {onRetry && !isOptimal && (
+              <Pressable
+                style={[styles.smallButton, { backgroundColor: colors.card }]}
+                onPress={onRetry}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.smallButtonText, { color: colors.accent }]}>↻ {t('solution.retry')}</Text>
+              </Pressable>
+            )}
+          </View>
           {canShareResult && (
             <Pressable
               style={[styles.winButton, styles.winShareButton, { borderColor: colors.accent }]}
@@ -135,6 +162,29 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 2,
     marginBottom: 12,
+  },
+  notOptimal: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: -16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  solutionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  smallButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+  },
+  smallButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   winTime: {
     fontSize: 14,

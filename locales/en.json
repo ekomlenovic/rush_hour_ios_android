@@ -483,5 +483,23 @@
     "added": "Added: {{vehicle}}, {{position}}",
     "horizontal": "horizontal",
     "vertical": "vertical"
+  },
+  "solution": {
+    "title": "Optimal solution",
+    "show": "See the solution",
+    "computing": "Computing the solution…",
+    "unsolvable": "Could not compute the solution.",
+    "step": "Move {{step}} / {{total}}",
+    "start": "Starting position",
+    "move": "{{vehicle}}, {{direction}}",
+    "step_announce": "Move {{step}} of {{total}}: {{move}}",
+    "not_optimal": "Optimal solution in {{best}} moves, you made {{moves}}",
+    "retry": "Retry for 3 ⭐",
+    "first": "Back to the start",
+    "prev": "Previous move",
+    "play": "Play",
+    "pause": "Pause",
+    "next": "Next move",
+    "last": "Go to the end"
   }
 }

@@ -16,7 +16,7 @@ import { requestReminderPermission } from '@/utils/notifications';
 import { calculateScore, getStars } from '@/utils/scoring';
 import { resolveLevel, GameRouteParams } from '@/utils/levelResolver';
 import { useActivePlayTime } from '@/hooks/useActivePlayTime';
-import { describeVehicle, getVehicleLetters } from '@/utils/accessibility';
+import { describeVehicle, getVehicleLetters, getMoveDirection } from '@/utils/accessibility';
 import { getGameColors } from '@/components/game/colors';
 import GameLoading from '@/components/game/GameLoading';
 import GameStatsBar from '@/components/game/GameStatsBar';
@@ -25,6 +25,7 @@ import WinModal from '@/components/game/WinModal';
 import ShareLevelModal from '@/components/game/ShareLevelModal';
 import ChallengeDoneBanner from '@/components/game/ChallengeDoneBanner';
 import HintLoadingPill from '@/components/game/HintLoadingPill';
+import SolutionPlayer from '@/components/game/SolutionPlayer';
 
 export default function GameScreen() {
   const { t, i18n } = useTranslation();
@@ -59,6 +60,7 @@ export default function GameScreen() {
   const [winMissionReward, setWinMissionReward] = useState<{ freezeGranted: boolean } | null>(null);
 
   const [isShareVisible, setShareVisible] = useState(false);
+  const [isSolutionVisible, setSolutionVisible] = useState(false);
 
   // Daily and weekly challenges are one-shot: no hint, undo or reset (see docs/GAME_DESIGN.md)
   const challengeKind = params.levelId === 'daily' && params.date ? 'daily'
@@ -226,6 +228,16 @@ export default function GameScreen() {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }, [resetLevel]);
 
+  // Replay a won map / custom level from the start, as a fresh attempt
+  const handleRetry = useCallback(() => {
+    if (!currentLevel) return;
+    loadLevel(currentLevel, { vehicles: currentLevel.vehicles, moveCount: 0, history: [] });
+    setWon(false);
+    setHintVehicleId(null);
+    setHintRemainingMoves(null);
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  }, [currentLevel, loadLevel]);
+
   const handleHint = useCallback(async () => {
     if (!currentLevel || won || isHintLoading) return;
 
@@ -262,9 +274,7 @@ export default function GameScreen() {
         // The highlight is visual only: say which vehicle to move and where
         const hinted = vehicles.find(v => v.id === hintMove.vehicleId);
         if (hinted) {
-          const direction = hinted.orientation === 'horizontal'
-            ? (hintMove.toCol > hinted.col ? 'right' : 'left')
-            : (hintMove.toRow > hinted.row ? 'down' : 'up');
+          const direction = getMoveDirection(hinted, hintMove);
           AccessibilityInfo.announceForAccessibility(t('a11y.hint_found', {
             vehicle: describeVehicle(t, hinted, getVehicleLetters(vehicles)[hinted.id]),
             direction: t(`a11y.dir_${direction}`),
@@ -341,7 +351,7 @@ export default function GameScreen() {
       </Animated.View>
 
       <WinModal
-        visible={won}
+        visible={won && !isSolutionVisible}
         colors={colors}
         isDark={isDark}
         stars={stars}
@@ -353,6 +363,8 @@ export default function GameScreen() {
         missionReward={winMissionReward}
         canShareResult={!!challengeKind}
         onShareResult={handleShareResult}
+        onShowSolution={() => setSolutionVisible(true)}
+        onRetry={challengeKind ? undefined : handleRetry}
         onContinue={handleWinContinue}
         onRequestClose={() => router.back()}
       />
@@ -378,6 +390,7 @@ export default function GameScreen() {
           kind={challengeKind}
           stars={challengeResult?.stars ?? 3}
           onShareResult={handleShareResult}
+          onShowSolution={() => setSolutionVisible(true)}
         />
       )}
 
@@ -388,6 +401,14 @@ export default function GameScreen() {
           <Text style={[styles.goalText, { color: colors.sub }]}>{t('game.goal_desc')}</Text>
         </Animated.View>
       )}
+
+      <SolutionPlayer
+        visible={isSolutionVisible}
+        level={currentLevel}
+        colors={colors}
+        isDark={isDark}
+        onClose={() => setSolutionVisible(false)}
+      />
 
       <ShareLevelModal
         visible={isShareVisible}

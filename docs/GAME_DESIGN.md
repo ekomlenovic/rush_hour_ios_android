@@ -13,6 +13,7 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 | Pas de **recommencer** (reset) | idem |
 | La **progression est conservée** si on quitte l'écran : on reprend là où on s'était arrêté, avec le même compteur de coups | `savedStates["daily-YYYY-MM-DD"]` (`store/gameStore.ts`) |
 | Une fois réussi, le plateau est **verrouillé** jusqu'au lendemain | `isDailyCompleted` désactive le plateau |
+| La **solution optimale** n'est visible **qu'une fois le défi réussi** (écran de victoire, puis bandeau « déjà réussi ») : jamais avant, pour ne pas gâcher l'essai unique | `SolutionPlayer` (`components/game/SolutionPlayer.tsx`) |
 | Même puzzle pour tout le monde à une date donnée | `generateDailyLevel(dateStr)` est déterministe |
 | Le **lundi**, le puzzle est plus difficile | `isMondayDaily` |
 | La réussite fait avancer le **streak** | `completeDailyChallenge` → `updateStreak` |
@@ -30,6 +31,8 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 | Progression sauvegardée par niveau | `savedStates[levelId]` |
 | Étoiles : 3 ⭐ = solution optimale, 2 ⭐ ≤ optimal + 3, sinon 1 ⭐ | `getStars` (`utils/scoring.ts`) |
 | On garde le meilleur score et les meilleures étoiles | `completeLevel` |
+| Après une victoire, on peut **revoir la solution optimale** : elle se joue toute seule depuis la position de départ, et on avance ou recule coup par coup | `SolutionPlayer`, `vehiclesAtStep` (`utils/solutionReplay.ts`) |
+| Si la victoire n'est pas optimale, l'écran de victoire affiche l'écart et propose **« Réessayer pour 3 ⭐ »** : une nouvelle tentative depuis le départ (compteurs remis à zéro, ce n'est pas un recommencer) | `handleRetry` (`app/game.tsx`) |
 
 ## Streak et gels
 
