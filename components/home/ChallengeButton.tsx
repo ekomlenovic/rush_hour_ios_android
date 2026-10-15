@@ -25,6 +25,8 @@ export default function ChallengeButton({ colors, label, color, done, detail, en
       entering={FadeInDown.delay(enteringDelay).springify()}
       style={[styles.secondaryButton, { borderColor: tint, borderWidth: 2 }]}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={detail ? `${label}, ${detail}` : label}
     >
       <Text style={[styles.secondaryText, { color: tint }]}>{label}</Text>
       {detail ? (

@@ -25,8 +25,8 @@ export default function ShareLevelModal({ visible, colors, isDark, shareUrl, onS
         <BlurView intensity={30} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
         <Animated.View entering={FadeInDown.springify()} style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}>
           <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('game.share_level')}</Text>
-            <Pressable onPress={onClose}>
+            <Text style={[styles.modalTitle, { color: colors.text }]} accessibilityRole="header">{t('game.share_level')}</Text>
+            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('a11y.close')} hitSlop={8}>
               <Text style={{ fontSize: 20, color: colors.sub, padding: 8 }}>✕</Text>
             </Pressable>
           </View>
@@ -34,6 +34,8 @@ export default function ShareLevelModal({ visible, colors, isDark, shareUrl, onS
           <View style={styles.qrContainer}>
               <Image
                   source={{ uri: getQRCodeUrl(shareUrl) }}
+                  accessibilityIgnoresInvertColors
+                  accessible={false}
                    style={styles.qrCode}
               />
               <Text style={[styles.qrHint, { color: colors.sub }]}>{t('game.qr_hint')}</Text>
@@ -43,12 +45,14 @@ export default function ShareLevelModal({ visible, colors, isDark, shareUrl, onS
               <Pressable
                 style={[styles.mainBtn, { backgroundColor: colors.accent, flex: 1 }]}
                 onPress={onShare}
+                accessibilityRole="button"
               >
                  <Text style={styles.mainBtnText}>{t('game.share_link')}</Text>
               </Pressable>
               <Pressable
                 style={[styles.mainBtn, { backgroundColor: colors.sub, flex: 1 }]}
                 onPress={onCopyLink}
+                accessibilityRole="button"
               >
                  <Text style={styles.mainBtnText}>{t('game.copy_url')}</Text>
               </Pressable>

@@ -71,3 +71,19 @@ export function getNextAvailableColor(usedColors: string[], baseColor: string, p
   const available = palette.filter(c => !usedColors.includes(c) && c !== '#EF4444');
   return available.length > 0 ? available[0] : palette[Math.floor(Math.random() * palette.length)];
 }
+
+/** First free top-left cell (row by row) where such a vehicle fits, or null if the board is full */
+export function findFreeCell(
+  vehicles: Vehicle[],
+  orientation: Orientation, length: number,
+  gridSize: number,
+): { row: number; col: number } | null {
+  const maxRow = gridSize - (orientation === 'vertical' ? length : 1);
+  const maxCol = gridSize - (orientation === 'horizontal' ? length : 1);
+  for (let row = 0; row <= maxRow; row++) {
+    for (let col = 0; col <= maxCol; col++) {
+      if (!hasCollision(vehicles, row, col, orientation, length)) return { row, col };
+    }
+  }
+  return null;
+}

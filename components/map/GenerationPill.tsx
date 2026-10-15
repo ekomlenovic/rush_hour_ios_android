@@ -15,6 +15,7 @@ export default function GenerationPill({ colors, isDark }: { colors: MapColors; 
   return (
     <Animated.View
       entering={FadeInDown.springify()}
+      accessibilityLiveRegion="polite"
       style={[
         styles.generationPill,
         { backgroundColor: isDark ? 'rgba(22,20,40,0.96)' : 'rgba(255,255,255,0.96)' }
@@ -32,6 +33,8 @@ export default function GenerationPill({ colors, isDark }: { colors: MapColors; 
           <Pressable
             onPress={() => cancelGeneration()}
             hitSlop={15}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.cancel')}
             style={[styles.pillCancelBtn, { backgroundColor: isDark ? 'rgba(239,68,68,0.18)' : 'rgba(239,68,68,0.1)' }]}
           >
             <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: RFValue(13) }}>✕ {t('common.cancel')}</Text>

@@ -47,6 +47,7 @@ export default function HomeScreen() {
       <Animated.Text
         entering={FadeInUp.delay(200).springify()}
         style={[styles.title, { color: colors.text }]}
+        accessibilityRole="header"
       >
         Rush Hours
       </Animated.Text>
@@ -64,6 +65,7 @@ export default function HomeScreen() {
         onPress={() => {
           router.push('/map');
         }}
+        accessibilityRole="button"
       >
         <Text style={styles.playText}>{t('home.world_map') || 'Play'}</Text>
       </AnimatedPressable>
@@ -104,6 +106,8 @@ export default function HomeScreen() {
           haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           setMissionsVisible(true);
         }}
+        accessibilityRole="button"
+        accessibilityLabel={t('a11y.missions_progress', { done: missionsDone, total: todayMissions.ids.length })}
       >
         <Text style={[styles.missionsPillText, { color: todayMissions.rewarded ? colors.success : colors.text }]}>
           🎯 {t('missions.title')} {missionsDone}/{todayMissions.ids.length}
@@ -123,6 +127,7 @@ export default function HomeScreen() {
           entering={FadeInDown.delay(900).springify()}
           style={[styles.linkButton]}
           onPress={() => router.push('/custom-levels')}
+          accessibilityRole="link"
         >
           <Text style={[styles.linkText, { color: colors.accent }]}>{t('home.my_levels')}</Text>
         </AnimatedPressable>
@@ -131,6 +136,7 @@ export default function HomeScreen() {
           entering={FadeInDown.delay(950).springify()}
           style={[styles.linkButton]}
           onPress={() => router.push('/profile')}
+          accessibilityRole="link"
         >
           <Text style={[styles.linkText, { color: colors.accent }]}>{t('home.profile')}</Text>
         </AnimatedPressable>
@@ -139,6 +145,7 @@ export default function HomeScreen() {
           entering={FadeInDown.delay(1000).springify()}
           style={[styles.linkButton]}
           onPress={() => router.push('/creator')}
+          accessibilityRole="link"
         >
           <Text style={[styles.linkText, { color: colors.accent }]}>{t('home.level_creator')}</Text>
         </AnimatedPressable>
@@ -149,6 +156,7 @@ export default function HomeScreen() {
           entering={FadeInDown.delay(1100).springify()}
           style={[styles.linkButton]}
           onPress={() => router.push('/tutorial')}
+          accessibilityRole="link"
         >
           <Text style={[styles.linkText, { color: colors.sub }]}>{t('home.how_to_play')}</Text>
         </AnimatedPressable>
@@ -163,6 +171,8 @@ export default function HomeScreen() {
             setSettingsVisible(true);
           }}
           style={[styles.settingsButton, { backgroundColor: colors.card }]}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.settings')}
         >
           <Text style={{ fontSize: 24 }}>⚙️</Text>
         </Pressable>

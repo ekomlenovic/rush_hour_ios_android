@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, useColorScheme, Pressable,
-  useWindowDimensions, Alert,
+  useWindowDimensions, Alert, AccessibilityInfo,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -12,8 +12,9 @@ import { useGameStore, Vehicle, Level } from '@/store/gameStore';
 import { validateLevel } from '@/utils/solver';
 import { haptics, Haptics } from '@/utils/haptics';
 import {
-  ExitSide, hasCollision as collides, vehicleCells, getExitSide, moveExitToSide, getNextAvailableColor,
+  ExitSide, hasCollision as collides, vehicleCells, getExitSide, moveExitToSide, getNextAvailableColor, findFreeCell,
 } from '@/utils/creatorGeometry';
+import { describeVehicle, describePosition, getVehicleLetters } from '@/utils/accessibility';
 import {
   ActiveDrag, BOARD_PADDING, CAR_PALETTE, GRID_SIZES, TOOLBOX_ITEMS, VehicleTemplate, getCreatorColors,
 } from '@/components/creator/constants';
@@ -265,6 +266,28 @@ export default function LevelCreatorScreen() {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [screenToGrid, hasCollision, boardSize, cellSize]);
 
+  /** Screen readers cannot drag from the toolbox: the vehicle goes on the first free cell */
+  const addFromToolboxA11y = useCallback((template: VehicleTemplate) => {
+    const cell = findFreeCell(vehiclesRef.current, template.orientation, template.length, gridSize);
+    if (!cell) {
+      AccessibilityInfo.announceForAccessibility(t('a11y.board_full'));
+      haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return;
+    }
+    const added: Vehicle = {
+      id: `v${Date.now()}`, row: cell.row, col: cell.col,
+      length: template.length, orientation: template.orientation,
+      isTarget: false, color: template.color,
+    };
+    setVehicles(prev => [...prev, added]);
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const letter = getVehicleLetters([...vehiclesRef.current, added])[added.id];
+    AccessibilityInfo.announceForAccessibility(t('a11y.added', {
+      vehicle: describeVehicle(t, added, letter),
+      position: describePosition(t, added),
+    }));
+  }, [gridSize, t]);
+
   const removeVehicle = useCallback((id: string) => {
     if (id === 'target') return;
     setVehicles(prev => prev.filter(v => v.id !== id));
@@ -319,6 +342,13 @@ export default function LevelCreatorScreen() {
     opacity: dragVisible.value,
   }));
 
+  const letters = getVehicleLetters(vehicles);
+  const vehicleA11yStrings = useMemo(() => ({
+    hint: t('a11y.pivot_hint'),
+    pivot: t('a11y.pivot'),
+    remove: t('a11y.remove'),
+  }), [t]);
+
   const target = vehicles.find(v => v.id === 'target');
   const exitSide = getExitSide(exitRow, exitCol, gridSize);
 
@@ -328,15 +358,15 @@ export default function LevelCreatorScreen() {
 
         {/* ── Header ── */}
         <View style={[styles.header, { backgroundColor: C.bg }]}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Pressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('a11y.back')}>
             <Text style={[styles.backArrow, { color: C.sub }]}>←</Text>
           </Pressable>
-          <Text style={[styles.title, { color: C.text }]} numberOfLines={1}>{t('creator.title')}</Text>
+          <Text style={[styles.title, { color: C.text }]} numberOfLines={1} accessibilityRole="header">{t('creator.title')}</Text>
           <View style={styles.headerRight}>
-            <Pressable onPress={handleTest} style={[styles.pill, { borderColor: C.accent, borderWidth: 1.5 }]}>
+            <Pressable onPress={handleTest} style={[styles.pill, { borderColor: C.accent, borderWidth: 1.5 }]} accessibilityRole="button" hitSlop={6}>
               <Text style={[styles.pillText, { color: C.accent }]}>{t('creator.test')}</Text>
             </Pressable>
-            <Pressable onPress={handleSave} style={[styles.pill, { backgroundColor: C.accent }]}>
+            <Pressable onPress={handleSave} style={[styles.pill, { backgroundColor: C.accent }]} accessibilityRole="button" hitSlop={6}>
               <Text style={[styles.pillText, { color: '#FFF' }]}>{t('creator.save')}</Text>
             </Pressable>
           </View>
@@ -400,6 +430,9 @@ export default function LevelCreatorScreen() {
                 }}
                 onRemove={() => removeVehicle(v.id)}
                 onPress={() => pivotVehicle(v.id)}
+                a11yLabel={describeVehicle(t, v, letters[v.id])}
+                a11yValue={describePosition(t, v)}
+                a11yStrings={vehicleA11yStrings}
               />
             ))}
           </View>
@@ -468,6 +501,7 @@ export default function LevelCreatorScreen() {
                     setFloatingTemplate(null);
                     placeFromToolbox(templateWithColor, sx, sy);
                   }}
+                  onA11yAdd={() => addFromToolboxA11y(templateWithColor)}
                 />
               );
             })}

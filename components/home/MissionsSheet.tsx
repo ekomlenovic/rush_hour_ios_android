@@ -35,7 +35,7 @@ export default function MissionsSheet({ visible, colors, isDark, missions, onClo
         const progress = getMissionProgress(mission, missions.counters);
         const done = progress >= mission.target;
         return (
-          <View key={id} style={styles.missionRow}>
+          <View key={id} style={styles.missionRow} accessible accessibilityLabel={`${t(`missions.list.${id}`)}, ${formatMissionProgress(mission, progress)}`} accessibilityState={{ checked: done }}>
             <Text style={styles.missionIcon}>{done ? '✅' : mission.icon}</Text>
             <View style={styles.missionBody}>
               <Text style={[styles.missionLabel, { color: colors.text, opacity: done ? 0.6 : 1 }]}>{t(`missions.list.${id}`)}</Text>

@@ -26,6 +26,8 @@ interface Props {
 export default function SettingsSheet({ visible, colors, isDark, onClose }: Props) {
   const { t } = useTranslation();
   const isHapticsEnabled = useGameStore(s => s.isHapticsEnabled);
+  const showVehicleLetters = useGameStore(s => s.showVehicleLetters);
+  const toggleVehicleLetters = useGameStore(s => s.toggleVehicleLetters);
   const toggleHapticsEnabled = useGameStore(s => s.toggleHapticsEnabled);
   const notificationsEnabled = useGameStore(s => s.notificationsEnabled);
   const setNotificationsEnabled = useGameStore(s => s.setNotificationsEnabled);
@@ -119,12 +121,18 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
           <Pressable
             onPress={() => changeLanguage('en')}
             style={[styles.langBtn, i18n.language === 'en' && { backgroundColor: colors.accent }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.en')}
+            accessibilityState={{ selected: i18n.language === 'en' }}
           >
             <Text style={[styles.langBtnText, { color: i18n.language === 'en' ? '#FFF' : colors.text }]}>EN</Text>
           </Pressable>
           <Pressable
             onPress={() => changeLanguage('fr')}
             style={[styles.langBtn, i18n.language === 'fr' && { backgroundColor: colors.accent }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.fr')}
+            accessibilityState={{ selected: i18n.language === 'fr' }}
           >
             <Text style={[styles.langBtnText, { color: i18n.language === 'fr' ? '#FFF' : colors.text }]}>FR</Text>
           </Pressable>
@@ -143,6 +151,7 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
             haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }}
           trackColor={{ false: '#767577', true: colors.accent }}
+          accessibilityLabel={t('home.background_music')}
         />
       </View>
 
@@ -158,6 +167,23 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
             haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }}
           trackColor={{ false: '#767577', true: colors.accent }}
+          accessibilityLabel={t('home.haptic_feedback')}
+        />
+      </View>
+
+      <View style={styles.settingRow}>
+        <View style={styles.settingText}>
+          <Text style={[styles.settingLabel, { color: colors.text }]}>{t('a11y.vehicle_letters')}</Text>
+          <Text style={[styles.settingSub, { color: colors.sub }]}>{t('a11y.vehicle_letters_desc')}</Text>
+        </View>
+        <Switch
+          value={showVehicleLetters}
+          onValueChange={() => {
+            toggleVehicleLetters();
+            haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
+          trackColor={{ false: '#767577', true: colors.accent }}
+          accessibilityLabel={t('a11y.vehicle_letters')}
         />
       </View>
 
@@ -170,6 +196,7 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
           value={notificationsEnabled}
           onValueChange={handleRemindersToggle}
           trackColor={{ false: '#767577', true: colors.accent }}
+          accessibilityLabel={t('reminders.setting')}
         />
       </View>
 
@@ -180,11 +207,11 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
             <Text style={[styles.settingSub, { color: colors.sub }]}>{t('reminders.hour_desc')}</Text>
           </View>
           <View style={styles.hourStepper}>
-            <Pressable onPress={() => setReminderHour(reminderHour - 1)} style={[styles.hourBtn, { backgroundColor: colors.card }]}>
+            <Pressable onPress={() => setReminderHour(reminderHour - 1)} style={[styles.hourBtn, { backgroundColor: colors.card }]} accessibilityRole="button" accessibilityLabel={t('a11y.hour_less')} hitSlop={4}>
               <Text style={[styles.hourBtnText, { color: colors.text }]}>−</Text>
             </Pressable>
             <Text style={[styles.hourValue, { color: colors.text }]}>{formatHour(reminderHour)}</Text>
-            <Pressable onPress={() => setReminderHour(reminderHour + 1)} style={[styles.hourBtn, { backgroundColor: colors.card }]}>
+            <Pressable onPress={() => setReminderHour(reminderHour + 1)} style={[styles.hourBtn, { backgroundColor: colors.card }]} accessibilityRole="button" accessibilityLabel={t('a11y.hour_more')} hitSlop={4}>
               <Text style={[styles.hourBtnText, { color: colors.text }]}>+</Text>
             </Pressable>
           </View>
@@ -201,6 +228,8 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
         <Pressable
           onPress={handleUpdateCheck}
           disabled={isCheckingUpdate}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isCheckingUpdate, busy: isCheckingUpdate }}
           style={[styles.updateButton, { backgroundColor: colors.card }]}
         >
           <Text style={[styles.updateButtonText, { color: colors.accent }]}>
@@ -214,6 +243,8 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
       <Pressable
         style={[styles.resetBtn, { borderColor: colors.accent, backgroundColor: colors.card, marginBottom: 12 }]}
         onPress={handleUnlockAll}
+        accessibilityRole="button"
+        accessibilityLabel={t('home.unlock_all')}
       >
         <Text style={[styles.resetBtnText, { color: colors.accent, fontWeight: '700' }]}>🔓 {t('home.unlock_all')}</Text>
       </Pressable>
@@ -221,6 +252,7 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
       <Pressable
         style={[styles.resetBtn, { borderColor: colors.sub, borderStyle: 'dotted', marginBottom: 24 }]}
         onPress={handleHardReset}
+        accessibilityRole="button"
       >
         <Text style={[styles.resetBtnText, { color: colors.sub }]}>{t('home.hard_reset_progress')}</Text>
       </Pressable>
@@ -228,6 +260,7 @@ export default function SettingsSheet({ visible, colors, isDark, onClose }: Prop
       <Pressable
         style={[styles.closeButton, { backgroundColor: colors.accent }]}
         onPress={onClose}
+        accessibilityRole="button"
       >
         <Text style={styles.closeButtonText}>{t('common.done')}</Text>
       </Pressable>

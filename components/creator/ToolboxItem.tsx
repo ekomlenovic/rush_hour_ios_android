@@ -3,7 +3,8 @@ import { View, Text, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, runOnJS, SharedValue } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
-import { CreatorColors, DIR_LABEL, MINI_CELL, SNAP, VehicleTemplate } from './constants';
+import { CreatorColors, DIR_LABEL, MINI_CELL, VehicleTemplate } from './constants';
+import { SNAP } from './snap';
 
 type ToolboxItemProps = {
   template: VehicleTemplate;
@@ -14,10 +15,12 @@ type ToolboxItemProps = {
   onDragStart: (template: VehicleTemplate, sx: number, sy: number) => void;
   onDragMove: (sx: number, sy: number) => void;
   onDrop: (sx: number, sy: number) => void;
+  /** Screen readers cannot drag: this action puts the vehicle on the first free cell */
+  onA11yAdd: () => void;
 };
 
 /** A vehicle of the toolbox, dragged onto the board to add it */
-const ToolboxItem = React.memo(function ToolboxItem({ template, colors, dragX, dragY, dragVisible, onDragStart, onDragMove, onDrop }: ToolboxItemProps) {
+const ToolboxItem = React.memo(function ToolboxItem({ template, colors, dragX, dragY, dragVisible, onDragStart, onDragMove, onDrop, onA11yAdd }: ToolboxItemProps) {
   const { t } = useTranslation();
   const sc = useSharedValue(1);
 
@@ -55,7 +58,14 @@ const ToolboxItem = React.memo(function ToolboxItem({ template, colors, dragX, d
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View style={[styles.toolCard, animStyle, {
+      <Animated.View
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={`${t(`creator.${template.label.toLowerCase()}`)}, ${t(isH ? 'a11y.horizontal' : 'a11y.vertical')}, ${size}`}
+        accessibilityHint={t('a11y.tool_hint')}
+        accessibilityActions={[{ name: 'activate', label: t('a11y.add_to_board') }]}
+        onAccessibilityAction={onA11yAdd}
+        style={[styles.toolCard, animStyle, {
         backgroundColor: colors.toolBg,
         borderColor: colors.border,
       }]}>

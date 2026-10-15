@@ -24,6 +24,9 @@ export default function PillSelector<T extends string | number>({ title, options
               key={option}
               onPress={() => onSelect(option)}
               style={[styles.sizePill, active && { backgroundColor: colors.accent }]}
+              accessibilityRole="button"
+              accessibilityLabel={`${title} ${getLabel(option)}`}
+              accessibilityState={{ selected: active }}
             >
               <Text style={[styles.sizePillText, { color: active ? '#FFF' : colors.sub }]}>{getLabel(option)}</Text>
             </Pressable>

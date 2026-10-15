@@ -112,11 +112,11 @@ export default function MapScreen() {
       {/* Header */}
       <Animated.View entering={FadeInUp.delay(100).springify()} style={[styles.header, { backgroundColor: isDark ? 'rgba(15,15,26,0.85)' : 'rgba(245,245,250,0.85)' }]}>
         <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
           <Text style={[styles.backText, { color: colors.sub }]}>← {t('common.home')}</Text>
         </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>{t('map.title')}</Text>
-        <Pressable onPress={() => setSettingsVisible(true)} style={styles.settingsButton}>
+        <Text style={[styles.headerTitle, { color: colors.text }]} accessibilityRole="header">{t('map.title')}</Text>
+        <Pressable onPress={() => setSettingsVisible(true)} style={styles.settingsButton} accessibilityRole="button" accessibilityLabel={t('a11y.settings')}>
           <Text style={{ fontSize: 24, color: colors.text }}>⚙️</Text>
         </Pressable>
       </Animated.View>

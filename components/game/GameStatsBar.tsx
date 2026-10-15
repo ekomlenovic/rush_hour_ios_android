@@ -18,11 +18,11 @@ export default function GameStatsBar({ colors, moveCount, minMoves, score, hintR
   return (
     <Animated.View entering={FadeInUp.delay(200).springify()} style={[styles.statsBar, { backgroundColor: colors.card }]}>
       <View style={styles.statsPanel}>
-        <View style={styles.statBox}>
+        <View style={styles.statBox} accessible>
           <Text style={[styles.statLabel, { color: colors.sub }]}>{t('game.moves')}</Text>
           <Text style={[styles.statValue, { color: colors.text }]}>{moveCount}</Text>
         </View>
-        <View style={styles.statBox}>
+        <View style={styles.statBox} accessible>
           <Text style={[styles.statLabel, { color: colors.sub }]}>{t('game.best')}</Text>
           <Text style={[styles.statValue, { color: colors.text }]}>
             {minMoves}
@@ -31,7 +31,7 @@ export default function GameStatsBar({ colors, moveCount, minMoves, score, hintR
         </View>
       </View>
       <View style={[styles.divider, { backgroundColor: colors.sub }]} />
-      <View style={styles.stat}>
+      <View style={styles.stat} accessible>
         <Text style={[styles.statLabel, { color: colors.sub }]}>{t('game.score')}</Text>
         <Text style={[styles.statValue, { color: score > 0 ? '#10B981' : colors.sub }]}>{score}</Text>
       </View>
