@@ -96,7 +96,7 @@ export default function ProfileScreen() {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Animated.View entering={FadeInDown.delay(50).duration(400)} style={styles.section}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>{t('progression.player_level')}</Text>
-          <PlayerLevelCard colors={colors} />
+          <PlayerLevelCard colors={colors} onSeeAll={() => router.push('/progression')} />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.section}>
