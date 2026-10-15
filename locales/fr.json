@@ -483,5 +483,23 @@
     "added": "Ajouté : {{vehicle}}, {{position}}",
     "horizontal": "à l'horizontale",
     "vertical": "à la verticale"
+  },
+  "solution": {
+    "title": "Solution optimale",
+    "show": "Voir la solution",
+    "computing": "Calcul de la solution…",
+    "unsolvable": "Impossible de calculer la solution.",
+    "step": "Coup {{step}} / {{total}}",
+    "start": "Position de départ",
+    "move": "{{vehicle}}, {{direction}}",
+    "step_announce": "Coup {{step}} sur {{total}} : {{move}}",
+    "not_optimal": "Solution optimale en {{best}} coups, tu en as fait {{moves}}",
+    "retry": "Réessayer pour 3 ⭐",
+    "first": "Revenir au début",
+    "prev": "Coup précédent",
+    "play": "Lecture",
+    "pause": "Pause",
+    "next": "Coup suivant",
+    "last": "Aller à la fin"
   }
 }
