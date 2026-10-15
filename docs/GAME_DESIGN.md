@@ -14,7 +14,8 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 | La **progression est conservée** si on quitte l'écran : on reprend là où on s'était arrêté, avec le même compteur de coups | `savedStates["daily-YYYY-MM-DD"]` (`store/gameStore.ts`) |
 | Une fois réussi, le plateau est **verrouillé** jusqu'au lendemain | `isDailyCompleted` désactive le plateau |
 | La **solution optimale** n'est visible **qu'une fois le défi réussi** (écran de victoire, puis bandeau « déjà réussi ») : jamais avant, pour ne pas gâcher l'essai unique | `SolutionPlayer` (`components/game/SolutionPlayer.tsx`) |
-| Même puzzle pour tout le monde à une date donnée | `generateDailyLevel(dateStr)` est déterministe |
+| Même puzzle pour tout le monde à une date donnée (avec la même version de l'app : un changement du générateur change les puzzles des jours suivants) | `generateDailyLevel(dateStr)` est déterministe, graine `daily-YYYY-MM-DD` |
+| Difficulté **NORMAL** (10 à 15 coups), **HARD** le lundi (15 à 25 coups) | `getDailyDifficulty` |
 | Le **lundi**, le puzzle est plus difficile | `isMondayDaily` |
 | La réussite fait avancer le **streak** | `completeDailyChallenge` → `updateStreak` |
 | N'affecte pas la progression de la carte | ID réservé `999999`, exclu de `maxUnlockedLevel` |
@@ -117,6 +118,21 @@ Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dan
 | Les effets de victoire ne se jouent pas avec « Réduire les animations » | `WinEffect` (`components/effects/WinEffect.tsx`) |
 | Les identifiants des cosmétiques sont sauvegardés : ne jamais en renommer, seulement en ajouter | |
 | Les nouveautés sont signalées sur le lien Garage jusqu'à la prochaine visite | `seenCosmetics` |
+
+## Génération des niveaux
+
+Le téléphone génère le défi du jour, les niveaux demandés dans les options de la carte et les niveaux de carte manquants. Objectif : un niveau en quelques secondes au plus, sans jamais figer l'interface (#34).
+
+| Règle | Implémentation |
+|---|---|
+| Un plateau aléatoire est **exploré en entier** (tous les états atteignables), puis la distance de chaque état à la sortie est calculée en partant des états gagnants. On choisit un état dans la plage de coups voulue, aussi difficile que possible (à 2 coups près, pour varier) | `generateLevel` (`utils/generator.ts`), `exploreComponent` (`utils/solver.ts`) |
+| Le nombre de coups annoncé est **exact** (c'est une distance de parcours en largeur) | |
+| Une même graine donne toujours le même niveau | `createPRNG`, `randomSeed` |
+| **Jamais de MASTER sur le téléphone** : trop lent. Le générateur de la carte propose EASY à EXPERT ; les niveaux de carte manquants s'arrêtent à EXPERT. MASTER reste disponible pour les scripts de pack (`generate_pack.ts`) | `DEVICE_DIFFICULTIES` |
+| Un plateau dont l'exploration dépasse un plafond d'états est abandonné (trop long sur téléphone) | `MAX_COMPONENT_STATES` |
+| Solveur, indices, solution et génération tournent sur un **thread de fond** (runtime worklet dédié), jamais sur les threads JS ou UI | `utils/solver.background.ts` |
+| Annuler la génération s'applique juste après le niveau en cours | `useLevelGenerator` |
+| Le solveur doit trouver le nombre de coups annoncé de **chaque** niveau de la campagne | `__tests__/generator.test.ts` |
 
 ## Succès
 
