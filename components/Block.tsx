@@ -32,6 +32,8 @@ interface BlockProps {
   a11yStrings: BlockA11yStrings;
   /** Letter drawn on the vehicle (color-blind option), none if undefined */
   letter?: string;
+  /** Displayed color (vehicle palette), the level's color if undefined */
+  color?: string;
 }
 
 export interface BlockA11yStrings {
@@ -56,10 +58,11 @@ const BOUNCE_SPRING = {
   mass: 0.5,
 };
 
-function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, disabled = false, a11yLabel, a11yValue, a11yStrings, letter }: BlockProps) {
+function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, disabled = false, a11yLabel, a11yValue, a11yStrings, letter, color }: BlockProps) {
 
   const { board } = useTheme();
-  const fillColor = vehicle.isTarget ? board.targetCar : vehicle.color;
+  const fillColor = vehicle.isTarget ? board.targetCar : color ?? vehicle.color;
+  const radius = cellSize * board.vehicleRadius;
 
   const width = vehicle.orientation === 'horizontal' ? cellSize * vehicle.length : cellSize;
   const height = vehicle.orientation === 'vertical' ? cellSize * vehicle.length : cellSize;
@@ -264,7 +267,7 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
             width: width - 4,
             height: height - 4,
             backgroundColor: fillColor,
-            borderRadius: cellSize * 0.18,
+            borderRadius: radius,
             shadowColor,
             borderColor: board.vehicleBorder,
           },
@@ -278,7 +281,7 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
               StyleSheet.absoluteFill,
               {
                 borderColor: board.hint,
-                borderRadius: cellSize * 0.18,
+                borderRadius: radius,
                 zIndex: 20,
                 shadowColor: board.hintOutline,
                 shadowOpacity: 1,
@@ -294,7 +297,7 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
                 { 
                   borderWidth: 1, 
                   borderColor: board.hintOutline,
-                  borderRadius: cellSize * 0.18,
+                  borderRadius: radius,
                   margin: -1,
                 }
               ]} 
@@ -304,9 +307,12 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
         <View
           style={[
             styles.shine,
-            { borderRadius: cellSize * 0.14, backgroundColor: board.vehicleShine },
+            { borderRadius: radius * 0.78, backgroundColor: board.vehicleShine },
           ]}
         />
+        {letter === undefined && vehicle.isTarget && board.targetIcon && (
+          <Text style={{ fontSize: cellSize * 0.5 }} importantForAccessibility="no" accessibilityElementsHidden>{board.targetIcon}</Text>
+        )}
         {letter !== undefined && (
           <Text style={[styles.letter, { fontSize: cellSize * 0.42, color: board.vehicleLabel, textShadowColor: board.vehicleLabelShadow }]}>{letter}</Text>
         )}
@@ -368,7 +374,8 @@ function areBlocksEqual(prevProps: BlockProps, nextProps: BlockProps) {
     prevProps.a11yLabel === nextProps.a11yLabel &&
     prevProps.a11yValue === nextProps.a11yValue &&
     prevProps.a11yStrings === nextProps.a11yStrings &&
-    prevProps.letter === nextProps.letter
+    prevProps.letter === nextProps.letter &&
+    prevProps.color === nextProps.color
   );
 }
 

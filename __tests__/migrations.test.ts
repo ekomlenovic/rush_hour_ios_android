@@ -1,6 +1,7 @@
 import { useGameStore, Level } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
 import { resetStore } from './helpers';
+import { ACHIEVEMENT_XP, MISSIONS_XP, dailyWinXp, levelWinXp, weeklyWinXp } from '../data/progression';
 
 const options = useGameStore.persist.getOptions();
 const migrate = (state: Record<string, unknown>, version: number) =>
@@ -9,18 +10,18 @@ const merge = (persisted: Record<string, unknown>) =>
   options.merge!(persisted, useGameStore.getInitialState());
 
 describe('persisted state', () => {
-  it('is at version 2', () => {
-    expect(options.version).toBe(2);
+  it('is at version 3', () => {
+    expect(options.version).toBe(3);
   });
 
   it('keeps the player data and leaves the in-game state out', () => {
     resetStore();
     useGameStore.setState({ unlockQueue: ['first_win'], pendingMissionReward: { freezeGranted: true } });
     const saved = options.partialize!(useGameStore.getState()) as Record<string, unknown>;
-    for (const key of ['progress', 'dailyChallengeProgress', 'stats', 'currentStreak', 'streakFreezes', 'frozenDates', 'dailyMissions', 'achievements', 'savedStates']) {
+    for (const key of ['progress', 'dailyChallengeProgress', 'stats', 'currentStreak', 'streakFreezes', 'frozenDates', 'dailyMissions', 'achievements', 'savedStates', 'xp', 'cosmetics', 'seenCosmetics']) {
       expect(saved).toHaveProperty(key);
     }
-    for (const key of ['unlockQueue', 'pendingMissionReward', 'currentLevel', 'vehicles', 'history']) {
+    for (const key of ['unlockQueue', 'pendingMissionReward', 'currentLevel', 'vehicles', 'history', 'levelUpQueue', 'lastXpGain']) {
       expect(saved).not.toHaveProperty(key);
     }
   });
@@ -65,9 +66,25 @@ describe('migrate', () => {
     expect(state).toMatchObject({ currentStreak: 0, bestStreak: 0, lastStreakDate: null });
   });
 
-  it('v2 is up to date: nothing changes', () => {
-    const saved = { currentStreak: 3, bestStreak: 5, lastStreakDate: '2026-10-14', dailyChallengeProgress: {} };
-    expect(migrate(saved, 2)).toEqual(saved);
+  it('v2: credits the XP of the progress made before XP existed (#14)', () => {
+    const level = sampleLevels[0];
+    const state = migrate({
+      progress: [{ levelId: level.id, completed: true, bestScore: 300, stars: 3 }],
+      dailyChallengeProgress: { '2026-10-13': { completed: true, score: 300, stars: 3 } },
+      weeklyChallengeProgress: { '2026-W41': { completed: true, score: 200, stars: 2 } },
+      achievements: ['first_win', 'daily_winner'],
+      stats: { missionDaysCompleted: 2 },
+    }, 2);
+    expect(state.xp).toBe(levelWinXp(level.minMoves, 3, true) + dailyWinXp(3) + weeklyWinXp(2) + 2 * MISSIONS_XP + 2 * ACHIEVEMENT_XP);
+  });
+
+  it('v2: a new player starts at 0 XP', () => {
+    expect(migrate({}, 2).xp).toBe(0);
+  });
+
+  it('v3 is up to date: nothing changes', () => {
+    const saved = { currentStreak: 3, bestStreak: 5, lastStreakDate: '2026-10-14', dailyChallengeProgress: {}, xp: 1234 };
+    expect(migrate(saved, 3)).toEqual(saved);
   });
 });
 

@@ -2,6 +2,9 @@ import { useGameStore, MAX_STREAK_FREEZES } from '../store/gameStore';
 import { addDays } from '../utils/date';
 import { resetStore, setToday, winDaily } from './helpers';
 
+// Level-up rewards also give freezes: tested in progression.test.ts, kept out of the streak rules here
+jest.mock('../data/progression', () => ({ ...jest.requireActual('../data/progression'), getPlayerLevel: () => 1 }));
+
 const state = () => useGameStore.getState();
 
 /** Wins the daily on `count` consecutive days from `start` */

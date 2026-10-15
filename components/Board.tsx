@@ -5,7 +5,7 @@ import { getMoveBounds } from '@/utils/collision';
 import Block, { BlockA11yStrings } from './Block';
 import { useTranslation } from 'react-i18next';
 import { getVehicleLetters, describeVehicle, describePosition, describeExit } from '@/utils/accessibility';
-import { useTheme } from '@/theme';
+import { useTheme, applyPalette } from '@/theme';
 
 
 interface BoardProps {
@@ -25,7 +25,7 @@ const BOARD_PADDING = 24;
 
 const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hintVehicleId, disabled = false, readOnly = false }: BoardProps) => {
 
-  const { colors, board } = useTheme();
+  const { colors, board, palette } = useTheme();
 
   const { width: screenWidth } = useWindowDimensions();
   const boardSize = screenWidth - BOARD_PADDING * 2;
@@ -38,6 +38,8 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
   const { t } = useTranslation();
   const showVehicleLetters = useGameStore(s => s.showVehicleLetters);
   const letters = useMemo(() => getVehicleLetters(vehicles), [vehicles]);
+  // Colors of the selected palette (cosmetic), the level's own colors with the classic one
+  const displayColors = useMemo(() => applyPalette(vehicles, palette), [vehicles, palette]);
   const a11yStrings = useMemo<BlockA11yStrings>(() => ({
     hint: t('a11y.vehicle_hint'),
     blocked: t('a11y.blocked'),
@@ -99,6 +101,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
           height: boardSize,
           backgroundColor: boardBg,
           borderColor: board.frame,
+          borderRadius: board.boardRadius,
         },
       ]}
     >
@@ -108,10 +111,12 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
       {/* Vehicles */}
       {cellSize > 0 && !isNaN(cellSize) && vehicles.map((v) => {
         const b = vehicleBounds.find(vb => vb.id === v.id)?.bounds || { min: 0, max: gridSize - v.length };
+        const color = displayColors.get(v.id) ?? v.color;
         return (
           <Block
             key={v.id}
             vehicle={v}
+            color={color}
             allVehicles={vehicles}
             gridSize={gridSize}
             cellSize={cellSize}
@@ -120,7 +125,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
             min={b.min}
             max={b.max}
             disabled={disabled || readOnly}
-            a11yLabel={describeVehicle(t, v, letters[v.id])}
+            a11yLabel={describeVehicle(t, { ...v, color }, letters[v.id])}
             a11yValue={describePosition(t, v)}
             a11yStrings={a11yStrings}
             letter={showVehicleLetters ? (v.isTarget ? '★' : letters[v.id]) : undefined}
@@ -222,7 +227,6 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
 
 const styles = StyleSheet.create({
   boardContainer: {
-    borderRadius: 16,
     borderWidth: 2,
     overflow: 'hidden',
     position: 'relative',
