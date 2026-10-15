@@ -11,7 +11,9 @@ import { useAppOpenAlert } from '@/hooks/useAppOpenAlert';
 import { useTheme, fixedColors } from '@/theme';
 import ChallengeButton from '@/components/home/ChallengeButton';
 import MissionsSheet from '@/components/home/MissionsSheet';
-import SettingsSheet from '@/components/home/SettingsSheet';
+import OptionsSheet from '@/components/settings/OptionsSheet';
+import PlayerLevelBadge from '@/components/progression/PlayerLevelBadge';
+import { useCosmetics } from '@/hooks/useCosmetics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -29,6 +31,7 @@ export default function HomeScreen() {
   const [isMissionsVisible, setMissionsVisible] = useState(false);
 
   useAppOpenAlert();
+  const { unseen: newCosmetics } = useCosmetics();
 
   const dateStr = getLocalDateString(new Date());
   const dailyStatus = dailyChallengeProgress[dateStr];
@@ -55,6 +58,10 @@ export default function HomeScreen() {
       >
         {t('home.subtitle')}
       </Animated.Text>
+
+      <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.badgeWrap}>
+        <PlayerLevelBadge colors={colors} onPress={() => router.push('/profile')} />
+      </Animated.View>
 
       <AnimatedPressable
         entering={FadeInDown.delay(600).springify()}
@@ -158,6 +165,20 @@ export default function HomeScreen() {
           <Text style={[styles.linkText, { color: colors.textMuted }]}>{t('home.how_to_play')}</Text>
         </AnimatedPressable>
 
+        <AnimatedPressable
+          entering={FadeInDown.delay(1150).springify()}
+          style={[styles.linkButton]}
+          onPress={() => router.push('/garage')}
+          accessibilityRole="link"
+          accessibilityLabel={newCosmetics.length > 0
+            ? `${t('cosmetics.garage')}, ${t('cosmetics.new_count', { count: newCosmetics.length })}`
+            : t('cosmetics.garage')}
+        >
+          <Text style={[styles.linkText, { color: colors.primaryText }]}>
+            🚘 {t('cosmetics.garage')}{newCosmetics.length > 0 ? ` (${newCosmetics.length})` : ''}
+          </Text>
+        </AnimatedPressable>
+
       </View>
 
       {/* Settings Button */}
@@ -175,10 +196,9 @@ export default function HomeScreen() {
         </Pressable>
       </Animated.View>
 
-      <SettingsSheet
+      <OptionsSheet
         visible={isSettingsVisible}
         colors={colors}
-        isDark={isDark}
         onClose={() => setSettingsVisible(false)}
       />
     </View>
@@ -191,6 +211,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
+  },
+  badgeWrap: {
+    width: '100%',
+    alignItems: 'center',
   },
   title: {
     fontSize: 48,

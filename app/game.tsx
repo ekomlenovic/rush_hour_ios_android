@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, Share, Alert, AccessibilityInfo } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -29,7 +29,9 @@ import SolutionPlayer from '@/components/game/SolutionPlayer';
 
 export default function GameScreen() {
   const { t, i18n } = useTranslation();
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, board } = useTheme();
+  const winEffect = useGameStore(s => s.cosmetics.effect);
+  const winEffectColors = useMemo(() => [board.targetCar, ...board.vehicles.slice(0, 6)], [board]);
   const router = useRouter();
   const params = useLocalSearchParams<{ levelId: string; date?: string; week?: string; data?: string }>();
 
@@ -57,6 +59,8 @@ export default function GameScreen() {
   const [winTimeMs, setWinTimeMs] = useState<number | null>(null);
   const [winUnlocks, setWinUnlocks] = useState<string[]>([]);
   const [winMissionReward, setWinMissionReward] = useState<{ freezeGranted: boolean } | null>(null);
+  const [winXpGain, setWinXpGain] = useState<{ from: number; to: number } | null>(null);
+  const [winLevelUps, setWinLevelUps] = useState<number[]>([]);
 
   const [isShareVisible, setShareVisible] = useState(false);
   const [isSolutionVisible, setSolutionVisible] = useState(false);
@@ -206,6 +210,8 @@ export default function GameScreen() {
       // Unlocked achievements are shown in the win modal instead of the global toast
       setWinUnlocks(useGameStore.getState().consumeUnlockQueue());
       setWinMissionReward(useGameStore.getState().consumeMissionReward());
+      setWinXpGain(useGameStore.getState().lastXpGain);
+      setWinLevelUps(useGameStore.getState().consumeLevelUps());
       setWinTimeMs(timeMs);
       setWon(true);
       haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -358,6 +364,10 @@ export default function GameScreen() {
         timeMs={winTimeMs}
         unlocks={winUnlocks}
         missionReward={winMissionReward}
+        xpGain={winXpGain}
+        levelUps={winLevelUps}
+        effect={winEffect}
+        effectColors={winEffectColors}
         canShareResult={!!challengeKind}
         onShareResult={handleShareResult}
         onShowSolution={() => setSolutionVisible(true)}

@@ -505,5 +505,100 @@
     "pause": "Pause",
     "next": "Coup suivant",
     "last": "Aller à la fin"
+  },
+  "progression": {
+    "level": "Niveau {{level}}",
+    "level_short": "Niv. {{level}}",
+    "xp_progress": "{{xp}} / {{next}} XP",
+    "xp_gain": "+{{xp}} XP",
+    "level_up": "Niveau {{level}} atteint !",
+    "level_up_label": "Niveau supérieur",
+    "player_level": "Niveau joueur",
+    "next_level": "Prochain niveau : {{level}}",
+    "rewards_title": "Récompenses",
+    "reward_freeze": "+1 gel de streak ❄️ (s'il reste un emplacement)",
+    "reward_slot": "Nouvel emplacement de gel : jusqu'à {{count}} ❄️",
+    "reward_cosmetic": "Débloqué : {{name}}",
+    "freeze_capacity": "Emplacements de gel",
+    "a11y_badge": "Niveau {{level}}, {{title}}, {{xp}} sur {{next}} XP avant le niveau suivant",
+    "titles": {
+      "apprentice": "Apprenti",
+      "driver": "Chauffeur",
+      "pilot": "Pilote",
+      "navigator": "Navigateur",
+      "road_expert": "As de la route",
+      "traffic_master": "Maître du trafic",
+      "legend": "Légende"
+    },
+    "see_all": "Voir toute la progression",
+    "screen_title": "Progression",
+    "levels_title": "Niveaux joueur",
+    "other_unlocks": "Autres déblocages",
+    "other_unlocks_desc": "Gagnés avec les étoiles, les défis hebdo et les succès, quel que soit ton niveau.",
+    "new_title": "Nouveau titre : {{title}}",
+    "from_xp": "{{xp}} XP au total",
+    "reached": "Atteint",
+    "current": "Tu es ici",
+    "a11y_level_row": "Niveau {{level}}, {{state}}. {{rewards}}",
+    "locked": "À venir"
+  },
+  "cosmetics": {
+    "garage": "Garage",
+    "garage_desc": "Débloque des styles en jouant : étoiles, niveau joueur, défis et succès.",
+    "preview": "Aperçu",
+    "selected": "Choisi",
+    "locked": "Verrouillé",
+    "new": "Nouveau",
+    "new_count_one": "{{count}} nouveauté",
+    "new_count_other": "{{count}} nouveautés",
+    "unlocked_count": "{{unlocked}} / {{total}} débloqués",
+    "a11y_item": "{{name}}, {{state}}",
+    "kinds": {
+      "board": "Plateau",
+      "skin": "Voiture cible",
+      "palette": "Couleurs des véhicules",
+      "effect": "Effet de victoire"
+    },
+    "unlock": {
+      "default": "Disponible",
+      "level": "Atteins le niveau {{level}}",
+      "stars": "Gagne {{count}} ⭐ ({{current}}/{{count}})",
+      "weeklies_one": "Réussis {{count}} défi hebdo",
+      "weeklies_other": "Réussis {{count}} défis hebdo ({{current}}/{{count}})",
+      "achievement": "Succès : {{name}}",
+      "winter": "Réussis un défi du jour en hiver (déc. à fév.)"
+    },
+    "board": {
+      "classic": "Classique",
+      "paper": "Papier croquis",
+      "wood": "Bois",
+      "neon": "Nuit néon",
+      "pixel": "Pixel art",
+      "snow": "Neige",
+      "fire": "En feu"
+    },
+    "skin": {
+      "classic": "Voiture rouge",
+      "taxi": "Taxi",
+      "bus": "Bus",
+      "police": "Voiture de police",
+      "rocket": "Fusée",
+      "sport": "Voiture de sport",
+      "gold": "Voiture dorée"
+    },
+    "palette": {
+      "classic": "Classique",
+      "ocean": "Océan",
+      "pastel": "Pastel",
+      "earth": "Terre",
+      "neon": "Néon",
+      "candy": "Bonbon"
+    },
+    "effect": {
+      "none": "Aucun",
+      "confetti": "Confettis",
+      "fireworks": "Feu d'artifice",
+      "speed": "Trace de vitesse"
+    }
   }
 }

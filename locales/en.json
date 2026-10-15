@@ -505,5 +505,100 @@
     "pause": "Pause",
     "next": "Next move",
     "last": "Go to the end"
+  },
+  "progression": {
+    "level": "Level {{level}}",
+    "level_short": "Lv. {{level}}",
+    "xp_progress": "{{xp}} / {{next}} XP",
+    "xp_gain": "+{{xp}} XP",
+    "level_up": "Level {{level}} reached!",
+    "level_up_label": "Level up",
+    "player_level": "Player level",
+    "next_level": "Next level: {{level}}",
+    "rewards_title": "Rewards",
+    "reward_freeze": "+1 streak freeze ❄️ (if a slot is free)",
+    "reward_slot": "New freeze slot: up to {{count}} ❄️",
+    "reward_cosmetic": "Unlocked: {{name}}",
+    "freeze_capacity": "Freeze slots",
+    "a11y_badge": "Level {{level}}, {{title}}, {{xp}} of {{next}} XP to the next level",
+    "titles": {
+      "apprentice": "Apprentice",
+      "driver": "Driver",
+      "pilot": "Pilot",
+      "navigator": "Navigator",
+      "road_expert": "Road expert",
+      "traffic_master": "Traffic master",
+      "legend": "Legend"
+    },
+    "see_all": "See the whole progression",
+    "screen_title": "Progression",
+    "levels_title": "Player levels",
+    "other_unlocks": "Other unlocks",
+    "other_unlocks_desc": "Earned with stars, weekly challenges and achievements, whatever your level.",
+    "new_title": "New title: {{title}}",
+    "from_xp": "{{xp}} XP in total",
+    "reached": "Reached",
+    "current": "You are here",
+    "a11y_level_row": "Level {{level}}, {{state}}. {{rewards}}",
+    "locked": "Locked"
+  },
+  "cosmetics": {
+    "garage": "Garage",
+    "garage_desc": "Unlock looks by playing: stars, player level, challenges and achievements.",
+    "preview": "Preview",
+    "selected": "Selected",
+    "locked": "Locked",
+    "new": "New",
+    "new_count_one": "{{count}} new item",
+    "new_count_other": "{{count}} new items",
+    "unlocked_count": "{{unlocked}} / {{total}} unlocked",
+    "a11y_item": "{{name}}, {{state}}",
+    "kinds": {
+      "board": "Board",
+      "skin": "Target car",
+      "palette": "Vehicle colors",
+      "effect": "Win effect"
+    },
+    "unlock": {
+      "default": "Available",
+      "level": "Reach level {{level}}",
+      "stars": "Earn {{count}} ⭐ ({{current}}/{{count}})",
+      "weeklies_one": "Win {{count}} weekly challenge",
+      "weeklies_other": "Win {{count}} weekly challenges ({{current}}/{{count}})",
+      "achievement": "Achievement: {{name}}",
+      "winter": "Win a daily challenge in winter (Dec. to Feb.)"
+    },
+    "board": {
+      "classic": "Classic",
+      "paper": "Paper sketch",
+      "wood": "Wood",
+      "neon": "Neon night",
+      "pixel": "Pixel art",
+      "snow": "Snow",
+      "fire": "On fire"
+    },
+    "skin": {
+      "classic": "Red car",
+      "taxi": "Taxi",
+      "bus": "Bus",
+      "police": "Police car",
+      "rocket": "Rocket",
+      "sport": "Sports car",
+      "gold": "Golden car"
+    },
+    "palette": {
+      "classic": "Classic",
+      "ocean": "Ocean",
+      "pastel": "Pastel",
+      "earth": "Earth",
+      "neon": "Neon",
+      "candy": "Candy"
+    },
+    "effect": {
+      "none": "None",
+      "confetti": "Confetti",
+      "fireworks": "Fireworks",
+      "speed": "Speed trail"
+    }
   }
 }
