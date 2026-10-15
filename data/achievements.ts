@@ -1,6 +1,7 @@
 import type { ChallengeResult, Level, LevelProgress, PlayerStats } from '../store/gameStore';
 import { sampleLevels } from './sampleLevels';
 import { computeDayRuns, getLocalDateString, parseLocalDateString } from '../utils/date';
+import { countArchiveWins, countCompleteArchiveMonths } from '../utils/archives';
 const HOUR_MS = 60 * 60 * 1000;
 
 /** Minimum moves from which a map level counts as hard for the "hard perfect" achievements */
@@ -31,6 +32,7 @@ export interface AchievementSource {
   progress: LevelProgress[];
   dailyChallengeProgress: Record<string, ChallengeResult>;
   weeklyChallengeProgress: Record<string, ChallengeResult>;
+  archiveProgress: Record<string, ChallengeResult>;
   createdLevels: Level[];
   bestStreak: number;
   totalHintsUsed: number;
@@ -54,6 +56,10 @@ export interface AchievementContext {
   perfectWeeklies: number;
   /** Weekends with both the Saturday and Sunday dailies completed */
   weekendDailies: number;
+  /** Past dailies won from the archives (never counted as dailies) */
+  archives: number;
+  /** Calendar months with every day won, with at least one archive */
+  archiveMonths: number;
   totalHintsUsed: number;
   bestStreak: number;
   createdLevels: number;
@@ -89,6 +95,8 @@ export function buildAchievementContext(s: AchievementSource): AchievementContex
     weeklies: weeklyResults.length,
     perfectWeeklies: weeklyResults.filter(r => r.stars === 3).length,
     weekendDailies,
+    archives: countArchiveWins(s.archiveProgress ?? {}),
+    archiveMonths: countCompleteArchiveMonths(s.dailyChallengeProgress, s.archiveProgress ?? {}),
     totalHintsUsed: s.totalHintsUsed,
     bestStreak: s.bestStreak,
     createdLevels: s.createdLevels.length,
@@ -102,6 +110,7 @@ const isUnder = (ms: number | null, limitMs: number) => (ms !== null && ms < lim
 /**
  * All achievements. IDs are persisted: never rename one, only add new ones.
  * Achievements of the daily challenge must respect its rules: no hint, undo or reset (see docs/GAME_DESIGN.md).
+ * Archives (past dailies) only count for the archive achievements, never for the daily ones.
  */
 export const ACHIEVEMENTS: AchievementDef[] = [
   // Progress
@@ -162,6 +171,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'missions_7', icon: '📋', category: 'daily', target: 7, value: c => c.stats.missionDaysCompleted },
   { id: 'missions_30', icon: '🗂️', category: 'daily', target: 30, value: c => c.stats.missionDaysCompleted },
   { id: 'weekend_warrior', icon: '🛋️', category: 'daily', target: 1, value: c => c.weekendDailies },
+  { id: 'archives_10', icon: '🗄️', category: 'daily', target: 10, value: c => c.archives },
+  { id: 'archives_month', icon: '📜', category: 'daily', target: 1, value: c => c.archiveMonths },
 
   // Streak
   { id: 'streak_3', icon: '🔥', category: 'streak', target: 3, value: c => c.bestStreak },

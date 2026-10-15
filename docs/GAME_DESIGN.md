@@ -21,6 +21,26 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 
 > ⚠️ Toute évolution touchant au défi du jour (missions, succès, partage…) doit respecter ces contraintes. Exemple : un succès « finir le défi du jour sans indice » n'a pas de sens, il n'y a jamais d'indice.
 
+## Archives des défis du jour — mode d'entraînement
+
+Les défis du jour **passés** se rejouent depuis les archives (Profil → « Archives des défis », ou toucher un jour passé du calendrier). Une archive est un **mode d'entraînement**, pas un défi : la règle « un seul essai » ne concerne que le jour même.
+
+| Règle | Implémentation |
+|---|---|
+| **Uniquement les jours passés** : jamais aujourd'hui (le vrai défi) ni le futur, les **90 derniers jours** au plus | `isArchiveDateAvailable` (`utils/archives.ts`), vérifié à l'ouverture (`resolveArchiveLevel`) et à la victoire (`completeArchiveChallenge`) |
+| Pas avant le **14/10/2026** : dernière modification du générateur du défi du jour, un jour plus ancien pourrait donner un autre puzzle que celui vraiment joué. **Modifier le générateur du défi du jour oblige à avancer cette date** (le générateur est figé par un test) | `ARCHIVE_FIRST_DATE`, `__tests__/archives.test.ts` |
+| Le puzzle d'un jour est généré une fois puis **mis en cache** ; si c'est le défi d'hier encore en cache, c'est ce puzzle-là | `archiveLevels` (`utils/levelResolver.ts`) |
+| Indices, annuler, recommencer et « Réessayer pour 3 ⭐ » **autorisés** | comme un niveau de la carte (`app/game.tsx`) |
+| **Aucun effet sur le streak** ni sur les gels : on ne rattrape pas un jour manqué en le jouant après coup | `completeArchiveChallenge` n'appelle pas `updateStreak` |
+| Ne compte **pas** pour les succès et missions du défi du jour (`daily_*`, `monday_survivor`, « Réussis le défi du jour »…), ni pour les missions « niveau » | résultats dans `archiveProgress`, jamais dans `dailyChallengeProgress` |
+| Score du jour même **jamais modifié** : le résultat partagé façon Wordle reste celui de la vraie tentative. Pas de partage de résultat pour une archive | idem |
+| XP **réduite** : celle d'un niveau rejoué (25 %), à la première réussite de chaque jour seulement | `archiveWinXp` (`data/progression.ts`) |
+| Progression sauvegardée par jour | `savedStates["archive-YYYY-MM-DD"]`, distincte de `daily-YYYY-MM-DD` |
+| N'affecte pas la progression de la carte | ID réservé `999997` |
+| Le **lundi** reste plus difficile | `generateDailyLevel` |
+| État de chaque jour : réussi le jour même (couleur des étoiles), réussi en archive (vert), jamais réussi | `getArchiveDayStatus`, `app/archives.tsx` |
+| Succès propres : **10 archives réussies**, un **mois complet** (tous les jours d'un mois passé réussis, le jour même ou en archive, dont au moins une archive) | `archives_10`, `archives_month` (`data/achievements.ts`) |
+
 ## Niveaux de la carte et niveaux personnalisés — mode d'entraînement
 
 | Règle | Détail |
