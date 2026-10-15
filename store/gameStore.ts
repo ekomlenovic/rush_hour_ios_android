@@ -161,6 +161,8 @@ interface GameState {
   setGenerationState: (state: Partial<GenerationState>) => void;
   cancelGeneration: () => void;
   hardReset: () => void;
+  /** Replaces the progress with an imported save (utils/saveTransfer.ts), keeping the device settings */
+  importProgress: (imported: Record<string, unknown>) => void;
   updateStreak: (dateKey: string) => void;
   recordAppOpen: () => AppOpenInfo;
   addStreakFreeze: () => boolean;
@@ -732,6 +734,19 @@ export const useGameStore = create<GameState>()(
           cosmetics: { ...DEFAULT_COSMETICS },
           seenCosmetics: [],
         });
+      },
+
+      importProgress: (imported) => {
+        get().hardReset();
+        const state = { ...get(), ...(imported as Partial<GameState>) };
+        set({
+          ...(imported as Partial<GameState>),
+          stats: { ...initialStats(), ...state.stats },
+          cosmetics: sanitizeSelection(state.cosmetics, buildCosmeticContext(state)),
+        });
+        // Achievements the progress already earns (no toast flood), then the days missed since the export
+        get().checkAchievements({ silent: true });
+        get().recordAppOpen();
       },
       };
     },
