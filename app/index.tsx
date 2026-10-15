@@ -1,31 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, Modal, Switch, Alert } from 'react-native';
-
-
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, useColorScheme, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
 import { useGameStore } from '@/store/gameStore';
-import { useAudio } from '@/context/AudioProvider';
 import { haptics, Haptics } from '@/utils/haptics';
-import { checkForUpdate, UpdateInfo } from '@/utils/updateChecker';
-import * as Linking from 'expo-linking';
-import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
-import i18n, { changeLanguage } from '@/utils/i18n';
-import { RFValue } from '@/utils/responsive';
 import { getLocalDateString, getWeekKey, getDaysLeftInWeek } from '@/utils/date';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { requestReminderPermission } from '@/utils/notifications';
-import { MISSIONS_BY_ID, MissionDef, getMissionsForDay, getMissionProgress, countMissionsDone } from '@/data/missions';
-
-function formatMissionProgress(mission: MissionDef, progress: number): string {
-  if (mission.counter === 'playMs') {
-    return `${Math.floor(progress / 60000)}/${mission.target / 60000} min`;
-  }
-  return `${progress}/${mission.target}`;
-}
-
+import { getMissionsForDay, countMissionsDone } from '@/data/missions';
+import { useAppOpenAlert } from '@/hooks/useAppOpenAlert';
+import { getHomeColors } from '@/components/home/colors';
+import ChallengeButton from '@/components/home/ChallengeButton';
+import MissionsSheet from '@/components/home/MissionsSheet';
+import SettingsSheet from '@/components/home/SettingsSheet';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -34,131 +20,18 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
-  const { maxUnlockedLevel, dailyChallengeProgress, hardReset, unlockAllLevels, isHapticsEnabled, toggleHapticsEnabled, currentStreak, recordAppOpen, weeklyChallengeProgress, streakFreezes, dailyMissions, notificationsEnabled, reminderHour, setNotificationsEnabled, setReminderHour } = useGameStore();
+  const dailyChallengeProgress = useGameStore(s => s.dailyChallengeProgress);
+  const weeklyChallengeProgress = useGameStore(s => s.weeklyChallengeProgress);
+  const currentStreak = useGameStore(s => s.currentStreak);
+  const streakFreezes = useGameStore(s => s.streakFreezes);
+  const dailyMissions = useGameStore(s => s.dailyMissions);
 
-  const { toggleMusic, isPlaying: isMusicEnabled } = useAudio();
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const [isMissionsVisible, setMissionsVisible] = useState(false);
-  const insets = useSafeAreaInsets();
-  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
-  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
-  useEffect(() => {
-    const info = recordAppOpen();
-    const lines = [
-      info.isComeback ? t('home.welcome_back_desc', { days: info.missedDays }) : null,
-      info.frozenDays > 0 ? t('home.freeze_used', { count: info.frozenDays, streak: useGameStore.getState().currentStreak }) : null,
-      info.lostStreak > 0 ? t('home.streak_lost', { count: info.lostStreak }) : null,
-    ].filter(Boolean);
-    if (lines.length > 0) {
-      setTimeout(() => {
-        Alert.alert(
-          info.isComeback ? t('home.welcome_back') : info.frozenDays > 0 ? '❄️' : '🔥',
-          lines.join('\n\n')
-        );
-      }, 500);
-    }
-  }, []);
 
-  const handleUpdateCheck = async () => {
-    setIsCheckingUpdate(true);
-    const info = await checkForUpdate();
-    setUpdateInfo(info);
-    setIsCheckingUpdate(false);
-    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    if (info.isUpdateAvailable) {
-      Alert.alert(
-        t('common.update_available'),
-        t('home.update_desc', { version: info.latestVersion }),
-        [
-          { text: t('common.later'), style: "cancel" },
-          {
-            text: info.isStoreUpdate ? t('common.update') : t('common.download'),
-            onPress: () => info.downloadURL && Linking.openURL(info.downloadURL)
-          }
-        ]
-      );
-    } else if (!info.error) {
-      Alert.alert(t('common.up_to_date'), t('common.already_latest'));
-    } else {
-      Alert.alert(t('common.check_failed'), t('common.could_not_check'));
-    }
-  };
-
-  useEffect(() => {
-    // Silent check on launch
-    const autoCheck = async () => {
-      const info = await checkForUpdate();
-      if (info.isUpdateAvailable) {
-        Alert.alert(
-          t('common.update_available'),
-          t('home.update_desc', { version: info.latestVersion }),
-          [
-            { text: t('common.later'), style: "cancel" },
-            {
-              text: info.isStoreUpdate ? t('common.update') : t('common.download'),
-              onPress: () => info.downloadURL && Linking.openURL(info.downloadURL)
-            }
-          ]
-        );
-      }
-    };
-    // autoCheck();
-  }, []);
-
-  const handleRemindersToggle = async (value: boolean) => {
-    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (value && !(await requestReminderPermission())) {
-      Alert.alert(t('reminders.denied_title'), t('reminders.denied_body'));
-      setNotificationsEnabled(false);
-      return;
-    }
-    setNotificationsEnabled(value);
-  };
-
-  const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
-
-  const handleUnlockAll = () => {
-    Alert.alert(
-      t('home.unlock_all'),
-      t('home.unlock_all_confirm'),
-      [
-        { text: t('common.cancel'), style: "cancel" },
-        {
-          text: t('common.ok'),
-          onPress: () => {
-            unlockAllLevels();
-            haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert(t('common.success'), t('home.unlock_all_success'));
-          }
-        }
-      ]
-    );
-  };
-
-  const handleHardReset = () => {
-    Alert.alert(
-      t('common.hard_reset'),
-      t('home.hard_reset_confirm_desc'),
-      [
-        { text: t('common.cancel'), style: "cancel" },
-        {
-          text: t('home.hard_reset_confirm_btn'),
-          style: "destructive",
-          onPress: () => {
-            hardReset();
-            setSettingsVisible(false);
-            haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          }
-        }
-      ]
-    );
-  };
-
-
+  useAppOpenAlert();
 
   const dateStr = getLocalDateString(new Date());
-
   const dailyStatus = dailyChallengeProgress[dateStr];
 
   const todayMissions = getMissionsForDay(dailyMissions, dateStr);
@@ -167,15 +40,14 @@ export default function HomeScreen() {
   const weekKey = getWeekKey(new Date());
   const weeklyStatus = weeklyChallengeProgress[weekKey];
 
-  const colors = isDark
-    ? { text: '#FFFFFF', sub: '#8E8EA0', accent: '#6C63FF', card: 'rgba(255,255,255,0.06)', success: '#10B981', weekly: '#F97316' }
-    : { text: '#1A1A2E', sub: '#6B6B80', accent: '#5A4FE0', card: 'rgba(0,0,0,0.04)', success: '#059669', weekly: '#EA580C' };
+  const colors = getHomeColors(isDark);
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0F0F1A' : '#F5F5FA' }]}>
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <Animated.Text
         entering={FadeInUp.delay(200).springify()}
         style={[styles.title, { color: colors.text }]}
+        accessibilityRole="header"
       >
         Rush Hours
       </Animated.Text>
@@ -193,45 +65,29 @@ export default function HomeScreen() {
         onPress={() => {
           router.push('/map');
         }}
+        accessibilityRole="button"
       >
         <Text style={styles.playText}>{t('home.world_map') || 'Play'}</Text>
       </AnimatedPressable>
 
-      <AnimatedPressable
-        entering={FadeInDown.delay(750).springify()}
-        style={[
-          styles.secondaryButton,
-          { borderColor: dailyStatus?.completed ? colors.success : colors.accent, borderWidth: 2 }
-        ]}
-        onPress={() => {
-          router.push(`/game?levelId=daily&date=${dateStr}`);
-        }}
-      >
-        <Text style={[styles.secondaryText, { color: dailyStatus?.completed ? colors.success : colors.accent }]}>
-          {dailyStatus?.completed ? t('home.daily_done', { stars: dailyStatus.stars }) : t('home.daily_challenge')}
-        </Text>
+      <ChallengeButton
+        colors={colors}
+        color={colors.accent}
+        done={!!dailyStatus?.completed}
+        label={dailyStatus?.completed ? t('home.daily_done', { stars: dailyStatus.stars }) : t('home.daily_challenge')}
+        enteringDelay={750}
+        onPress={() => router.push(`/game?levelId=daily&date=${dateStr}`)}
+      />
 
-      </AnimatedPressable>
-
-      <AnimatedPressable
-        entering={FadeInDown.delay(775).springify()}
-        style={[
-          styles.secondaryButton,
-          { borderColor: weeklyStatus?.completed ? colors.success : colors.weekly, borderWidth: 2 }
-        ]}
-        onPress={() => {
-          router.push(`/game?levelId=weekly&week=${weekKey}`);
-        }}
-      >
-        <Text style={[styles.secondaryText, { color: weeklyStatus?.completed ? colors.success : colors.weekly }]}>
-          {weeklyStatus?.completed ? t('home.weekly_done', { stars: weeklyStatus.stars }) : t('home.weekly_challenge')}
-        </Text>
-        {!weeklyStatus?.completed && (
-          <Text style={[styles.daysLeftText, { color: colors.sub }]}>
-            {t('home.weekly_days_left', { count: getDaysLeftInWeek(new Date()) })}
-          </Text>
-        )}
-      </AnimatedPressable>
+      <ChallengeButton
+        colors={colors}
+        color={colors.weekly}
+        done={!!weeklyStatus?.completed}
+        label={weeklyStatus?.completed ? t('home.weekly_done', { stars: weeklyStatus.stars }) : t('home.weekly_challenge')}
+        detail={weeklyStatus?.completed ? undefined : t('home.weekly_days_left', { count: getDaysLeftInWeek(new Date()) })}
+        enteringDelay={775}
+        onPress={() => router.push(`/game?levelId=weekly&week=${weekKey}`)}
+      />
 
       {currentStreak > 0 && (
         <Animated.Text
@@ -250,54 +106,28 @@ export default function HomeScreen() {
           haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           setMissionsVisible(true);
         }}
+        accessibilityRole="button"
+        accessibilityLabel={t('a11y.missions_progress', { done: missionsDone, total: todayMissions.ids.length })}
       >
         <Text style={[styles.missionsPillText, { color: todayMissions.rewarded ? colors.success : colors.text }]}>
           🎯 {t('missions.title')} {missionsDone}/{todayMissions.ids.length}
         </Text>
       </AnimatedPressable>
 
-      {/* Daily Missions Modal */}
-      <Modal visible={isMissionsVisible} transparent animationType="slide" onRequestClose={() => setMissionsVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-          <View style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF', paddingBottom: Math.max(48, insets.bottom + 24) }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>🎯 {t('missions.title')}</Text>
-              <Pressable onPress={() => setMissionsVisible(false)}>
-                <Text style={{ fontSize: RFValue(20), color: colors.sub, padding: 8 }}>✕</Text>
-              </Pressable>
-            </View>
-            <Text style={[styles.settingSub, { color: todayMissions.rewarded ? colors.success : colors.sub, marginBottom: 20 }]}>
-              {todayMissions.rewarded ? t('missions.all_done') : t('missions.reward_hint')}
-            </Text>
-            {todayMissions.ids.map((id) => {
-              const mission = MISSIONS_BY_ID[id];
-              if (!mission) return null;
-              const progress = getMissionProgress(mission, todayMissions.counters);
-              const done = progress >= mission.target;
-              return (
-                <View key={id} style={styles.missionRow}>
-                  <Text style={styles.missionIcon}>{done ? '✅' : mission.icon}</Text>
-                  <View style={styles.missionBody}>
-                    <Text style={[styles.missionLabel, { color: colors.text, opacity: done ? 0.6 : 1 }]}>{t(`missions.list.${id}`)}</Text>
-                    <View style={[styles.missionTrack, { backgroundColor: colors.card }]}>
-                      <View style={[styles.missionFill, { width: `${(progress / mission.target) * 100}%`, backgroundColor: done ? colors.success : colors.accent }]} />
-                    </View>
-                  </View>
-                  <Text style={[styles.missionCount, { color: colors.sub }]}>{formatMissionProgress(mission, progress)}</Text>
-                </View>
-              );
-            })}
-            <Text style={[styles.settingSub, { color: colors.sub, marginTop: 8, textAlign: 'center' }]}>{t('missions.renew')}</Text>
-          </View>
-        </View>
-      </Modal>
+      <MissionsSheet
+        visible={isMissionsVisible}
+        colors={colors}
+        isDark={isDark}
+        missions={todayMissions}
+        onClose={() => setMissionsVisible(false)}
+      />
 
       <View style={styles.footerLinks}>
         <AnimatedPressable
           entering={FadeInDown.delay(900).springify()}
           style={[styles.linkButton]}
           onPress={() => router.push('/custom-levels')}
+          accessibilityRole="link"
         >
           <Text style={[styles.linkText, { color: colors.accent }]}>{t('home.my_levels')}</Text>
         </AnimatedPressable>
@@ -306,6 +136,7 @@ export default function HomeScreen() {
           entering={FadeInDown.delay(950).springify()}
           style={[styles.linkButton]}
           onPress={() => router.push('/profile')}
+          accessibilityRole="link"
         >
           <Text style={[styles.linkText, { color: colors.accent }]}>{t('home.profile')}</Text>
         </AnimatedPressable>
@@ -314,6 +145,7 @@ export default function HomeScreen() {
           entering={FadeInDown.delay(1000).springify()}
           style={[styles.linkButton]}
           onPress={() => router.push('/creator')}
+          accessibilityRole="link"
         >
           <Text style={[styles.linkText, { color: colors.accent }]}>{t('home.level_creator')}</Text>
         </AnimatedPressable>
@@ -324,6 +156,7 @@ export default function HomeScreen() {
           entering={FadeInDown.delay(1100).springify()}
           style={[styles.linkButton]}
           onPress={() => router.push('/tutorial')}
+          accessibilityRole="link"
         >
           <Text style={[styles.linkText, { color: colors.sub }]}>{t('home.how_to_play')}</Text>
         </AnimatedPressable>
@@ -338,153 +171,20 @@ export default function HomeScreen() {
             setSettingsVisible(true);
           }}
           style={[styles.settingsButton, { backgroundColor: colors.card }]}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.settings')}
         >
           <Text style={{ fontSize: 24 }}>⚙️</Text>
         </Pressable>
       </Animated.View>
 
-      {/* Simple Settings Modal */}
-      <Modal visible={isSettingsVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-          <View style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF', paddingBottom: Math.max(48, insets.bottom + 24) }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>{t('home.options')}</Text>
-              <Pressable onPress={() => setSettingsVisible(false)}>
-                <Text style={{ fontSize: RFValue(20), color: colors.sub, padding: 8 }}>✕</Text>
-              </Pressable>
-            </View>
-
-            <View style={styles.settingRow}>
-              <View>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('common.language')}</Text>
-                <Text style={[styles.settingSub, { color: colors.sub }]}>{i18n.language === 'en' ? t('common.en') : t('common.fr')}</Text>
-              </View>
-              <View style={styles.languageBtns}>
-                <Pressable
-                  onPress={() => changeLanguage('en')}
-                  style={[styles.langBtn, i18n.language === 'en' && { backgroundColor: colors.accent }]}
-                >
-                  <Text style={[styles.langBtnText, { color: i18n.language === 'en' ? '#FFF' : colors.text }]}>EN</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => changeLanguage('fr')}
-                  style={[styles.langBtn, i18n.language === 'fr' && { backgroundColor: colors.accent }]}
-                >
-                  <Text style={[styles.langBtnText, { color: i18n.language === 'fr' ? '#FFF' : colors.text }]}>FR</Text>
-                </Pressable>
-              </View>
-            </View>
-
-            <View style={styles.settingRow}>
-              <View>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('home.background_music')}</Text>
-                <Text style={[styles.settingSub, { color: colors.sub }]}>{t('home.music_desc')}</Text>
-              </View>
-              <Switch
-                value={isMusicEnabled}
-                onValueChange={() => {
-                  toggleMusic();
-                  haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-                trackColor={{ false: '#767577', true: colors.accent }}
-              />
-            </View>
-
-            <View style={styles.settingRow}>
-              <View>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('home.haptic_feedback')}</Text>
-                <Text style={[styles.settingSub, { color: colors.sub }]}>{t('home.haptic_desc')}</Text>
-              </View>
-              <Switch
-                value={isHapticsEnabled}
-                onValueChange={() => {
-                  toggleHapticsEnabled();
-                  haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-                trackColor={{ false: '#767577', true: colors.accent }}
-              />
-            </View>
-
-            <View style={styles.settingRow}>
-              <View style={styles.settingText}>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('reminders.setting')}</Text>
-                <Text style={[styles.settingSub, { color: colors.sub }]}>{t('reminders.setting_desc')}</Text>
-              </View>
-              <Switch
-                value={notificationsEnabled}
-                onValueChange={handleRemindersToggle}
-                trackColor={{ false: '#767577', true: colors.accent }}
-              />
-            </View>
-
-            {notificationsEnabled && (
-              <View style={styles.settingRow}>
-                <View style={styles.settingText}>
-                  <Text style={[styles.settingLabel, { color: colors.text }]}>{t('reminders.hour')}</Text>
-                  <Text style={[styles.settingSub, { color: colors.sub }]}>{t('reminders.hour_desc')}</Text>
-                </View>
-                <View style={styles.hourStepper}>
-                  <Pressable onPress={() => setReminderHour(reminderHour - 1)} style={[styles.hourBtn, { backgroundColor: colors.card }]}>
-                    <Text style={[styles.hourBtnText, { color: colors.text }]}>−</Text>
-                  </Pressable>
-                  <Text style={[styles.hourValue, { color: colors.text }]}>{formatHour(reminderHour)}</Text>
-                  <Pressable onPress={() => setReminderHour(reminderHour + 1)} style={[styles.hourBtn, { backgroundColor: colors.card }]}>
-                    <Text style={[styles.hourBtnText, { color: colors.text }]}>+</Text>
-                  </Pressable>
-                </View>
-              </View>
-            )}
-
-            <View style={[styles.divider, { backgroundColor: colors.sub }]} />
-
-            <View style={styles.versionRow}>
-              <View>
-                <Text style={[styles.settingLabel, { color: colors.text }]}>{t('home.version')}</Text>
-                <Text style={[styles.settingSub, { color: colors.sub }]}>{Constants.expoConfig?.version || '1.0.0'}</Text>
-              </View>
-              <Pressable
-                onPress={handleUpdateCheck}
-                disabled={isCheckingUpdate}
-                style={[styles.updateButton, { backgroundColor: colors.card }]}
-              >
-                <Text style={[styles.updateButtonText, { color: colors.accent }]}>
-                  {isCheckingUpdate ? t('common.checking') : t('home.check_for_update')}
-                </Text>
-              </Pressable>
-            </View>
-
-            <View style={[styles.divider, { backgroundColor: colors.sub }]} />
-
-            <Pressable
-              style={[styles.resetBtn, { borderColor: colors.accent, backgroundColor: colors.card, marginBottom: 12 }]}
-              onPress={handleUnlockAll}
-            >
-              <Text style={[styles.resetBtnText, { color: colors.accent, fontWeight: '700' }]}>🔓 {t('home.unlock_all')}</Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.resetBtn, { borderColor: colors.sub, borderStyle: 'dotted', marginBottom: 24 }]}
-              onPress={handleHardReset}
-            >
-              <Text style={[styles.resetBtnText, { color: colors.sub }]}>{t('home.hard_reset_progress')}</Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.closeButton, { backgroundColor: colors.accent }]}
-              onPress={() => setSettingsVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>{t('common.done')}</Text>
-            </Pressable>
-
-          </View>
-        </View>
-      </Modal>
+      <SettingsSheet
+        visible={isSettingsVisible}
+        colors={colors}
+        isDark={isDark}
+        onClose={() => setSettingsVisible(false)}
+      />
     </View>
-
-
-
-
   );
 }
 
@@ -522,25 +222,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
   },
-  secondaryButton: {
-    marginTop: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  secondaryText: {
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  daysLeftText: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
-  },
   streakText: {
     fontSize: 16,
     fontWeight: '700',
@@ -557,46 +238,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  missionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  missionIcon: {
-    fontSize: 26,
-    marginRight: 12,
-  },
-  missionBody: {
-    flex: 1,
-  },
-  missionLabel: {
-    fontSize: RFValue(15),
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  missionTrack: {
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  missionFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  missionCount: {
-    fontSize: RFValue(13),
-    fontWeight: '600',
-    marginLeft: 12,
-    minWidth: 56,
-    textAlign: 'right',
-  },
   footerLinks: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 16,
   },
   linkButton: {
-
     marginTop: 24,
     padding: 12,
   },
@@ -617,129 +264,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 48,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  modalTitle: {
-    fontSize: RFValue(24),
-    fontWeight: '800',
-  },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  settingText: {
-    flexShrink: 1,
-    marginRight: 12,
-  },
-  hourStepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  hourBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hourBtnText: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  hourValue: {
-    fontSize: RFValue(16),
-    fontWeight: '700',
-    minWidth: 52,
-    textAlign: 'center',
-  },
-  settingLabel: {
-    fontSize: RFValue(18),
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  settingSub: {
-    fontSize: RFValue(14),
-  },
-  languageBtns: {
-    flexDirection: 'row',
-    gap: 8,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    padding: 4,
-    borderRadius: 12
-  },
-  langBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8
-  },
-  langBtnText: {
-    fontSize: RFValue(14),
-    fontWeight: '700'
-  },
-  closeButton: {
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: '#FFFFFF',
-    fontSize: RFValue(18),
-    fontWeight: '700',
-  },
-  divider: {
-    height: 1,
-    opacity: 0.2,
-    marginVertical: 20,
-  },
-  resetBtn: {
-    paddingVertical: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  resetBtnText: {
-    fontSize: RFValue(15),
-    fontWeight: '700',
-  },
-  versionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  updateButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  updateButtonText: {
-    fontSize: RFValue(14),
-    fontWeight: '600',
-  },
 });
-
-
-
-

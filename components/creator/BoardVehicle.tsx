@@ -1,0 +1,110 @@
+import React, { useEffect } from 'react';
+import { View, Text } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, runOnJS } from 'react-native-reanimated';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import { Vehicle } from '@/store/gameStore';
+import { SNAP } from './snap';
+import { vehicleStyles as styles } from './vehicleStyles';
+
+type BoardVehicleProps = {
+  vehicle: Vehicle;
+  cellSize: number;
+  isGhost: boolean;
+  onDragStart: () => void;
+  onDragMove: (tx: number, ty: number) => void;
+  onDragEnd: (tx: number, ty: number) => void;
+  onRemove: () => void;
+  onPress: () => void;
+  /** Screen reader: vehicle, position, and the labels of its actions */
+  a11yLabel: string;
+  a11yValue: string;
+  a11yStrings: { hint: string; pivot: string; remove: string };
+};
+
+/** A vehicle on the creator board: drag to move, tap to pivot, long press to remove */
+const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, cellSize, isGhost, onDragStart, onDragMove, onDragEnd, onRemove, onPress, a11yLabel, a11yValue, a11yStrings }: BoardVehicleProps) {
+  const tx = useSharedValue(0);
+  const ty = useSharedValue(0);
+  const sc = useSharedValue(1);
+  const opacity = useSharedValue(1);
+
+  useEffect(() => {
+    opacity.value = SNAP(isGhost ? 0.12 : 1);
+  }, [isGhost]);
+
+  const tap = Gesture.Tap()
+    .onStart(() => {
+      runOnJS(onPress)();
+    });
+
+  const pan = Gesture.Pan()
+    .minDistance(2)
+    .onStart(() => {
+      'use worklet';
+      sc.value = SNAP(1.05);
+      runOnJS(onDragStart)();
+    })
+    .onUpdate(e => {
+      'use worklet';
+      tx.value = e.translationX;
+      ty.value = e.translationY;
+      runOnJS(onDragMove)(e.translationX, e.translationY);
+    })
+    .onEnd(e => {
+      'use worklet';
+      sc.value = SNAP(1);
+      tx.value = SNAP(0);
+      ty.value = SNAP(0);
+      runOnJS(onDragEnd)(e.translationX, e.translationY);
+    });
+
+  const longPress = Gesture.LongPress()
+    .minDuration(600)
+    .onStart(() => runOnJS(onRemove)());
+
+  const gesture = Gesture.Exclusive(pan, tap, longPress);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: tx.value },
+      { translateY: ty.value },
+      { scale: sc.value },
+    ],
+    opacity: opacity.value,
+    zIndex: sc.value > 1 ? 80 : 2,
+    elevation: sc.value > 1 ? 10 : 4,
+  }));
+
+  const w = (v.orientation === 'horizontal' ? v.length : 1) * cellSize - 4;
+  const h = (v.orientation === 'vertical' ? v.length : 1) * cellSize - 4;
+
+  return (
+    <GestureDetector gesture={gesture}>
+      <Animated.View
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={a11yLabel}
+        accessibilityValue={{ text: a11yValue }}
+        accessibilityHint={a11yStrings.hint}
+        accessibilityActions={[
+          { name: 'activate', label: a11yStrings.pivot },
+          ...(v.isTarget ? [] : [{ name: 'remove', label: a11yStrings.remove }, { name: 'longpress', label: a11yStrings.remove }]),
+        ]}
+        onAccessibilityAction={e => (e.nativeEvent.actionName === 'activate' ? onPress() : onRemove())}
+        style={[
+        styles.vehicleBlock, animStyle,
+        { top: v.row * cellSize + 2, left: v.col * cellSize + 2, width: w, height: h, backgroundColor: v.color },
+      ]}>
+        <View style={[styles.vehicleShine, v.orientation === 'vertical' && styles.vehicleShineV]} />
+        {v.isTarget
+          ? <Text style={styles.targetIcon}>🚗</Text>
+          : <View style={[styles.vehicleGrip, v.orientation === 'vertical' && { flexDirection: 'column' }]}>
+            <View style={styles.gripDot} /><View style={styles.gripDot} />
+          </View>
+        }
+      </Animated.View>
+    </GestureDetector>
+  );
+});
+
+export default BoardVehicle;

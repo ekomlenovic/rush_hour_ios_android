@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Pressable, AccessibilityInfo } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -39,6 +39,11 @@ export default function AchievementToast() {
 
   useEffect(() => {
     if (!current) return;
+    // Screen readers: the toast is announced, it may vanish before the player reaches it
+    const announced = current.kind === 'achievement'
+      ? `${t('achievements.unlocked')} ${t(`achievements.${current.id}`)}`
+      : `${t('missions.completed')} ${current.freezeGranted ? t('missions.reward_freeze') : t('missions.reward_full')}`;
+    AccessibilityInfo.announceForAccessibility(announced);
     const timer = setTimeout(() => setCurrent(null), DISPLAY_MS);
     return () => clearTimeout(timer);
   }, [current]);
@@ -62,6 +67,9 @@ export default function AchievementToast() {
       >
         <Pressable
           onPress={() => setCurrent(null)}
+          accessibilityRole="button"
+          accessibilityLabel={`${label} ${name}`}
+          accessibilityHint={t('a11y.close')}
           style={[styles.toast, { backgroundColor: isDark ? '#1C1C28' : '#FFFFFF', borderColor: '#F59E0B' }]}
         >
           <Text style={styles.icon}>{icon}</Text>

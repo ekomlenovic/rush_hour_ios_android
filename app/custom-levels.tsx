@@ -98,30 +98,39 @@ export default function CustomLevelsScreen() {
                     <Pressable
                         onPress={() => toggleFavorite(item.id, type)}
                         style={[styles.iconBtn]}
+                        accessibilityRole="button"
+                        accessibilityLabel={item.isFavorite ? t('a11y.favorite_remove') : t('a11y.favorite_add')}
+                        accessibilityState={{ selected: !!item.isFavorite }}
                     >
                         <Text style={{ fontSize: 20, color: item.isFavorite ? colors.star : colors.sub }}>{item.isFavorite ? '★' : '☆'}</Text>
                     </Pressable>
                     <Pressable
                         onPress={() => handleShare(item)}
                         style={[styles.iconBtn]}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('a11y.share_link')}
                     >
                         <Text style={{ fontSize: 18, color: colors.accent }}>🔗</Text>
                     </Pressable>
                     <Pressable
                         onPress={() => router.push(`/game?levelId=${item.id}`)}
                         style={[styles.actionBtn, { backgroundColor: colors.accent }]}
+                        accessibilityRole="button"
                     >
                         <Text style={styles.actionText}>{t('common.play')}</Text>
                     </Pressable>
                     <Pressable
                         onPress={() => router.push(`/creator?levelId=${item.id}`)}
                         style={[styles.actionBtn, { backgroundColor: colors.sub }]}
+                        accessibilityRole="button"
                     >
                         <Text style={styles.actionText}>{t('common.edit')}</Text>
                     </Pressable>
                     <Pressable
                         onPress={() => handleDelete(item.id)}
                         style={[styles.actionBtn, { backgroundColor: colors.danger }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('a11y.delete_level')}
                     >
                         <Text style={styles.actionText}>✕</Text>
                     </Pressable>
@@ -133,7 +142,7 @@ export default function CustomLevelsScreen() {
     return (
         <View style={[styles.container, { backgroundColor: colors.bg }]}>
              <View style={styles.header}>
-                <Pressable onPress={() => router.back()} style={styles.backButton}>
+                <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
                     <Text style={[styles.backText, { color: colors.sub }]}>← {t('common.home')}</Text>
                 </Pressable>
                 <Text style={[styles.headerTitle, { color: colors.text }]}>{t('home.my_levels')}</Text>
@@ -144,18 +153,24 @@ export default function CustomLevelsScreen() {
                 <Pressable
                     onPress={() => setActiveTab('created')}
                     style={[styles.tab, activeTab === 'created' && { borderBottomColor: colors.accent, borderBottomWidth: 3 }]}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: activeTab === 'created' }}
                 >
                     <Text style={[styles.tabText, { color: activeTab === 'created' ? colors.text : colors.sub }]}>{t('custom_levels.tabs.created')}</Text>
                 </Pressable>
                 <Pressable
                     onPress={() => setActiveTab('imported')}
                     style={[styles.tab, activeTab === 'imported' && { borderBottomColor: colors.accent, borderBottomWidth: 3 }]}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: activeTab === 'imported' }}
                 >
                     <Text style={[styles.tabText, { color: activeTab === 'imported' ? colors.text : colors.sub }]}>{t('custom_levels.tabs.imported')}</Text>
                 </Pressable>
                 <Pressable
                     onPress={() => setActiveTab('favorites')}
                     style={[styles.tab, activeTab === 'favorites' && { borderBottomColor: colors.accent, borderBottomWidth: 3 }]}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: activeTab === 'favorites' }}
                 >
                     <Text style={[styles.tabText, { color: activeTab === 'favorites' ? colors.text : colors.sub }]}>{t('custom_levels.tabs.favorites')}</Text>
                 </Pressable>
@@ -168,12 +183,14 @@ export default function CustomLevelsScreen() {
                             style={[styles.input, { color: colors.text, borderColor: colors.sub + '22' }]}
                             placeholder={t('custom_levels.import_placeholder')}
                             placeholderTextColor={colors.sub}
+                            accessibilityLabel={t('custom_levels.import_placeholder')}
                             value={importUrl}
                             onChangeText={setImportUrl}
                         />
                         <Pressable
                              onPress={handlePaste}
                             style={[styles.pasteBtn, { backgroundColor: colors.sub + '22' }]}
+                            accessibilityRole="button"
                         >
                             <Text style={[styles.pasteBtnText, { color: colors.accent }]}>{t('common.paste')}</Text>
                         </Pressable>
@@ -181,6 +198,7 @@ export default function CustomLevelsScreen() {
                     <Pressable
                          onPress={handleManualImport}
                         style={[styles.importBtn, { backgroundColor: colors.accent }]}
+                        accessibilityRole="button"
                     >
                         <Text style={styles.importBtnText}>{t('common.import')}</Text>
                     </Pressable>
@@ -201,6 +219,7 @@ export default function CustomLevelsScreen() {
                             <Pressable
                                  onPress={() => router.push('/creator')}
                                 style={[styles.createBtn, { backgroundColor: colors.accent }]}
+                                accessibilityRole="button"
                             >
                                 <Text style={styles.createBtnText}>{t('custom_levels.create_new')}</Text>
                             </Pressable>

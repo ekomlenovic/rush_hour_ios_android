@@ -28,7 +28,7 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 | **Annuler compte comme un coup** | `undo` incrémente `moveCount` : annuler n'est pas gratuit pour le score |
 | **Recommencer** remet le compteur à zéro | `resetLevel` |
 | Progression sauvegardée par niveau | `savedStates[levelId]` |
-| Étoiles : 3 ⭐ = solution optimale, 2 ⭐ ≤ optimal + 3, sinon 1 ⭐ | `app/game.tsx` |
+| Étoiles : 3 ⭐ = solution optimale, 2 ⭐ ≤ optimal + 3, sinon 1 ⭐ | `getStars` (`utils/scoring.ts`) |
 | On garde le meilleur score et les meilleures étoiles | `completeLevel` |
 
 ## Streak et gels
@@ -37,11 +37,11 @@ Le streak compte les jours consécutifs avec le défi du jour réussi.
 
 | Règle | Implémentation |
 |---|---|
-| Un **gel** ❄️ couvre un jour manqué : le streak continue (le jour gelé ne compte pas dans le total) | `settleStreak` (`store/gameStore.ts`) |
+| Un **gel** ❄️ couvre un jour manqué : le streak continue (le jour gelé ne compte pas dans le total) | `settleStreak` (`store/streak.ts`) |
 | Les gels sont **consommés automatiquement**, à l'ouverture de l'app ou à la réussite du défi suivant | `recordAppOpen`, `updateStreak` |
 | S'il manque plus de jours que de gels en stock, le streak est **perdu** (affiché à 0) et les gels sont **conservés** | |
 | Stock limité à **2 gels** | `MAX_STREAK_FREEZES` |
-| On gagne un gel **tous les 7 jours de streak** et en finissant les **3 missions du jour** | `updateStreak`, missions |
+| On gagne un gel **tous les 7 jours de streak** et en finissant les **3 missions du jour** | `advanceStreak` (`store/streak.ts`), missions |
 | Pas de monnaie : un gel ne s'achète pas | |
 | Les jours gelés apparaissent en bleu dans le calendrier du profil | `frozenDates` |
 
@@ -78,7 +78,7 @@ Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler
 | Le niveau est **déguisé** : une des 7 symétries non triviales (rotation / miroir) et couleurs remélangées. Le nombre minimum de coups est inchangé | `transformLevel` |
 | **Diversité** : tout le pool est parcouru avant qu'un niveau revienne, deux semaines de suite ne se ressemblent pas | pas de 23 dans le pool, symétrie qui change chaque semaine |
 | Ajouter des niveaux à la campagne agrandit le pool et **change le tirage des semaines suivantes**. La semaine en cours ne bouge pas : son niveau est en cache pour sa clé de semaine | `currentWeeklyLevel` / `weeklyLevelKey` |
-| **Recommencer** est le seul bouton d'action ; il remet les coups à zéro | `resetLevel`, boutons dans `app/game.tsx` |
+| **Recommencer** est le seul bouton d'action ; il remet les coups à zéro | `resetLevel`, `components/game/GameActions.tsx` |
 | N'affecte **ni le streak ni la carte** | ID réservé `999998`, `weeklyChallengeProgress` |
 
 ## Succès
@@ -97,9 +97,25 @@ Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler
 - Le **temps de jeu** ne compte que le temps actif : écran de jeu ouvert, app au premier plan, niveau non résolu.
 - Indices, annulations, recommencements et temps sont suivis **par tentative** et survivent à la fermeture de l'écran (`savedStates[…].attempt`).
 
+## Accessibilité
+
+Le jeu se joue entièrement avec VoiceOver (iOS) et TalkBack (Android).
+
+| Règle | Implémentation |
+|---|---|
+| Chaque véhicule est annoncé : type, **lettre**, couleur, puis sa position (« Voiture B (bleu), à l'horizontale, ligne 3, colonnes 2 à 3 ») | `describeVehicle`, `describePosition` (`utils/accessibility.ts`) |
+| On déplace un véhicule **d'une case** sans glisser : balayage haut / bas (élément « ajustable ») ou actions « Déplacer à gauche / droite / haut / bas ». Ce déplacement est un **coup normal** (même chemin que le glisser) | `stepVehicle`, `components/Block.tsx` |
+| La lettre d'un véhicule suit l'ordre du niveau et ne change pas pendant la partie ; la voiture cible n'en a pas | `getVehicleLetters` |
+| L'indice est **annoncé** (véhicule et direction), pas seulement surligné | `handleHint` (`app/game.tsx`) |
+| La victoire, les succès et les missions terminées sont annoncés | `WinModal`, `AchievementToast` |
+| Option **« Lettres sur les véhicules »** (désactivée par défaut) pour distinguer les véhicules sans les couleurs | `showVehicleLetters` |
+| Les animations suivent le réglage système « Réduire les animations » | `ReducedMotionConfig` (`app/_layout.tsx`) |
+| Créateur : « Ajouter au plateau » place le véhicule sur la **première case libre** (on ne peut pas glisser au lecteur d'écran) ; toucher deux fois fait pivoter, l'action « Supprimer » retire | `findFreeCell` (`utils/creatorGeometry.ts`) |
+| Tout nouveau bouton a un `accessibilityRole`, et un `accessibilityLabel` traduit s'il ne contient qu'une icône | clés `a11y.*` des fichiers de traduction |
+
 ## Retour du joueur
 
-- Après **3 jours ou plus** d'absence : message de bienvenue (`recordAppOpen`, `app/index.tsx`).
+- Après **3 jours ou plus** d'absence : message de bienvenue (`recordAppOpen`, `hooks/useAppOpenAlert.ts`).
 
 ## Roadmap
 
@@ -116,6 +132,8 @@ Les règles ci-dessus sont vérifiées par les tests de `__tests__/` (Jest). Tou
 | `npm run typecheck` | vérification TypeScript |
 
 La CI (`.github/workflows/tests.yml`) lance le typecheck et les tests dans les trois fuseaux sur chaque pull request.
+
+Le build de l'app (`.github/workflows/build.yml`) ne se lance **qu'à la main** (Actions → Run workflow). Lancé sur `main`, il publie une release et met à jour les sources SideStore / Android ; lancé sur une autre branche, il ne fait que builder.
 
 ## Conventions
 
