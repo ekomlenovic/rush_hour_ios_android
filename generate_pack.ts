@@ -9,7 +9,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { generateLevel, randomSeed, DIFFICULTY_LEVELS } from './utils/generator.js';
+import { generateLevel, DIFFICULTY_LEVELS } from './utils/generator.js';
 
 // ── Configuration ──────────────────────────────────────────────────────────
 
@@ -70,7 +70,7 @@ async function main() {
     let attempts = 0;
 
     while (!level && attempts < MAX_RETRIES_PER_LEVEL) {
-      level = generateLevel(i, diffConfig, randomSeed());
+      level = generateLevel(i, diffConfig);
       attempts++;
 
       if (!level && attempts % PROGRESS_DOT_INTERVAL === 0) {
