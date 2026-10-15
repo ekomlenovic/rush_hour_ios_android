@@ -34,7 +34,7 @@ export default function ChallengeDoneBanner({ colors, isDark, kind, stars, onSha
       <Text style={{ color: colors.sub, fontSize: 13, textAlign: 'center', marginTop: 4 }}>
         {t(kind === 'weekly' ? 'game.weekly_already_completed' : 'game.daily_already_completed')}
       </Text>
-      <Pressable onPress={onShareResult} style={[styles.bannerShareButton, { borderColor: green }]}>
+      <Pressable onPress={onShareResult} style={[styles.bannerShareButton, { borderColor: green }]} accessibilityRole="button">
         <Text style={{ color: green, fontWeight: '700', fontSize: 14 }}>📤 {t('share.share_result')}</Text>
       </Pressable>
     </Animated.View>

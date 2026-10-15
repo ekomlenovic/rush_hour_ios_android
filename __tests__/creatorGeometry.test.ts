@@ -1,4 +1,4 @@
-import { hasCollision, vehicleCells, getExitSide, moveExitToSide, getNextAvailableColor } from '../utils/creatorGeometry';
+import { hasCollision, vehicleCells, getExitSide, moveExitToSide, getNextAvailableColor, findFreeCell } from '../utils/creatorGeometry';
 import type { Vehicle } from '../store/types';
 
 const car = (id: string, row: number, col: number, orientation: Vehicle['orientation'], length = 2): Vehicle =>
@@ -49,5 +49,18 @@ describe('getNextAvailableColor', () => {
   it('keeps the base color when unused, else takes the first free one (never the target red)', () => {
     expect(getNextAvailableColor([], '#B', palette)).toBe('#B');
     expect(getNextAvailableColor(['#A', '#B'], '#A', palette)).toBe('#C');
+  });
+});
+
+describe('findFreeCell', () => {
+  it('returns the first free place, row by row', () => {
+    const board = [car('target', 0, 0, 'horizontal'), car('v1', 0, 2, 'vertical', 3)];
+    expect(findFreeCell(board, 'horizontal', 2, 6)).toEqual({ row: 0, col: 3 });
+    expect(findFreeCell(board, 'vertical', 3, 6)).toEqual({ row: 0, col: 3 });
+  });
+
+  it('returns null when nothing fits', () => {
+    const full = [0, 1].map(r => car(`h${r}`, r, 0, 'horizontal'));
+    expect(findFreeCell(full, 'horizontal', 2, 2)).toBeNull();
   });
 });

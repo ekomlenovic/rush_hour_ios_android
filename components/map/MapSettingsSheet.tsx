@@ -94,8 +94,8 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF', paddingBottom: Math.max(40, insets.bottom + 24) }]}>
           <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('home.options')}</Text>
-            <Pressable onPress={onClose}>
+            <Text style={[styles.modalTitle, { color: colors.text }]} accessibilityRole="header">{t('home.options')}</Text>
+            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('a11y.close')} hitSlop={8}>
               <Text style={{ fontSize: RFValue(20), color: colors.sub, padding: 8 }}>✕</Text>
             </Pressable>
           </View>
@@ -121,12 +121,18 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
                 <Pressable
                   onPress={() => changeLanguage('en')}
                   style={[styles.langBtn, i18n.language === 'en' && { backgroundColor: colors.accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('common.en')}
+                  accessibilityState={{ selected: i18n.language === 'en' }}
                 >
                   <Text style={[styles.langBtnText, { color: i18n.language === 'en' ? '#FFF' : colors.text }]}>EN</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => changeLanguage('fr')}
                   style={[styles.langBtn, i18n.language === 'fr' && { backgroundColor: colors.accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('common.fr')}
+                  accessibilityState={{ selected: i18n.language === 'fr' }}
                 >
                   <Text style={[styles.langBtnText, { color: i18n.language === 'fr' ? '#FFF' : colors.text }]}>FR</Text>
                 </Pressable>
@@ -143,6 +149,7 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
                 value={isMusicEnabled}
                 onValueChange={toggleMusic}
                 trackColor={{ false: '#767577', true: colors.accent }}
+                accessibilityLabel={t('map.background_music')}
               />
             </View>
 
@@ -158,6 +165,7 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
                   haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
                 trackColor={{ false: '#767577', true: colors.accent }}
+                accessibilityLabel={t('map.haptic_feedback')}
               />
             </View>
 
@@ -181,6 +189,8 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
                       setGenGridSize(DIFFICULTY_LEVELS[diff].gridSize);
                     }}
                     style={[styles.segmentBtn, genDifficulty === diff && { backgroundColor: colors.accent }]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: genDifficulty === diff }}
                   >
                     <Text
                       style={[styles.segmentText, { color: genDifficulty === diff ? '#FFF' : colors.text }]}
@@ -202,6 +212,8 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
                     key={size}
                     onPress={() => setGenGridSize(size)}
                     style={[styles.segmentBtn, genGridSize === size && { backgroundColor: colors.accent }]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: genGridSize === size }}
                   >
                     <Text style={[styles.segmentText, { color: genGridSize === size ? '#FFF' : colors.text }]}>
                       {size}x{size}
@@ -219,6 +231,8 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
                     key={amt}
                     onPress={() => setGenAmount(amt)}
                     style={[styles.segmentBtn, genAmount === amt && { backgroundColor: colors.accent }]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: genAmount === amt }}
                   >
                     <Text style={[styles.segmentText, { color: genAmount === amt ? '#FFF' : colors.text }]}>
                       {amt}
@@ -234,6 +248,8 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
                 style={[styles.mainBtn, { backgroundColor: colors.accent, opacity: isGenerating ? 0.5 : 1 }]}
                 onPress={handleGenerateCustomLevels}
                 disabled={isGenerating}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: isGenerating, busy: isGenerating }}
               >
                 <Text style={styles.mainBtnText}>
                   {isGenerating ? t('map.generating') : t('map.generate_btn', { amount: genAmount, time: Math.ceil((genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000) })}
@@ -244,6 +260,7 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
                 <Pressable
                   style={[styles.resetBtn, { borderColor: '#EF4444' }]}
                   onPress={handleResetLevels}
+                  accessibilityRole="button"
                 >
                   <Text style={[styles.resetBtnText, { color: '#EF4444' }]}>{t('map.reset_custom')}</Text>
                 </Pressable>
@@ -255,6 +272,7 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
               <Pressable
                 style={[styles.mainBtn, { backgroundColor: '#24292e', marginBottom: 12 }]}
                 onPress={() => Linking.openURL(REQUEST_LEVELS_URL)}
+                accessibilityRole="link"
               >
                 <Text style={styles.mainBtnText}>{t('map.request_github')}</Text>
               </Pressable>
@@ -262,6 +280,8 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
               <Pressable
                 style={[styles.resetBtn, { borderColor: colors.accent, backgroundColor: colors.bg, marginTop: 12 }]}
                 onPress={handleUnlockAll}
+                accessibilityRole="button"
+                accessibilityLabel={t('home.unlock_all')}
               >
                 <Text style={[styles.resetBtnText, { color: colors.accent, fontWeight: '700' }]}>🔓 {t('home.unlock_all')}</Text>
               </Pressable>
@@ -269,6 +289,7 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
               <Pressable
                 style={[styles.resetBtn, { borderColor: colors.sub, borderStyle: 'dotted', marginTop: 12 }]}
                 onPress={handleHardReset}
+                accessibilityRole="button"
               >
                 <Text style={[styles.resetBtnText, { color: colors.sub }]}>{t('map.hard_reset_progress')}</Text>
               </Pressable>
@@ -276,7 +297,7 @@ export default function MapSettingsSheet({ visible, colors, isDark, onClose }: P
           </ScrollView>
 
           {!settingsScrolledToBottom && (
-            <Animated.View entering={FadeInDown} style={styles.scrollHint}>
+            <Animated.View entering={FadeInDown} style={styles.scrollHint} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
               <Text style={{ color: colors.accent, fontWeight: '700', fontSize: RFValue(12) }}>{t('map.scroll_hint')}</Text>
             </Animated.View>
           )}

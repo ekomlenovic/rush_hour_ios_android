@@ -56,6 +56,16 @@ const LevelNode = React.memo(({
 
   const nodeOpacity = (isUnlocked || isPadlockNode || isTutorial) ? 1 : 0.4;
 
+  // "Level 12, 3 stars" / "Level 13, next level" / "Level 14, locked"
+  const a11yLabel = isPadlockNode ? t('a11y.map_end')
+    : isTutorial ? t('tutorial.title')
+    : [
+        isCustom ? t('a11y.generated_level', { id: point.id }) : t('a11y.level', { id: point.id }),
+        stars > 0 ? t('a11y.level_stars', { count: stars }) : null,
+        isCurrent ? t('a11y.level_next') : null,
+        !isUnlocked && !isCustom ? t('a11y.level_locked') : null,
+      ].filter(Boolean).join(', ');
+
   return (
     <Animated.View
       entering={FadeInDown.springify()}
@@ -66,6 +76,9 @@ const LevelNode = React.memo(({
     >
       <Pressable
         onPress={() => onPress(point.id, isUnlocked, isCustom)}
+        accessibilityRole="button"
+        accessibilityLabel={a11yLabel}
+        accessibilityState={{ disabled: !isUnlocked && !isCustom && !isTutorial }}
         style={({ pressed }) => [
           styles.carNode,
           { backgroundColor: carColor, borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)', opacity: nodeOpacity },
@@ -91,7 +104,7 @@ const LevelNode = React.memo(({
       </Pressable>
 
       {(isUnlocked || isTutorial) && (
-        <View style={styles.starsContainer}>
+        <View style={styles.starsContainer} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
           {stars > 0 ? (
             <Text style={styles.starsText}>
               {'⭐'.repeat(stars)}

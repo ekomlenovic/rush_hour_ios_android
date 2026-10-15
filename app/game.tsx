@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable, Share, Alert } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Pressable, Share, Alert, AccessibilityInfo } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { haptics, Haptics } from '@/utils/haptics';
@@ -16,6 +16,7 @@ import { requestReminderPermission } from '@/utils/notifications';
 import { calculateScore, getStars } from '@/utils/scoring';
 import { resolveLevel, GameRouteParams } from '@/utils/levelResolver';
 import { useActivePlayTime } from '@/hooks/useActivePlayTime';
+import { describeVehicle, getVehicleLetters } from '@/utils/accessibility';
 import { getGameColors } from '@/components/game/colors';
 import GameLoading from '@/components/game/GameLoading';
 import GameStatsBar from '@/components/game/GameStatsBar';
@@ -258,6 +259,18 @@ export default function GameScreen() {
         setHintVehicleId(hintMove.vehicleId);
         haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
+        // The highlight is visual only: say which vehicle to move and where
+        const hinted = vehicles.find(v => v.id === hintMove.vehicleId);
+        if (hinted) {
+          const direction = hinted.orientation === 'horizontal'
+            ? (hintMove.toCol > hinted.col ? 'right' : 'left')
+            : (hintMove.toRow > hinted.row ? 'down' : 'up');
+          AccessibilityInfo.announceForAccessibility(t('a11y.hint_found', {
+            vehicle: describeVehicle(t, hinted, getVehicleLetters(vehicles)[hinted.id]),
+            direction: t(`a11y.dir_${direction}`),
+          }));
+        }
+
         // Auto-clear hint highlight after 8 seconds
         setTimeout(() => {
           setHintVehicleId(null);
@@ -272,7 +285,7 @@ export default function GameScreen() {
     } finally {
       setIsHintLoading(false);
     }
-  }, [vehicles, currentLevel, won, isHintLoading, recordHintUsed]);
+  }, [vehicles, currentLevel, won, isHintLoading, recordHintUsed, t]);
 
   const minMoves = computedMinMoves ?? currentLevel?.minMoves ?? 0;
   const score = calculateScore(moveCount, minMoves);
@@ -288,15 +301,15 @@ export default function GameScreen() {
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* Header */}
       <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
           <Text style={[styles.backText, { color: colors.sub }]}>← {t('common.map')}</Text>
         </Pressable>
-        <Text style={[styles.levelTitle, { color: colors.text }]}>
+        <Text style={[styles.levelTitle, { color: colors.text }]} accessibilityRole="header">
           {challengeKind === 'daily' ? t('home.daily_challenge')
             : challengeKind === 'weekly' ? t('home.weekly_challenge')
             : t('game.level_count', { id: currentLevel.id })}
         </Text>
-        <Pressable onPress={() => setShareVisible(true)} style={styles.shareHeaderBtn}>
+        <Pressable onPress={() => setShareVisible(true)} style={styles.shareHeaderBtn} accessibilityRole="button" accessibilityLabel={t('a11y.share_level')}>
           <Text style={{ fontSize: 22 }}>📤</Text>
         </Pressable>
       </Animated.View>

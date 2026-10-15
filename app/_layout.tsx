@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { ReducedMotionConfig, ReduceMotion } from 'react-native-reanimated';
 import { AudioProvider } from '@/context/AudioProvider';
 import AchievementToast from '@/components/AchievementToast';
 import { useReminderSync } from '@/utils/notifications';
@@ -53,6 +54,8 @@ export default function RootLayout() {
           }}
         />
         <AchievementToast />
+        {/* Follow the system "Reduce motion" setting for every animation (#26) */}
+        <ReducedMotionConfig mode={ReduceMotion.System} />
       </GestureHandlerRootView>
     </AudioProvider>
   );

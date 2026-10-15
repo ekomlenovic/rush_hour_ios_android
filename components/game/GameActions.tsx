@@ -20,13 +20,16 @@ export default function GameActions({ colors, showUndoAndHint, isHintLoading, on
     <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.actions}>
       {showUndoAndHint && (
         <>
-          <Pressable onPress={onUndo} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
+          <Pressable onPress={onUndo} style={[styles.actionBtn, { backgroundColor: colors.card }]} accessibilityRole="button" accessibilityLabel={t('game.undo')}>
             <Text style={[styles.actionText, { color: colors.text }]}>↩ {t('game.undo')}</Text>
           </Pressable>
           <Pressable
             onPress={onHint}
             style={[styles.actionBtn, { backgroundColor: colors.hint + '22' }]}
             disabled={isHintLoading}
+            accessibilityRole="button"
+            accessibilityLabel={isHintLoading ? t('game.analyzing') : t('game.hint')}
+            accessibilityState={{ disabled: isHintLoading, busy: isHintLoading }}
           >
             {isHintLoading ? (
               <ActivityIndicator size="small" color={colors.hint} />
@@ -36,7 +39,7 @@ export default function GameActions({ colors, showUndoAndHint, isHintLoading, on
           </Pressable>
         </>
       )}
-       <Pressable onPress={onReset} style={[styles.actionBtn, { backgroundColor: colors.card }]}>
+       <Pressable onPress={onReset} style={[styles.actionBtn, { backgroundColor: colors.card }]} accessibilityRole="button" accessibilityLabel={t('common.reset')}>
         <Text style={[styles.actionText, { color: colors.text }]}>↻ {t('common.reset')}</Text>
       </Pressable>
     </Animated.View>

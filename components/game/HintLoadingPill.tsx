@@ -11,6 +11,7 @@ export default function HintLoadingPill({ colors, isDark }: { colors: GameColors
     <Animated.View
       entering={FadeInUp.duration(300)}
       exiting={FadeOut.duration(300)}
+      accessibilityLiveRegion="polite"
       style={[styles.hintPill, { backgroundColor: isDark ? 'rgba(245,158,11,0.15)' : 'rgba(217,119,6,0.1)' }]}
     >
       <ActivityIndicator size="small" color={colors.hint} />

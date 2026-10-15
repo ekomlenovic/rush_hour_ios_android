@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, Modal, AccessibilityInfo } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
 import { formatDuration } from '@/utils/date';
@@ -29,16 +29,27 @@ export default function WinModal({
   canShareResult, onShareResult, onContinue, onRequestClose,
 }: Props) {
   const { t } = useTranslation();
+
+  // Screen readers: the win is announced at once, before the player explores the card
+  useEffect(() => {
+    if (!visible) return;
+    AccessibilityInfo.announceForAccessibility(t('a11y.win', {
+      title: t('game.level_complete'),
+      stars,
+      stats: t('game.win_stats', { moves: moveCount, best: minMoves, score }),
+    }));
+  }, [visible]);
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onRequestClose}>
       <View style={styles.winOverlay}>
         <View
           style={[styles.winCard, { backgroundColor: isDark ? '#1A1A2E' : '#FFFFFF' }]}
         >
-          <Text style={styles.winStars}>
+          <Text style={styles.winStars} accessibilityLabel={t('a11y.level_stars', { count: stars })}>
             {'⭐'.repeat(stars)}{'☆'.repeat(3 - stars)}
           </Text>
-          <Text style={[styles.winTitle, { color: colors.accent }]}>{t('game.level_complete')}</Text>
+          <Text style={[styles.winTitle, { color: colors.accent }]} accessibilityRole="header">{t('game.level_complete')}</Text>
           <Text style={[styles.winScore, { color: colors.text }]}>
             {t('game.win_stats', { moves: moveCount, best: minMoves, score: score })}
           </Text>
@@ -69,6 +80,7 @@ export default function WinModal({
             <Pressable
               style={[styles.winButton, styles.winShareButton, { borderColor: colors.accent }]}
               onPress={onShareResult}
+              accessibilityRole="button"
             >
               <Text style={[styles.winButtonText, { color: colors.accent }]}>📤 {t('share.share_result')}</Text>
             </Pressable>
@@ -76,6 +88,7 @@ export default function WinModal({
           <Pressable
             style={[styles.winButton, { backgroundColor: colors.accent }]}
             onPress={onContinue}
+            accessibilityRole="button"
           >
            <Text style={styles.winButtonText}>{t('common.continue')}</Text>
           </Pressable>

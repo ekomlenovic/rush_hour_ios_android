@@ -1,10 +1,3 @@
-import { withTiming } from 'react-native-reanimated';
-
-export const SNAP = (val: number) => {
-  'worklet';
-  return withTiming(val, { duration: 110 });
-};
-
 export const BOARD_PADDING = 32;
 export const MINI_CELL = 30;
 

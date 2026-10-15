@@ -3,7 +3,7 @@ import { View, Text } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, runOnJS } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { Vehicle } from '@/store/gameStore';
-import { SNAP } from './constants';
+import { SNAP } from './snap';
 import { vehicleStyles as styles } from './vehicleStyles';
 
 type BoardVehicleProps = {
@@ -15,10 +15,14 @@ type BoardVehicleProps = {
   onDragEnd: (tx: number, ty: number) => void;
   onRemove: () => void;
   onPress: () => void;
+  /** Screen reader: vehicle, position, and the labels of its actions */
+  a11yLabel: string;
+  a11yValue: string;
+  a11yStrings: { hint: string; pivot: string; remove: string };
 };
 
 /** A vehicle on the creator board: drag to move, tap to pivot, long press to remove */
-const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, cellSize, isGhost, onDragStart, onDragMove, onDragEnd, onRemove, onPress }: BoardVehicleProps) {
+const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, cellSize, isGhost, onDragStart, onDragMove, onDragEnd, onRemove, onPress, a11yLabel, a11yValue, a11yStrings }: BoardVehicleProps) {
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
   const sc = useSharedValue(1);
@@ -76,7 +80,18 @@ const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, cellSize, is
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View style={[
+      <Animated.View
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={a11yLabel}
+        accessibilityValue={{ text: a11yValue }}
+        accessibilityHint={a11yStrings.hint}
+        accessibilityActions={[
+          { name: 'activate', label: a11yStrings.pivot },
+          ...(v.isTarget ? [] : [{ name: 'remove', label: a11yStrings.remove }, { name: 'longpress', label: a11yStrings.remove }]),
+        ]}
+        onAccessibilityAction={e => (e.nativeEvent.actionName === 'activate' ? onPress() : onRemove())}
+        style={[
         styles.vehicleBlock, animStyle,
         { top: v.row * cellSize + 2, left: v.col * cellSize + 2, width: w, height: h, backgroundColor: v.color },
       ]}>

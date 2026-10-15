@@ -2,7 +2,9 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, useColorScheme, useWindowDimensions } from 'react-native';
 import { Vehicle, useGameStore } from '@/store/gameStore';
 import { getMoveBounds } from '@/utils/collision';
-import Block from './Block';
+import Block, { BlockA11yStrings } from './Block';
+import { useTranslation } from 'react-i18next';
+import { getVehicleLetters, describeVehicle, describePosition, describeExit } from '@/utils/accessibility';
 
 
 interface BoardProps {
@@ -30,6 +32,18 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
   const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
   const boardBg = isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)';
   const exitColor = '#EF4444';
+
+  const { t } = useTranslation();
+  const showVehicleLetters = useGameStore(s => s.showVehicleLetters);
+  const letters = useMemo(() => getVehicleLetters(vehicles), [vehicles]);
+  const a11yStrings = useMemo<BlockA11yStrings>(() => ({
+    hint: t('a11y.vehicle_hint'),
+    blocked: t('a11y.blocked'),
+    left: t('a11y.move_left'),
+    right: t('a11y.move_right'),
+    up: t('a11y.move_up'),
+    down: t('a11y.move_down'),
+  }), [t]);
 
   // Calculate bounds for all vehicles at once
   // This ensures that when ANY vehicle moves, we re-calculate for all,
@@ -104,6 +118,10 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
             min={b.min}
             max={b.max}
             disabled={disabled}
+            a11yLabel={describeVehicle(t, v, letters[v.id])}
+            a11yValue={describePosition(t, v)}
+            a11yStrings={a11yStrings}
+            letter={showVehicleLetters ? (v.isTarget ? '★' : letters[v.id]) : undefined}
           />
         );
       })}
@@ -135,7 +153,9 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
 
         return (
           <>
-            <View 
+            <View
+              accessible
+              accessibilityLabel={describeExit(t, exitRow, exitCol, gridSize)}
               style={[
                 styles.exitIndicator, 
                 { 
@@ -160,8 +180,10 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
       })()}
 
       {disabled && (
-        <View 
+        <View
           pointerEvents="auto"
+          accessible
+          accessibilityLabel={t('a11y.board_locked')}
           style={[
             StyleSheet.absoluteFill, 
             { 
