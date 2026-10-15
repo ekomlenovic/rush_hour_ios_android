@@ -1,7 +1,7 @@
-import { useGameStore } from '../store/gameStore';
+import { ARCHIVE_LEVEL_ID, useGameStore } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
 import { STORE_VERSION } from '../store/migrations';
-import { getFreezeCapacity, getPlayerLevel } from '../data/progression';
+import { archiveWinXp, getFreezeCapacity, getPlayerLevel } from '../data/progression';
 import { decodeSave, encodeSave, exportProgress, maxPlausibleXp, parseSave } from '../utils/saveTransfer';
 import { calculateScore, getStars } from '../utils/scoring';
 import type { Level } from '../store/types';
@@ -30,6 +30,12 @@ function playSomeDays() {
   winDaily('2026-10-12', 2);
   winLevel(sampleLevels[0], 0);
   winLevel(sampleLevels[1], 2);
+  // A missed day replayed from the archives (set by hand: these saves predate ARCHIVE_FIRST_DATE)
+  useGameStore.setState({
+    archiveProgress: { '2026-10-09': { completed: true, score: 1200, stars: 3, moves: 12, minMoves: 12 } },
+    archiveLevels: { '2026-10-09': { ...sampleLevels[3], id: ARCHIVE_LEVEL_ID } },
+    xp: store().xp + archiveWinXp(12, 3),
+  });
   store().loadLevel(sampleLevels[2]);
   const v = sampleLevels[2].vehicles.find(x => !x.isTarget)!;
   store().moveVehicle(v.id, v.row, v.col);
@@ -176,6 +182,8 @@ describe('import refuses', () => {
       ['2 stars with a score of 1 star', (s: any) => { s.progress[1].bestScore = 0; }],
       ['4 stars', (s: any) => { s.progress[0].stars = 4; }],
       ['a daily won in the future', (s: any) => { s.dailyChallengeProgress['2026-10-13'] = { completed: true, score: 100, stars: 3 }; }],
+      ['an archive won today', (s: any) => { s.archiveProgress['2026-10-12'] = { completed: true, score: 100, stars: 3 }; }],
+      ['a broken archive level', (s: any) => { s.archiveLevels = { '2026-10-09': 'level' }; }],
       ['a weekly won in the future', (s: any) => { s.weeklyChallengeProgress['2026-W45'] = { completed: true, score: 100, stars: 3 }; }],
       ['a streak longer than the dailies won', (s: any) => { s.currentStreak = 30; s.bestStreak = 30; }],
       ['a streak above the best streak', (s: any) => { s.bestStreak = 2; }],

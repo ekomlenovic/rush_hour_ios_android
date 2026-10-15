@@ -3,7 +3,7 @@ import { STORE_VERSION, migrateState, relocateGeneratedLevels } from '../store/m
 import { sampleLevels } from '../data/sampleLevels';
 import { ACHIEVEMENTS } from '../data/achievements';
 import {
-  ACHIEVEMENT_XP, MISSIONS_XP, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, weeklyWinXp, REPLAY_XP_FACTOR,
+  ACHIEVEMENT_XP, MISSIONS_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, weeklyWinXp, REPLAY_XP_FACTOR,
 } from '../data/progression';
 import { getLocalDateString, getWeekKey } from './date';
 
@@ -219,6 +219,16 @@ export function isConsistent(state: Record<string, any>, now: Date = new Date())
   for (const [key, result] of Object.entries(weeklies)) {
     if (!WEEK_KEY.test(key) || key > thisWeek || !isValidResult(result)) return false;
   }
+  // Archives are past days only: never today
+  const archives = state.archiveProgress ?? {};
+  const archiveLevels = state.archiveLevels ?? {};
+  if (!isRecord(archives) || !isRecord(archiveLevels)) return false;
+  for (const [key, result] of Object.entries(archives)) {
+    if (!DATE_KEY.test(key) || key >= today || !isValidResult(result)) return false;
+  }
+  for (const [key, level] of Object.entries(archiveLevels)) {
+    if (!DATE_KEY.test(key) || !isRecord(level) || !isCount(level.minMoves) || !Array.isArray(level.vehicles)) return false;
+  }
 
   // Every day of a streak is a daily won (frozen days do not count)
   const dailiesWon = Object.values(dailies as Record<string, ChallengeResult>).filter(r => r.completed).length;
@@ -255,6 +265,9 @@ export function maxPlausibleXp(state: Record<string, any>): number {
   }
   for (const r of Object.values((state.weeklyChallengeProgress ?? {}) as Record<string, ChallengeResult>)) {
     if (r.completed) xp += weeklyWinXp(r.stars || 1);
+  }
+  for (const r of Object.values((state.archiveProgress ?? {}) as Record<string, ChallengeResult>)) {
+    if (r.completed) xp += archiveWinXp(r.minMoves ?? 60, r.stars || 1);
   }
   xp += (state.stats?.missionDaysCompleted ?? 0) * MISSIONS_XP;
   xp += (state.achievements?.length ?? 0) * ACHIEVEMENT_XP;
