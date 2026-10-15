@@ -11,6 +11,12 @@ import type {
   AppOpenInfo, AttemptStats, ChallengeDetails, ChallengeResult, Level, LevelProgress, LevelSaveState, PlayerStats, ThemeMode, Vehicle,
 } from './types';
 import { MAX_STREAK_FREEZES, settleStreak, advanceStreak } from './streak';
+import {
+  ACHIEVEMENT_XP, MISSIONS_XP, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, weeklyWinXp,
+} from '../data/progression';
+import {
+  CosmeticKind, CosmeticSelection, COSMETICS_BY_KEY, DEFAULT_COSMETICS, buildCosmeticContext, isCosmeticUnlocked, sanitizeSelection,
+} from '../data/cosmetics';
 import { emptyAttempt, initialStats, withWinStats, mergeChallengeResult } from './stats';
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from './migrations';
 
@@ -112,6 +118,17 @@ interface GameState {
   /** Total number of hints ever used */
   totalHintsUsed: number;
 
+  /** Experience points: the player level is derived from them (data/progression.ts) */
+  xp: number;
+  /** Player levels reached but not shown to the player yet (not persisted) */
+  levelUpQueue: number[];
+  /** XP before and after the last win, for the win screen (not persisted) */
+  lastXpGain: { from: number; to: number } | null;
+  /** Selected board theme, car skin, palette and win effect */
+  cosmetics: CosmeticSelection;
+  /** Unlocked cosmetics already seen in the garage ('kind:id') */
+  seenCosmetics: string[];
+
   // Actions
   loadLevel: (level: Level, savedState?: LevelSaveState) => void;
   moveVehicle: (vehicleId: string, newRow: number, newCol: number) => void;
@@ -148,6 +165,9 @@ interface GameState {
   recordAppOpen: () => AppOpenInfo;
   addStreakFreeze: () => boolean;
   consumeMissionReward: () => { freezeGranted: boolean } | null;
+  consumeLevelUps: () => number[];
+  selectCosmetic: (kind: CosmeticKind, id: string) => boolean;
+  markCosmeticsSeen: (keys: string[]) => void;
 }
 
 /** Key under which a level's in-progress state is saved */
@@ -202,8 +222,27 @@ export const useGameStore = create<GameState>()(
         });
         const freezeGranted = get().addStreakFreeze();
         set({ pendingMissionReward: { freezeGranted } });
+        addXp(MISSIONS_XP);
         get().checkAchievements();
       };
+
+      /** Adds XP; each level reached gives a streak freeze (if there is room) and is queued for display */
+      const addXp = (amount: number, options?: { silent?: boolean }) => {
+        if (amount <= 0) return;
+        const state = get();
+        const fromLevel = getPlayerLevel(state.xp);
+        const xp = state.xp + Math.round(amount);
+        const toLevel = getPlayerLevel(xp);
+        set({ xp });
+        if (toLevel <= fromLevel) return;
+
+        const reached = Array.from({ length: toLevel - fromLevel }, (_, i) => fromLevel + i + 1);
+        for (let i = 0; i < reached.length; i++) get().addStreakFreeze();
+        if (!options?.silent) set({ levelUpQueue: [...get().levelUpQueue, ...reached] });
+      };
+
+      /** Records the XP of a win (level, missions and achievements included) for the win screen */
+      const recordXpGain = (from: number) => set({ lastXpGain: { from, to: get().xp } });
 
       return {
       currentLevel: null,
@@ -243,6 +282,11 @@ export const useGameStore = create<GameState>()(
       pendingMissionReward: null,
       lastOpenDate: null,
       totalHintsUsed: 0,
+      xp: 0,
+      levelUpQueue: [],
+      lastXpGain: null,
+      cosmetics: { ...DEFAULT_COSMETICS },
+      seenCosmetics: [],
       generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
 
       loadLevel: (level, savedState) => {
@@ -325,7 +369,7 @@ export const useGameStore = create<GameState>()(
       },
 
       completeLevel: (levelId, score, stars, timeMs) => {
-        const { progress, maxUnlockedLevel, savedStates, currentLevel, currentAttempt, stats } = get();
+        const { progress, maxUnlockedLevel, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
 
         // The tutorial completes a level that is not loaded: no attempt to record
         const isCurrentLevel = currentLevel?.id === levelId;
@@ -368,6 +412,7 @@ export const useGameStore = create<GameState>()(
           currentAttempt: emptyAttempt(),
         });
         if (isCurrentLevel && currentLevel) {
+          addXp(levelWinXp(currentLevel.minMoves, stars, !existing?.completed));
           bumpMissions({
             levelWins: 1,
             perfectWins: stars === 3 ? 1 : 0,
@@ -377,10 +422,12 @@ export const useGameStore = create<GameState>()(
           });
         }
         get().checkAchievements();
+        recordXpGain(xpBefore);
       },
 
       completeDailyChallenge: (dateKey, score, stars, timeMs, details) => {
-        const { dailyChallengeProgress, savedStates, currentLevel, currentAttempt, stats } = get();
+        const { dailyChallengeProgress, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
+        const firstWin = !dailyChallengeProgress[dateKey]?.completed;
         const newSavedStates = { ...savedStates };
         delete newSavedStates[`daily-${dateKey}`];
 
@@ -396,15 +443,18 @@ export const useGameStore = create<GameState>()(
 
         // Update streak
         get().updateStreak(dateKey);
+        if (firstWin) addXp(dailyWinXp(stars));
         if (dateKey === getLocalDateString(new Date())) {
           bumpMissions({ dailyDone: 1 });
         }
 
         get().checkAchievements();
+        recordXpGain(xpBefore);
       },
 
       completeWeeklyChallenge: (weekKey, score, stars, timeMs, details) => {
-        const { weeklyChallengeProgress, savedStates, currentLevel, currentAttempt, stats } = get();
+        const { weeklyChallengeProgress, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
+        const firstWin = !weeklyChallengeProgress[weekKey]?.completed;
         const newSavedStates = { ...savedStates };
         delete newSavedStates[`weekly-${weekKey}`];
 
@@ -417,7 +467,9 @@ export const useGameStore = create<GameState>()(
           stats: currentLevel?.id === WEEKLY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'weekly') : stats,
           currentAttempt: emptyAttempt(),
         });
+        if (firstWin) addXp(weeklyWinXp(stars));
         get().checkAchievements();
+        recordXpGain(xpBefore);
       },
 
       checkAchievements: (options) => {
@@ -431,6 +483,7 @@ export const useGameStore = create<GameState>()(
 
         if (options?.silent) {
           set({ achievements: [...state.achievements, ...newlyUnlocked] });
+          addXp(newlyUnlocked.length * ACHIEVEMENT_XP, { silent: true });
           return;
         }
 
@@ -438,6 +491,7 @@ export const useGameStore = create<GameState>()(
           achievements: [...state.achievements, ...newlyUnlocked],
           unlockQueue: [...state.unlockQueue, ...newlyUnlocked],
         });
+        addXp(newlyUnlocked.length * ACHIEVEMENT_XP);
         if (state.isHapticsEnabled) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
@@ -447,6 +501,27 @@ export const useGameStore = create<GameState>()(
         const { pendingMissionReward } = get();
         if (pendingMissionReward) set({ pendingMissionReward: null });
         return pendingMissionReward;
+      },
+
+      consumeLevelUps: () => {
+        const { levelUpQueue } = get();
+        if (levelUpQueue.length > 0) set({ levelUpQueue: [] });
+        return levelUpQueue;
+      },
+
+      selectCosmetic: (kind, id) => {
+        const state = get();
+        const def = COSMETICS_BY_KEY[`${kind}:${id}`];
+        if (!def || !isCosmeticUnlocked(def, buildCosmeticContext(state))) return false;
+        set({ cosmetics: { ...state.cosmetics, [kind]: id } });
+        return true;
+      },
+
+      markCosmeticsSeen: (keys) => {
+        const seen = new Set(get().seenCosmetics);
+        if (keys.every(k => seen.has(k))) return;
+        keys.forEach(k => seen.add(k));
+        set({ seenCosmetics: [...seen] });
       },
 
       consumeUnlockQueue: () => {
@@ -468,12 +543,12 @@ export const useGameStore = create<GameState>()(
       },
 
       updateStreak: (dateKey: string) => {
-        set(advanceStreak(get(), dateKey));
+        set(advanceStreak(get(), dateKey, getFreezeCapacity(getPlayerLevel(get().xp))));
       },
 
       addStreakFreeze: () => {
-        const { streakFreezes, stats } = get();
-        if (streakFreezes >= MAX_STREAK_FREEZES) return false;
+        const { streakFreezes, stats, xp } = get();
+        if (streakFreezes >= getFreezeCapacity(getPlayerLevel(xp))) return false;
         set({
           streakFreezes: streakFreezes + 1,
           stats: { ...stats, freezesEarned: stats.freezesEarned + 1 },
@@ -629,6 +704,11 @@ export const useGameStore = create<GameState>()(
           pendingMissionReward: null,
           lastOpenDate: null,
           totalHintsUsed: 0,
+          xp: 0,
+          levelUpQueue: [],
+          lastXpGain: null,
+          cosmetics: { ...DEFAULT_COSMETICS },
+          seenCosmetics: [],
         });
       },
       };
@@ -642,11 +722,13 @@ export const useGameStore = create<GameState>()(
       // so fields added in later versions get their defaults
       merge: (persistedState, currentState) => {
         const persisted = relocateGeneratedLevels((persistedState || {}) as Partial<GameState>);
-        return {
+        const merged = {
           ...currentState,
           ...persisted,
           stats: { ...currentState.stats, ...persisted.stats },
         };
+        // A selected cosmetic that is no longer unlocked falls back to its default
+        return { ...merged, cosmetics: sanitizeSelection(merged.cosmetics, buildCosmeticContext(merged)) };
       },
       // Unlock achievements already earned (e.g. new ones after an update) without a toast flood
       onRehydrateStorage: () => (state) => {
@@ -684,6 +766,9 @@ export const useGameStore = create<GameState>()(
         dailyMissions: state.dailyMissions,
         lastOpenDate: state.lastOpenDate,
         totalHintsUsed: state.totalHintsUsed,
+        xp: state.xp,
+        cosmetics: state.cosmetics,
+        seenCosmetics: state.seenCosmetics,
       }),
     }
   )

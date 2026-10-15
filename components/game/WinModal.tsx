@@ -1,9 +1,14 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Modal, AccessibilityInfo } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal, AccessibilityInfo, ScrollView, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
 import { formatDuration } from '@/utils/date';
 import { fixedColors, type UiColors } from '@/theme';
+import { getLevelInfo } from '@/data/progression';
+import type { WinEffectId } from '@/data/cosmetics';
+import XpBar from '@/components/progression/XpBar';
+import { getLevelRewardLines } from '@/components/progression/rewards';
+import WinEffect from '@/components/effects/WinEffect';
 
 interface Props {
   visible: boolean;
@@ -16,6 +21,13 @@ interface Props {
   /** Achievements unlocked by this win (shown here instead of the global toast) */
   unlocks: string[];
   missionReward: { freezeGranted: boolean } | null;
+  /** XP before and after this win (level, missions and achievements included) */
+  xpGain: { from: number; to: number } | null;
+  /** Player levels reached with this win */
+  levelUps: number[];
+  /** Cosmetic win effect and its particle colors */
+  effect: WinEffectId;
+  effectColors: string[];
   /** Daily / weekly challenge: the result can be shared */
   canShareResult: boolean;
   onShareResult: () => void;
@@ -27,11 +39,15 @@ interface Props {
 }
 
 export default function WinModal({
-  visible, colors, stars, moveCount, minMoves, score, timeMs, unlocks, missionReward,
+  visible, colors, stars, moveCount, minMoves, score, timeMs, unlocks, missionReward, xpGain, levelUps, effect, effectColors,
   canShareResult, onShareResult, onShowSolution, onRetry, onContinue, onRequestClose,
 }: Props) {
   const isOptimal = moveCount <= minMoves;
   const { t } = useTranslation();
+  const { width, height } = useWindowDimensions();
+  const xpAfter = xpGain ? getLevelInfo(xpGain.to) : null;
+  const xpBefore = xpGain ? getLevelInfo(xpGain.from) : null;
+  const gained = xpGain ? xpGain.to - xpGain.from : 0;
 
   // Screen readers: the win is announced at once, before the player explores the card
   useEffect(() => {
@@ -41,6 +57,7 @@ export default function WinModal({
       stars,
       stats: t('game.win_stats', { moves: moveCount, best: minMoves, score }),
     }));
+    for (const level of levelUps) AccessibilityInfo.announceForAccessibility(t('progression.level_up', { level }));
   }, [visible]);
 
   return (
@@ -49,6 +66,7 @@ export default function WinModal({
         <View
           style={[styles.winCard, { backgroundColor: colors.surface }]}
         >
+          <ScrollView contentContainerStyle={styles.winContent} showsVerticalScrollIndicator={false}>
           <Text style={styles.winStars} accessibilityLabel={t('a11y.level_stars', { count: stars })}>
             {'⭐'.repeat(stars)}{'☆'.repeat(3 - stars)}
           </Text>
@@ -76,6 +94,27 @@ export default function WinModal({
               ))}
             </View>
           )}
+          {xpAfter && xpBefore && gained > 0 && (
+            <View style={styles.xpBlock} accessible accessibilityLabel={`${t('progression.xp_gain', { xp: gained })}, ${t('progression.level', { level: xpAfter.level })}, ${t('progression.xp_progress', { xp: xpAfter.xpInLevel, next: xpAfter.xpForNext })}`}>
+              <View style={styles.xpRow}>
+                <Text style={[styles.xpGain, { color: colors.primaryText }]}>{t('progression.xp_gain', { xp: gained })}</Text>
+                <Text style={[styles.xpLevel, { color: colors.textMuted }]}>{t('progression.level', { level: xpAfter.level })}</Text>
+              </View>
+              <XpBar
+                colors={colors}
+                ratio={xpAfter.ratio}
+                from={xpAfter.level > xpBefore.level ? 0 : xpBefore.ratio}
+              />
+            </View>
+          )}
+          {levelUps.map(level => (
+            <View key={level} style={[styles.winUnlocks, { backgroundColor: colors.primarySoft }]}>
+              <Text style={[styles.winUnlocksTitle, { color: colors.primaryText }]}>🎉 {t('progression.level_up', { level })}</Text>
+              {getLevelRewardLines(t, level).map(line => (
+                <Text key={line} style={[styles.winRewardItem, { color: colors.text }]}>{line}</Text>
+              ))}
+            </View>
+          ))}
           {missionReward && (
             <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
               <Text style={[styles.winUnlocksTitle, { color: colors.warning }]}>🎯 {t('missions.completed')}</Text>
@@ -118,7 +157,9 @@ export default function WinModal({
           >
            <Text style={styles.winButtonText}>{t('common.continue')}</Text>
           </Pressable>
+          </ScrollView>
         </View>
+        {visible && <WinEffect effect={effect} width={width} height={height} colors={effectColors} />}
       </View>
     </Modal>
   );
@@ -132,15 +173,43 @@ const styles = StyleSheet.create({
     backgroundColor: fixedColors.overlay,
   },
   winCard: {
-    padding: 32,
     borderRadius: 20,
-    alignItems: 'center',
+    maxHeight: '88%',
+    maxWidth: '92%',
     shadowColor: fixedColors.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 12,
     minWidth: 280,
+  },
+  winContent: {
+    padding: 32,
+    alignItems: 'center',
+  },
+  xpBlock: {
+    alignSelf: 'stretch',
+    marginBottom: 20,
+    gap: 6,
+  },
+  xpRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+  },
+  xpGain: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  xpLevel: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  winRewardItem: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginVertical: 2,
+    textAlign: 'center',
   },
   winStars: {
     fontSize: 36,

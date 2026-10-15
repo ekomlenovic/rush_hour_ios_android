@@ -1,9 +1,10 @@
 import type { Level, LevelProgress, LevelSaveState } from './types';
 import { sampleLevels } from '../data/sampleLevels';
 import { recomputeStreak } from './streak';
+import { computeRetroactiveXp } from '../data/progression';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 2;
+export const STORE_VERSION = 3;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
@@ -17,6 +18,12 @@ export function migrateState(persistedState: unknown, version: number): Record<s
   if (version < 2) {
     // v2: streaks were broken west of UTC (dates parsed as UTC), rebuild them from the dailies
     Object.assign(state, recomputeStreak(state));
+  }
+  if (version < 3) {
+    // v3: player XP, credited for the progress made before it existed (each win once)
+    const levels = [sampleLevels, state.generatedLevels, state.createdLevels, state.importedLevels]
+      .flatMap(list => (Array.isArray(list) ? (list as Level[]) : []));
+    state.xp = computeRetroactiveXp(state, levels);
   }
   return state;
 }

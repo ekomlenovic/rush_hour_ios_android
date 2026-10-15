@@ -43,9 +43,16 @@ export interface BoardColors {
   dropValidBorder: string;
   dropInvalid: string;
   dropInvalidBorder: string;
+  /** Corner radius of the vehicles, as a share of the cell size */
+  vehicleRadius: number;
+  /** Corner radius of the board */
+  boardRadius: number;
+  /** Drawn on the target car (car skin) */
+  targetIcon?: string;
 }
 
-export type BoardThemeId = 'classic';
+/** Board themes, persisted in the cosmetics selection: never rename one, only add */
+export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire';
 
 /** Vehicle colors of the classic board (also the creator palette) */
 export const CLASSIC_VEHICLE_COLORS = [
@@ -80,6 +87,8 @@ const classicShared = {
   dropValidBorder: 'rgba(74,222,128,0.75)',
   dropInvalid: 'rgba(248,113,113,0.28)',
   dropInvalidBorder: 'rgba(248,113,113,0.75)',
+  vehicleRadius: 0.18,
+  boardRadius: 16,
 };
 
 const classic: Record<ColorScheme, BoardColors> = {
@@ -105,8 +114,206 @@ const classic: Record<ColorScheme, BoardColors> = {
   },
 };
 
-export const BOARD_THEMES: Record<BoardThemeId, Record<ColorScheme, BoardColors>> = { classic };
+/** Same board in light and dark mode (themes with their own opaque background) */
+const both = (colors: BoardColors): Record<ColorScheme, BoardColors> => ({ light: colors, dark: colors });
+
+const paper: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#FBF8EF',
+    frame: '#2F3A56',
+    grid: 'rgba(59,92,170,0.28)',
+    exitOutline: '#2F3A56',
+    vehicleBorder: 'rgba(30,30,40,0.7)',
+    vehicleShine: 'rgba(255,255,255,0.1)',
+    winVeil: 'rgba(251,248,239,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(47,58,86,0.3)',
+    vehicleRadius: 0.12,
+  },
+  dark: {
+    ...classicShared,
+    background: '#2A2925',
+    frame: '#D9D3C0',
+    grid: 'rgba(217,211,192,0.18)',
+    exitOutline: '#D9D3C0',
+    vehicleBorder: 'rgba(240,235,220,0.6)',
+    vehicleShine: 'rgba(255,255,255,0.08)',
+    winVeil: 'rgba(42,41,37,0.7)',
+    winBadge: 'rgba(60,58,52,0.9)',
+    winBadgeBorder: 'rgba(217,211,192,0.3)',
+    vehicleRadius: 0.12,
+  },
+};
+
+const wood: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#D9A86C',
+    frame: '#7A4A21',
+    grid: 'rgba(110,62,25,0.35)',
+    vehicleBorder: 'rgba(80,40,10,0.45)',
+    winVeil: 'rgba(240,215,180,0.55)',
+    winBadge: 'rgba(255,245,230,0.92)',
+    winBadgeBorder: 'rgba(122,74,33,0.4)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#5C3B1E',
+    frame: '#3B2410',
+    grid: 'rgba(20,10,0,0.35)',
+    vehicleBorder: 'rgba(20,10,0,0.45)',
+    winVeil: 'rgba(40,25,10,0.7)',
+    winBadge: 'rgba(70,45,22,0.92)',
+    winBadgeBorder: 'rgba(255,220,180,0.2)',
+  },
+};
+
+const neon = both({
+  ...classicShared,
+  background: '#0B0620',
+  frame: '#00E5FF',
+  grid: 'rgba(0,229,255,0.22)',
+  exit: '#FF2BD6',
+  exitOutline: '#FFFFFF',
+  vehicleBorder: 'rgba(255,255,255,0.55)',
+  vehicleShine: 'rgba(255,255,255,0.25)',
+  hint: '#FFF200',
+  hintOutline: '#FF2BD6',
+  winVeil: 'rgba(11,6,32,0.7)',
+  winBadge: 'rgba(30,10,60,0.9)',
+  winBadgeBorder: 'rgba(0,229,255,0.6)',
+});
+
+const pixel = both({
+  ...classicShared,
+  background: '#9BBC0F',
+  frame: '#0F380F',
+  grid: 'rgba(15,56,15,0.3)',
+  exit: '#0F380F',
+  exitOutline: '#9BBC0F',
+  vehicleBorder: '#0F380F',
+  vehicleShine: 'rgba(255,255,255,0.12)',
+  hint: '#0F380F',
+  hintOutline: '#8BAC0F',
+  winVeil: 'rgba(139,172,15,0.6)',
+  winBadge: 'rgba(155,188,15,0.95)',
+  winBadgeBorder: '#0F380F',
+  vehicleRadius: 0.02,
+  boardRadius: 2,
+});
+
+const snow: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#EAF4FB',
+    frame: '#9CC7E8',
+    grid: 'rgba(110,160,205,0.3)',
+    vehicleBorder: 'rgba(255,255,255,0.9)',
+    vehicleShine: 'rgba(255,255,255,0.35)',
+    winVeil: 'rgba(234,244,251,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(156,199,232,0.8)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#16253A',
+    frame: '#9CC7E8',
+    grid: 'rgba(156,199,232,0.2)',
+    vehicleBorder: 'rgba(220,240,255,0.6)',
+    vehicleShine: 'rgba(255,255,255,0.3)',
+    winVeil: 'rgba(22,37,58,0.7)',
+    winBadge: 'rgba(30,50,75,0.92)',
+    winBadgeBorder: 'rgba(156,199,232,0.5)',
+  },
+};
+
+const fire: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#FFE8D6',
+    frame: '#FF6A00',
+    grid: 'rgba(255,106,0,0.25)',
+    exit: '#FF6A00',
+    vehicleBorder: 'rgba(160,40,0,0.35)',
+    hint: '#FFD000',
+    winVeil: 'rgba(255,232,214,0.6)',
+    winBadge: 'rgba(255,250,245,0.95)',
+    winBadgeBorder: 'rgba(255,106,0,0.5)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#2A0A02',
+    frame: '#FF6A00',
+    grid: 'rgba(255,120,0,0.22)',
+    exit: '#FFB000',
+    vehicleBorder: 'rgba(255,150,60,0.4)',
+    hint: '#FFD000',
+    winVeil: 'rgba(42,10,2,0.7)',
+    winBadge: 'rgba(70,20,5,0.92)',
+    winBadgeBorder: 'rgba(255,106,0,0.5)',
+  },
+};
+
+export const BOARD_THEMES: Record<BoardThemeId, Record<ColorScheme, BoardColors>> = {
+  classic, paper, wood, neon, pixel, snow, fire,
+};
 
 export function getBoardColors(id: BoardThemeId, scheme: ColorScheme): BoardColors {
   return (BOARD_THEMES[id] ?? classic)[scheme];
+}
+
+// ─── Target car skins ─────────────────────────────────────────────────────────
+
+export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold';
+
+export interface CarSkin {
+  /** Body color, the board's target car color when absent */
+  color?: string;
+  /** Drawn on the car */
+  icon?: string;
+}
+
+export const CAR_SKINS: Record<CarSkinId, CarSkin> = {
+  classic: {},
+  taxi: { color: '#FACC15', icon: '🚕' },
+  bus: { color: '#F59E0B', icon: '🚌' },
+  police: { color: '#1E3A8A', icon: '🚓' },
+  sport: { color: '#DC2626', icon: '🏎️' },
+  rocket: { color: '#7C3AED', icon: '🚀' },
+  gold: { color: '#EAB308', icon: '👑' },
+};
+
+// ─── Vehicle palettes ─────────────────────────────────────────────────────────
+
+/** 'classic' keeps the colors saved in each level */
+export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy';
+
+export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
+  classic: null,
+  pastel: ['#93C5FD', '#86EFAC', '#FDE68A', '#C4B5FD', '#F9A8D4', '#99F6E4', '#FDBA74', '#A5F3FC'],
+  ocean: ['#0EA5E9', '#14B8A6', '#1D4ED8', '#06B6D4', '#0F766E', '#38BDF8', '#2563EB', '#5EEAD4'],
+  earth: ['#A16207', '#4D7C0F', '#78716C', '#B45309', '#365314', '#92400E', '#57534E', '#65A30D'],
+  neon: ['#00E5FF', '#39FF14', '#FFF200', '#B026FF', '#FF6EC7', '#00FFA3', '#FF9E00', '#4D4DFF'],
+  candy: ['#F472B6', '#A78BFA', '#34D399', '#FBBF24', '#60A5FA', '#FB923C', '#2DD4BF', '#E879F9'],
+};
+
+/** Board colors with the target car skin applied */
+export function getSkinnedBoard(id: BoardThemeId, skin: CarSkinId, scheme: ColorScheme): BoardColors {
+  const board = getBoardColors(id, scheme);
+  const carSkin = CAR_SKINS[skin] ?? CAR_SKINS.classic;
+  return { ...board, targetCar: carSkin.color ?? board.targetCar, targetIcon: carSkin.icon };
+}
+
+/** Color of each non-target vehicle in the order of the level, for a palette */
+export function applyPalette<T extends { id: string; isTarget: boolean; color: string }>(vehicles: T[], palette: VehiclePaletteId): Map<string, string> {
+  const colors = VEHICLE_PALETTES[palette];
+  const result = new Map<string, string>();
+  let index = 0;
+  for (const v of vehicles) {
+    if (v.isTarget) continue;
+    result.set(v.id, colors ? colors[index % colors.length] : v.color);
+    index++;
+  }
+  return result;
 }

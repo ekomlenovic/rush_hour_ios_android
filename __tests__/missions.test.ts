@@ -4,6 +4,9 @@ import { sampleLevels } from '../data/sampleLevels';
 import { addDays } from '../utils/date';
 import { resetStore, setToday, winMapLevel } from './helpers';
 
+// Level-up rewards also give freezes: tested in progression.test.ts, kept out of the streak rules here
+jest.mock('../data/progression', () => ({ ...jest.requireActual('../data/progression'), getPlayerLevel: () => 1 }));
+
 const state = () => useGameStore.getState();
 const TODAY = '2026-10-14';
 
