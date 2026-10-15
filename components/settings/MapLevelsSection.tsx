@@ -3,9 +3,9 @@ import { View, Text, Pressable, Alert, Linking } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
-import { DIFFICULTY_LEVELS } from '@/utils/generator';
+import { DEVICE_DIFFICULTIES, DIFFICULTY_LEVELS, type DeviceDifficulty } from '@/utils/generator';
 import { haptics, Haptics } from '@/utils/haptics';
-import { useLevelGenerator, GENERATION_TIME_MAP, DifficultyKey } from '@/hooks/useLevelGenerator';
+import { useLevelGenerator, EXPECTED_GENERATION_MS } from '@/hooks/useLevelGenerator';
 import type { UiColors } from '@/theme';
 import { settingsStyles as styles } from './styles';
 
@@ -27,7 +27,7 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
   const startGeneration = useLevelGenerator();
 
   const [genAmount, setGenAmount] = useState<number>(3);
-  const [genDifficulty, setGenDifficulty] = useState<DifficultyKey>('NORMAL');
+  const [genDifficulty, setGenDifficulty] = useState<DeviceDifficulty>('NORMAL');
   const [genGridSize, setGenGridSize] = useState<number>(6);
 
   const handleGenerate = () => {
@@ -82,7 +82,7 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
       <View style={{ marginBottom: 20 }}>
         <Text style={[styles.settingLabel, { color: colors.text }]}>{t('creator.difficulty')}: {t(`difficulty.${genDifficulty}`)}</Text>
         <View style={styles.segmentGroup}>
-          {(['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER'] as const).map(diff =>
+          {DEVICE_DIFFICULTIES.map(diff =>
             segment(diff, genDifficulty, t(`difficulty.${diff}`), () => {
               setGenDifficulty(diff);
               setGenGridSize(DIFFICULTY_LEVELS[diff].gridSize);
@@ -114,7 +114,7 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
           accessibilityState={{ disabled: isGenerating, busy: isGenerating }}
         >
           <Text style={styles.mainBtnText}>
-            {isGenerating ? t('map.generating') : t('map.generate_btn', { amount: genAmount, time: Math.ceil((genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000) })}
+            {isGenerating ? t('map.generating') : t('map.generate_btn', { amount: genAmount, time: Math.ceil((genAmount * EXPECTED_GENERATION_MS[genDifficulty]) / 1000) })}
           </Text>
         </Pressable>
 

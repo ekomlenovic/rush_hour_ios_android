@@ -1,83 +1,74 @@
 import { useCallback } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
-import { DIFFICULTY_LEVELS, generateLevel } from '@/utils/generator';
+import { DIFFICULTY_LEVELS, type DeviceDifficulty } from '@/utils/generator';
+import { generateLevelAsync } from '@/utils/solver.background';
 import { haptics, Haptics } from '@/utils/haptics';
 
-export type DifficultyKey = keyof typeof DIFFICULTY_LEVELS;
-
-/** Rough generation time of one level, for the estimate shown before generating */
-export const GENERATION_TIME_MAP: Record<string, number> = {
-  'EASY': 1000,
-  'NORMAL': 3000,
-  'HARD': 15000,
-  'EXPERT': 500000,
-  'MASTER': 1200000,
+/**
+ * Typical generation time of one level on a phone, for the estimate shown before
+ * generating (measured with the component generator, see docs/GAME_DESIGN.md).
+ * The estimate is then corrected with the real average during the generation.
+ */
+export const EXPECTED_GENERATION_MS: Record<DeviceDifficulty, number> = {
+  EASY: 300,
+  NORMAL: 1500,
+  HARD: 4000,
+  EXPERT: 10000,
 };
 
 export interface GenerationRequest {
   amount: number;
-  difficulty: DifficultyKey;
+  difficulty: DeviceDifficulty;
   gridSize: number;
 }
 
 /**
- * Generates map levels one by one in the background, after the existing ones.
- * Progress and cancellation go through the store's generationState.
+ * Generates map levels one by one on a background thread, after the existing ones.
+ * Progress and cancellation go through the store's generationState: the JS thread stays
+ * free, so Cancel stops the generation right after the level in progress.
  */
 export function useLevelGenerator(): (request: GenerationRequest) => void {
   return useCallback(({ amount, difficulty, gridSize }: GenerationRequest) => {
     const { setGenerationState } = useGameStore.getState();
-    const baseTimePerLevel = GENERATION_TIME_MAP[difficulty] || 2000;
-    const initialEst = Math.ceil(((amount * baseTimePerLevel) + (amount * 150)) / 1000);
-
     setGenerationState({
       isRunning: true,
       current: 0,
       total: amount,
       shouldCancel: false,
-      estimatedRemainingSeconds: initialEst
+      estimatedRemainingSeconds: Math.ceil((amount * EXPECTED_GENERATION_MS[difficulty]) / 1000),
     });
 
-    setTimeout(async () => {
-      const { addGeneratedLevel, generatedLevels } = useGameStore.getState();
+    (async () => {
+      const { generatedLevels } = useGameStore.getState();
       const levels = [...sampleLevels, ...generatedLevels];
       const startingId = levels.length > 0 ? levels[levels.length - 1].id + 1 : 1;
-
-      let totalGenerationTime = 0;
+      const config = { ...DIFFICULTY_LEVELS[difficulty], gridSize };
+      let totalMs = 0;
+      let nextId = startingId;
 
       for (let i = 0; i < amount; i++) {
-        // Check cancel flag before each level
-        const { shouldCancel } = useGameStore.getState().generationState;
-        if (shouldCancel) break;
+        if (useGameStore.getState().generationState.shouldCancel) break;
 
         const startTime = Date.now();
-        const config = { ...DIFFICULTY_LEVELS[difficulty], gridSize };
-        // Pass a copy of config to be safe
-        const newLevel = generateLevel(startingId + i, { ...config });
-        const duration = Date.now() - startTime;
-        totalGenerationTime += duration;
+        const newLevel = await generateLevelAsync(nextId, config);
+        totalMs += Date.now() - startTime;
 
+        if (useGameStore.getState().generationState.shouldCancel) break;
         if (newLevel) {
-          addGeneratedLevel(newLevel);
+          useGameStore.getState().addGeneratedLevel(newLevel);
+          nextId++;
         }
 
-        // Calculate remaining time based on actual average
-        const avgSoFar = totalGenerationTime / (i + 1);
-        const remainingCount = amount - (i + 1);
-        const estRemaining = Math.ceil((remainingCount * (avgSoFar + 150)) / 1000);
-
+        const remaining = amount - (i + 1);
         setGenerationState({
           current: i + 1,
-          estimatedRemainingSeconds: estRemaining
+          estimatedRemainingSeconds: Math.ceil((remaining * totalMs) / (i + 1) / 1000),
         });
-
-        // Yield to the JS event loop — lets the Cancel button press be processed.
-        await new Promise(resolve => setTimeout(resolve, 150));
       }
 
       setGenerationState({ isRunning: false, shouldCancel: false, estimatedRemainingSeconds: 0 });
       haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }, 100);
+    })();
   }, []);
 }
