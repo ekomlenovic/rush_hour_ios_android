@@ -1,0 +1,92 @@
+import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
+import { useGameStore } from '../store/gameStore';
+import { sampleLevels } from '../data/sampleLevels';
+import en from '../locales/en.json';
+import fr from '../locales/fr.json';
+import { resetStore, setToday, winDaily, winMapLevel } from './helpers';
+
+const state = () => useGameStore.getState();
+
+describe('achievement definitions', () => {
+  it('have unique ids', () => {
+    expect(new Set(ACHIEVEMENTS.map(a => a.id)).size).toBe(ACHIEVEMENTS.length);
+  });
+
+  it.each([['en', en], ['fr', fr]] as const)('are translated in %s', (_, locale) => {
+    const strings = (locale as Record<string, any>).achievements;
+    for (const a of ACHIEVEMENTS) {
+      expect(strings[a.id]).toEqual(expect.any(String));
+      expect(strings[`${a.id}_desc`]).toEqual(expect.any(String));
+    }
+  });
+
+  it('none is unlocked on a fresh install', () => {
+    const context = buildAchievementContext(useGameStore.getInitialState());
+    expect(ACHIEVEMENTS.filter(a => a.value(context) >= a.target).map(a => a.id)).toEqual([]);
+  });
+});
+
+describe('achievements in the store', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    resetStore();
+    setToday('2026-10-14');
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('are unlocked once, and queued for the toast', () => {
+    winMapLevel();
+    expect(state().achievements).toContain('first_win');
+    expect(state().consumeUnlockQueue()).toContain('first_win');
+    expect(state().consumeUnlockQueue()).toEqual([]);
+
+    winMapLevel(sampleLevels[1]);
+    state().checkAchievements();
+    expect(state().achievements.filter(id => id === 'first_win')).toHaveLength(1);
+    expect(state().unlockQueue).not.toContain('first_win');
+  });
+
+  it('are unlocked silently after an update (no toast flood)', () => {
+    useGameStore.setState({ progress: [{ levelId: 1, completed: true, bestScore: 300, stars: 3 }] });
+    state().checkAchievements({ silent: true });
+    expect(state().achievements).toContain('first_win');
+    expect(state().unlockQueue).toEqual([]);
+  });
+
+  it('"without help" achievements count distinct levels: replaying cannot farm them', () => {
+    for (let i = 0; i < 30; i++) winMapLevel(sampleLevels[0]);
+    const context = buildAchievementContext(state());
+    expect(context.noHintLevels).toBe(1);
+    expect(context.noHelpLevels).toBe(1);
+    expect(state().achievements).not.toContain('no_hint_25');
+  });
+
+  it('a hint or an undo during the winning attempt breaks "clean run"', () => {
+    winMapLevel(sampleLevels[0], { hints: 1 });
+    winMapLevel(sampleLevels[1], { undos: 1 });
+    expect(state().achievements).not.toContain('clean_run');
+    winMapLevel(sampleLevels[2]);
+    expect(state().achievements).toContain('clean_run');
+  });
+
+  it('streak achievements are reachable', () => {
+    winDaily('2026-10-12');
+    winDaily('2026-10-13');
+    winDaily('2026-10-14');
+    expect(state().achievements).toEqual(expect.arrayContaining(['daily_winner', 'streak_3', 'monday_survivor']));
+  });
+
+  it('the weekly challenge unlocks "weekly warrior"', () => {
+    state().completeWeeklyChallenge('2026-W42', 300, 3);
+    expect(state().achievements).toEqual(expect.arrayContaining(['weekly_warrior', 'weekly_perfect']));
+  });
+
+  it('secret: a win on Halloween', () => {
+    setToday('2026-10-31');
+    winMapLevel();
+    expect(state().achievements).toContain('halloween');
+  });
+});
