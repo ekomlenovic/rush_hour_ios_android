@@ -87,10 +87,10 @@ export default function TutorialScreen() {
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* Header */}
        <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" hitSlop={8}>
           <Text style={[styles.backText, { color: colors.sub }]}>{t('tutorial.skip')}</Text>
         </Pressable>
-        <Text style={[styles.title, { color: colors.text }]}>{t('tutorial.title')}</Text>
+        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('tutorial.title')}</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -162,6 +162,7 @@ export default function TutorialScreen() {
           <Pressable 
             style={[styles.nextBtn, { backgroundColor: colors.accent }]}
             onPress={handleDismissDialog}
+            accessibilityRole="button"
           >
             <Text style={styles.nextBtnText}>{t('common.got_it')}</Text>
           </Pressable>
@@ -187,6 +188,7 @@ export default function TutorialScreen() {
             <Pressable 
               style={[styles.playBtn, { backgroundColor: colors.accent }]}
               onPress={() => router.replace('/map')}
+              accessibilityRole="button"
             >
               <Text style={styles.playBtnText}>{t('tutorial.start_playing')}</Text>
             </Pressable>
