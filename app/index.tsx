@@ -11,7 +11,7 @@ import { useAppOpenAlert } from '@/hooks/useAppOpenAlert';
 import { useTheme, fixedColors } from '@/theme';
 import ChallengeButton from '@/components/home/ChallengeButton';
 import MissionsSheet from '@/components/home/MissionsSheet';
-import SettingsSheet from '@/components/home/SettingsSheet';
+import OptionsSheet from '@/components/settings/OptionsSheet';
 import PlayerLevelBadge from '@/components/progression/PlayerLevelBadge';
 import { useCosmetics } from '@/hooks/useCosmetics';
 
@@ -196,10 +196,9 @@ export default function HomeScreen() {
         </Pressable>
       </Animated.View>
 
-      <SettingsSheet
+      <OptionsSheet
         visible={isSettingsVisible}
         colors={colors}
-        isDark={isDark}
         onClose={() => setSettingsVisible(false)}
       />
     </View>
