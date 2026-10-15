@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, StyleSheet, useColorScheme, Text } from 'react-native';
+import { View, StyleSheet, useColorScheme, Text, AccessibilityActionEvent, AccessibilityInfo } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { haptics, Haptics } from '@/utils/haptics';
 import { Vehicle } from '@/store/gameStore';
+import { stepVehicle } from '@/utils/accessibility';
 
 interface BlockProps {
   vehicle: Vehicle;
@@ -23,6 +24,22 @@ interface BlockProps {
   min: number;
   max: number;
   disabled?: boolean;
+  /** Screen reader: what the vehicle is ("Car B (blue)") and where ("horizontal, row 3…") */
+  a11yLabel: string;
+  a11yValue: string;
+  /** Labels of the move actions and the announcement when blocked, translated by the board */
+  a11yStrings: BlockA11yStrings;
+  /** Letter drawn on the vehicle (color-blind option), none if undefined */
+  letter?: string;
+}
+
+export interface BlockA11yStrings {
+  hint: string;
+  blocked: string;
+  left: string;
+  right: string;
+  up: string;
+  down: string;
 }
 
 
@@ -38,7 +55,7 @@ const BOUNCE_SPRING = {
   mass: 0.5,
 };
 
-function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, disabled = false }: BlockProps) {
+function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, disabled = false, a11yLabel, a11yValue, a11yStrings, letter }: BlockProps) {
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -181,6 +198,24 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
       }
     }), [isHorizontal, vehicle.id, vehicle.row, vehicle.col, vehicle.length, cellSize, triggerMoveHaptic, triggerCollisionHaptic, handleMoveEndSync]);
 
+  // Moves of one cell without dragging: VoiceOver / TalkBack swipe (adjustable) or named actions
+  const a11yActions = useMemo(() => disabled ? [] : (isHorizontal
+    ? [{ name: 'increment' }, { name: 'decrement' }, { name: 'right', label: a11yStrings.right }, { name: 'left', label: a11yStrings.left }]
+    : [{ name: 'increment' }, { name: 'decrement' }, { name: 'down', label: a11yStrings.down }, { name: 'up', label: a11yStrings.up }]
+  ), [disabled, isHorizontal, a11yStrings]);
+
+  const handleA11yAction = useCallback((event: AccessibilityActionEvent) => {
+    const forward = ['increment', 'right', 'down'].includes(event.nativeEvent.actionName);
+    const next = stepVehicle(vehicle, { min, max }, forward ? 1 : -1);
+    if (!next) {
+      AccessibilityInfo.announceForAccessibility(a11yStrings.blocked);
+      triggerCollisionHaptic();
+      return;
+    }
+    onMoveEnd(vehicle.id, next.row, next.col);
+    triggerMoveHaptic();
+  }, [vehicle, min, max, onMoveEnd, a11yStrings, triggerCollisionHaptic, triggerMoveHaptic]);
+
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -214,6 +249,14 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
 
 
       <Animated.View
+        accessible
+        accessibilityRole="adjustable"
+        accessibilityLabel={a11yLabel}
+        accessibilityValue={{ text: a11yValue }}
+        accessibilityHint={disabled ? undefined : a11yStrings.hint}
+        accessibilityState={{ disabled }}
+        accessibilityActions={a11yActions}
+        onAccessibilityAction={handleA11yAction}
         style={[
           styles.block,
           {
@@ -263,6 +306,9 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
             { borderRadius: cellSize * 0.14 },
           ]}
         />
+        {letter !== undefined && (
+          <Text style={[styles.letter, { fontSize: cellSize * 0.42 }]}>{letter}</Text>
+        )}
       </Animated.View>
 
 
@@ -287,6 +333,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 10,
     elevation: 10,
+  },
+  letter: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   shine: {
     position: 'absolute',
@@ -313,7 +366,11 @@ function areBlocksEqual(prevProps: BlockProps, nextProps: BlockProps) {
     prevProps.onMoveEnd === nextProps.onMoveEnd &&
     prevProps.min === nextProps.min &&
     prevProps.max === nextProps.max &&
-    prevProps.disabled === nextProps.disabled
+    prevProps.disabled === nextProps.disabled &&
+    prevProps.a11yLabel === nextProps.a11yLabel &&
+    prevProps.a11yValue === nextProps.a11yValue &&
+    prevProps.a11yStrings === nextProps.a11yStrings &&
+    prevProps.letter === nextProps.letter
   );
 }
 
