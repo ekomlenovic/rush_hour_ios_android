@@ -5,62 +5,25 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import Animated, {
-  useSharedValue, useAnimatedStyle, runOnJS, withTiming, SharedValue,
-} from 'react-native-reanimated';
-import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 import { useGameStore, Vehicle, Level } from '@/store/gameStore';
 import { validateLevel } from '@/utils/solver';
 import { haptics, Haptics } from '@/utils/haptics';
+import {
+  ExitSide, hasCollision as collides, vehicleCells, getExitSide, moveExitToSide, getNextAvailableColor,
+} from '@/utils/creatorGeometry';
+import {
+  ActiveDrag, BOARD_PADDING, CAR_PALETTE, GRID_SIZES, TOOLBOX_ITEMS, VehicleTemplate, getCreatorColors,
+} from '@/components/creator/constants';
+import BoardVehicle from '@/components/creator/BoardVehicle';
+import ToolboxItem from '@/components/creator/ToolboxItem';
+import ExitMarker from '@/components/creator/ExitMarker';
+import PillSelector from '@/components/creator/PillSelector';
+import { vehicleStyles } from '@/components/creator/vehicleStyles';
 
-const SNAP = (val: number) => {
-  'worklet';
-  return withTiming(val, { duration: 110 });
-};
-
-const BOARD_PADDING = 32;
-const MINI_CELL = 30;
-
-// ─── Palettes et Données ──────────────────────────────────────────────────────
-
-const GRID_SIZES = [6, 7, 8];
-const CAR_PALETTE = [
-  '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6',
-  '#EC4899', '#14B8A6', '#F97316', '#06B6D4',
-  '#6366F1', '#84CC16', '#D946EF', '#0EA5E9'
-];
-
-type VehicleTemplate = {
-  type: 'car' | 'truck';
-  orientation: 'horizontal' | 'vertical';
-  length: number;
-  color: string;
-  label: string;
-  dirIcon: string;
-};
-
-type ActiveDrag = {
-  id: string;
-  orientation: 'horizontal' | 'vertical';
-  length: number;
-  color: string;
-  targetRow: number;
-  targetCol: number;
-  isValid: boolean;
-};
-
-const TOOLBOX_ITEMS: VehicleTemplate[] = [
-  { type: 'car', orientation: 'horizontal', length: 2, color: '#3B82F6', label: 'Car', dirIcon: '⟷' },
-  { type: 'car', orientation: 'vertical', length: 2, color: '#10B981', label: 'Car', dirIcon: '↕' },
-  { type: 'truck', orientation: 'horizontal', length: 3, color: '#F59E0B', label: 'Truck', dirIcon: '⟷' },
-  { type: 'truck', orientation: 'vertical', length: 3, color: '#8B5CF6', label: 'Truck', dirIcon: '↕' },
-];
-
-const DIR_LABEL = {
-  horizontal: '↔',
-  vertical: '↕',
-};
+const EXIT_SIDES = ['Right', 'Left', 'Top', 'Bottom'] as const;
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
@@ -70,7 +33,9 @@ export default function LevelCreatorScreen() {
   const isDark = colorScheme === 'dark';
   const router = useRouter();
   const params = useLocalSearchParams<{ levelId: string }>();
-  const { saveCreatedLevel, createdLevels, importedLevels } = useGameStore();
+  const saveCreatedLevel = useGameStore(s => s.saveCreatedLevel);
+  const createdLevels = useGameStore(s => s.createdLevels);
+  const importedLevels = useGameStore(s => s.importedLevels);
 
   const [gridSize, setGridSize] = useState(6);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -125,59 +90,31 @@ export default function LevelCreatorScreen() {
     }]);
   }, []);
 
-  const handleExitSideChange = (side: 'Right' | 'Left' | 'Top' | 'Bottom') => {
+  // ── Helpers ──
+
+  /** Collision with the latest vehicles (read through a ref: gesture callbacks may be stale) */
+  const hasCollision = useCallback((
+    row: number, col: number,
+    orientation: 'horizontal' | 'vertical', length: number,
+    excludeId?: string,
+  ) => collides(vehiclesRef.current, row, col, orientation, length, excludeId), []);
+
+  const handleExitSideChange = (side: ExitSide) => {
     const target = vehicles.find(v => v.id === 'target');
     if (!target) return;
 
-    let newExR = target.row;
-    let newExC = target.col;
-    let targetOrient: 'horizontal' | 'vertical' = 'horizontal';
-
-    if (side === 'Right') { 
-      newExR = target.row; 
-      newExC = gridSize; 
-      targetOrient = 'horizontal'; 
-    }
-    else if (side === 'Left') { 
-      newExR = target.row; 
-      newExC = 255; 
-      targetOrient = 'horizontal'; 
-    }
-    else if (side === 'Bottom') { 
-      newExR = gridSize; 
-      newExC = target.col; 
-      targetOrient = 'vertical'; 
-    }
-    else if (side === 'Top') { 
-      newExR = 255; 
-      newExC = target.col; 
-      targetOrient = 'vertical'; 
-    }
-
-    let newTargetRow = target.row;
-    let newTargetCol = target.col;
-    if (targetOrient === 'horizontal') {
-      newTargetCol = Math.min(target.col, gridSize - target.length);
-    } else {
-      newTargetRow = Math.min(target.row, gridSize - target.length);
-    }
-
-    if (hasCollision(newTargetRow, newTargetCol, targetOrient, target.length, 'target')) {
+    const next = moveExitToSide(target, side, gridSize);
+    if (hasCollision(next.target.row, next.target.col, next.target.orientation, target.length, 'target')) {
       haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       Alert.alert(t('creator.collision_title'), t('creator.collision_desc'));
       return;
     }
 
-    setExitRow(newExR);
-    setExitCol(newExC);
+    setExitRow(next.exitRow);
+    setExitCol(next.exitCol);
 
     // Update target car to match orientation
-    setVehicles(prev => prev.map(v => {
-      if (v.id === 'target') {
-        return { ...v, orientation: targetOrient, row: newTargetRow, col: newTargetCol };
-      }
-      return v;
-    }));
+    setVehicles(prev => prev.map(v => (v.id === 'target' ? { ...v, ...next.target } : v)));
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
@@ -196,8 +133,6 @@ export default function LevelCreatorScreen() {
     });
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
-
-  // ── Helpers ──
 
   /** Convertit la position centrale du véhicule en ligne/colonne de grille (avec gestion du vrai offset) */
   const screenToGrid = useCallback((
@@ -225,29 +160,6 @@ export default function LevelCreatorScreen() {
       row: Math.max(0, Math.min(maxRow, Math.round(topY / cellSize))),
     };
   }, [cellSize, gridSize]);
-
-  const hasCollision = useCallback((
-    row: number, col: number,
-    orientation: 'horizontal' | 'vertical', length: number,
-    excludeId?: string,
-  ) => {
-    const cells: [number, number][] = [];
-    for (let i = 0; i < length; i++) {
-      cells.push([
-        orientation === 'vertical' ? row + i : row,
-        orientation === 'horizontal' ? col + i : col,
-      ]);
-    }
-    return vehiclesRef.current.some(v => {
-      if (v.id === excludeId) return false;
-      for (let i = 0; i < v.length; i++) {
-        const vr = v.orientation === 'vertical' ? v.row + i : v.row;
-        const vc = v.orientation === 'horizontal' ? v.col + i : v.col;
-        if (cells.some(([r, c]) => r === vr && c === vc)) return true;
-      }
-      return false;
-    });
-  }, []);
 
   const updateDrag = useCallback((
     id: string,
@@ -312,15 +224,15 @@ export default function LevelCreatorScreen() {
       const v = prev.find(v => v.id === id);
       if (!v) return prev;
       const newOrient = v.orientation === 'horizontal' ? 'vertical' : 'horizontal';
-      
+
       // Check if pivot is possible (no OOB and no collision)
       const maxCol = gridSize - (newOrient === 'horizontal' ? v.length : 1);
       const maxRow = gridSize - (newOrient === 'vertical' ? v.length : 1);
-      
+
       // Keep within bounds
       const nr = Math.min(v.row, maxRow);
       const nc = Math.min(v.col, maxCol);
-      
+
       if (!hasCollision(nr, nc, newOrient, v.length, id)) {
         haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         return prev.map(item => item.id === id ? { ...item, orientation: newOrient, row: nr, col: nc } : item);
@@ -387,33 +299,13 @@ export default function LevelCreatorScreen() {
 
   // ── Couleurs Dynamiques ──
   const usedColors = vehicles.map(v => v.color);
-  const getNextAvailableColor = (baseColor: string) => {
-    if (!usedColors.includes(baseColor)) return baseColor;
-    const available = CAR_PALETTE.filter(c => !usedColors.includes(c) && c !== '#EF4444');
-    return available.length > 0 ? available[0] : CAR_PALETTE[Math.floor(Math.random() * CAR_PALETTE.length)];
-  };
 
   // ── Theme & Rendering Data ──
-  const C = isDark ? {
-    bg: '#0C0C18', surface: '#13131F', text: '#EEEEFF', sub: '#6E6E8A',
-    accent: '#7B71FF', card: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.09)',
-    grid: 'rgba(255,255,255,0.06)', boardBg: 'rgba(255,255,255,0.015)', toolBg: 'rgba(255,255,255,0.04)',
-  } : {
-    bg: '#ECEAF5', surface: '#F8F7FF', text: '#18182C', sub: '#7070A0',
-    accent: '#5B4FE8', card: 'rgba(255,255,255,0.85)', border: 'rgba(90,79,224,0.15)',
-    grid: 'rgba(0,0,0,0.06)', boardBg: 'rgba(255,255,255,0.6)', toolBg: 'rgba(255,255,255,0.7)',
-  };
+  const C = getCreatorColors(isDark);
 
   const ghostCells = useMemo(() => {
     if (!activeDrag) return [];
-    const cells: [number, number][] = [];
-    for (let i = 0; i < activeDrag.length; i++) {
-      cells.push([
-        activeDrag.orientation === 'vertical' ? activeDrag.targetRow + i : activeDrag.targetRow,
-        activeDrag.orientation === 'horizontal' ? activeDrag.targetCol + i : activeDrag.targetCol,
-      ]);
-    }
-    return cells;
+    return vehicleCells(activeDrag.targetRow, activeDrag.targetCol, activeDrag.orientation, activeDrag.length);
   }, [activeDrag?.targetRow, activeDrag?.targetCol, activeDrag?.length, activeDrag?.orientation]);
 
   const floatW = floatingTemplate ? (floatingTemplate.orientation === 'horizontal' ? floatingTemplate.length : 1) * cellSize - 4 : 0;
@@ -426,6 +318,9 @@ export default function LevelCreatorScreen() {
     ],
     opacity: dragVisible.value,
   }));
+
+  const target = vehicles.find(v => v.id === 'target');
+  const exitSide = getExitSide(exitRow, exitCol, gridSize);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -448,82 +343,19 @@ export default function LevelCreatorScreen() {
         </View>
 
         {/* ── Grid Size Selector (Sub-header) ── */}
-        <View style={styles.subHeader}>
-          <Text style={[styles.subTitle, { color: C.sub }]}>{t('map.grid_size_label')}</Text>
-          <View style={styles.gridSizeSelector}>
-            {GRID_SIZES.map(s => (
-              <Pressable 
-                key={s} 
-                onPress={() => handleGridSizeChange(s)}
-                style={[
-                  styles.sizePill, 
-                  gridSize === s && { backgroundColor: C.accent }
-                ]}
-              >
-                <Text style={[
-                  styles.sizePillText, 
-                  { color: gridSize === s ? '#FFF' : C.sub }
-                ]}>{s}x{s}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
+        <PillSelector
+          title={t('map.grid_size_label')}
+          options={GRID_SIZES}
+          isActive={s => gridSize === s}
+          getLabel={s => `${s}x${s}`}
+          onSelect={handleGridSizeChange}
+          colors={C}
+        />
 
         {/* ── Board ── */}
         <View style={styles.boardWrapper}>
           <View style={{ width: boardSize, height: boardSize }}>
-            {/* Exit logic and flags */}
-            {(() => {
-              const isRight = exitCol >= gridSize && exitCol !== 255;
-              const isLeft = exitCol === 255;
-              const isBottom = exitRow >= gridSize && exitRow !== 255;
-              const isTop = exitRow === 255;
-
-              // Gate styles
-              let indicatorStyle: any = null;
-              let glowStyle: any = null;
-              const exitColor = '#EF4444';
-
-              // Label styles
-              let labelStyle: any = null;
-              let arrow = '▶';
-
-              if (isRight) {
-                indicatorStyle = { top: exitRow * cellSize + cellSize * 0.2, right: 0, width: 6, height: cellSize * 0.6, borderRadius: 3 };
-                glowStyle = { top: exitRow * cellSize, right: -8, width: 16, height: cellSize, opacity: 0.15, borderRadius: 8 };
-                labelStyle = { top: exitRow * cellSize + cellSize * 0.5 - 10, right: 2 }; 
-                arrow = '▶';
-              } else if (isLeft) {
-                indicatorStyle = { top: exitRow * cellSize + cellSize * 0.2, left: 0, width: 6, height: cellSize * 0.6, borderRadius: 3 };
-                glowStyle = { top: exitRow * cellSize, left: -8, width: 16, height: cellSize, opacity: 0.15, borderRadius: 8 };
-                labelStyle = { top: exitRow * cellSize + cellSize * 0.5 - 10, left: 2, flexDirection: 'row-reverse' }; 
-                arrow = '◀';
-              } else if (isBottom) {
-                indicatorStyle = { left: exitCol * cellSize + cellSize * 0.2, bottom: 0, height: 6, width: cellSize * 0.6, borderRadius: 3 };
-                glowStyle = { left: exitCol * cellSize, bottom: -8, height: 16, width: cellSize, opacity: 0.15, borderRadius: 8 };
-                labelStyle = { left: exitCol * cellSize + cellSize * 0.5 - 10, bottom: 2, flexDirection: 'column' }; 
-                arrow = '▼';
-              } else if (isTop) {
-                indicatorStyle = { left: exitCol * cellSize + cellSize * 0.2, top: 0, height: 6, width: cellSize * 0.6, borderRadius: 3 };
-                glowStyle = { left: exitCol * cellSize, top: -8, height: 16, width: cellSize, opacity: 0.15, borderRadius: 8 };
-                labelStyle = { left: exitCol * cellSize + cellSize * 0.5 - 10, top: 2, flexDirection: 'column-reverse' }; 
-                arrow = '▲';
-              }
-
-              return (
-                <>
-                  {/* Label */}
-                  <View style={[styles.exitLabelWrap, labelStyle]}>
-                    <Text style={styles.exitLabel}>EXIT</Text>
-                    <Text style={styles.exitArrow}>{arrow}</Text>
-                  </View>
-
-                  {/* Indicator & Glow */}
-                  {indicatorStyle && <View style={[styles.exitIndicator, { backgroundColor: exitColor, ...indicatorStyle }]} />}
-                  {glowStyle && <View style={{ position: 'absolute', backgroundColor: exitColor, ...glowStyle }} />}
-                </>
-              );
-            })()}
+            <ExitMarker exitRow={exitRow} exitCol={exitCol} gridSize={gridSize} cellSize={cellSize} />
 
           <View
             ref={boardRef}
@@ -576,34 +408,18 @@ export default function LevelCreatorScreen() {
         </View>
 
         {/* ── Exit Side Selector ── */}
-        <View style={styles.subHeader}>
-          <Text style={[styles.subTitle, { color: C.sub }]}>{t('creator.exit_label')}</Text>
-          <View style={styles.gridSizeSelector}>
-            {(['Right', 'Left', 'Top', 'Bottom'] as const).map(side => {
-              const target = vehicles.find(v => v.id === 'target');
-              const isH = (side === 'Right' || side === 'Left');
-              const orientMatch = target ? (isH === (target.orientation === 'horizontal')) : true;
-              
-              const axisMatch = 
-                side === 'Right' ? (exitCol >= gridSize && exitCol !== 255) :
-                side === 'Left' ? (exitCol === 255) :
-                side === 'Bottom' ? (exitRow >= gridSize && exitRow !== 255) :
-                side === 'Top' ? (exitRow === 255) : false;
-              
-              const active = orientMatch && axisMatch;
-              
-              return (
-                <Pressable 
-                  key={side} 
-                  onPress={() => handleExitSideChange(side)}
-                  style={[styles.sizePill, active && { backgroundColor: C.accent }]}
-                >
-                  <Text style={[styles.sizePillText, { color: active ? '#FFF' : C.sub }]}>{t(`creator.${side.toLowerCase()}`)}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
+        <PillSelector
+          title={t('creator.exit_label')}
+          options={EXIT_SIDES}
+          isActive={side => {
+            const isH = side === 'Right' || side === 'Left';
+            const orientMatch = target ? (isH === (target.orientation === 'horizontal')) : true;
+            return orientMatch && exitSide === side;
+          }}
+          getLabel={side => t(`creator.${side.toLowerCase()}`)}
+          onSelect={handleExitSideChange}
+          colors={C}
+        />
 
         {/* ── Floating preview (Le véhicule centré sur le doigt !) ── */}
         {floatingTemplate && (
@@ -619,7 +435,7 @@ export default function LevelCreatorScreen() {
               floatAnimStyle,
             ]}
           >
-            <View style={[styles.vehicleShine, floatingTemplate.orientation === 'vertical' && styles.vehicleShineV]} />
+            <View style={[vehicleStyles.vehicleShine, floatingTemplate.orientation === 'vertical' && vehicleStyles.vehicleShineV]} />
           </Animated.View>
         )}
 
@@ -628,7 +444,7 @@ export default function LevelCreatorScreen() {
           <Text style={[styles.toolboxHeading, { color: C.sub }]}>{t('creator.vehicles_toolbox', { defaultValue: 'VEHICLES' })}</Text>
           <View style={styles.toolboxGrid}>
             {TOOLBOX_ITEMS.map((item, idx) => {
-              const dynamicColor = getNextAvailableColor(item.color);
+              const dynamicColor = getNextAvailableColor(usedColors, item.color, CAR_PALETTE);
               const templateWithColor = { ...item, color: dynamicColor };
 
               return (
@@ -663,165 +479,6 @@ export default function LevelCreatorScreen() {
   );
 }
 
-// ─── BoardVehicle ─────────────────────────────────────────────────────────────
-
-type BoardVehicleProps = {
-  vehicle: Vehicle;
-  cellSize: number;
-  isGhost: boolean;
-  onDragStart: () => void;
-  onDragMove: (tx: number, ty: number) => void;
-  onDragEnd: (tx: number, ty: number) => void;
-  onRemove: () => void;
-  onPress: () => void;
-};
-
-const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, cellSize, isGhost, onDragStart, onDragMove, onDragEnd, onRemove, onPress }: BoardVehicleProps) {
-  const tx = useSharedValue(0);
-  const ty = useSharedValue(0);
-  const sc = useSharedValue(1);
-  const opacity = useSharedValue(1);
-
-  useEffect(() => {
-    opacity.value = SNAP(isGhost ? 0.12 : 1);
-  }, [isGhost]);
-
-  const tap = Gesture.Tap()
-    .onStart(() => {
-      runOnJS(onPress)();
-    });
-
-  const pan = Gesture.Pan()
-    .minDistance(2)
-    .onStart(() => {
-      'use worklet';
-      sc.value = SNAP(1.05);
-      runOnJS(onDragStart)();
-    })
-    .onUpdate(e => {
-      'use worklet';
-      tx.value = e.translationX;
-      ty.value = e.translationY;
-      runOnJS(onDragMove)(e.translationX, e.translationY);
-    })
-    .onEnd(e => {
-      'use worklet';
-      sc.value = SNAP(1);
-      tx.value = SNAP(0);
-      ty.value = SNAP(0);
-      runOnJS(onDragEnd)(e.translationX, e.translationY);
-    });
-
-  const longPress = Gesture.LongPress()
-    .minDuration(600)
-    .onStart(() => runOnJS(onRemove)());
-
-  const gesture = Gesture.Exclusive(pan, tap, longPress);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: tx.value },
-      { translateY: ty.value },
-      { scale: sc.value },
-    ],
-    opacity: opacity.value,
-    zIndex: sc.value > 1 ? 80 : 2,
-    elevation: sc.value > 1 ? 10 : 4,
-  }));
-
-  const w = (v.orientation === 'horizontal' ? v.length : 1) * cellSize - 4;
-  const h = (v.orientation === 'vertical' ? v.length : 1) * cellSize - 4;
-
-  return (
-    <GestureDetector gesture={gesture}>
-      <Animated.View style={[
-        styles.vehicleBlock, animStyle,
-        { top: v.row * cellSize + 2, left: v.col * cellSize + 2, width: w, height: h, backgroundColor: v.color },
-      ]}>
-        <View style={[styles.vehicleShine, v.orientation === 'vertical' && styles.vehicleShineV]} />
-        {v.isTarget
-          ? <Text style={styles.targetIcon}>🚗</Text>
-          : <View style={[styles.vehicleGrip, v.orientation === 'vertical' && { flexDirection: 'column' }]}>
-            <View style={styles.gripDot} /><View style={styles.gripDot} />
-          </View>
-        }
-      </Animated.View>
-    </GestureDetector>
-  );
-});
-
-// ─── ToolboxItem ──────────────────────────────────────────────────────────────
-
-type ToolboxItemProps = {
-  template: VehicleTemplate;
-  colors: Record<string, string>;
-  dragX: SharedValue<number>;
-  dragY: SharedValue<number>;
-  dragVisible: SharedValue<number>;
-  onDragStart: (template: VehicleTemplate, sx: number, sy: number) => void;
-  onDragMove: (sx: number, sy: number) => void;
-  onDrop: (sx: number, sy: number) => void;
-};
-
-const ToolboxItem = React.memo(function ToolboxItem({ template, colors, dragX, dragY, dragVisible, onDragStart, onDragMove, onDrop }: ToolboxItemProps) {
-  const { t } = useTranslation();
-  const sc = useSharedValue(1);
-
-  const gesture = Gesture.Pan()
-    .onStart((e) => {
-      'use worklet';
-      sc.value = SNAP(0.95);
-      dragX.value = e.absoluteX;
-      dragY.value = e.absoluteY;
-      dragVisible.value = 1;
-      runOnJS(onDragStart)(template, e.absoluteX, e.absoluteY);
-    })
-    .onUpdate(e => {
-      'use worklet';
-      dragX.value = e.absoluteX;
-      dragY.value = e.absoluteY;
-      runOnJS(onDragMove)(e.absoluteX, e.absoluteY);
-    })
-    .onEnd(e => {
-      'use worklet';
-      sc.value = SNAP(1);
-      dragVisible.value = 0;
-      runOnJS(onDrop)(e.absoluteX, e.absoluteY);
-    });
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: sc.value }]
-  }));
-
-  const isH = template.orientation === 'horizontal';
-  const pw = (isH ? template.length : 1) * MINI_CELL;
-  const ph = (!isH ? template.length : 1) * MINI_CELL;
-  const dir = DIR_LABEL[template.orientation];
-  const size = `${template.length}×1`;
-
-  return (
-    <GestureDetector gesture={gesture}>
-      <Animated.View style={[styles.toolCard, animStyle, {
-        backgroundColor: colors.toolBg,
-        borderColor: colors.border,
-      }]}>
-        <View style={[styles.toolPreviewWrap, { width: pw + 8, height: Math.max(ph + 8, MINI_CELL + 8) }]}>
-          <View style={[styles.toolPreview, { width: pw, height: ph, backgroundColor: template.color }]}>
-            <View style={styles.toolPreviewShine} />
-          </View>
-        </View>
-
-        <View style={styles.toolLabels}>
-          <Text style={[styles.toolName, { color: colors.text }]}>{t(`creator.${template.label.toLowerCase()}`)}</Text>
-          <View style={[styles.toolBadge, { backgroundColor: template.color + '28', borderColor: template.color + '55' }]}>
-            <Text style={[styles.toolBadgeText, { color: template.color }]}>{dir} {size}</Text>
-          </View>
-        </View>
-      </Animated.View>
-    </GestureDetector>
-  );
-});
-
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
@@ -836,27 +493,11 @@ const styles = StyleSheet.create({
   pillText: { fontSize: 12, fontWeight: '700' },
 
   boardWrapper: { alignItems: 'center', paddingHorizontal: BOARD_PADDING, marginTop: 8 },
-  exitLabelWrap: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 2, zIndex: 10 },
-  exitIndicator: {
-    position: 'absolute',
-    width: 6,
-    borderRadius: 3,
-    zIndex: 10,
-  },
-  exitLabel: { fontSize: 7, fontWeight: '800', color: '#EF4444', letterSpacing: 0.8 },
-  exitArrow: { fontSize: 11, color: '#EF4444' },
   board: { position: 'relative', borderWidth: 1.5, borderRadius: 14, overflow: 'hidden' },
   gridH: { position: 'absolute', left: 0, right: 0, height: StyleSheet.hairlineWidth },
   gridV: { position: 'absolute', top: 0, bottom: 0, width: StyleSheet.hairlineWidth },
 
   ghostCell: { position: 'absolute', borderWidth: 2, borderRadius: 7 },
-
-  vehicleBlock: { position: 'absolute', justifyContent: 'center', alignItems: 'center', borderRadius: 9, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, overflow: 'hidden' },
-  vehicleShine: { position: 'absolute', top: 0, left: 0, right: 0, height: '38%', backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 9 },
-  vehicleShineV: { height: undefined, top: 0, bottom: undefined, right: 0, left: 0, width: '38%' },
-  targetIcon: { fontSize: 18 },
-  vehicleGrip: { flexDirection: 'row', gap: 5, opacity: 0.55 },
-  gripDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.9)' },
 
   floatingPreview: { position: 'absolute', top: 0, left: 0, borderRadius: 9, opacity: 0.9, shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 18, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)', overflow: 'hidden', zIndex: 999 },
 
@@ -865,42 +506,4 @@ const styles = StyleSheet.create({
   toolbox: { marginTop: 'auto', paddingTop: 12, paddingBottom: 34, paddingHorizontal: 20, borderTopWidth: StyleSheet.hairlineWidth },
   toolboxHeading: { fontSize: 11, fontWeight: '700', letterSpacing: 1.8, marginBottom: 10 },
   toolboxGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-
-  toolCard: { borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10, flexBasis: '48%' },
-  toolPreviewWrap: { justifyContent: 'center', alignItems: 'center', width: 52, height: 38 },
-  toolPreview: { borderRadius: 5, overflow: 'hidden', justifyContent: 'flex-start' },
-  toolPreviewShine: { position: 'absolute', top: 0, left: 0, right: 0, height: '40%', backgroundColor: 'rgba(255,255,255,0.28)' },
-  toolLabels: { alignItems: 'flex-start', gap: 3 },
-  toolName: { fontSize: 12, fontWeight: '700' },
-  toolBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5, borderWidth: 1 },
-  toolBadgeText: { fontSize: 10, fontWeight: '700' },
-  gridSizeSelector: {
-    flexDirection: 'row',
-    gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    padding: 2,
-    borderRadius: 20,
-  },
-  subHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingBottom: 12,
-  },
-  subTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  sizePill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 18,
-  },
-  sizePillText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
 });
