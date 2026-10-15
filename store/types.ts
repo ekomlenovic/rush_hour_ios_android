@@ -1,5 +1,8 @@
 /** Data types of the game store (persisted shapes: never rename a field) */
 
+/** Light / dark choice of the interface ('system' follows the device) */
+export type ThemeMode = 'system' | 'light' | 'dark';
+
 /** Describes a single vehicle/block on the grid */
 export interface Vehicle {
   id: string;

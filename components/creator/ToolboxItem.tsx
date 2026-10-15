@@ -3,12 +3,13 @@ import { View, Text, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, runOnJS, SharedValue } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
-import { CreatorColors, DIR_LABEL, MINI_CELL, VehicleTemplate } from './constants';
+import { useTheme, type UiColors } from '@/theme';
+import { DIR_LABEL, MINI_CELL, VehicleTemplate } from './constants';
 import { SNAP } from './snap';
 
 type ToolboxItemProps = {
   template: VehicleTemplate;
-  colors: CreatorColors;
+  colors: UiColors;
   dragX: SharedValue<number>;
   dragY: SharedValue<number>;
   dragVisible: SharedValue<number>;
@@ -21,6 +22,7 @@ type ToolboxItemProps = {
 
 /** A vehicle of the toolbox, dragged onto the board to add it */
 const ToolboxItem = React.memo(function ToolboxItem({ template, colors, dragX, dragY, dragVisible, onDragStart, onDragMove, onDrop, onA11yAdd }: ToolboxItemProps) {
+  const { board } = useTheme();
   const { t } = useTranslation();
   const sc = useSharedValue(1);
 
@@ -66,12 +68,12 @@ const ToolboxItem = React.memo(function ToolboxItem({ template, colors, dragX, d
         accessibilityActions={[{ name: 'activate', label: t('a11y.add_to_board') }]}
         onAccessibilityAction={onA11yAdd}
         style={[styles.toolCard, animStyle, {
-        backgroundColor: colors.toolBg,
+        backgroundColor: colors.card,
         borderColor: colors.border,
       }]}>
         <View style={[styles.toolPreviewWrap, { width: pw + 8, height: Math.max(ph + 8, MINI_CELL + 8) }]}>
           <View style={[styles.toolPreview, { width: pw, height: ph, backgroundColor: template.color }]}>
-            <View style={styles.toolPreviewShine} />
+            <View style={[styles.toolPreviewShine, { backgroundColor: board.vehicleShineStrong }]} />
           </View>
         </View>
 
@@ -92,7 +94,7 @@ const styles = StyleSheet.create({
   toolCard: { borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10, flexBasis: '48%' },
   toolPreviewWrap: { justifyContent: 'center', alignItems: 'center', width: 52, height: 38 },
   toolPreview: { borderRadius: 5, overflow: 'hidden', justifyContent: 'flex-start' },
-  toolPreviewShine: { position: 'absolute', top: 0, left: 0, right: 0, height: '40%', backgroundColor: 'rgba(255,255,255,0.28)' },
+  toolPreviewShine: { position: 'absolute', top: 0, left: 0, right: 0, height: '40%' },
   toolLabels: { alignItems: 'flex-start', gap: 3 },
   toolName: { fontSize: 12, fontWeight: '700' },
   toolBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5, borderWidth: 1 },

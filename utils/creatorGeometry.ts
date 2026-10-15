@@ -1,4 +1,5 @@
 import type { Vehicle } from '@/store/types';
+import { TARGET_CAR_COLOR } from '../theme/board';
 
 /** Pure geometry of the level creator */
 
@@ -68,7 +69,7 @@ export function moveExitToSide(target: Vehicle, side: ExitSide, gridSize: number
 /** The base color if unused, else the first unused palette color (never the target red) */
 export function getNextAvailableColor(usedColors: string[], baseColor: string, palette: string[]): string {
   if (!usedColors.includes(baseColor)) return baseColor;
-  const available = palette.filter(c => !usedColors.includes(c) && c !== '#EF4444');
+  const available = palette.filter(c => !usedColors.includes(c) && c !== TARGET_CAR_COLOR);
   return available.length > 0 ? available[0] : palette[Math.floor(Math.random() * palette.length)];
 }
 

@@ -2,10 +2,10 @@ import React from 'react';
 import { Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { GameColors } from './colors';
+import type { UiColors } from '@/theme';
 
 interface Props {
-  colors: GameColors;
+  colors: UiColors;
   /** Undo and hint are hidden on challenges: only reset is offered (weekly) */
   showUndoAndHint: boolean;
   isHintLoading: boolean;
@@ -25,16 +25,16 @@ export default function GameActions({ colors, showUndoAndHint, isHintLoading, on
           </Pressable>
           <Pressable
             onPress={onHint}
-            style={[styles.actionBtn, { backgroundColor: colors.hint + '22' }]}
+            style={[styles.actionBtn, { backgroundColor: colors.warning + '22' }]}
             disabled={isHintLoading}
             accessibilityRole="button"
             accessibilityLabel={isHintLoading ? t('game.analyzing') : t('game.hint')}
             accessibilityState={{ disabled: isHintLoading, busy: isHintLoading }}
           >
             {isHintLoading ? (
-              <ActivityIndicator size="small" color={colors.hint} />
+              <ActivityIndicator size="small" color={colors.warning} />
             ) : (
-              <Text style={[styles.actionText, { color: colors.hint }]}>💡 {t('game.hint')}</Text>
+              <Text style={[styles.actionText, { color: colors.warning }]}>💡 {t('game.hint')}</Text>
             )}
           </Pressable>
         </>

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { DailyMissionsState, MISSIONS_BY_ID, MissionDef, getMissionProgress } from '@/data/missions';
 import BottomSheet from './BottomSheet';
-import { HomeColors } from './colors';
+import type { UiColors } from '@/theme';
 
 function formatMissionProgress(mission: MissionDef, progress: number): string {
   if (mission.counter === 'playMs') {
@@ -15,7 +15,7 @@ function formatMissionProgress(mission: MissionDef, progress: number): string {
 
 interface Props {
   visible: boolean;
-  colors: HomeColors;
+  colors: UiColors;
   isDark: boolean;
   missions: DailyMissionsState;
   onClose: () => void;
@@ -26,7 +26,7 @@ export default function MissionsSheet({ visible, colors, isDark, missions, onClo
   const { t } = useTranslation();
   return (
     <BottomSheet visible={visible} title={`🎯 ${t('missions.title')}`} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose}>
-      <Text style={[styles.settingSub, { color: missions.rewarded ? colors.success : colors.sub, marginBottom: 20 }]}>
+      <Text style={[styles.settingSub, { color: missions.rewarded ? colors.success : colors.textMuted, marginBottom: 20 }]}>
         {missions.rewarded ? t('missions.all_done') : t('missions.reward_hint')}
       </Text>
       {missions.ids.map((id) => {
@@ -40,14 +40,14 @@ export default function MissionsSheet({ visible, colors, isDark, missions, onClo
             <View style={styles.missionBody}>
               <Text style={[styles.missionLabel, { color: colors.text, opacity: done ? 0.6 : 1 }]}>{t(`missions.list.${id}`)}</Text>
               <View style={[styles.missionTrack, { backgroundColor: colors.card }]}>
-                <View style={[styles.missionFill, { width: `${(progress / mission.target) * 100}%`, backgroundColor: done ? colors.success : colors.accent }]} />
+                <View style={[styles.missionFill, { width: `${(progress / mission.target) * 100}%`, backgroundColor: done ? colors.success : colors.primary }]} />
               </View>
             </View>
-            <Text style={[styles.missionCount, { color: colors.sub }]}>{formatMissionProgress(mission, progress)}</Text>
+            <Text style={[styles.missionCount, { color: colors.textMuted }]}>{formatMissionProgress(mission, progress)}</Text>
           </View>
         );
       })}
-      <Text style={[styles.settingSub, { color: colors.sub, marginTop: 8, textAlign: 'center' }]}>{t('missions.renew')}</Text>
+      <Text style={[styles.settingSub, { color: colors.textMuted, marginTop: 8, textAlign: 'center' }]}>{t('missions.renew')}</Text>
     </BottomSheet>
   );
 }

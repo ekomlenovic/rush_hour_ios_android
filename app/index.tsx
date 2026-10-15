@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated';
 import { useGameStore } from '@/store/gameStore';
@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { getLocalDateString, getWeekKey, getDaysLeftInWeek } from '@/utils/date';
 import { getMissionsForDay, countMissionsDone } from '@/data/missions';
 import { useAppOpenAlert } from '@/hooks/useAppOpenAlert';
-import { getHomeColors } from '@/components/home/colors';
+import { useTheme, fixedColors } from '@/theme';
 import ChallengeButton from '@/components/home/ChallengeButton';
 import MissionsSheet from '@/components/home/MissionsSheet';
 import SettingsSheet from '@/components/home/SettingsSheet';
@@ -17,8 +17,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function HomeScreen() {
   const { t } = useTranslation();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { colors, isDark } = useTheme();
   const router = useRouter();
   const dailyChallengeProgress = useGameStore(s => s.dailyChallengeProgress);
   const weeklyChallengeProgress = useGameStore(s => s.weeklyChallengeProgress);
@@ -40,10 +39,8 @@ export default function HomeScreen() {
   const weekKey = getWeekKey(new Date());
   const weeklyStatus = weeklyChallengeProgress[weekKey];
 
-  const colors = getHomeColors(isDark);
-
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Animated.Text
         entering={FadeInUp.delay(200).springify()}
         style={[styles.title, { color: colors.text }]}
@@ -54,14 +51,14 @@ export default function HomeScreen() {
 
       <Animated.Text
         entering={FadeInUp.delay(400).springify()}
-        style={[styles.subtitle, { color: colors.sub }]}
+        style={[styles.subtitle, { color: colors.textMuted }]}
       >
         {t('home.subtitle')}
       </Animated.Text>
 
       <AnimatedPressable
         entering={FadeInDown.delay(600).springify()}
-        style={[styles.playButton, { backgroundColor: colors.accent }]}
+        style={[styles.playButton, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
         onPress={() => {
           router.push('/map');
         }}
@@ -72,7 +69,7 @@ export default function HomeScreen() {
 
       <ChallengeButton
         colors={colors}
-        color={colors.accent}
+        color={colors.primary}
         done={!!dailyStatus?.completed}
         label={dailyStatus?.completed ? t('home.daily_done', { stars: dailyStatus.stars }) : t('home.daily_challenge')}
         enteringDelay={750}
@@ -92,7 +89,7 @@ export default function HomeScreen() {
       {currentStreak > 0 && (
         <Animated.Text
           entering={FadeInDown.delay(800).springify()}
-          style={[styles.streakText, { color: '#F59E0B' }]}
+          style={[styles.streakText, { color: colors.warning }]}
         >
           {t('home.streak', { count: currentStreak })}
           {streakFreezes > 0 ? `   ❄️ ×${streakFreezes}` : ''}
@@ -129,7 +126,7 @@ export default function HomeScreen() {
           onPress={() => router.push('/custom-levels')}
           accessibilityRole="link"
         >
-          <Text style={[styles.linkText, { color: colors.accent }]}>{t('home.my_levels')}</Text>
+          <Text style={[styles.linkText, { color: colors.primaryText }]}>{t('home.my_levels')}</Text>
         </AnimatedPressable>
 
         <AnimatedPressable
@@ -138,7 +135,7 @@ export default function HomeScreen() {
           onPress={() => router.push('/profile')}
           accessibilityRole="link"
         >
-          <Text style={[styles.linkText, { color: colors.accent }]}>{t('home.profile')}</Text>
+          <Text style={[styles.linkText, { color: colors.primaryText }]}>{t('home.profile')}</Text>
         </AnimatedPressable>
 
         <AnimatedPressable
@@ -147,7 +144,7 @@ export default function HomeScreen() {
           onPress={() => router.push('/creator')}
           accessibilityRole="link"
         >
-          <Text style={[styles.linkText, { color: colors.accent }]}>{t('home.level_creator')}</Text>
+          <Text style={[styles.linkText, { color: colors.primaryText }]}>{t('home.level_creator')}</Text>
         </AnimatedPressable>
       </View>
 
@@ -158,7 +155,7 @@ export default function HomeScreen() {
           onPress={() => router.push('/tutorial')}
           accessibilityRole="link"
         >
-          <Text style={[styles.linkText, { color: colors.sub }]}>{t('home.how_to_play')}</Text>
+          <Text style={[styles.linkText, { color: colors.textMuted }]}>{t('home.how_to_play')}</Text>
         </AnimatedPressable>
 
       </View>
@@ -211,13 +208,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 64,
     borderRadius: 16,
     elevation: 4,
-    shadowColor: '#6C63FF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
   playText: {
-    color: '#FFFFFF',
+    color: fixedColors.onPrimary,
     fontSize: 20,
     fontWeight: '700',
     letterSpacing: 1,
