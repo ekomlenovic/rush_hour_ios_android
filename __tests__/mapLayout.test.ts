@@ -1,0 +1,49 @@
+import { buildZones, zoneOf, ZONE_SIZE } from '../components/map/zones';
+import { createMapLayout, generateRoadSegments, ZONE_GAP } from '../components/map/path';
+
+describe('map zones', () => {
+  it('groups the story levels by ZONE_SIZE, then the generated levels in one zone', () => {
+    const zones = buildZones(45, 3);
+    expect(zones.map(z => [z.firstId, z.lastId, z.generated])).toEqual([
+      [1, 20, false], [21, 40, false], [41, 45, false], [46, 48, true],
+    ]);
+    expect(zones[3].theme).toBe('workshop');
+    expect(ZONE_SIZE).toBe(20);
+  });
+
+  it('finds the zone of a level, the tutorial and the padlock included', () => {
+    const zones = buildZones(45, 0);
+    expect(zoneOf(zones, 0)?.number).toBe(1);
+    expect(zoneOf(zones, 21)?.number).toBe(2);
+    expect(zoneOf(zones, 46)?.number).toBe(3);
+  });
+});
+
+describe('map layout', () => {
+  const zones = buildZones(45, 0);
+  const layout = createMapLayout(46, 390, 844, zones.slice(1).map(z => z.firstId));
+
+  it('places the levels bottom to top, with more room between two zones', () => {
+    const gap = (id: number) => layout.points[id - 1].y - layout.points[id].y;
+    expect(gap(5)).toBeCloseTo(130);
+    expect(gap(21)).toBeCloseTo(130 + ZONE_GAP);
+    expect(gap(41)).toBeCloseTo(130 + ZONE_GAP);
+  });
+
+  it('finds the road position back from a height', () => {
+    for (const t of [0, 3.5, 19.5, 20.25, 44]) {
+      expect(layout.tAt(layout.yAt(t))).toBeCloseTo(t, 3);
+    }
+  });
+
+  it('draws a continuous road from the tutorial to the padlock', () => {
+    const segments = generateRoadSegments(layout);
+    for (let i = 1; i < segments.length; i++) {
+      expect(segments[i].x1).toBeCloseTo(segments[i - 1].x2);
+      expect(segments[i].y1).toBeCloseTo(segments[i - 1].y2);
+    }
+    const last = segments[segments.length - 1];
+    const padlock = layout.points[layout.points.length - 1];
+    expect([last.x2, last.y2]).toEqual([padlock.x, padlock.y]);
+  });
+});

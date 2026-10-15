@@ -1,10 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { Level } from '@/store/gameStore';
 import { fixedColors, type BoardColors, type UiColors } from '@/theme';
 import { PathPoint } from './path';
+
+const TOKEN = 60;
+const DEPTH = 5;
 
 interface LevelNodeProps {
   point: PathPoint;
@@ -18,6 +28,30 @@ interface LevelNodeProps {
   onPress: (id: number, unlocked: boolean, custom: boolean) => void;
   colors: UiColors;
   board: BoardColors;
+}
+
+/** Ring pulsing out of the next level to play */
+function Halo({ color }: { color: string }) {
+  const pulse = useSharedValue(0);
+  useEffect(() => {
+    pulse.value = withRepeat(withTiming(1, { duration: 1600, easing: Easing.out(Easing.quad) }), -1, false);
+  }, []);
+  const style = useAnimatedStyle(() => ({
+    opacity: 0.9 * (1 - pulse.value),
+    transform: [{ scale: 1 + pulse.value * 0.55 }],
+  }));
+  return <Animated.View pointerEvents="none" style={[styles.halo, { backgroundColor: color }, style]} />;
+}
+
+/** Three star slots under a played level */
+function Stars({ stars, colors }: { stars: number; colors: UiColors }) {
+  return (
+    <View style={[styles.starsPill, { backgroundColor: colors.floating, borderColor: colors.border }]}>
+      {[1, 2, 3].map(i => (
+        <Text key={i} style={[styles.star, { color: i <= stars ? colors.star : colors.mapLockedText }]}>★</Text>
+      ))}
+    </View>
+  );
 }
 
 const LevelNode = React.memo(({
@@ -41,20 +75,17 @@ const LevelNode = React.memo(({
     return colors.levelHard;
   };
 
-  let carColor = colors.inactive;
-  if (isPadlockNode) {
-    carColor = colors.inactive;
-  } else if (isTutorial) {
-    carColor = colors.levelTutorial; // Distinct blue for tutorial
-  } else if (isCurrent) {
-    carColor = board.targetCar;
-  } else if (isCustom) {
-    carColor = getCustomColor();
-  } else {
-    carColor = colors.levelCustom;
-  }
+  const isPlayable = isUnlocked || isTutorial || isCustom;
+  const isLocked = isPadlockNode || (!isUnlocked && !isTutorial && !isCustom);
 
-  const nodeOpacity = (isUnlocked || isPadlockNode || isTutorial) ? 1 : 0.4;
+  let face: string = colors.mapLocked;
+  if (isPadlockNode) face = colors.mapLocked;
+  else if (isTutorial) face = colors.levelTutorial;
+  else if (isCurrent) face = board.targetCar;
+  else if (isCustom) face = getCustomColor();
+  else if (isUnlocked) face = colors.primary;
+
+  const isPerfect = stars >= 3 && !isCurrent;
 
   // "Level 12, 3 stars" / "Level 13, next level" / "Level 14, locked"
   const a11yLabel = isPadlockNode ? t('a11y.map_end')
@@ -66,56 +97,68 @@ const LevelNode = React.memo(({
         !isUnlocked && !isCustom ? t('a11y.level_locked') : null,
       ].filter(Boolean).join(', ');
 
+  const label = isPadlockNode ? '🔒' : isTutorial ? '🎓' : isCustom ? '∞' : String(point.id);
+  const labelSize = isPadlockNode || isTutorial ? 24 : label.length >= 3 ? 19 : 23;
+
   return (
     <Animated.View
-      entering={FadeInDown.springify()}
-      style={[
-        styles.nodeContainer,
-        { left: point.x - 40, top: point.y - 40 }
-      ]}
+      entering={FadeIn.duration(300)}
+      style={[styles.nodeContainer, { left: point.x - 45, top: point.y - TOKEN / 2 - 4 }]}
     >
-      <Pressable
-        onPress={() => onPress(point.id, isUnlocked, isCustom)}
-        accessibilityRole="button"
-        accessibilityLabel={a11yLabel}
-        accessibilityState={{ disabled: !isUnlocked && !isCustom && !isTutorial }}
-        style={({ pressed }) => [
-          styles.carNode,
-          { backgroundColor: carColor, borderColor: board.vehicleBorder, opacity: nodeOpacity },
-          isCurrent && { transform: [{ scale: 1.15 }], shadowColor: carColor, shadowOpacity: 0.6, shadowRadius: 12, elevation: 12 },
-          isCustom && { borderRadius: 24, borderWidth: 2, borderColor: board.dragBorder, shadowColor: carColor },
-          { transform: [{ scale: pressed && (isUnlocked || isTutorial) ? 0.9 : (isCurrent ? 1.15 : 1) }] }
-        ]}
-      >
-        <View style={[styles.carShine, { backgroundColor: (isUnlocked || isTutorial) ? colors.shine : colors.shineFaint }]} />
-
-        {isPadlockNode ? (
-          <Text style={[styles.lockedIcon, { color: board.vehicleBorder }]}>🔒</Text>
-        ) : (
-          <View style={{ alignItems: 'center' }}>
-            <Text style={styles.nodeText}>
-              {isCustom ? `∞` : isTutorial ? '0' : point.id}
-            </Text>
-            {!isUnlocked && !isTutorial && (
-              <Text style={{ fontSize: 12, position: 'absolute', bottom: -18 }}>🔒</Text>
-            )}
-          </View>
-        )}
-      </Pressable>
-
-      {(isUnlocked || isTutorial) && (
-        <View style={styles.starsContainer} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-          {stars > 0 ? (
-            <Text style={styles.starsText}>
-              {'⭐'.repeat(stars)}
-            </Text>
-          ) : isCurrent ? (
-            <Text style={[styles.currentText, { color: colors.primaryText }]}>{t('map.next')}</Text>
-          ) : isTutorial ? (
-            <Text style={[styles.currentText, { color: colors.primaryText, fontSize: 10 }]}>{t('tutorial.title')}</Text>
-          ) : null}
+      {isCurrent && (
+        <View style={[styles.nextPill, { backgroundColor: colors.primary }]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+          <Text style={styles.nextText}>{t('map.next')}</Text>
         </View>
       )}
+
+      <View style={[styles.tokenSlot, isCurrent && styles.tokenCurrent]}>
+        {isCurrent && <Halo color={colors.mapHalo} />}
+        <Pressable
+          onPress={() => onPress(point.id, isUnlocked, isCustom)}
+          accessibilityRole="button"
+          accessibilityLabel={a11yLabel}
+          accessibilityState={{ disabled: !isPlayable }}
+          hitSlop={6}
+          style={({ pressed }) => ({ transform: [{ translateY: pressed && isPlayable ? DEPTH - 1 : 0 }] })}
+        >
+          {/* Rim under the token: the 3D button depth */}
+          <View style={[styles.depth, { backgroundColor: face }]}>
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.mapNodeDepth }]} />
+          </View>
+          <View
+            style={[
+              styles.face,
+              { backgroundColor: face, borderColor: isPerfect ? colors.star : isLocked ? colors.border : colors.shine },
+              isPerfect && styles.facePerfect,
+              isPadlockNode && styles.facePadlock,
+            ]}
+          >
+            {!isLocked && <View style={[styles.shine, { backgroundColor: colors.shine }]} />}
+            <Text
+              style={[
+                styles.nodeText,
+                { fontSize: labelSize, color: isLocked ? colors.mapLockedText : fixedColors.onPrimary },
+                isLocked && styles.nodeTextFlat,
+              ]}
+            >
+              {label}
+            </Text>
+          </View>
+          {isLocked && !isPadlockNode && (
+            <View style={[styles.lockBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={styles.lockIcon}>🔒</Text>
+            </View>
+          )}
+        </Pressable>
+      </View>
+
+      <View style={styles.below} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+        {isTutorial ? (
+          <Text style={[styles.caption, { color: colors.primaryText }]}>{t('tutorial.title')}</Text>
+        ) : isPlayable && !isCurrent && !isPadlockNode && (stars > 0 || !isCustom) ? (
+          <Stars stars={stars} colors={colors} />
+        ) : null}
+      </View>
     </Animated.View>
   );
 });
@@ -125,59 +168,124 @@ export default LevelNode;
 const styles = StyleSheet.create({
   nodeContainer: {
     position: 'absolute',
-    width: 80,
-    height: 100,
+    width: 90,
     alignItems: 'center',
     zIndex: 10,
   },
-  carNode: {
-    width: 48,
-    height: 64,
-    borderRadius: 12,
-    justifyContent: 'center',
+  tokenSlot: {
+    width: TOKEN,
+    height: TOKEN + DEPTH,
     alignItems: 'center',
+  },
+  tokenCurrent: {
+    transform: [{ scale: 1.12 }],
+  },
+  halo: {
+    position: 'absolute',
+    top: 0,
+    width: TOKEN,
+    height: TOKEN,
+    borderRadius: TOKEN / 2,
+  },
+  depth: {
+    position: 'absolute',
+    top: DEPTH,
+    width: TOKEN,
+    height: TOKEN,
+    borderRadius: TOKEN / 2,
+    overflow: 'hidden',
     shadowColor: fixedColors.shadow,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.3,
     shadowRadius: 6,
-    elevation: 8,
-    borderWidth: 1,
-    overflow: 'hidden',
+    elevation: 6,
   },
-  carShine: {
+  face: {
+    width: TOKEN,
+    height: TOKEN,
+    borderRadius: TOKEN / 2,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+    elevation: 7,
+  },
+  facePerfect: {
+    borderWidth: 3,
+  },
+  facePadlock: {
+    borderStyle: 'dashed',
+  },
+  shine: {
     position: 'absolute',
-    top: 2,
-    left: 2,
-    right: 2,
-    height: '45%',
-    borderRadius: 8,
+    top: 3,
+    left: 8,
+    right: 8,
+    height: TOKEN * 0.4,
+    borderRadius: TOKEN,
   },
   nodeText: {
-    fontSize: 24,
     fontWeight: '900',
-    color: fixedColors.onPrimary,
-    zIndex: 2,
     textShadowColor: fixedColors.textShadow,
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    textShadowRadius: 2,
+    fontVariant: ['tabular-nums'],
   },
-  lockedIcon: {
-    fontSize: 20,
+  nodeTextFlat: {
+    textShadowRadius: 0,
+  },
+  lockBadge: {
+    position: 'absolute',
+    right: -4,
+    bottom: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+  },
+  lockIcon: {
+    fontSize: 11,
+  },
+  nextPill: {
+    position: 'absolute',
+    top: -30,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
     zIndex: 2,
   },
-  starsContainer: {
-    marginTop: 8,
-    height: 20,
+  nextText: {
+    color: fixedColors.onPrimary,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  below: {
+    marginTop: 4,
+    height: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  starsText: {
-    fontSize: 12,
-    letterSpacing: 1,
+  starsPill: {
+    flexDirection: 'row',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 1,
   },
-  currentText: {
-    fontSize: 14,
+  star: {
+    fontSize: 13,
+    lineHeight: 17,
+  },
+  caption: {
+    fontSize: 11,
     fontWeight: '800',
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });

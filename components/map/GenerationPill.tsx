@@ -73,7 +73,7 @@ export default function GenerationPill({ colors }: { colors: UiColors }) {
 const styles = StyleSheet.create({
   generationPill: {
     position: 'absolute',
-    top: 115, // below the header (which has paddingTop: 60 + paddingBottom: 16 + ~30 content)
+    top: 150, // below the map header
     left: 16,
     right: 16,
     paddingVertical: 14,
