@@ -14,6 +14,7 @@ import { requestReminderPermission } from '@/utils/notifications';
 import { fixedColors, type UiColors } from '@/theme';
 import ThemeModeSetting from '../ThemeModeSetting';
 import MapLevelsSection from './MapLevelsSection';
+import SaveSection from './SaveSection';
 import { settingsStyles } from './styles';
 
 const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
@@ -28,7 +29,7 @@ interface Props {
 
 /**
  * Options of the home screen and the world map (one sheet for both): language, appearance,
- * music, haptics, vehicle letters, reminders, version and update, hard reset.
+ * music, haptics, vehicle letters, reminders, save export / import, version and update, hard reset.
  */
 export default function OptionsSheet({ visible, colors, showMapLevels = false, onClose }: Props) {
   const { t } = useTranslation();
@@ -206,6 +207,8 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
             <View style={[settingsStyles.divider, { backgroundColor: colors.textMuted }]} />
 
             {showMapLevels && <MapLevelsSection colors={colors} onClose={onClose} />}
+
+            <SaveSection colors={colors} onClose={onClose} />
 
             <View style={settingsStyles.settingRow}>
               <View style={settingsStyles.settingText}>
