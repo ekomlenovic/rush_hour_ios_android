@@ -177,6 +177,21 @@ function getLevelKey(level: Level, dailyLevelDate: string | null, weeklyLevelKey
   return level.id;
 }
 
+/**
+ * Whether a saved state belongs to this level: same vehicles, each on its own lane.
+ * A daily or weekly save is keyed by date only: if the level was regenerated differently
+ * (another app version, a cache miss), its save describes another puzzle.
+ */
+export function isSaveForLevel(level: Pick<Level, 'vehicles'>, saved: Pick<LevelSaveState, 'vehicles'>): boolean {
+  if (saved.vehicles.length !== level.vehicles.length) return false;
+  const byId = new Map(level.vehicles.map(v => [v.id, v]));
+  return saved.vehicles.every(s => {
+    const v = byId.get(s.id);
+    return !!v && v.length === s.length && v.orientation === s.orientation && v.isTarget === s.isTarget
+      && (v.orientation === 'horizontal' ? v.row === s.row : v.col === s.col);
+  });
+}
+
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => {
@@ -292,7 +307,14 @@ export const useGameStore = create<GameState>()(
       loadLevel: (level, savedState) => {
         const state = get();
         const levelKey = getLevelKey(level, state.dailyLevelDate, state.weeklyLevelKey);
-        const resolvedSavedState = savedState || state.savedStates[levelKey];
+        const stored = state.savedStates[levelKey];
+        // Never replay the save of another puzzle on this one: start it fresh instead
+        const storedIsValid = !!stored && isSaveForLevel(level, stored);
+        const resolvedSavedState = savedState || (storedIsValid ? stored : undefined);
+        if (stored && !storedIsValid) {
+          const { [levelKey]: _stale, ...savedStates } = state.savedStates;
+          set({ savedStates });
+        }
 
         set({
           currentLevel: level,

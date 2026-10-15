@@ -170,24 +170,23 @@ function shuffleWith<T>(arr: T[], random: () => number): T[] {
 }
 
 async function generateSeededLevel(seed: string, id: number, difficulty: DifficultyConfig): Promise<Level | null> {
-  const prng = createPRNG(seed);
-  const oldRNG = currentRNG;
-  currentRNG = prng;
-
-  try {
-    // We use a small timeout to allow UI to breathe
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // We use the new scrambled generator for near-instant on-device generation
-        const level = generateScrambledLevel(id, difficulty);
-        currentRNG = oldRNG; // Restore RNG after generation
-        resolve(level);
-      }, 0);
-    });
-  } catch (e) {
-    currentRNG = oldRNG;
-    return null;
-  }
+  // We use a small timeout to allow UI to breathe
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      // The seeded RNG is swapped in and out within this callback only: set before the
+      // timeout, other code (e.g. the map generator) could draw from it in between and
+      // change the puzzle of the day
+      const oldRNG = currentRNG;
+      currentRNG = createPRNG(seed);
+      try {
+        resolve(generateScrambledLevel(id, difficulty));
+      } catch (e) {
+        resolve(null);
+      } finally {
+        currentRNG = oldRNG;
+      }
+    }, 0);
+  });
 }
 
 /**
