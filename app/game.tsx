@@ -252,10 +252,6 @@ export default function GameScreen() {
     const startTime = Date.now();
     setIsHintLoading(true);
 
-    // Give React and UI thread time to render the loading indicator
-    // before the UI thread potentially gets blocked by the solver worklet
-    await new Promise(resolve => setTimeout(resolve, 150));
-
     try {
       const result = await solvePuzzleAsync(
         vehicles,
