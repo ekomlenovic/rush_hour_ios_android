@@ -36,7 +36,8 @@
     "en": "Anglais",
     "fr": "Français",
     "checking": "Vérification...",
-    "done": "Terminé"
+    "done": "Terminé",
+    "close": "Fermer"
   },
   "home": {
     "world_map": "Jouer",
@@ -141,7 +142,8 @@
     "goal_title": "Objectif",
     "goal_desc": "Faites glisser la voiture rouge vers la sortie en haut !",
     "daily_already_completed": "Défi du jour déjà réussi ! Rendez-vous demain.",
-    "weekly_already_completed": "Défi de la semaine déjà réussi ! Rendez-vous lundi."
+    "weekly_already_completed": "Défi de la semaine déjà réussi ! Rendez-vous lundi.",
+    "archive_title": "Archive · {{date}}"
   },
   "tutorial": {
     "title": "Tutoriel",
@@ -240,7 +242,9 @@
     "total_moves": "Coups joués",
     "fastest_daily": "Meilleur temps (défi du jour)",
     "weeklies_completed": "Défis hebdo complétés",
-    "streak_freezes": "Gels de streak"
+    "streak_freezes": "Gels de streak",
+    "archives": "Archives des défis",
+    "calendar_hint": "Touche un jour passé pour rejouer son défi."
   },
   "achievements": {
     "novice": "Novice",
@@ -404,7 +408,11 @@
     "missions_7": "Agent fiable",
     "missions_7_desc": "Terminer toutes les missions du jour 7 fois",
     "missions_30": "Agent d'élite",
-    "missions_30_desc": "Terminer toutes les missions du jour 30 fois"
+    "missions_30_desc": "Terminer toutes les missions du jour 30 fois",
+    "archives_10": "Archiviste",
+    "archives_10_desc": "Réussir 10 défis du jour passés dans les archives",
+    "archives_month": "Mois complet",
+    "archives_month_desc": "Réussir tous les défis du jour d'un mois, en rattrapant les jours manqués dans les archives"
   },
   "share": {
     "share_result": "Partager mon résultat",
@@ -637,6 +645,20 @@
       "fireworks": "Feu d'artifice",
       "speed": "Trace de vitesse"
     }
+  },
+  "archives": {
+    "title": "Archives",
+    "subtitle": "Rejoue les défis du jour passés. C'est de l'entraînement : indices, annuler et recommencer sont permis, sans effet sur le streak.",
+    "won_count_one": "{{count}} archive réussie",
+    "won_count_other": "{{count}} archives réussies",
+    "legend_daily": "Réussi le jour même",
+    "legend_archive": "Réussi en archive",
+    "legend_none": "Jamais réussi",
+    "empty": "Aucun défi passé pour l'instant : reviens demain !",
+    "day_daily": "{{date}}, réussi le jour même",
+    "day_archive": "{{date}}, réussi en archive",
+    "day_none": "{{date}}, jamais réussi",
+    "day_hint": "Rejouer ce défi"
   },
   "save": {
     "title": "Sauvegarde",

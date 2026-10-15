@@ -36,7 +36,8 @@
     "en": "English",
     "fr": "French",
     "checking": "Checking...",
-    "done": "Done"
+    "done": "Done",
+    "close": "Close"
   },
   "home": {
     "world_map": "Play",
@@ -141,7 +142,8 @@
     "goal_title": "Objective",
     "goal_desc": "Slide the red car to the exit at the top!",
     "daily_already_completed": "Today's challenge is already completed! Come back tomorrow.",
-    "weekly_already_completed": "Weekly challenge already completed! See you Monday."
+    "weekly_already_completed": "Weekly challenge already completed! See you Monday.",
+    "archive_title": "Archive · {{date}}"
   },
   "tutorial": {
     "title": "Tutorial",
@@ -240,7 +242,9 @@
     "total_moves": "Moves Played",
     "fastest_daily": "Best Daily Time",
     "weeklies_completed": "Weeklies Completed",
-    "streak_freezes": "Streak Freezes"
+    "streak_freezes": "Streak Freezes",
+    "archives": "Challenge archives",
+    "calendar_hint": "Tap a past day to replay its challenge."
   },
   "achievements": {
     "novice": "Novice",
@@ -404,7 +408,11 @@
     "missions_7": "Reliable Agent",
     "missions_7_desc": "Complete all daily missions 7 times",
     "missions_30": "Elite Agent",
-    "missions_30_desc": "Complete all daily missions 30 times"
+    "missions_30_desc": "Complete all daily missions 30 times",
+    "archives_10": "Archivist",
+    "archives_10_desc": "Win 10 past daily challenges from the archives",
+    "archives_month": "Full Month",
+    "archives_month_desc": "Win every daily challenge of a month, catching up on missed days in the archives"
   },
   "share": {
     "share_result": "Share my result",
@@ -637,6 +645,20 @@
       "fireworks": "Fireworks",
       "speed": "Speed trail"
     }
+  },
+  "archives": {
+    "title": "Archives",
+    "subtitle": "Replay past daily challenges. It's training: hints, undo and reset are allowed, with no effect on your streak.",
+    "won_count_one": "{{count}} archive won",
+    "won_count_other": "{{count}} archives won",
+    "legend_daily": "Won on the day",
+    "legend_archive": "Won as an archive",
+    "legend_none": "Never won",
+    "empty": "No past challenge yet: come back tomorrow!",
+    "day_daily": "{{date}}, won on the day",
+    "day_archive": "{{date}}, won as an archive",
+    "day_none": "{{date}}, never won",
+    "day_hint": "Replay this challenge"
   },
   "save": {
     "title": "Save",
