@@ -15,12 +15,14 @@ interface BoardProps {
   onMoveEnd: (vehicleId: string, newRow: number, newCol: number) => void;
   hintVehicleId?: string | null;
   disabled?: boolean;
+  /** No dragging, without the lock overlay (solution replay) */
+  readOnly?: boolean;
 }
 
 
 const BOARD_PADDING = 24;
 
-const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hintVehicleId, disabled = false }: BoardProps) => {
+const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hintVehicleId, disabled = false, readOnly = false }: BoardProps) => {
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -117,7 +119,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
             isHinted={hintVehicleId === v.id}
             min={b.min}
             max={b.max}
-            disabled={disabled}
+            disabled={disabled || readOnly}
             a11yLabel={describeVehicle(t, v, letters[v.id])}
             a11yValue={describePosition(t, v)}
             a11yStrings={a11yStrings}

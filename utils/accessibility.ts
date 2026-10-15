@@ -90,3 +90,15 @@ export function stepVehicle(
   if (next < bounds.min || next > bounds.max) return null;
   return isHorizontal ? { row: vehicle.row, col: next } : { row: next, col: vehicle.col };
 }
+
+export type MoveDirection = 'left' | 'right' | 'up' | 'down';
+
+/** Direction of a move, from the vehicle's position before it */
+export function getMoveDirection(
+  vehicle: Pick<Vehicle, 'row' | 'col' | 'orientation'>,
+  move: { toRow: number; toCol: number },
+): MoveDirection {
+  return vehicle.orientation === 'horizontal'
+    ? (move.toCol > vehicle.col ? 'right' : 'left')
+    : (move.toRow > vehicle.row ? 'down' : 'up');
+}
