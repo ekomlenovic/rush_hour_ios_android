@@ -1,6 +1,7 @@
-import { useGameStore, Level } from '@/store/gameStore';
+import { useGameStore, Level, DAILY_LEVEL_ID } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
-import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel, generateWeeklyLevel } from '@/utils/generator';
+import { DIFFICULTY_LEVELS, generateWeeklyLevel, getDailyDifficulty, getDailySeed } from '@/utils/generator';
+import { generateLevelAsync } from '@/utils/solver.background';
 import { deserializeLevel } from '@/utils/sharing';
 
 export interface GameRouteParams {
@@ -31,7 +32,8 @@ export async function resolveLevel(params: GameRouteParams): Promise<Level | nul
     if (state.currentDailyLevel && state.dailyLevelDate === dateParam) {
       level = state.currentDailyLevel;
     } else {
-      level = await generateDailyLevel(dateParam);
+      // Same seed as generateDailyLevel: the same puzzle for everyone, computed off the JS thread
+      level = await generateLevelAsync(DAILY_LEVEL_ID, getDailyDifficulty(dateParam), getDailySeed(dateParam));
       if (level) {
         useGameStore.setState({ currentDailyLevel: level, dailyLevelDate: dateParam });
       }
@@ -65,12 +67,12 @@ export async function resolveLevel(params: GameRouteParams): Promise<Level | nul
     // Adjust difficulty based on level ID range
     if (!level && id > 0 && id <= 2000) {
       let difficulty = DIFFICULTY_LEVELS.EASY;
-      if (id > 1500) difficulty = DIFFICULTY_LEVELS.MASTER;
-      else if (id > 800) difficulty = DIFFICULTY_LEVELS.EXPERT;
+      // Never MASTER on the phone (too slow, see docs/GAME_DESIGN.md)
+      if (id > 800) difficulty = DIFFICULTY_LEVELS.EXPERT;
       else if (id > 400) difficulty = DIFFICULTY_LEVELS.HARD;
       else if (id > 100) difficulty = DIFFICULTY_LEVELS.NORMAL;
 
-      level = generateLevel(id || 1, difficulty) || sampleLevels[0];
+      level = (await generateLevelAsync(id || 1, difficulty)) || sampleLevels[0];
       if (level && level.id !== sampleLevels[0].id) {
         state.addGeneratedLevel(level);
       }
