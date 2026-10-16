@@ -29,7 +29,7 @@ describe('theme variants', () => {
 });
 
 describe('contrast (WCAG AA)', () => {
-  const TEXT_TOKENS = ['text', 'textMuted', 'primaryText', 'success', 'warning', 'danger', 'weekly'] as const;
+  const TEXT_TOKENS = ['text', 'textMuted', 'primaryText', 'success', 'warning', 'danger', 'weekly', 'starText'] as const;
 
   it.each(SCHEMES)('text tokens are readable on the %s background and surfaces', (_, colors) => {
     for (const token of TEXT_TOKENS) {

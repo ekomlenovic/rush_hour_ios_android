@@ -67,7 +67,7 @@ Le streak compte les jours consécutifs avec le défi du jour réussi.
 | On gagne un gel **tous les 7 jours de streak**, en finissant les **3 missions du jour** et à **chaque niveau joueur atteint** (rien si le stock est plein) | `advanceStreak` (`store/streak.ts`), missions, `addXp` (`store/gameStore.ts`) |
 | Pas de monnaie : un gel ne s'achète pas | |
 | Les jours gelés apparaissent en bleu dans le calendrier du profil | `frozenDates`, `StreakCalendar` |
-| Le profil montre les gels comme des **emplacements** : remplis, libres, puis ceux qu'un niveau joueur débloquera (5, 10, 20, 30) | `StreakCard` |
+| Le profil montre les gels comme des **emplacements** (remplis ou libres) et le niveau joueur du prochain emplacement | `StreakCard` |
 
 ## Missions quotidiennes
 
