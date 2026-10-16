@@ -1,6 +1,7 @@
 import { useGameStore, Level, ARCHIVE_LEVEL_ID } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
-import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel, generateWeeklyLevel } from '@/utils/generator';
+import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel } from '@/utils/generator';
+import { generateWeeklyLevel } from '@/utils/weekly';
 import { deserializeLevel } from '@/utils/sharing';
 import { isArchiveDateAvailable } from '@/utils/archives';
 

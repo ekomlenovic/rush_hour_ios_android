@@ -98,7 +98,7 @@ Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler
 | Règle | Implémentation |
 |---|---|
 | Même puzzle pour tout le monde pendant une semaine ISO (lundi → dimanche) | clé `YYYY-Www` (`getWeekKey`, `utils/date.ts`) |
-| Puzzle tiré d'un **niveau difficile de la campagne** (≥ 25 coups minimum) | `generateWeeklyLevel` (`utils/generator.ts`) |
+| Puzzle tiré d'un **niveau difficile de la campagne** (≥ 25 coups minimum) | `generateWeeklyLevel` (`utils/weekly.ts`) |
 | Le niveau est **déguisé** : une des 7 symétries non triviales (rotation / miroir) et couleurs remélangées. Le nombre minimum de coups est inchangé | `transformLevel` |
 | **Diversité** : tout le pool est parcouru avant qu'un niveau revienne, deux semaines de suite ne se ressemblent pas | pas de 23 dans le pool, symétrie qui change chaque semaine |
 | Ajouter des niveaux à la campagne agrandit le pool et **change le tirage des semaines suivantes**. La semaine en cours ne bouge pas : son niveau est en cache pour sa clé de semaine | `currentWeeklyLevel` / `weeklyLevelKey` |
@@ -147,7 +147,7 @@ Pour changer de téléphone sans perdre sa progression, **sans serveur ni compte
 |---|---|
 | Options → Sauvegarde : **exporter** donne un fichier `rush-hours-AAAA-MM-JJ.rushsave` (feuille de partage du système), **importer** en choisit un. En second choix, la même sauvegarde en **code texte** (copier / coller) | `components/settings/SaveSection.tsx` |
 | Le fichier ne contient que le code : les deux passent par les mêmes vérifications. S'il n'y a pas de partage de fichier sur l'appareil, le code est copié à la place | `saveFileName`, `parseSave` |
-| Le code contient tout ce que l'app sauvegarde (`partialize`), **sauf les réglages du téléphone** (rappels, heure de rappel, génération en cours) et l'**historique d'annulation** des niveaux en cours (le niveau en cours est gardé) | `exportProgress`, `DEVICE_FIELDS` (`utils/saveTransfer.ts`) |
+| Le code contient tout ce que l'app sauvegarde (`partialize`), **sauf les réglages du téléphone** (rappels, heure de rappel, génération en cours) et l'**historique d'annulation** et le **journal de coups** des niveaux en cours (le niveau en cours est gardé) | `exportProgress`, `DEVICE_FIELDS` (`utils/saveTransfer.ts`) |
 | Importer **remplace** la progression, après une confirmation qui résume la sauvegarde (date, niveau joueur, niveaux réussis, étoiles, streak) | `parseSave`, `importProgress` |
 | Une sauvegarde d'une ancienne version passe par les **migrations** ; une sauvegarde d'une version **plus récente** que l'app est refusée | `migrateState`, `relocateGeneratedLevels` |
 | Les jours manqués depuis l'export sont appliqués à l'import (gels, streak perdu) | `recordAppOpen` |

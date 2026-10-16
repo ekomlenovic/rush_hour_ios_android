@@ -61,12 +61,27 @@ export interface AttemptStats {
   elapsedMs: number;
 }
 
+/**
+ * One move of the move log: a vehicle slid by `delta` cells along its axis
+ * (right / down is positive), `t` milliseconds after the start of the attempt.
+ * A drag across several cells is a single move, as in the move counter.
+ */
+export interface MoveRecord {
+  vehicleId: string;
+  delta: number;
+  t: number;
+}
+
 /** Saved state for an ongoing level session */
 export interface LevelSaveState {
   vehicles: Vehicle[];
   moveCount: number;
   history: Vehicle[][];
   attempt?: AttemptStats;
+  /** Moves since the start or the last reset (undo adds the opposite move); missing in saves from before 1.2 */
+  moveLog?: MoveRecord[];
+  /** Wall-clock start of the attempt (ms since epoch), the origin of the move times */
+  startedAt?: number;
 }
 
 /** Result of a daily or weekly challenge */

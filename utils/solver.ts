@@ -1,4 +1,4 @@
-import { Vehicle } from '../store/gameStore';
+import type { Vehicle } from '../store/types';
 
 /**
  * Represents a single move: which vehicle moved, and to which position.
