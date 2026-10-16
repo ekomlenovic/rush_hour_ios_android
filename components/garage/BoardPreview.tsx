@@ -12,12 +12,12 @@ const GRID = 6;
 const FRAME = 2;
 
 /** A small fixed puzzle to show the board, the car skin and the palette */
-const SAMPLE: Vehicle[] = [
+export const SAMPLE: Vehicle[] = [
   { id: 'target', row: 2, col: 1, length: 2, orientation: 'horizontal', isTarget: true, color: TARGET_CAR_COLOR },
   { id: 'a', row: 1, col: 3, length: 3, orientation: 'vertical', isTarget: false, color: CLASSIC_VEHICLE_COLORS[0] },
   { id: 'b', row: 0, col: 0, length: 2, orientation: 'horizontal', isTarget: false, color: CLASSIC_VEHICLE_COLORS[1] },
   { id: 'c', row: 2, col: 5, length: 2, orientation: 'vertical', isTarget: false, color: CLASSIC_VEHICLE_COLORS[2] },
-  { id: 'd', row: 4, col: 0, length: 3, orientation: 'horizontal', isTarget: false, color: CLASSIC_VEHICLE_COLORS[3] },
+  { id: 'd', row: 4, col: 1, length: 3, orientation: 'horizontal', isTarget: false, color: CLASSIC_VEHICLE_COLORS[3] },
   { id: 'e', row: 3, col: 0, length: 2, orientation: 'vertical', isTarget: false, color: CLASSIC_VEHICLE_COLORS[4] },
   { id: 'f', row: 5, col: 4, length: 2, orientation: 'horizontal', isTarget: false, color: CLASSIC_VEHICLE_COLORS[5] },
 ];
