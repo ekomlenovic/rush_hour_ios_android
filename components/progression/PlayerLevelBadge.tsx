@@ -40,12 +40,11 @@ export default function PlayerLevelBadge({ colors, onPress }: Props) {
 
 const styles = StyleSheet.create({
   badge: {
-    width: '80%',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
-    gap: 6,
-    marginBottom: 20,
+    width: '100%',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 18,
+    gap: 8,
   },
   row: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
   level: { fontSize: RFValue(15), fontWeight: '800' },
