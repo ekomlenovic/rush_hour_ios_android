@@ -1,6 +1,6 @@
 import { runOnUI, runOnJS } from 'react-native-reanimated';
 import { solvePuzzle, Move, SolverResult } from './solver';
-import { Vehicle } from '../store/gameStore';
+import type { Vehicle } from '../store/types';
 
 /**
  * Background version of solvePuzzle using Reanimated's UI thread.

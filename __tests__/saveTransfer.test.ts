@@ -87,13 +87,17 @@ describe('export then import', () => {
     });
   });
 
-  it('keeps the level in progress but not its undo history', () => {
+  it('keeps the level in progress but not its undo history nor its move log', () => {
     playSomeDays();
+    const key = String(sampleLevels[2].id);
+    const inProgress = store().savedStates[key];
+    useGameStore.setState({ savedStates: { ...store().savedStates, [key]: { ...inProgress, moveLog: [{ vehicleId: 'v1', delta: 1, t: 800 }] } } });
     const result = parseSave(exportProgress());
     if (!result.ok) throw new Error(result.error);
-    const saved = (result.state.savedStates as Record<string, { moveCount: number; history: unknown[] }>)[sampleLevels[2].id];
+    const saved = (result.state.savedStates as Record<string, { moveCount: number; history: unknown[]; moveLog: unknown[] }>)[sampleLevels[2].id];
     expect(saved.moveCount).toBe(1);
     expect(saved.history).toEqual([]);
+    expect(saved.moveLog).toEqual([]);
   });
 
   it('keeps the settings of the phone it is imported on', () => {
