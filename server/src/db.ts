@@ -40,6 +40,23 @@ const MIGRATIONS: string[] = [
     value TEXT NOT NULL
   );
   `,
+  // Anti-cheat, moderation and admin (#50)
+  `
+  ALTER TABLE players ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE players ADD COLUMN banned INTEGER NOT NULL DEFAULT 0;
+  -- Suspicion signals computed when the win was sent (JSON list)
+  ALTER TABLE attempts ADD COLUMN flags_json TEXT;
+  -- Decision of the admin: 'cheater' (confirmed) or 'cleared' (suspicion lifted); NULL: none yet
+  ALTER TABLE attempts ADD COLUMN verdict TEXT CHECK (verdict IN ('cheater', 'cleared'));
+  CREATE TABLE reports (
+    id INTEGER PRIMARY KEY,
+    reporter_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    reason TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL,
+    UNIQUE (reporter_id, player_id)
+  );
+  `,
 ];
 
 export function openDatabase(path: string): Database {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
@@ -20,12 +20,25 @@ export default function MultiAccountScreen() {
   const account = useMultiStore(selectActiveAccount);
   const updateAccount = useMultiStore(s => s.updateAccount);
   const removeAccount = useMultiStore(s => s.removeAccount);
+  const blocked = useMultiStore(s => (account ? s.blocked[account.url] : undefined)) ?? [];
+  const setBlocked = useMultiStore(s => s.setBlocked);
   const api = useMultiApi(account);
 
   const [pseudo, setPseudo] = useState(account?.pseudo ?? '');
   const [showCode, setShowCode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const [adminToken, setAdminToken] = useState('');
+  const [claiming, setClaiming] = useState(false);
+
+  // The nickname or the admin rights may have been changed (by the admin, on another phone)
+  useEffect(() => {
+    if (!api || !account) return;
+    api.me().then(me => {
+      updateAccount(account.url, { pseudo: me.pseudo, isAdmin: !!me.isAdmin });
+      setPseudo(me.pseudo);
+    }).catch(() => {});
+  }, [api]);
 
   if (!account || !api) return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -67,6 +80,14 @@ export default function MultiAccountScreen() {
     await Clipboard.setStringAsync(account.recoveryCode);
     Alert.alert(t('common.copied'));
   };
+
+  const claimAdmin = () => run(async () => {
+    const me = await api.claimAdmin(adminToken);
+    updateAccount(account.url, { isAdmin: !!me.isAdmin });
+    setAdminToken('');
+    setClaiming(false);
+    router.push('/multi/admin');
+  });
 
   const leave = () => Alert.alert(t('multi.leave_title'), t('multi.leave_body'), [
     { text: t('common.cancel'), style: 'cancel' },
@@ -136,6 +157,58 @@ export default function MultiAccountScreen() {
             </Pressable>
           )}
         </View>
+
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.cardTitle, { color: colors.text }]} accessibilityRole="header">{t('multi.admin')}</Text>
+          {account.isAdmin ? (
+            <Pressable onPress={() => router.push('/multi/admin')} style={[styles.reveal, { borderColor: colors.primary }]} accessibilityRole="button">
+              <Text style={[styles.smallButtonText, { color: colors.primaryText }]}>🛠️ {t('multi.admin_panel')}</Text>
+            </Pressable>
+          ) : claiming ? (
+            <>
+              <Text style={[styles.help, { color: colors.textMuted }]}>{t('multi.admin_claim_help')}</Text>
+              <View style={[styles.row, { marginTop: 10 }]}>
+                <TextInput
+                  value={adminToken}
+                  onChangeText={setAdminToken}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  placeholder="ADMIN_TOKEN"
+                  placeholderTextColor={colors.textMuted}
+                  style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
+                  accessibilityLabel={t('multi.admin_token')}
+                />
+                <Pressable
+                  onPress={claimAdmin}
+                  disabled={busy || !adminToken.trim()}
+                  style={[styles.smallButton, { backgroundColor: colors.primary, opacity: busy || !adminToken.trim() ? 0.5 : 1 }]}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.smallButtonText, { color: colors.onPrimary }]}>{t('common.ok')}</Text>
+                </Pressable>
+              </View>
+            </>
+          ) : (
+            <Pressable onPress={() => setClaiming(true)} style={[styles.reveal, { borderColor: colors.border }]} accessibilityRole="button">
+              <Text style={[styles.smallButtonText, { color: colors.text }]}>{t('multi.become_admin')}</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {blocked.length > 0 && (
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.cardTitle, { color: colors.text }]} accessibilityRole="header">{t('multi.blocked_players')}</Text>
+            {blocked.map(player => (
+              <View key={player.playerId} style={[styles.row, styles.blockedRow]}>
+                <Text style={[styles.blockedName, { color: colors.text }]} numberOfLines={1}>{player.pseudo}</Text>
+                <Pressable onPress={() => setBlocked(account.url, player, false)} style={[styles.smallButton, { backgroundColor: colors.neutralSoft }]} accessibilityRole="button" accessibilityLabel={`${t('multi.unblock')} ${player.pseudo}`}>
+                  <Text style={[styles.smallButtonText, { color: colors.text }]}>{t('multi.unblock')}</Text>
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        )}
 
         {busy && <ActivityIndicator color={colors.primary} style={{ marginTop: 12 }} />}
         {!!error && <Text style={[styles.error, { color: colors.danger }]} accessibilityLiveRegion="polite">{multiErrorMessage(t, error)}</Text>}
@@ -230,6 +303,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: RFValue(12),
     textAlign: 'center',
+  },
+  blockedRow: {
+    marginTop: RFValue(8),
+  },
+  blockedName: {
+    flex: 1,
+    fontSize: RFValue(15),
+    fontWeight: '600',
   },
   dangerButton: {
     marginTop: RFValue(16),

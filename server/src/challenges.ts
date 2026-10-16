@@ -38,6 +38,8 @@ export class Challenges {
     private generator: PuzzleGenerator,
     private now: () => number,
     private log: Logger,
+    /** Difficulty and replay retention: the environment, or what the admin set in the app (#50) */
+    private settings: () => { difficultyByWeekday: Difficulty[]; replayRetentionDays: number } = () => config,
   ) {
     this.schedule = { timeZone: config.timeZone, releaseTime: config.releaseTime };
     if (!getSetting(db, 'first_date')) setSetting(db, 'first_date', this.currentDate());
@@ -53,7 +55,7 @@ export class Challenges {
   }
 
   difficultyFor(date: string): Difficulty {
-    return this.config.difficultyByWeekday[weekday(date)];
+    return this.settings().difficultyByWeekday[weekday(date)];
   }
 
   releaseAt(date: string): number {
@@ -133,7 +135,7 @@ export class Challenges {
 
   /** Forgets the moves of games older than REPLAY_RETENTION_DAYS; the scores stay */
   purgeReplays(): number {
-    const before = this.now() - this.config.replayRetentionDays * DAY_MS;
+    const before = this.now() - this.settings().replayRetentionDays * DAY_MS;
     const result = this.db.prepare('UPDATE attempts SET moves_json = NULL WHERE moves_json IS NOT NULL AND finished_at < ?').run(before);
     return Number(result.changes);
   }

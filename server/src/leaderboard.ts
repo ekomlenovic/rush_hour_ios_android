@@ -6,7 +6,12 @@ export const WIN_POINTS = 1;
 
 export const pointsForRank = (rank: number): number => RANK_POINTS[rank - 1] ?? WIN_POINTS;
 
+import type { Flag } from './cheat';
+
 export type GameStatus = 'playing' | 'won' | 'abandoned' | 'unfinished';
+
+/** ⚠️ suspect: automatic, shown with its reasons; 🤡 cheater: confirmed by the admin */
+export type Verdict = 'suspect' | 'cheater' | null;
 
 export interface GameResult {
   playerId: number;
@@ -15,6 +20,11 @@ export interface GameResult {
   status: GameStatus;
   moves: number | null;
   timeMs: number | null;
+  /** The game, to watch its replay */
+  attemptId: number;
+  verdict: Verdict;
+  /** Why it is suspect (empty otherwise) */
+  reasons: Flag[];
 }
 
 export interface DayRow extends GameResult {
@@ -25,7 +35,11 @@ export interface DayRow extends GameResult {
 
 const STATUS_ORDER: Record<GameStatus, number> = { won: 0, playing: 1, unfinished: 2, abandoned: 3 };
 
-/** The ranking of one day: wins by moves then time (exact ties share a rank), then games in progress, then the others */
+/**
+ * The ranking of one day: wins by moves then time (exact ties share a rank), then games
+ * in progress, then the others. A confirmed cheater keeps their rank but scores 0: the
+ * others do not move up.
+ */
 export function rankDay(results: GameResult[]): DayRow[] {
   const sorted = [...results].sort((a, b) =>
     STATUS_ORDER[a.status] - STATUS_ORDER[b.status]
@@ -40,7 +54,7 @@ export function rankDay(results: GameResult[]): DayRow[] {
     } else {
       const tied = previous?.status === 'won' && previous.moves === result.moves && previous.timeMs === result.timeMs;
       const rank = tied ? previous!.rank! : index + 1;
-      row = { ...result, rank, points: pointsForRank(rank) };
+      row = { ...result, rank, points: result.verdict === 'cheater' ? 0 : pointsForRank(rank) };
     }
     previous = row;
     return row;
@@ -66,7 +80,7 @@ export function rankPeriod(results: GameResult[]): PeriodRow[] {
     for (const row of rankDay(day)) {
       const total = totals.get(row.playerId) ?? { playerId: row.playerId, pseudo: row.pseudo, points: 0, wins: 0, played: 0 };
       total.points += row.points;
-      total.wins += row.status === 'won' ? 1 : 0;
+      total.wins += row.status === 'won' && row.verdict !== 'cheater' ? 1 : 0;
       total.played += 1;
       totals.set(row.playerId, total);
     }

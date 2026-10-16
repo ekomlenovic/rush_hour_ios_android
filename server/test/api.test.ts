@@ -159,7 +159,7 @@ describe('the daily challenge', () => {
     const { join, request, play } = open();
     const { token } = await join('Léo');
     const res = await play(token, SOLUTION, 42_000);
-    expect(res.body).toEqual({ status: 'won', moves: 2, timeMs: 42_000, minMoves: 2, rank: 1, points: 10 });
+    expect(res.body).toEqual({ status: 'won', moves: 2, timeMs: 42_000, minMoves: 2, rank: 1, points: 10, verdict: null });
     expect((await request('POST', '/challenge/start', token, {})).body).toEqual({ error: 'already_finished' });
     expect((await request('GET', '/challenge/today', token)).body.me).toMatchObject({ status: 'won', moves: 2, timeMs: 42_000, minMoves: 2 });
   });
