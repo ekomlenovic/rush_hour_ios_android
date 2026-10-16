@@ -3,6 +3,7 @@
 const load = (os: 'android' | 'ios', environment: string) => {
   jest.resetModules();
   const required = jest.fn();
+  const calls: string[] = [];
   jest.doMock('react-native', () => ({ Platform: { OS: os }, AppState: { addEventListener: jest.fn() } }));
   jest.doMock('expo-constants', () => ({
     __esModule: true,
@@ -14,12 +15,14 @@ const load = (os: 'android' | 'ios', environment: string) => {
     if (os === 'android' && environment === 'storeClient') throw new Error('removed from Expo Go');
     return {
       setNotificationHandler: jest.fn(),
-      getPermissionsAsync: jest.fn(async () => ({ granted: true, canAskAgain: true })),
+      setNotificationChannelAsync: jest.fn(async () => { calls.push('channel'); }),
+      getPermissionsAsync: jest.fn(async () => { calls.push('getPermissions'); return { granted: true, canAskAgain: true }; }),
       requestPermissionsAsync: jest.fn(),
+      AndroidImportance: { DEFAULT: 3 },
     };
   });
   const module = require('../utils/notifications') as typeof import('../utils/notifications');
-  return { module, required };
+  return { module, required, calls };
 };
 
 describe('reminders and Expo Go', () => {
@@ -33,6 +36,12 @@ describe('reminders and Expo Go', () => {
     const { module, required } = load('android', 'standalone');
     expect(required).toHaveBeenCalled();
     expect(await module.requestReminderPermission()).toBe(true);
+  });
+
+  it('Android 13+: the channel exists before the permission is asked', async () => {
+    const { module, calls } = load('android', 'standalone');
+    await module.requestReminderPermission();
+    expect(calls).toEqual(['channel', 'getPermissions']);
   });
 
   it('Expo Go on iOS still has local notifications', async () => {

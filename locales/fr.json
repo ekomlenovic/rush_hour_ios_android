@@ -461,7 +461,14 @@
     "denied_body": "Autorise les notifications de Rush Hours dans les réglages du téléphone pour recevoir les rappels.",
     "prompt_title": "Un petit rappel ? 🔔",
     "prompt_body": "Veux-tu un rappel chaque jour pour ne pas manquer le défi du jour et garder ton streak ? Tu peux changer l'heure dans les options.",
-    "prompt_yes": "Oui, me rappeler"
+    "prompt_yes": "Oui, me rappeler",
+    "test": "Tester les rappels",
+    "test_desc": "Envoie une notification dans quelques secondes",
+    "test_button": "Tester",
+    "test_sent_title": "Notification envoyée 🔔",
+    "test_sent_body_one": "Elle arrive dans {{count}} seconde, même si tu quittes l'app.",
+    "test_sent_body_other": "Elle arrive dans {{count}} secondes, même si tu quittes l'app.",
+    "test_failed_body": "Les notifications ne sont pas disponibles : autorise-les dans les réglages du téléphone (elles ne marchent pas dans Expo Go sur Android)."
   },
   "a11y": {
     "target_car": "Voiture rouge, celle à faire sortir",

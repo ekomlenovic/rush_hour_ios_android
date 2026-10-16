@@ -10,7 +10,7 @@ import { haptics, Haptics } from '@/utils/haptics';
 import { checkForUpdate } from '@/utils/updateChecker';
 import i18n, { changeLanguage } from '@/utils/i18n';
 import { RFValue } from '@/utils/responsive';
-import { requestReminderPermission } from '@/utils/notifications';
+import { requestReminderPermission, sendTestReminder, TEST_REMINDER_DELAY_SECONDS } from '@/utils/notifications';
 import { fixedColors, type UiColors } from '@/theme';
 import ThemeModeSetting from '../ThemeModeSetting';
 import MapLevelsSection from './MapLevelsSection';
@@ -85,6 +85,15 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
       return;
     }
     setNotificationsEnabled(value);
+  };
+
+  const handleTestReminder = async () => {
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (await sendTestReminder()) {
+      Alert.alert(t('reminders.test_sent_title'), t('reminders.test_sent_body', { count: TEST_REMINDER_DELAY_SECONDS }));
+    } else {
+      Alert.alert(t('reminders.denied_title'), t('reminders.test_failed_body'));
+    }
   };
 
   const handleHardReset = () => {
@@ -201,6 +210,18 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
                     <Text style={[styles.hourBtnText, { color: colors.text }]}>+</Text>
                   </Pressable>
                 </View>
+              </View>
+            )}
+
+            {notificationsEnabled && (
+              <View style={settingsStyles.settingRow}>
+                <View style={settingsStyles.settingText}>
+                  <Text style={[settingsStyles.settingLabel, { color: colors.text }]}>{t('reminders.test')}</Text>
+                  <Text style={[settingsStyles.settingSub, { color: colors.textMuted }]}>{t('reminders.test_desc')}</Text>
+                </View>
+                <Pressable onPress={handleTestReminder} accessibilityRole="button" style={[styles.updateButton, { backgroundColor: colors.card }]}>
+                  <Text style={[styles.updateButtonText, { color: colors.primaryText }]}>{t('reminders.test_button')}</Text>
+                </Pressable>
               </View>
             )}
 
