@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, StyleSheet, Pressable, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { fixedColors } from '@/theme';
 import type { UiColors } from '@/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -9,8 +10,6 @@ interface Props {
   colors: UiColors;
   icon: string;
   label: string;
-  /** Accent (border, label) while the challenge is still to do */
-  color: string;
   done: boolean;
   /** Second line under the label (e.g. days left, stars won) */
   detail?: string;
@@ -19,15 +18,14 @@ interface Props {
 }
 
 /**
- * Daily / weekly challenge card of the home screen: green once won.
- * Cards share a row with flex: 1 so they keep the same size whatever the language.
+ * Daily / weekly challenge button of the home screen, same look as the Play button.
+ * Buttons share a row with flex: 1 so they keep the same size whatever the language.
  */
-export default function ChallengeButton({ colors, icon, label, color, done, detail, enteringDelay, onPress }: Props) {
-  const tint = done ? colors.success : color;
+export default function ChallengeButton({ colors, icon, label, done, detail, enteringDelay, onPress }: Props) {
   return (
     <AnimatedPressable
       entering={FadeInDown.delay(enteringDelay).springify()}
-      style={[styles.card, { borderColor: tint, backgroundColor: done ? colors.successSoft : colors.card }]}
+      style={[styles.card, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={detail ? `${label}, ${detail}` : label}
@@ -35,7 +33,7 @@ export default function ChallengeButton({ colors, icon, label, color, done, deta
       <Text style={styles.icon}>{done ? '✅' : icon}</Text>
       <View style={styles.labelSlot}>
         <Text
-          style={[styles.label, { color: tint }]}
+          style={styles.label}
           numberOfLines={2}
           adjustsFontSizeToFit
           minimumFontScale={0.85}
@@ -45,7 +43,7 @@ export default function ChallengeButton({ colors, icon, label, color, done, deta
       </View>
       <View style={styles.detailSlot}>
         {detail ? (
-          <Text style={[styles.detail, { color: colors.textMuted }]} numberOfLines={1}>{detail}</Text>
+          <Text style={styles.detail} numberOfLines={1}>{detail}</Text>
         ) : null}
       </View>
     </AnimatedPressable>
@@ -60,8 +58,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 10,
     borderRadius: 18,
-    borderWidth: 2,
     gap: 4,
+    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   icon: {
     fontSize: 26,
@@ -72,8 +73,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: {
+    color: fixedColors.onPrimary,
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
     textAlign: 'center',
   },
   detailSlot: {
@@ -81,6 +83,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   detail: {
+    color: fixedColors.onPrimary,
+    opacity: 0.85,
     fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
