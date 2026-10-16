@@ -87,15 +87,31 @@ export function localDate(instant: number, timeZone: string): string {
   return formatDate(p.year, p.month, p.day);
 }
 
-export interface Schedule {
-  timeZone: string;
+export interface ReleaseChange {
+  /** First date released at that time */
+  from: string;
   /** 'HH:MM' */
   releaseTime: string;
 }
 
+export interface Schedule {
+  timeZone: string;
+  /** 'HH:MM' */
+  releaseTime: string;
+  /** Changes made by the admin, oldest first: each one applies from its date on, the past never moves */
+  changes?: ReleaseChange[];
+}
+
+/** Release time of the challenge of a date */
+export function releaseTimeOn(date: string, schedule: Schedule): string {
+  let time = schedule.releaseTime;
+  for (const change of schedule.changes ?? []) if (change.from <= date) time = change.releaseTime;
+  return time;
+}
+
 /** When the challenge of a date comes out */
 export function releaseAt(date: string, schedule: Schedule): number {
-  return zonedTimeToInstant(date, schedule.releaseTime, schedule.timeZone);
+  return zonedTimeToInstant(date, releaseTimeOn(date, schedule), schedule.timeZone);
 }
 
 /** When the challenge of a date closes: the release of the next one */
