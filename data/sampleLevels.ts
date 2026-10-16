@@ -1,5 +1,5 @@
 // Auto-generated merge — 2026-10-14T21:50:46.777Z
-import { Level } from '@/store/gameStore';
+import type { Level } from '../store/types';
 
 export const sampleLevels: Level[] = [
   {

@@ -95,6 +95,16 @@ export default function HomeScreen() {
         onPress={() => router.push(`/game?levelId=weekly&week=${weekKey}`)}
       />
 
+      {/* Optional, between friends on a self-hosted server (#46) */}
+      <ChallengeButton
+        colors={colors}
+        color={colors.primaryText}
+        done={false}
+        label={`👥 ${t('multi.title')}`}
+        enteringDelay={790}
+        onPress={() => router.push('/multi')}
+      />
+
       {currentStreak > 0 && (
         <Animated.Text
           entering={FadeInDown.delay(800).springify()}

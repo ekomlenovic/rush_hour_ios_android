@@ -1,0 +1,35 @@
+# Rush Hours multiplayer server, behind a reverse proxy with HTTPS (nginx, Caddy…).
+# Fill in the secrets, then: docker compose up -d
+services:
+  rush-hours:
+    image: ghcr.io/ekomlenovic/rush-hours-server:latest
+    container_name: rush-hours
+    restart: unless-stopped
+    ports:
+      # Only reachable from this machine: the reverse proxy forwards to it
+      - "127.0.0.1:3000:3000"
+    environment:
+      SERVER_NAME: "Rush Hours"
+      # Two long random secrets, e.g. openssl rand -hex 32 (never share SERVER_SECRET)
+      SERVER_SECRET: "change-me"
+      ADMIN_TOKEN: "change-me"
+      # Empty: generated at the first start and written in the logs (docker compose logs rush-hours)
+      INVITE_CODE: ""
+      TZ: "Europe/Paris"
+      RELEASE_TIME: "12:00"
+      PREGENERATE_AHEAD: "48h"
+      DIFFICULTY: "NORMAL,MONDAY=HARD"
+      GRACE_PERIOD: "1h"
+      REPLAY_RETENTION_DAYS: "7"
+    volumes:
+      - rush-hours-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  rush-hours-data:
