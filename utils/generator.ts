@@ -1,6 +1,6 @@
-import { Vehicle, Level, DAILY_LEVEL_ID, WEEKLY_LEVEL_ID } from '../store/gameStore';
+import type { Vehicle, Level } from '../store/types';
+import { DAILY_LEVEL_ID } from '../store/levelIds';
 import { solvePuzzle } from './solver';
-import { sampleLevels } from '../data/sampleLevels';
 import { parseLocalDateString } from './date';
 import { GENERATOR_VEHICLE_COLORS, TARGET_CAR_COLOR } from '../theme/board';
 
@@ -20,7 +20,7 @@ export const DIFFICULTY_LEVELS: Record<string, DifficultyConfig> = {
   MASTER: { gridSize: 7, minVehicles: 14, maxVehicles: 20, minMovesRequired: 40, maxMovesRequired: 80 },
 };
 
-const COLORS = GENERATOR_VEHICLE_COLORS;
+export const COLORS = GENERATOR_VEHICLE_COLORS;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SEEDED RNG (Linear Congruential Generator)
@@ -29,7 +29,7 @@ const COLORS = GENERATOR_VEHICLE_COLORS;
 /**
  * Creates a simple pseudo-random number generator from a string seed.
  */
-function createPRNG(seed: string) {
+export function createPRNG(seed: string): () => number {
   let h = 0;
   for (let i = 0; i < seed.length; i++) {
     h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
@@ -63,26 +63,6 @@ export async function generateDailyLevel(dateStr: string): Promise<Level | null>
   const difficulty = isMonday ? DIFFICULTY_LEVELS.HARD : DIFFICULTY_LEVELS.NORMAL;
 
   return generateSeededLevel(dateStr, DAILY_LEVEL_ID, difficulty);
-}
-
-/** Campaign levels at least this hard feed the weekly challenge */
-const WEEKLY_MIN_MOVES = 25;
-/** Stride through the pool: consecutive weeks get unrelated levels */
-const WEEKLY_POOL_STRIDE = 23;
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
-/** Number of weeks between 1970 and the Monday of an ISO week key ('2026-W42') */
-function getWeekIndex(weekKey: string): number {
-  const [year, week] = weekKey.split('-W').map(Number);
-  // January 4th is always in ISO week 1
-  const jan4 = Date.UTC(year, 0, 4);
-  const jan4DayOfWeek = new Date(jan4).getUTCDay() || 7;
-  const monday = jan4 - (jan4DayOfWeek - 1) * 86400000 + (week - 1) * WEEK_MS;
-  return Math.round(monday / WEEK_MS);
-}
-
-function gcd(a: number, b: number): number {
-  return b === 0 ? a : gcd(b, a % b);
 }
 
 /**
@@ -131,36 +111,7 @@ export function transformLevel(level: Level, symmetry: number): Level {
   };
 }
 
-/**
- * Weekly challenge: same puzzle for everyone during an ISO week, harder than the daily.
- * Built from a hard campaign level, disguised by a symmetry and new colors:
- * instant to produce and the minimum number of moves is already known.
- */
-export async function generateWeeklyLevel(weekKey: string): Promise<Level | null> {
-  const pool = sampleLevels.filter(l => l.minMoves >= WEEKLY_MIN_MOVES);
-  if (pool.length === 0) return null;
-
-  const weekIndex = getWeekIndex(weekKey);
-  // A stride coprime with the pool size visits every level before repeating one
-  const stride = gcd(WEEKLY_POOL_STRIDE, pool.length) === 1 ? WEEKLY_POOL_STRIDE : 1;
-  const source = pool[(weekIndex * stride) % pool.length];
-  // Never the identity, so the level does not look like its campaign version
-  const symmetry = 1 + (weekIndex % 7);
-
-  const transformed = transformLevel(source, symmetry);
-
-  // Shuffle the colors of the other vehicles
-  const random = createPRNG(`weekly-${weekKey}`);
-  const colors = shuffleWith(COLORS, random);
-  let colorIndex = 0;
-  const vehicles = transformed.vehicles.map(v =>
-    v.isTarget ? v : { ...v, color: colors[colorIndex++ % colors.length] }
-  );
-
-  return { ...transformed, id: WEEKLY_LEVEL_ID, vehicles, updatedAt: Date.now() };
-}
-
-function shuffleWith<T>(arr: T[], random: () => number): T[] {
+export function shuffleWith<T>(arr: T[], random: () => number): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(random() * (i + 1));
@@ -169,23 +120,28 @@ function shuffleWith<T>(arr: T[], random: () => number): T[] {
   return a;
 }
 
-async function generateSeededLevel(seed: string, id: number, difficulty: DifficultyConfig): Promise<Level | null> {
+/**
+ * Generates the level of a seed, always the same one for a given seed and difficulty.
+ * Synchronous: for a worker or a server (#46); the app uses generateSeededLevel.
+ */
+export function generateSeededLevelSync(seed: string, id: number, difficulty: DifficultyConfig): Level | null {
+  // The seeded RNG is swapped in and out within this call only, so that other code
+  // (e.g. the map generator) cannot draw from it in between and change the puzzle
+  const oldRNG = currentRNG;
+  currentRNG = createPRNG(seed);
+  try {
+    return generateScrambledLevel(id, difficulty);
+  } catch (e) {
+    return null;
+  } finally {
+    currentRNG = oldRNG;
+  }
+}
+
+export async function generateSeededLevel(seed: string, id: number, difficulty: DifficultyConfig): Promise<Level | null> {
   // We use a small timeout to allow UI to breathe
   return new Promise((resolve) => {
-    setTimeout(() => {
-      // The seeded RNG is swapped in and out within this callback only: set before the
-      // timeout, other code (e.g. the map generator) could draw from it in between and
-      // change the puzzle of the day
-      const oldRNG = currentRNG;
-      currentRNG = createPRNG(seed);
-      try {
-        resolve(generateScrambledLevel(id, difficulty));
-      } catch (e) {
-        resolve(null);
-      } finally {
-        currentRNG = oldRNG;
-      }
-    }, 0);
+    setTimeout(() => resolve(generateSeededLevelSync(seed, id, difficulty)), 0);
   });
 }
 
