@@ -190,7 +190,7 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
     const strict = { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } };
 
     api.get('/info', async () => ({
-      name: config.serverName,
+      name: settings().serverName,
       apiVersion: API_VERSION,
       minAppVersion: MIN_APP_VERSION,
     }));
@@ -213,7 +213,7 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
       const result = db.prepare('INSERT INTO players (pseudo, pseudo_key, token_hash, recovery_hash, created_at) VALUES (?, ?, ?, ?, ?)')
         .run(pseudo, pseudoKey(pseudo), sha256(token), sha256(normalizeRecoveryCode(recoveryCode)), now());
       const player = playerById(Number(result.lastInsertRowid))!;
-      return reply.status(201).send({ token, recoveryCode, player: publicPlayer(player), server: { name: config.serverName } });
+      return reply.status(201).send({ token, recoveryCode, player: publicPlayer(player), server: { name: settings().serverName } });
     });
 
     api.post<{ Body: { recoveryCode: string } }>('/recover', {
@@ -229,7 +229,7 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
       // A new token: the previous phone is signed out
       const token = newToken();
       db.prepare('UPDATE players SET token_hash = ? WHERE id = ?').run(sha256(token), player.id);
-      return { token, player: publicPlayer(player), server: { name: config.serverName } };
+      return { token, player: publicPlayer(player), server: { name: settings().serverName } };
     });
 
     // Everything else needs a player
@@ -566,18 +566,24 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
           return { inviteCode: code };
         });
 
-        admin.get('/admin/settings', async () => settings());
+        // The changes of release time are the server's business: the app gets when the next challenge comes out
+        const settingsView = () => {
+          const { releaseChanges: _, ...rest } = settings();
+          return { ...rest, timeZone: config.timeZone, nextReleaseAt: challenges.releaseAt(addDays(challenges.currentDate(), 1)) };
+        };
+
+        admin.get('/admin/settings', async () => settingsView());
 
         admin.patch<{ Body: Record<string, unknown> }>('/admin/settings', {
           schema: { body: { type: 'object' } },
         }, async (request) => {
           try {
-            const updated = updateSettings(db, config, request.body);
+            updateSettings(db, config, request.body, now());
             // A new difficulty: the puzzles not released yet are generated again right away
             void challenges.tick();
-            return updated;
+            return settingsView();
           } catch (e) {
-            if (e instanceof SettingsError) throw new ApiError(400, 'invalid_settings', { field: e.message });
+            if (e instanceof SettingsError) throw new ApiError(400, e.code, { field: e.message });
             throw e;
           }
         });
@@ -586,7 +592,7 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
   }, { prefix: '/api/v1' });
 
   // Delete an account from the web (Google Play), with the recovery code
-  app.register(deletePage, { db, serverName: config.serverName });
+  app.register(deletePage, { db, serverName: () => settings().serverName });
 
   app.addHook('onClose', async () => {
     await challenges.stop();

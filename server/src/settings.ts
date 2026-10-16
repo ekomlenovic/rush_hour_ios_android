@@ -1,6 +1,12 @@
 import { DIFFICULTIES, type Config, type Difficulty } from './config';
 import { getSetting, setSetting, type Database } from './db';
 import { DEFAULT_THRESHOLDS, type Thresholds } from './cheat';
+import { addDays, currentChallengeDate, releaseTimeOn, zonedTimeToInstant, type ReleaseChange, type Schedule } from './time';
+
+const HOUR_MS = 3_600_000;
+/** A new release time may not bring the next challenge closer than this */
+export const MIN_RELEASE_NOTICE_MS = HOUR_MS;
+export const SERVER_NAME_MAX = 40;
 
 /**
  * What the admin can change from the app, without restarting the server (#50).
@@ -14,6 +20,13 @@ export interface AdminSettings {
   difficultyByWeekday: Difficulty[];
   replayRetentionDays: number;
   thresholds: Thresholds;
+  serverName: string;
+  /** 'HH:MM': release time of the next challenge and the ones after it */
+  releaseTime: string;
+  /** Every release time set in the app, so that the challenges already out never move */
+  releaseChanges: ReleaseChange[];
+  gracePeriodMs: number;
+  pregenerateAheadMs: number;
 }
 
 const KEY = 'admin_settings';
@@ -25,7 +38,17 @@ export function defaultSettings(config: Config): AdminSettings {
     difficultyByWeekday: config.difficultyByWeekday,
     replayRetentionDays: config.replayRetentionDays,
     thresholds: DEFAULT_THRESHOLDS,
+    serverName: config.serverName,
+    releaseTime: config.releaseTime,
+    releaseChanges: [],
+    gracePeriodMs: config.gracePeriodMs,
+    pregenerateAheadMs: config.pregenerateAheadMs,
   };
+}
+
+/** When the challenges come out, with the release times set in the app */
+export function scheduleOf(config: Config, settings: Pick<AdminSettings, 'releaseChanges'>): Schedule {
+  return { timeZone: config.timeZone, releaseTime: config.releaseTime, changes: settings.releaseChanges };
 }
 
 export function loadSettings(db: Database, config: Config): AdminSettings {
@@ -36,14 +59,19 @@ export function loadSettings(db: Database, config: Config): AdminSettings {
   return { ...defaults, ...saved, thresholds: { ...defaults.thresholds, ...saved.thresholds } };
 }
 
-export class SettingsError extends Error {}
+export class SettingsError extends Error {
+  /** `field` is the refused setting; `code` the error sent to the app */
+  constructor(field: string, readonly code = 'invalid_settings') {
+    super(field);
+  }
+}
 
 const isNumber = (v: unknown, min: number, max: number) => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
 
 /** Validates a change sent by the admin and saves it; returns the new settings */
-export function updateSettings(db: Database, config: Config, patch: Record<string, unknown>): AdminSettings {
+export function updateSettings(db: Database, config: Config, patch: Record<string, unknown>, now: number): AdminSettings {
   const current = loadSettings(db, config);
-  const next: AdminSettings = { ...current, thresholds: { ...current.thresholds } };
+  const next: AdminSettings = { ...current, thresholds: { ...current.thresholds }, releaseChanges: [...current.releaseChanges] };
 
   if ('joinOpen' in patch) {
     if (typeof patch.joinOpen !== 'boolean') throw new SettingsError('joinOpen');
@@ -79,6 +107,44 @@ export function updateSettings(db: Database, config: Config, patch: Record<strin
       next.thresholds[key as keyof Thresholds] = value as number;
     }
   }
-  setSetting(db, KEY, JSON.stringify(next));
+  if ('serverName' in patch) {
+    const name = typeof patch.serverName === 'string' ? patch.serverName.trim() : '';
+    if (!name || [...name].length > SERVER_NAME_MAX) throw new SettingsError('serverName');
+    next.serverName = name;
+  }
+  if ('gracePeriodMs' in patch) {
+    if (!isNumber(patch.gracePeriodMs, 0, 24 * HOUR_MS) || !Number.isInteger(patch.gracePeriodMs)) throw new SettingsError('gracePeriodMs');
+    next.gracePeriodMs = patch.gracePeriodMs as number;
+  }
+  if ('pregenerateAheadMs' in patch) {
+    if (!isNumber(patch.pregenerateAheadMs, HOUR_MS, 7 * 24 * HOUR_MS) || !Number.isInteger(patch.pregenerateAheadMs)) {
+      throw new SettingsError('pregenerateAheadMs');
+    }
+    next.pregenerateAheadMs = patch.pregenerateAheadMs as number;
+  }
+  if ('releaseTime' in patch) {
+    const time = patch.releaseTime;
+    if (typeof time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new SettingsError('releaseTime');
+    // The challenge being played keeps its release: the new time applies from the next one on
+    const schedule = scheduleOf(config, current);
+    const from = addDays(currentChallengeDate(now, schedule), 1);
+    if (time !== releaseTimeOn(from, schedule)) {
+      if (zonedTimeToInstant(from, time, config.timeZone) - now < MIN_RELEASE_NOTICE_MS) {
+        throw new SettingsError('releaseTime', 'release_too_soon');
+      }
+      // The first change keeps the environment's time for the past, even if RELEASE_TIME changes later
+      const changes = next.releaseChanges.length ? next.releaseChanges.filter(c => c.from < from)
+        : [{ from: '0000-01-01', releaseTime: config.releaseTime }];
+      next.releaseChanges = [...changes, { from, releaseTime: time }];
+    }
+    next.releaseTime = time;
+  }
+  // Only what the admin changed: the rest keeps following the environment
+  const saved = JSON.parse(getSetting(db, KEY) ?? '{}') as Record<string, unknown>;
+  for (const key of Object.keys(patch)) {
+    if (key in next && key !== 'releaseChanges') saved[key] = next[key as keyof AdminSettings];
+  }
+  if ('releaseTime' in patch) saved.releaseChanges = next.releaseChanges;
+  setSetting(db, KEY, JSON.stringify(saved));
   return next;
 }

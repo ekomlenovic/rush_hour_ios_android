@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { INVITE, LONG_SOLUTION, SOLUTION, paris, testServer } from './helpers';
+import { INVITE, LONG_SOLUTION, SOLUTION, paris, testConfig, testServer } from './helpers';
+import { loadSettings, scheduleOf } from '../src/settings';
+import { releaseAt } from '../src/time';
 
 let server: ReturnType<typeof testServer>;
 const open = (options?: Parameters<typeof testServer>[0]) => (server = testServer(options));
@@ -249,7 +251,10 @@ describe('settings', () => {
     expect((await request('GET', '/admin/settings', admin.token)).body).toMatchObject({
       joinOpen: true, invitesAdminOnly: false, replayRetentionDays: 7,
       difficultyByWeekday: ['NORMAL', 'HARD', 'NORMAL', 'NORMAL', 'NORMAL', 'NORMAL', 'NORMAL'],
+      serverName: 'Rush Hours', releaseTime: '12:00', timeZone: 'Europe/Paris',
+      gracePeriodMs: 3_600_000, pregenerateAheadMs: 48 * 3_600_000, nextReleaseAt: paris('2026-10-17', '12:00'),
     });
+    expect((await request('GET', '/admin/settings', admin.token)).body).not.toHaveProperty('releaseChanges');
   });
 
   it.each([
@@ -259,6 +264,13 @@ describe('settings', () => {
     [{ replayRetentionDays: -1 }, 'replayRetentionDays'],
     [{ thresholds: { minMsPerMove: -5 } }, 'thresholds.minMsPerMove'],
     [{ thresholds: { unknown: 1 } }, 'thresholds.unknown'],
+    [{ serverName: '   ' }, 'serverName'],
+    [{ serverName: 'x'.repeat(41) }, 'serverName'],
+    [{ releaseTime: '24:00' }, 'releaseTime'],
+    [{ releaseTime: '9:00' }, 'releaseTime'],
+    [{ gracePeriodMs: -1 }, 'gracePeriodMs'],
+    [{ gracePeriodMs: 25 * 3_600_000 }, 'gracePeriodMs'],
+    [{ pregenerateAheadMs: 0 }, 'pregenerateAheadMs'],
   ])('refuses %o', async (patch, field) => {
     const { joinAdmin, request } = open();
     const admin = await joinAdmin();
@@ -274,5 +286,135 @@ describe('settings', () => {
     await challenges.tick();
     expect(challenges.get('2026-10-16')!.difficulty).toBe('NORMAL');
     expect(challenges.get('2026-10-17')!.difficulty).toBe('EXPERT');
+  });
+});
+
+describe('release time', () => {
+  const setTime = async (server: ReturnType<typeof testServer>, token: string, releaseTime: string) =>
+    server.request('PATCH', '/admin/settings', token, { releaseTime });
+  const today = async (server: ReturnType<typeof testServer>, token: string) =>
+    (await server.request('GET', '/challenge/today', token)).body as { date: string; releasedAt: number; closesAt: number };
+
+  it('applies from the next challenge on: the one being played stays out', async () => {
+    const s = open();
+    const admin = await s.joinAdmin();
+    // 15:00, the challenge of the 16th came out at 12:00
+    const res = await setTime(s, admin.token, '18:00');
+    expect(res.body).toMatchObject({ releaseTime: '18:00', nextReleaseAt: paris('2026-10-17', '18:00') });
+    expect(await today(s, admin.token)).toMatchObject({
+      date: '2026-10-16', releasedAt: paris('2026-10-16', '12:00'), closesAt: paris('2026-10-17', '18:00'),
+    });
+    s.clock.now = paris('2026-10-17', '13:00');
+    expect((await today(s, admin.token)).date).toBe('2026-10-16');
+    s.clock.now = paris('2026-10-17', '18:00');
+    expect(await today(s, admin.token)).toMatchObject({ date: '2026-10-17', closesAt: paris('2026-10-18', '18:00') });
+  });
+
+  it('an earlier time shortens the challenge being played', async () => {
+    const s = open();
+    const admin = await s.joinAdmin();
+    await setTime(s, admin.token, '08:00');
+    expect((await today(s, admin.token)).closesAt).toBe(paris('2026-10-17', '08:00'));
+    s.clock.now = paris('2026-10-17', '08:00');
+    expect((await today(s, admin.token)).date).toBe('2026-10-17');
+  });
+
+  it('before the release of the day, moves that release', async () => {
+    const s = open({ at: paris('2026-10-16', '10:00') });
+    const admin = await s.joinAdmin();
+    expect((await today(s, admin.token)).date).toBe('2026-10-15');
+    await setTime(s, admin.token, '14:00');
+    s.clock.now = paris('2026-10-16', '13:00');
+    expect((await today(s, admin.token)).date).toBe('2026-10-15');
+    s.clock.now = paris('2026-10-16', '14:00');
+    expect((await today(s, admin.token)).date).toBe('2026-10-16');
+  });
+
+  it.each([
+    ['2026-10-16', '23:30', '00:15'],
+    ['2026-10-16', '10:00', '10:30'],
+    ['2026-10-16', '10:00', '09:00'],
+  ])('refuses a next challenge less than 1 h away (%s %s → %s)', async (date, time, releaseTime) => {
+    const s = open({ at: paris(date, time) });
+    const admin = await s.joinAdmin();
+    expect((await setTime(s, admin.token, releaseTime)).body).toEqual({ error: 'release_too_soon', field: 'releaseTime' });
+    expect((await s.request('GET', '/admin/settings', admin.token)).body.releaseTime).toBe('12:00');
+  });
+
+  it('accepts a next challenge just over 1 h away', async () => {
+    const s = open({ at: paris('2026-10-16', '23:30') });
+    const admin = await s.joinAdmin();
+    expect((await setTime(s, admin.token, '00:45')).status).toBe(200);
+  });
+
+  it('the challenges already out never move', async () => {
+    const s = open();
+    const admin = await s.joinAdmin();
+    await setTime(s, admin.token, '18:00');
+    // Changed again the same day: replaces the first change
+    await setTime(s, admin.token, '19:00');
+    s.clock.now = paris('2026-10-18', '20:00');
+    await setTime(s, admin.token, '09:00');
+    expect(['2026-10-16', '2026-10-17', '2026-10-18', '2026-10-19', '2026-10-20'].map(d => s.challenges.releaseAt(d))).toEqual([
+      paris('2026-10-16', '12:00'), paris('2026-10-17', '19:00'), paris('2026-10-18', '19:00'),
+      paris('2026-10-19', '09:00'), paris('2026-10-20', '09:00'),
+    ]);
+    // Back to the time of today: nothing to change
+    s.clock.now = paris('2026-10-19', '10:00');
+    expect((await setTime(s, admin.token, '09:00')).body.nextReleaseAt).toBe(paris('2026-10-20', '09:00'));
+  });
+
+  it('keeps the past when RELEASE_TIME changes after a change in the app', async () => {
+    const s = open();
+    const admin = await s.joinAdmin();
+    await setTime(s, admin.token, '18:00');
+    // Restarted with another RELEASE_TIME, on the same database
+    const config = testConfig({ RELEASE_TIME: '07:00' });
+    const schedule = scheduleOf(config, loadSettings(s.db, config));
+    expect(releaseAt('2026-10-10', schedule)).toBe(paris('2026-10-10', '12:00'));
+    expect(releaseAt('2026-10-16', schedule)).toBe(paris('2026-10-16', '12:00'));
+    expect(releaseAt('2026-10-17', schedule)).toBe(paris('2026-10-17', '18:00'));
+  });
+});
+
+describe('server, grace period and pregeneration', () => {
+  it('what the admin did not change keeps following the environment', async () => {
+    const s = open();
+    const admin = await s.joinAdmin();
+    await s.request('PATCH', '/admin/settings', admin.token, { joinOpen: false, gracePeriodMs: 0 });
+    const config = testConfig({ SERVER_NAME: 'Renamed', GRACE_PERIOD: '2h', PREGENERATE_AHEAD: '12h' });
+    expect(loadSettings(s.db, config)).toMatchObject({
+      joinOpen: false, gracePeriodMs: 0, serverName: 'Renamed', pregenerateAheadMs: 12 * 3_600_000, releaseTime: '12:00',
+    });
+  });
+
+  it('a new name is shown at once', async () => {
+    const { joinAdmin, request } = open();
+    const admin = await joinAdmin();
+    expect((await request('PATCH', '/admin/settings', admin.token, { serverName: '  Les copains  ' })).body.serverName).toBe('Les copains');
+    expect((await request('GET', '/info')).body.name).toBe('Les copains');
+    const page = await server.app.inject({ method: 'GET', url: '/delete-account' });
+    expect(page.body).toContain('Les copains');
+  });
+
+  it('a new grace period moves the deadlines', async () => {
+    const { joinAdmin, request, challenges } = open();
+    const admin = await joinAdmin();
+    await request('PATCH', '/admin/settings', admin.token, { gracePeriodMs: 0 });
+    expect(challenges.deadline('2026-10-16')).toBe(paris('2026-10-17', '12:00'));
+    await request('PATCH', '/admin/settings', admin.token, { gracePeriodMs: 2 * 3_600_000 });
+    expect(challenges.deadline('2026-10-16')).toBe(paris('2026-10-17', '14:00'));
+  });
+
+  it('a longer pregeneration generates more puzzles ahead', async () => {
+    const { joinAdmin, request, challenges } = open({ env: { PREGENERATE_AHEAD: '24h' } });
+    const admin = await joinAdmin();
+    await challenges.pregenerate();
+    expect(challenges.get('2026-10-18')).toBeUndefined();
+    await request('PATCH', '/admin/settings', admin.token, { pregenerateAheadMs: 72 * 3_600_000 });
+    await challenges.pregenerate();
+    expect(challenges.get('2026-10-18')).toBeDefined();
+    expect(challenges.get('2026-10-19')).toBeDefined();
+    expect(challenges.get('2026-10-20')).toBeUndefined();
   });
 });

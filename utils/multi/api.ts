@@ -124,7 +124,16 @@ export interface AdminSettings {
   difficultyByWeekday: Difficulty[];
   replayRetentionDays: number;
   thresholds: Thresholds;
+  serverName: string;
+  /** 'HH:MM' in timeZone; a change applies from the next challenge on */
+  releaseTime: string;
+  gracePeriodMs: number;
+  pregenerateAheadMs: number;
+  /** Time zone of the server (TZ), not changed from the app */
+  timeZone: string;
+  nextReleaseAt: number;
 }
+export type AdminSettingsPatch = Partial<Omit<AdminSettings, 'thresholds' | 'timeZone' | 'nextReleaseAt'>> & { thresholds?: Partial<Thresholds> };
 export type Period = 'day' | 'week' | 'month';
 export type Leaderboard =
   | { period: 'day'; from: string; to: string; rows: DayRow[] }
@@ -200,7 +209,7 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
       deleteReport: (reportId: number) => call<void>('DELETE', `/admin/reports/${reportId}`),
       newInviteCode: () => call<{ inviteCode: string }>('POST', '/admin/invite'),
       settings: () => call<AdminSettings>('GET', '/admin/settings'),
-      updateSettings: (patch: Partial<Omit<AdminSettings, 'thresholds'>> & { thresholds?: Partial<Thresholds> }) =>
+      updateSettings: (patch: AdminSettingsPatch) =>
         call<AdminSettings>('PATCH', '/admin/settings', patch),
     },
   };

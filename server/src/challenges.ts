@@ -3,7 +3,7 @@ import { getSetting, setSetting, type Database } from './db';
 import type { PuzzleGenerator } from './generation';
 import type { Level } from './core';
 import { puzzleSeed } from './secrets';
-import { addDays, closesAt, currentChallengeDate, daysBetween, releaseAt, weekday, type Schedule } from './time';
+import { addDays, closesAt, currentChallengeDate, daysBetween, releaseAt, weekday, type ReleaseChange, type Schedule } from './time';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Each generation may fail (no puzzle hard enough): a few more seeds before giving up */
@@ -17,6 +17,15 @@ export interface ChallengeRow {
   generated_at: number;
 }
 
+/** What the admin can change in the app (#50); the environment until then */
+export interface ChallengeSettings {
+  difficultyByWeekday: Difficulty[];
+  replayRetentionDays: number;
+  gracePeriodMs: number;
+  pregenerateAheadMs: number;
+  releaseChanges?: ReleaseChange[];
+}
+
 interface Logger {
   info(obj: object, msg: string): void;
   error(obj: object, msg: string): void;
@@ -27,7 +36,6 @@ interface Logger {
  * background, so that nobody ever waits, and kept secret until a player starts one.
  */
 export class Challenges {
-  readonly schedule: Schedule;
   private inflight = new Map<string, Promise<ChallengeRow | null>>();
   private timer: NodeJS.Timeout | null = null;
   private ticking: Promise<void> | null = null;
@@ -38,11 +46,13 @@ export class Challenges {
     private generator: PuzzleGenerator,
     private now: () => number,
     private log: Logger,
-    /** Difficulty and replay retention: the environment, or what the admin set in the app (#50) */
-    private settings: () => { difficultyByWeekday: Difficulty[]; replayRetentionDays: number } = () => config,
+    private settings: () => ChallengeSettings = () => config,
   ) {
-    this.schedule = { timeZone: config.timeZone, releaseTime: config.releaseTime };
     if (!getSetting(db, 'first_date')) setSetting(db, 'first_date', this.currentDate());
+  }
+
+  get schedule(): Schedule {
+    return { timeZone: this.config.timeZone, releaseTime: this.config.releaseTime, changes: this.settings().releaseChanges };
   }
 
   currentDate(): string {
@@ -68,7 +78,7 @@ export class Challenges {
 
   /** Last moment to finish a game of that day started in time */
   deadline(date: string): number {
-    return this.closesAt(date) + this.config.gracePeriodMs;
+    return this.closesAt(date) + this.settings().gracePeriodMs;
   }
 
   get(date: string): ChallengeRow | undefined {
@@ -126,9 +136,10 @@ export class Challenges {
   async pregenerate(): Promise<void> {
     let date = this.currentDate();
     await this.ensure(date);
+    const ahead = this.settings().pregenerateAheadMs;
     for (let i = 0; i < 31; i++) {
       date = addDays(date, 1);
-      if (this.releaseAt(date) - this.config.pregenerateAheadMs > this.now()) break;
+      if (this.releaseAt(date) - ahead > this.now()) break;
       await this.ensure(date);
     }
   }
