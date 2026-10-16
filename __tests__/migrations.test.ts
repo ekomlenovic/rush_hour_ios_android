@@ -16,7 +16,7 @@ describe('persisted state', () => {
 
   it('keeps the player data and leaves the in-game state out', () => {
     resetStore();
-    useGameStore.setState({ unlockQueue: ['first_win'], pendingMissionReward: { freezeGranted: true } });
+    useGameStore.setState({ unlockQueue: ['first_win'], pendingMissionReward: { freezeGranted: true, xp: 100 } });
     const saved = options.partialize!(useGameStore.getState()) as Record<string, unknown>;
     for (const key of ['progress', 'dailyChallengeProgress', 'stats', 'currentStreak', 'streakFreezes', 'frozenDates', 'dailyMissions', 'achievements', 'savedStates', 'xp', 'cosmetics', 'seenCosmetics']) {
       expect(saved).toHaveProperty(key);

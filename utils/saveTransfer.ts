@@ -3,7 +3,7 @@ import { STORE_VERSION, migrateState, relocateGeneratedLevels } from '../store/m
 import { sampleLevels } from '../data/sampleLevels';
 import { ACHIEVEMENTS } from '../data/achievements';
 import {
-  ACHIEVEMENT_XP, MISSIONS_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, weeklyWinXp, REPLAY_XP_FACTOR,
+  ACHIEVEMENT_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp, REPLAY_XP_FACTOR,
 } from '../data/progression';
 import { getLocalDateString, getWeekKey } from './date';
 
@@ -269,7 +269,7 @@ export function maxPlausibleXp(state: Record<string, any>): number {
   for (const r of Object.values((state.archiveProgress ?? {}) as Record<string, ChallengeResult>)) {
     if (r.completed) xp += archiveWinXp(r.minMoves ?? 60, r.stars || 1);
   }
-  xp += (state.stats?.missionDaysCompleted ?? 0) * MISSIONS_XP;
+  xp += (state.stats?.missionDaysCompleted ?? 0) * missionsXp(false);
   xp += (state.achievements?.length ?? 0) * ACHIEVEMENT_XP;
   return Math.ceil(xp);
 }

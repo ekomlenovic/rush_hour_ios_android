@@ -7,6 +7,7 @@ import { haptics, Haptics } from '@/utils/haptics';
 import { useTranslation } from 'react-i18next';
 import { getLocalDateString, getWeekKey, getDaysLeftInWeek } from '@/utils/date';
 import { getMissionsForDay, countMissionsDone } from '@/data/missions';
+import { getFreezeCapacity, getPlayerLevel } from '@/data/progression';
 import { useAppOpenAlert } from '@/hooks/useAppOpenAlert';
 import { useTheme, fixedColors } from '@/theme';
 import ChallengeButton from '@/components/home/ChallengeButton';
@@ -26,6 +27,7 @@ export default function HomeScreen() {
   const currentStreak = useGameStore(s => s.currentStreak);
   const streakFreezes = useGameStore(s => s.streakFreezes);
   const dailyMissions = useGameStore(s => s.dailyMissions);
+  const xp = useGameStore(s => s.xp);
 
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const [isMissionsVisible, setMissionsVisible] = useState(false);
@@ -123,6 +125,7 @@ export default function HomeScreen() {
         colors={colors}
         isDark={isDark}
         missions={todayMissions}
+        freezeStockFull={streakFreezes >= getFreezeCapacity(getPlayerLevel(xp))}
         onClose={() => setMissionsVisible(false)}
       />
 
