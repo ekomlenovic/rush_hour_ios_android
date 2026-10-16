@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { haptics, Haptics } from '@/utils/haptics';
 import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
+import { getMapFocusLevel } from '@/utils/mapFocus';
 import { useTheme } from '@/theme';
 import { createMapLayout, generateRoadSegments } from '@/components/map/path';
 import { buildZones, zoneOf } from '@/components/map/zones';
@@ -74,7 +75,7 @@ export default function MapScreen() {
 
   // Synchronously calculate initial scroll position to avoid "teleportation"
   const initialY = useMemo(() => {
-    const targetId = (lastPlayedLevelId && lastPlayedLevelId < 900000) ? lastPlayedLevelId : maxUnlockedLevel;
+    const targetId = getMapFocusLevel(lastPlayedLevelId, maxUnlockedLevel);
     const targetNode = pathPoints.find(p => p.id === targetId);
     if (targetNode) {
       return Math.max(0, targetNode.y - screenHeight / 2 + 50);

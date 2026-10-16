@@ -1,4 +1,5 @@
 import { buildZones, zoneOf, ZONE_SIZE } from '../components/map/zones';
+import { getMapFocusLevel } from '@/utils/mapFocus';
 import { createMapLayout, generateRoadSegments, ZONE_GAP } from '../components/map/path';
 
 describe('map zones', () => {
@@ -45,5 +46,19 @@ describe('map layout', () => {
     const last = segments[segments.length - 1];
     const padlock = layout.points[layout.points.length - 1];
     expect([last.x2, last.y2]).toEqual([padlock.x, padlock.y]);
+  });
+});
+
+describe('getMapFocusLevel', () => {
+  it('opens on the last map level played', () => {
+    expect(getMapFocusLevel(12, 30)).toBe(12);
+  });
+
+  it('opens on the next level to play when nothing was played', () => {
+    expect(getMapFocusLevel(null, 30)).toBe(30);
+  });
+
+  it('ignores daily and weekly challenges', () => {
+    expect(getMapFocusLevel(999999, 30)).toBe(30);
   });
 });

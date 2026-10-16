@@ -20,6 +20,7 @@ import OptionsSheet from '@/components/settings/OptionsSheet';
 import PlayerLevelBadge from '@/components/progression/PlayerLevelBadge';
 import BoardPreview from '@/components/garage/BoardPreview';
 import { useCosmetics } from '@/hooks/useCosmetics';
+import { getMapFocusLevel } from '@/utils/mapFocus';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -49,6 +50,7 @@ export default function HomeScreen() {
   const xp = useGameStore(s => s.xp);
   const progress = useGameStore(s => s.progress);
   const maxUnlockedLevel = useGameStore(s => s.maxUnlockedLevel);
+  const lastPlayedLevelId = useGameStore(s => s.lastPlayedLevelId);
   const generatedLevels = useGameStore(s => s.generatedLevels);
   const cosmetics = useGameStore(s => s.cosmetics);
 
@@ -70,14 +72,16 @@ export default function HomeScreen() {
   const weeklyStatus = weeklyChallengeProgress[weekKey];
   const daysLeftInWeek = getDaysLeftInWeek(now);
 
-  // Play: the tutorial for a brand new player, the next map level otherwise
+  // Play: the tutorial for a brand new player, otherwise the level the map opens on
   const isNewPlayer = progress.length === 0;
   const totalLevels = sampleLevels.length + generatedLevels.length;
+  const focusLevel = getMapFocusLevel(lastPlayedLevelId, maxUnlockedLevel);
   const playContext = isNewPlayer
     ? t('home.play_tutorial')
-    : maxUnlockedLevel <= totalLevels
-      ? t('home.play_level', { level: maxUnlockedLevel })
-      : t('home.play_all_done');
+    : focusLevel > totalLevels
+      ? t('home.play_all_done')
+      // The map opens on level 1 when the focus is not one of its levels
+      : t('home.play_level', { level: Math.max(1, focusLevel) });
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
