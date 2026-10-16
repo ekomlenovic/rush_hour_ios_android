@@ -1,0 +1,27 @@
+{
+  "name": "rush-hours-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Self-hosted multiplayer server of Rush Hours: a daily challenge between friends",
+  "type": "module",
+  "license": "GPL-3.0-or-later",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "node --disable-warning=ExperimentalWarning dist/server.cjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastify/rate-limit": "11.2.1",
+    "fastify": "5.12.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "esbuild": "0.28.2",
+    "typescript": "~6.0.3",
+    "vitest": "5.0.5"
+  }
+}

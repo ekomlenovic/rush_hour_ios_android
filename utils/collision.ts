@@ -1,4 +1,4 @@
-import { Vehicle } from '@/store/gameStore';
+import type { Vehicle } from '../store/types';
 
 /**
  * Compute how far a vehicle can slide in its constrained axis.

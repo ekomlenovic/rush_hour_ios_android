@@ -7,8 +7,9 @@ import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
 import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
 import { DailyMissionsState, MissionCounter, MissionReward, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
 import { getLocalDateString, daysBetween } from '../utils/date';
+import { diffMove, toMoveRecord } from '../utils/moveLog';
 import type {
-  AppOpenInfo, AttemptStats, ChallengeDetails, ChallengeResult, Level, LevelProgress, LevelSaveState, PlayerStats, ThemeMode, Vehicle,
+  AppOpenInfo, AttemptStats, ChallengeDetails, ChallengeResult, Level, LevelProgress, LevelSaveState, MoveRecord, PlayerStats, ThemeMode, Vehicle,
 } from './types';
 import { MAX_STREAK_FREEZES, settleStreak, advanceStreak } from './streak';
 import {
@@ -20,15 +21,11 @@ import {
 } from '../data/cosmetics';
 import { emptyAttempt, initialStats, withWinStats, mergeChallengeResult } from './stats';
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from './migrations';
+import { DAILY_LEVEL_ID, WEEKLY_LEVEL_ID, ARCHIVE_LEVEL_ID } from './levelIds';
 
 export type * from './types';
 export { MAX_STREAK_FREEZES };
-
-/** Reserved level IDs for challenges (excluded from map progression) */
-export const DAILY_LEVEL_ID = 999999;
-export const WEEKLY_LEVEL_ID = 999998;
-/** A past daily replayed from the archives (see docs/GAME_DESIGN.md) */
-export const ARCHIVE_LEVEL_ID = 999997;
+export { DAILY_LEVEL_ID, WEEKLY_LEVEL_ID, ARCHIVE_LEVEL_ID };
 
 interface GenerationState {
   isRunning: boolean;
@@ -47,6 +44,10 @@ interface GameState {
   moveCount: number;
   /** History stack for undo functionality */
   history: Vehicle[][];
+  /** Timed moves of the attempt, replayable with applyMoves (multiplayer, #46) */
+  moveLog: MoveRecord[];
+  /** Wall-clock start of the attempt (ms since epoch), the origin of the move times */
+  attemptStartedAt: number;
   /** Help used during the current attempt */
   currentAttempt: AttemptStats;
   /** Player's progress across all levels */
@@ -210,7 +211,7 @@ export const useGameStore = create<GameState>()(
   persist(
     (set, get) => {
       /** Updates the in-progress state and mirrors it into savedStates */
-      const saveSnapshot = (partial: Partial<Pick<GameState, 'vehicles' | 'moveCount' | 'history' | 'currentAttempt' | 'stats' | 'totalHintsUsed'>>) => {
+      const saveSnapshot = (partial: Partial<Pick<GameState, 'vehicles' | 'moveCount' | 'history' | 'moveLog' | 'currentAttempt' | 'stats' | 'totalHintsUsed'>>) => {
         const state = get();
         if (!state.currentLevel) return;
         const next = { ...state, ...partial };
@@ -225,6 +226,8 @@ export const useGameStore = create<GameState>()(
               moveCount: next.moveCount,
               history: next.history.map(h => h.map(v => ({ ...v }))),
               attempt: { ...next.currentAttempt },
+              moveLog: next.moveLog.map(m => ({ ...m })),
+              startedAt: next.attemptStartedAt,
             }
           }
         });
@@ -279,6 +282,8 @@ export const useGameStore = create<GameState>()(
       vehicles: [],
       moveCount: 0,
       history: [],
+      moveLog: [],
+      attemptStartedAt: 0,
       currentAttempt: emptyAttempt(),
       progress: [],
       maxUnlockedLevel: 1,
@@ -339,37 +344,45 @@ export const useGameStore = create<GameState>()(
           vehicles: resolvedSavedState ? resolvedSavedState.vehicles.map(v => ({...v})) : level.vehicles.map((v) => ({ ...v })),
           moveCount: resolvedSavedState ? resolvedSavedState.moveCount : 0,
           history: resolvedSavedState ? resolvedSavedState.history.map(h => h.map(v => ({...v}))) : [],
+          moveLog: resolvedSavedState?.moveLog ? resolvedSavedState.moveLog.map(m => ({ ...m })) : [],
+          attemptStartedAt: resolvedSavedState?.startedAt ?? Date.now(),
           currentAttempt: resolvedSavedState?.attempt ? { ...resolvedSavedState.attempt } : emptyAttempt(),
           lastPlayedLevelId: (level.id >= 900000) ? state.lastPlayedLevelId : level.id,
         });
       },
 
       moveVehicle: (vehicleId, newRow, newCol) => {
-        const { vehicles, history, moveCount, currentLevel, stats } = get();
+        const { vehicles, history, moveLog, attemptStartedAt, moveCount, currentLevel, stats } = get();
         if (!currentLevel) return;
 
         const snapshot = vehicles.map((v) => ({ ...v }));
         const updated = vehicles.map((v) =>
           v.id === vehicleId ? { ...v, row: newRow, col: newCol } : v
         );
+        const moved = vehicles.find(v => v.id === vehicleId);
+        const record = moved && toMoveRecord(moved, newRow, newCol, Date.now() - attemptStartedAt);
 
         saveSnapshot({
           vehicles: updated,
           moveCount: moveCount + 1,
           history: [...history, snapshot],
+          moveLog: record ? [...moveLog, record] : moveLog,
           stats: { ...stats, totalMoves: stats.totalMoves + 1 },
         });
         bumpMissions({ moves: 1 });
       },
 
       undo: () => {
-        const { history, moveCount, currentLevel, currentAttempt, stats } = get();
+        const { vehicles, history, moveLog, attemptStartedAt, moveCount, currentLevel, currentAttempt, stats } = get();
         if (history.length === 0 || !currentLevel) return;
 
-        // Undo counts as a move (see docs/GAME_DESIGN.md)
+        // Undo counts as a move (see docs/GAME_DESIGN.md): the log gets the opposite move
+        const previous = history[history.length - 1];
+        const record = diffMove(vehicles, previous, Date.now() - attemptStartedAt);
         saveSnapshot({
-          vehicles: history[history.length - 1],
+          vehicles: previous,
           history: history.slice(0, -1),
+          moveLog: record ? [...moveLog, record] : moveLog,
           moveCount: moveCount + 1,
           currentAttempt: { ...currentAttempt, undos: currentAttempt.undos + 1 },
           stats: { ...stats, totalUndos: stats.totalUndos + 1 },
@@ -385,6 +398,7 @@ export const useGameStore = create<GameState>()(
           vehicles: currentLevel.vehicles.map((v) => ({ ...v })),
           moveCount: 0,
           history: [],
+          moveLog: [],
           currentAttempt: { ...currentAttempt, resets: currentAttempt.resets + 1 },
           stats: { ...stats, totalResets: stats.totalResets + 1 },
         });
@@ -748,6 +762,8 @@ export const useGameStore = create<GameState>()(
           vehicles: [],
           moveCount: 0,
           history: [],
+          moveLog: [],
+          attemptStartedAt: 0,
           currentAttempt: emptyAttempt(),
           generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
           dailyChallengeProgress: {},

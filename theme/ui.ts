@@ -78,6 +78,8 @@ export interface UiColors {
   switchTrackOff: string;
   /** Behind a QR code (must stay white to be scanned) */
   qrBackground: string;
+  /** Dark modules of a QR code (must stay black to be scanned) */
+  qrForeground: string;
   /** GitHub brand button */
   github: string;
   /** Shine on a saturated fill */
@@ -107,6 +109,7 @@ export const fixedColors = {
   shadow: '#000000',
   switchTrackOff: '#767577',
   qrBackground: '#FFFFFF',
+  qrForeground: '#000000',
   github: '#24292E',
   shine: 'rgba(255,255,255,0.2)',
   shineFaint: 'rgba(255,255,255,0.05)',
