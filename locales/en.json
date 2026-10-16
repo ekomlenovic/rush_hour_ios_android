@@ -557,7 +557,9 @@
     "play": "Play",
     "pause": "Pause",
     "next": "Next move",
-    "last": "Go to the end"
+    "last": "Go to the end",
+    "speed": "Speed",
+    "speed_a11y": "Speed times {{speed}}"
   },
   "progression": {
     "level": "Level {{level}}",

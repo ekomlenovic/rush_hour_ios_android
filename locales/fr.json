@@ -557,7 +557,9 @@
     "play": "Lecture",
     "pause": "Pause",
     "next": "Coup suivant",
-    "last": "Aller à la fin"
+    "last": "Aller à la fin",
+    "speed": "Vitesse",
+    "speed_a11y": "Vitesse fois {{speed}}"
   },
   "progression": {
     "level": "Niveau {{level}}",
