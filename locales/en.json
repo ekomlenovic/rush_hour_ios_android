@@ -706,8 +706,6 @@
     "pending": "Your game from yesterday can still be finished: {{time}}",
     "preparing": "Preparing the challenge…",
     "start": "Start",
-    "start_title": "One try only",
-    "start_body": "The server clock starts now and keeps running even if you leave the screen. No hint, no undo. Ready?",
     "resume": "Resume ({{time}})",
     "my_win": "Solved in {{moves}} moves, {{time}} (optimum: {{min}})",
     "my_abandoned": "Given up. The optimum was {{min}} moves.",
@@ -931,6 +929,7 @@
     },
     "setup_join_title": "Join it and become admin",
     "setup_join_help": "Join your server with the invite code, then in My account → Become admin, enter your ADMIN_TOKEN. You can then invite your friends.",
+    "start_hint": "One try: the clock runs as soon as you start.",
     "errors": {
       "network": "The server does not answer. Check your connection and the server address.",
       "timeout": "The server takes too long to answer. Try again.",

@@ -706,8 +706,6 @@
     "pending": "Ta partie d'hier peut encore être finie : {{time}}",
     "preparing": "Préparation du défi…",
     "start": "Commencer",
-    "start_title": "Un seul essai",
-    "start_body": "Le chrono du serveur démarre maintenant et continue même si tu quittes l'écran. Pas d'indice, pas d'annuler. Prêt ?",
     "resume": "Reprendre ({{time}})",
     "my_win": "Réussi en {{moves}} coups, {{time}} (optimum : {{min}})",
     "my_abandoned": "Abandonné. L'optimum était de {{min}} coups.",
@@ -931,6 +929,7 @@
     },
     "setup_join_title": "Rejoindre et devenir admin",
     "setup_join_help": "Rejoins ton serveur avec le code d'invitation, puis dans Mon compte → Devenir admin, entre ton ADMIN_TOKEN. Tu pourras ensuite inviter tes amis.",
+    "start_hint": "Un seul essai : le chrono tourne dès que tu commences.",
     "errors": {
       "network": "Le serveur ne répond pas. Vérifie ta connexion et l'adresse du serveur.",
       "timeout": "Le serveur met trop de temps à répondre. Réessaie.",
