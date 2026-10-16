@@ -1,0 +1,9 @@
+# Only the server and the game logic it shares with the app go into the image (server/Dockerfile)
+**
+!server/
+!store/types.ts
+!store/levelIds.ts
+!utils/
+!theme/
+server/node_modules
+server/dist

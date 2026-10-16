@@ -59,6 +59,9 @@
     ],
     "testMatch": [
       "<rootDir>/__tests__/**/*.test.ts"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/server/"
     ]
   }
 }
