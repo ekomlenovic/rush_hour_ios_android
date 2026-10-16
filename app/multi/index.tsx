@@ -13,7 +13,8 @@ import { checkCompatibility, type Today } from '@/utils/multi/api';
 import { formatRemaining } from '@/utils/multi/format';
 import { serverHost } from '@/utils/multi/serverUrl';
 import MultiHeader from '@/components/multi/MultiHeader';
-import Leaderboard from '@/components/multi/Leaderboard';
+import Leaderboard, { type RowPlayer } from '@/components/multi/Leaderboard';
+import PlayerActionsSheet from '@/components/multi/PlayerActionsSheet';
 import InviteSheet from '@/components/multi/InviteSheet';
 import ServerPickerSheet from '@/components/multi/ServerPickerSheet';
 import { errorCode, multiErrorMessage } from '@/components/multi/errors';
@@ -66,6 +67,8 @@ export default function MultiplayerScreen() {
   const activeUrl = useMultiStore(s => s.activeUrl);
   const setActive = useMultiStore(s => s.setActive);
   const removeAccount = useMultiStore(s => s.removeAccount);
+  const blockedByServer = useMultiStore(s => s.blocked);
+  const setBlocked = useMultiStore(s => s.setBlocked);
   const account = useMultiStore(selectActiveAccount);
   const api = useMultiApi(account);
 
@@ -78,6 +81,7 @@ export default function MultiplayerScreen() {
   const [now, setNow] = useState(Date.now());
   const [isPickerVisible, setPickerVisible] = useState(false);
   const [isInviteVisible, setInviteVisible] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<RowPlayer | null>(null);
 
   const load = useCallback(async () => {
     if (!api) return;
@@ -121,6 +125,7 @@ export default function MultiplayerScreen() {
   );
 
   const serverNow = now + clockOffset;
+  const blocked = (blockedByServer[account.url] ?? []).map(p => p.playerId);
   const me = today?.me;
   const finishedCount = today?.results.filter(r => r.status === 'won').length ?? 0;
 
@@ -244,7 +249,16 @@ export default function MultiplayerScreen() {
           <Text style={[styles.secondaryButtonText, { color: colors.primaryText }]}>📨 {t('multi.invite')}</Text>
         </Pressable>
 
-        {api && <Leaderboard api={api} colors={colors} myPlayerId={account.playerId} refreshKey={refreshKey} />}
+        {api && (
+          <Leaderboard
+            api={api}
+            colors={colors}
+            myPlayerId={account.playerId}
+            refreshKey={refreshKey}
+            blocked={blocked}
+            onRowPress={setSelectedPlayer}
+          />
+        )}
       </ScrollView>
 
       <ServerPickerSheet
@@ -257,6 +271,19 @@ export default function MultiplayerScreen() {
         onAdd={() => { setPickerVisible(false); router.push('/multi/join'); }}
         onClose={() => setPickerVisible(false)}
       />
+      {api && (
+        <PlayerActionsSheet
+          player={selectedPlayer}
+          isMe={selectedPlayer?.playerId === account.playerId}
+          isBlocked={!!selectedPlayer && blocked.includes(selectedPlayer.playerId)}
+          api={api}
+          colors={colors}
+          isDark={isDark}
+          onReplay={(attemptId) => router.push(`/multi/replay?attemptId=${attemptId}`)}
+          onToggleBlock={(player, block) => setBlocked(account.url, player, block)}
+          onClose={() => setSelectedPlayer(null)}
+        />
+      )}
       {api && (
         <InviteSheet visible={isInviteVisible} account={account} api={api} colors={colors} isDark={isDark} onClose={() => setInviteVisible(false)} />
       )}

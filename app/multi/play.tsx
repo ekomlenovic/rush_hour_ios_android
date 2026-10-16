@@ -222,6 +222,9 @@ export default function MultiPlayScreen() {
                 <Text style={[styles.winRank, { color: colors.primaryText }]}>
                   {t('multi.provisional_rank', { rank: result.rank })} · {t('multi.points', { count: result.points })}
                 </Text>
+                {result.verdict === 'suspect' && (
+                  <Text style={[styles.winMuted, { color: colors.warning, textAlign: 'center' }]}>⚠️ {t('multi.win_suspect')}</Text>
+                )}
               </>
             )}
             <Pressable onPress={() => router.back()} style={[styles.button, { backgroundColor: colors.primary, alignSelf: 'stretch' }]} accessibilityRole="button">

@@ -81,11 +81,19 @@ export function testServer(options: { env?: Record<string, string>; level?: Leve
   };
 
   /** Starts the current challenge and wins it with `moves` after `ms` */
-  const play = async (token: string, moves = SOLUTION, ms = 30_000) => {
+  const play = async (token: string, moves = SOLUTION, ms = 30_000, extra: { clientMs?: number; backgroundMs?: number } = {}) => {
     const start = await request('POST', '/challenge/start', token, {});
     clock.now += ms;
-    return request('POST', '/challenge/submit', token, { date: start.body.date, moves });
+    return request('POST', '/challenge/submit', token, { date: start.body.date, moves, ...extra });
   };
 
-  return { app, db, challenges, clock, calls, config, request, join, play };
+  /** A player made admin with ADMIN_TOKEN */
+  const joinAdmin = async (pseudo = 'Admin') => {
+    const player = await join(pseudo);
+    const res = await request('POST', '/admin/claim', player.token, { adminToken: 'admin-token-for-tests' });
+    if (res.status !== 200) throw new Error(`claim: ${JSON.stringify(res.body)}`);
+    return player;
+  };
+
+  return { app, db, challenges, clock, calls, config, request, join, joinAdmin, play };
 }
