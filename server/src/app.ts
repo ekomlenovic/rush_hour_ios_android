@@ -12,8 +12,8 @@ import { addDays, isValidDate, periodBounds } from './time';
 
 /** Version of this API: the app refuses a server it does not know how to talk to */
 export const API_VERSION = 1;
-/** Oldest app that can use this server */
-export const MIN_APP_VERSION = '1.2.0';
+/** Oldest app that can use this server: the version of the app with the multiplayer mode, raised when the API breaks */
+export const MIN_APP_VERSION = '1.1.6';
 /** A game log longer than this is refused (the hardest puzzles take about 80 moves) */
 export const MAX_MOVES = 1000;
 
@@ -209,6 +209,9 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
         db.prepare('UPDATE players SET pseudo = ?, pseudo_key = ? WHERE id = ?').run(pseudo, pseudoKey(pseudo), request.player.id);
         return publicPlayer({ ...request.player, pseudo });
       });
+
+      // Every member can invite a friend (invitations may be kept to the admin later, #50)
+      auth.get('/invite', async () => ({ inviteCode: inviteCode(db, config).code }));
 
       auth.post('/me/recovery', async (request) => {
         const recoveryCode = newRecoveryCode();
