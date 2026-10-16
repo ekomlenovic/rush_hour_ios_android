@@ -150,12 +150,22 @@ export default function HomeScreen() {
             <Text style={styles.playText}>▶  {t('home.world_map')}</Text>
           </AnimatedPressable>
 
+          {/* Tutorial, right under Play for new players */}
+          <AnimatedPressable
+            entering={FadeInDown.delay(600).springify()}
+            style={styles.tutorialLink}
+            onPress={() => router.push('/tutorial')}
+            accessibilityRole="link"
+            hitSlop={8}
+          >
+            <Text style={[styles.tutorialText, { color: colors.primaryText }]}>❓ {t('home.how_to_play')}</Text>
+          </AnimatedPressable>
+
           {/* Challenges */}
           <View style={styles.row}>
             <ChallengeButton
               colors={colors}
               icon="📅"
-              color={colors.primaryText}
               done={!!dailyStatus?.completed}
               label={dailyStatus?.completed ? t('home.daily_done', { stars: dailyStatus.stars }) : t('home.daily_challenge')}
               enteringDelay={650}
@@ -164,7 +174,6 @@ export default function HomeScreen() {
             <ChallengeButton
               colors={colors}
               icon="🏆"
-              color={colors.weekly}
               done={!!weeklyStatus?.completed}
               label={weeklyStatus?.completed ? t('home.weekly_done', { stars: weeklyStatus.stars }) : t('home.weekly_challenge')}
               detail={weeklyStatus?.completed ? undefined : t('home.weekly_days_left', { count: getDaysLeftInWeek(new Date()) })}
@@ -214,7 +223,7 @@ export default function HomeScreen() {
             </Pressable>
           </Animated.View>
 
-          {/* Shortcuts: four equal tiles, so the grid stays centered in every language */}
+          {/* Shortcuts: three equal tiles, so the grid stays centered in every language */}
           <View style={[styles.row, styles.shortcuts]}>
             <Shortcut
               colors={colors}
@@ -240,13 +249,6 @@ export default function HomeScreen() {
                 : t('cosmetics.garage')}
               enteringDelay={950}
               onPress={() => router.push('/garage')}
-            />
-            <Shortcut
-              colors={colors}
-              icon="❓"
-              label={t('home.how_to_play')}
-              enteringDelay={1000}
-              onPress={() => router.push('/tutorial')}
             />
           </View>
         </View>
@@ -334,6 +336,16 @@ const styles = StyleSheet.create({
     fontSize: 21,
     fontWeight: '800',
     letterSpacing: 1,
+  },
+  tutorialLink: {
+    alignSelf: 'center',
+    marginTop: -4,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+  },
+  tutorialText: {
+    fontSize: 15,
+    fontWeight: '700',
   },
   row: {
     flexDirection: 'row',
