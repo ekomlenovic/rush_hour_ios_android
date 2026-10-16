@@ -5,6 +5,7 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { haptics, Haptics } from '@/utils/haptics';
 import Board from '@/components/Board';
 import { useGameStore } from '@/store/gameStore';
+import type { MissionReward } from '@/data/missions';
 import { checkWin } from '@/utils/collision';
 import { solvePuzzleAsync } from '@/utils/solver.background';
 import { getShareUrl } from '@/utils/sharing';
@@ -58,7 +59,7 @@ export default function GameScreen() {
   const [isHintLoading, setIsHintLoading] = useState(false);
   const [winTimeMs, setWinTimeMs] = useState<number | null>(null);
   const [winUnlocks, setWinUnlocks] = useState<string[]>([]);
-  const [winMissionReward, setWinMissionReward] = useState<{ freezeGranted: boolean } | null>(null);
+  const [winMissionReward, setWinMissionReward] = useState<MissionReward | null>(null);
   const [winXpGain, setWinXpGain] = useState<{ from: number; to: number } | null>(null);
   const [winLevelUps, setWinLevelUps] = useState<number[]>([]);
 

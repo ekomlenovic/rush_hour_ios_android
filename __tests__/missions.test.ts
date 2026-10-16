@@ -1,5 +1,6 @@
 import { MISSIONS, MISSIONS_BY_ID, MISSIONS_PER_DAY, getMissionsForDay, pickMissions, countMissionsDone } from '../data/missions';
 import { useGameStore, MAX_STREAK_FREEZES } from '../store/gameStore';
+import { MISSIONS_FULL_STOCK_XP, MISSIONS_XP } from '../data/progression';
 import { sampleLevels } from '../data/sampleLevels';
 import { addDays } from '../utils/date';
 import { resetStore, setToday, winMapLevel } from './helpers';
@@ -115,7 +116,7 @@ describe('mission counters in the store', () => {
       expect(state().dailyMissions?.rewarded).toBe(true);
       expect(state().streakFreezes).toBe(1);
       expect(state().stats.missionDaysCompleted).toBe(1);
-      expect(state().consumeMissionReward()).toEqual({ freezeGranted: true });
+      expect(state().consumeMissionReward()).toEqual({ freezeGranted: true, xp: MISSIONS_XP });
       expect(state().consumeMissionReward()).toBeNull();
 
       winMapLevel();
@@ -124,11 +125,20 @@ describe('mission counters in the store', () => {
       expect(state().consumeMissionReward()).toBeNull();
     });
 
-    it('gives nothing when the freeze stock is full', () => {
+    it('gives the missions XP plus a bonus instead of the freeze when the stock is full', () => {
       useGameStore.setState({ streakFreezes: MAX_STREAK_FREEZES });
       state().completeDailyChallenge(TODAY, 300, 3);
+      const xpFullStock = state().xp;
       expect(state().streakFreezes).toBe(MAX_STREAK_FREEZES);
-      expect(state().consumeMissionReward()).toEqual({ freezeGranted: false });
+      expect(state().consumeMissionReward()).toEqual({ freezeGranted: false, xp: MISSIONS_XP + MISSIONS_FULL_STOCK_XP });
+
+      // Same day with room in the stock: only the bonus differs
+      resetStore();
+      useGameStore.setState({
+        dailyMissions: { date: TODAY, ids: ['win_3', 'daily', 'moves_100'], counters: { levelWins: 3, moves: 100 }, rewarded: false },
+      });
+      state().completeDailyChallenge(TODAY, 300, 3);
+      expect(xpFullStock - state().xp).toBe(MISSIONS_FULL_STOCK_XP);
       expect(state().stats.missionDaysCompleted).toBe(1);
     });
   });

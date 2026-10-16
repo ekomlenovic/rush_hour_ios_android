@@ -77,6 +77,10 @@ export const weeklyWinXp = (stars: number): number => 150 + 50 * stars;
 export const archiveWinXp = (minMoves: number, stars: number): number => levelWinXp(minMoves, stars, false);
 /** All 3 missions of the day done */
 export const MISSIONS_XP = 100;
+/** Extra XP for the 3 missions when the freeze stock is full: the freeze that can't be given */
+export const MISSIONS_FULL_STOCK_XP = 50;
+/** XP of the 3 missions of the day, depending on whether their freeze could be given */
+export const missionsXp = (freezeGranted: boolean): number => MISSIONS_XP + (freezeGranted ? 0 : MISSIONS_FULL_STOCK_XP);
 export const ACHIEVEMENT_XP = 50;
 
 // ─── Level-up rewards ─────────────────────────────────────────────────────────

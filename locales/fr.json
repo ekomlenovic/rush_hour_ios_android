@@ -426,9 +426,10 @@
   "missions": {
     "title": "Missions",
     "completed": "Missions du jour terminées !",
-    "reward_freeze": "+1 gel de streak ❄️",
-    "reward_full": "Stock de gels déjà plein ❄️",
-    "reward_hint": "Termine les 3 missions pour gagner un gel de streak ❄️",
+    "reward_freeze": "+{{xp}} XP et +1 gel de streak ❄️",
+    "reward_full": "+{{xp}} XP (stock de gels plein ❄️)",
+    "reward_hint": "Termine les 3 missions pour gagner {{xp}} XP et un gel de streak ❄️",
+    "reward_hint_full": "Termine les 3 missions pour gagner {{xp}} XP (stock de gels plein ❄️)",
     "all_done": "Bravo, toutes les missions du jour sont faites !",
     "renew": "Nouvelles missions demain",
     "list": {

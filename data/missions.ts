@@ -31,6 +31,13 @@ export interface DailyMissionsState {
   rewarded: boolean;
 }
 
+/** What completing the 3 missions of the day gave */
+export interface MissionReward {
+  /** False when the freeze stock was full */
+  freezeGranted: boolean;
+  xp: number;
+}
+
 export const MISSIONS_PER_DAY = 3;
 
 /** IDs are persisted for the current day: never rename one, only add new ones. */

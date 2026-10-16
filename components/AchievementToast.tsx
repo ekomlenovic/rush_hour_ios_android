@@ -5,11 +5,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
 import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
+import type { MissionReward } from '@/data/missions';
+import { missionRewardText } from '@/components/progression/rewards';
 import { fixedColors, useTheme } from '@/theme';
 
 const DISPLAY_MS = 3000;
 
-type ToastItem = { kind: 'achievement'; id: string } | { kind: 'missions'; freezeGranted: boolean } | { kind: 'levelUp'; level: number };
+type ToastItem = { kind: 'achievement'; id: string } | ({ kind: 'missions' } & MissionReward) | { kind: 'levelUp'; level: number };
 
 /**
  * Shows unlocked achievements and completed daily missions one at a time at the top of the screen.
@@ -30,7 +32,7 @@ export default function AchievementToast() {
     if (current) return;
     const reward = useGameStore.getState().consumeMissionReward();
     if (reward) {
-      setCurrent({ kind: 'missions', freezeGranted: reward.freezeGranted });
+      setCurrent({ kind: 'missions', ...reward });
       return;
     }
     if (levelUpQueue.length > 0) {
@@ -52,7 +54,7 @@ export default function AchievementToast() {
       ? `${t('achievements.unlocked')} ${t(`achievements.${current.id}`)}`
       : current.kind === 'levelUp'
         ? t('progression.level_up', { level: current.level })
-        : `${t('missions.completed')} ${current.freezeGranted ? t('missions.reward_freeze') : t('missions.reward_full')}`;
+        : `${t('missions.completed')} ${missionRewardText(t, current)}`;
     AccessibilityInfo.announceForAccessibility(announced);
     const timer = setTimeout(() => setCurrent(null), DISPLAY_MS);
     return () => clearTimeout(timer);
@@ -69,7 +71,7 @@ export default function AchievementToast() {
   const name = achievement
     ? t(`achievements.${achievement.id}`)
     : current.kind === 'levelUp' ? t('progression.level', { level: current.level })
-    : current.kind === 'missions' && current.freezeGranted ? t('missions.reward_freeze') : t('missions.reward_full');
+    : current.kind === 'missions' ? missionRewardText(t, current) : '';
 
   return (
     <View style={[styles.container, { top: insets.top + 8 }]} pointerEvents="box-none">

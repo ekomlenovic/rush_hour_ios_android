@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { DailyMissionsState, MISSIONS_BY_ID, MissionDef, getMissionProgress } from '@/data/missions';
+import { missionsXp } from '@/data/progression';
 import BottomSheet from './BottomSheet';
 import type { UiColors } from '@/theme';
 
@@ -18,16 +19,20 @@ interface Props {
   colors: UiColors;
   isDark: boolean;
   missions: DailyMissionsState;
+  /** The freeze stock is full: the missions give more XP instead of a freeze */
+  freezeStockFull: boolean;
   onClose: () => void;
 }
 
 /** Today's 3 missions with their progress */
-export default function MissionsSheet({ visible, colors, isDark, missions, onClose }: Props) {
+export default function MissionsSheet({ visible, colors, isDark, missions, freezeStockFull, onClose }: Props) {
   const { t } = useTranslation();
   return (
     <BottomSheet visible={visible} title={`🎯 ${t('missions.title')}`} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose}>
       <Text style={[styles.settingSub, { color: missions.rewarded ? colors.success : colors.textMuted, marginBottom: 20 }]}>
-        {missions.rewarded ? t('missions.all_done') : t('missions.reward_hint')}
+        {missions.rewarded
+          ? t('missions.all_done')
+          : t(freezeStockFull ? 'missions.reward_hint_full' : 'missions.reward_hint', { xp: missionsXp(!freezeStockFull) })}
       </Text>
       {missions.ids.map((id) => {
         const mission = MISSIONS_BY_ID[id];

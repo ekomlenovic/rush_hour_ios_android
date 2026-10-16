@@ -6,8 +6,9 @@ import { formatDuration } from '@/utils/date';
 import { fixedColors, type UiColors } from '@/theme';
 import { getLevelInfo } from '@/data/progression';
 import type { WinEffectId } from '@/data/cosmetics';
+import type { MissionReward } from '@/data/missions';
 import XpBar from '@/components/progression/XpBar';
-import { getLevelRewardLines } from '@/components/progression/rewards';
+import { getLevelRewardLines, missionRewardText } from '@/components/progression/rewards';
 import WinEffect from '@/components/effects/WinEffect';
 
 interface Props {
@@ -20,7 +21,7 @@ interface Props {
   timeMs: number | null;
   /** Achievements unlocked by this win (shown here instead of the global toast) */
   unlocks: string[];
-  missionReward: { freezeGranted: boolean } | null;
+  missionReward: MissionReward | null;
   /** XP before and after this win (level, missions and achievements included) */
   xpGain: { from: number; to: number } | null;
   /** Player levels reached with this win */
@@ -119,7 +120,7 @@ export default function WinModal({
             <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
               <Text style={[styles.winUnlocksTitle, { color: colors.warning }]}>🎯 {t('missions.completed')}</Text>
               <Text style={[styles.winUnlockItem, { color: colors.text }]}>
-                {missionReward.freezeGranted ? t('missions.reward_freeze') : t('missions.reward_full')}
+                {missionRewardText(t, missionReward)}
               </Text>
             </View>
           )}

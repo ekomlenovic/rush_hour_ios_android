@@ -426,9 +426,10 @@
   "missions": {
     "title": "Missions",
     "completed": "Daily missions complete!",
-    "reward_freeze": "+1 streak freeze ❄️",
-    "reward_full": "Freeze stock already full ❄️",
-    "reward_hint": "Complete all 3 missions to earn a streak freeze ❄️",
+    "reward_freeze": "+{{xp}} XP and +1 streak freeze ❄️",
+    "reward_full": "+{{xp}} XP (freeze stock full ❄️)",
+    "reward_hint": "Complete all 3 missions to earn {{xp}} XP and a streak freeze ❄️",
+    "reward_hint_full": "Complete all 3 missions to earn {{xp}} XP (freeze stock full ❄️)",
     "all_done": "Well done, all of today's missions are complete!",
     "renew": "New missions tomorrow",
     "list": {
