@@ -129,13 +129,6 @@ export default function MultiplayerScreen() {
   const me = today?.me;
   const finishedCount = today?.results.filter(r => r.status === 'won').length ?? 0;
 
-  const start = () => {
-    Alert.alert(t('multi.start_title'), t('multi.start_body'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('multi.start'), onPress: () => router.push('/multi/play') },
-    ]);
-  };
-
   const forgetServer = () => {
     Alert.alert(t('multi.account_gone_title'), t('multi.account_gone_body'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -216,9 +209,18 @@ export default function MultiplayerScreen() {
               )}
 
               {today.status === 'ready' && !me && (
-                <Pressable onPress={start} disabled={compat !== 'ok'} style={[styles.primaryButton, { backgroundColor: colors.primary, opacity: compat === 'ok' ? 1 : 0.5 }]} accessibilityRole="button">
-                  <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>{t('multi.start')}</Text>
-                </Pressable>
+                <>
+                  <Pressable
+                    onPress={() => router.push('/multi/play')}
+                    disabled={compat !== 'ok'}
+                    style={[styles.primaryButton, { backgroundColor: colors.primary, opacity: compat === 'ok' ? 1 : 0.5 }]}
+                    accessibilityRole="button"
+                    accessibilityHint={t('multi.start_hint')}
+                  >
+                    <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>{t('multi.start')}</Text>
+                  </Pressable>
+                  <Text style={[styles.cardMuted, styles.startHint, { color: colors.textMuted }]}>{t('multi.start_hint')}</Text>
+                </>
               )}
 
               {me?.status === 'playing' && (
@@ -403,6 +405,10 @@ const styles = StyleSheet.create({
   cardMuted: {
     fontSize: RFValue(13),
     marginTop: 4,
+  },
+  startHint: {
+    textAlign: 'center',
+    marginTop: RFValue(8),
   },
   cardBody: {
     fontSize: RFValue(16),
