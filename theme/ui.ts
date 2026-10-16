@@ -45,6 +45,8 @@ export interface UiColors {
   weekly: string;
   /** Favorite star */
   star: string;
+  /** Star count written as text: readable on the background and surfaces */
+  starText: string;
   /** Streak freeze in the calendar */
   frozen: string;
   /** Daily challenge result in the calendar, by number of stars (1 to 3) */
@@ -146,6 +148,7 @@ export const darkColors: UiColors = {
   dangerSoft: 'rgba(239,68,68,0.18)',
   weekly: '#F97316',
   star: '#FFD700',
+  starText: '#FFD700',
   mapRoad: '#262639',
   mapRoadEdge: 'rgba(255,255,255,0.07)',
   mapRoadDash: 'rgba(255,255,255,0.32)',
@@ -185,6 +188,7 @@ export const lightColors: UiColors = {
   dangerSoft: 'rgba(239,68,68,0.1)',
   weekly: '#C2410C',
   star: '#FFB800',
+  starText: '#A16207',
   mapRoad: '#D4D4E2',
   mapRoadEdge: 'rgba(0,0,0,0.05)',
   mapRoadDash: 'rgba(255,255,255,0.95)',

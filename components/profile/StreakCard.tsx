@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useGameStore } from '@/store/gameStore';
 import { FREEZE_SLOT_LEVELS, getFreezeCapacity, getPlayerLevel } from '@/data/progression';
 import { RFValue } from '@/utils/responsive';
@@ -19,8 +20,8 @@ export default function StreakCard({ colors }: Props) {
   const streakFreezes = useGameStore((state) => state.streakFreezes);
   const level = getPlayerLevel(useGameStore((state) => state.xp));
   const capacity = getFreezeCapacity(level);
-  // Slots: frozen ones, free ones, then the ones still locked behind a player level
-  const lockedLevels = FREEZE_SLOT_LEVELS.filter(l => level < l);
+  // Next player level that adds a slot, if any is left
+  const nextSlotLevel = FREEZE_SLOT_LEVELS.find(l => level < l);
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -41,20 +42,18 @@ export default function StreakCard({ colors }: Props) {
         <View style={styles.slots} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
           {Array.from({ length: capacity }, (_, i) => (
             <View
-              key={`slot-${i}`}
+              key={i}
               style={[styles.slot, i < streakFreezes
                 ? { backgroundColor: colors.frozen }
-                : { borderWidth: 1.5, borderColor: colors.frozen }]}
+                : { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.frozen }]}
             >
-              {i < streakFreezes && <Text style={styles.slotIcon}>❄️</Text>}
-            </View>
-          ))}
-          {lockedLevels.map(l => (
-            <View key={`locked-${l}`} style={[styles.slot, styles.lockedSlot, { borderColor: colors.border }]}>
-              <Text style={[styles.slotLevel, { color: colors.textMuted }]}>{t('profile.freeze_slot_level', { level: l })}</Text>
+              <Ionicons name="snow" size={RFValue(18)} color={i < streakFreezes ? colors.onLightFill : colors.frozen} />
             </View>
           ))}
         </View>
+        {nextSlotLevel !== undefined && (
+          <Text style={[styles.nextSlot, { color: colors.textMuted }]}>{t('profile.freeze_next_slot', { level: nextSlotLevel })}</Text>
+        )}
       </View>
 
       <StreakCalendar colors={colors} />
@@ -103,21 +102,13 @@ const styles = StyleSheet.create({
     gap: RFValue(6),
   },
   slot: {
-    flex: 1,
-    height: RFValue(34),
+    width: RFValue(46),
+    height: RFValue(36),
     borderRadius: RFValue(10),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  lockedSlot: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-  },
-  slotIcon: {
-    fontSize: RFValue(16),
-  },
-  slotLevel: {
-    fontSize: RFValue(10),
-    fontWeight: '700',
+  nextSlot: {
+    fontSize: RFValue(12),
   },
 });

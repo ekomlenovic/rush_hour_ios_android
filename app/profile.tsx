@@ -39,7 +39,8 @@ export default function ProfileScreen() {
 
   const keyNumbers = [
     { value: String(currentStreak), label: t('profile.key_streak', { count: currentStreak }), color: colors.warning },
-    { value: String(totalStars), label: t('profile.key_stars', { count: totalStars }), color: colors.star },
+    { value: String(bestStreak), label: t('profile.key_best_streak'), color: colors.warning },
+    { value: String(totalStars), label: t('profile.key_stars', { count: totalStars }), color: colors.starText },
     { value: `${achievements.length}/${ACHIEVEMENTS.length}`, label: t('profile.key_achievements'), color: colors.primaryText },
   ];
 
@@ -83,7 +84,7 @@ export default function ProfileScreen() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + RFValue(40) }]}>
         <Animated.View entering={FadeInDown.delay(50).duration(400)}>
-          <PlayerLevelCard colors={colors} onSeeAll={() => router.push('/progression')}>
+          <PlayerLevelCard colors={colors} ring onSeeAll={() => router.push('/progression')}>
             <View style={styles.keyNumbers}>
               {keyNumbers.map(item => (
                 <View key={item.label} style={[styles.keyNumber, { backgroundColor: colors.card }]} accessible accessibilityLabel={`${item.value} ${item.label}`}>
@@ -161,7 +162,7 @@ const styles = StyleSheet.create({
   },
   keyNumbers: {
     flexDirection: 'row',
-    gap: RFValue(8),
+    gap: RFValue(6),
     marginTop: RFValue(8),
   },
   keyNumber: {
@@ -172,11 +173,11 @@ const styles = StyleSheet.create({
     borderRadius: RFValue(12),
   },
   keyValue: {
-    fontSize: RFValue(20),
+    fontSize: RFValue(19),
     fontWeight: '800',
   },
   keyLabel: {
-    fontSize: RFValue(12),
+    fontSize: RFValue(11),
     textAlign: 'center',
   },
   section: {
