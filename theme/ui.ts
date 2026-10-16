@@ -49,6 +49,8 @@ export interface UiColors {
   frozen: string;
   /** Daily challenge result in the calendar, by number of stars (1 to 3) */
   dailyStars: [string, string, string];
+  /** Text on the light calendar fills (1-2 stars, frozen), whatever the theme */
+  onLightFill: string;
   /** Level nodes of the map, by difficulty */
   levelEasy: string;
   levelMedium: string;
@@ -96,6 +98,7 @@ export const fixedColors = {
   onPrimary: '#FFFFFF',
   frozen: '#7DD3FC',
   dailyStars: ['#A5D6A7', '#66BB6A', '#2E7D32'] as [string, string, string],
+  onLightFill: '#0F0F1A',
   levelEasy: '#10B981',
   levelMedium: '#F59E0B',
   levelHard: '#EF4444',

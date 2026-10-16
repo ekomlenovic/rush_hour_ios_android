@@ -3,6 +3,9 @@ import {
   computeDayRuns,
   daysBetween,
   formatDuration,
+  formatPlayTime,
+  formatTimeLeft,
+  getMonthGrid,
   getDaysLeftInWeek,
   getLocalDateString,
   getWeekKey,
@@ -104,5 +107,33 @@ describe('formatDuration', () => {
     expect(formatDuration(0)).toBe('0:00');
     expect(formatDuration(102_000)).toBe('1:42');
     expect(formatDuration(3_600_000 + 5 * 60_000)).toBe('1h05');
+  });
+});
+
+describe('formatPlayTime', () => {
+  it('gives minutes, then hours and minutes', () => {
+    expect(formatPlayTime(0)).toBe('0 min');
+    expect(formatPlayTime(6 * 60_000 + 28_000)).toBe('6 min');
+    expect(formatPlayTime(3_600_000 + 5 * 60_000)).toBe('1 h 05');
+  });
+});
+
+describe('formatTimeLeft', () => {
+  it('rounds down to the hour from 2 h, then shows the minutes', () => {
+    expect(formatTimeLeft(23 * 3_600_000 + 38 * 60_000)).toBe('23 h');
+    expect(formatTimeLeft(2 * 3_600_000)).toBe('2 h');
+    expect(formatTimeLeft(3_600_000 + 12 * 60_000)).toBe('1 h 12');
+    expect(formatTimeLeft(45 * 60_000)).toBe('45 min');
+    expect(formatTimeLeft(10_000)).toBe('1 min');
+  });
+});
+
+describe('getMonthGrid', () => {
+  it('pads Monday-first weeks', () => {
+    const october = getMonthGrid('2026-10');
+    expect(october).toHaveLength(35);
+    expect(october.slice(0, 4)).toEqual([null, null, null, '2026-10-01']);
+    expect(october[33]).toBe('2026-10-31');
+    expect(october[34]).toBeNull();
   });
 });
