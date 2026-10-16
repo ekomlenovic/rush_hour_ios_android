@@ -6,6 +6,10 @@ import { formatDuration } from '@/utils/date';
 import type { DayRow, Leaderboard as Board, MultiApi, Period, PeriodRow } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
 import { multiErrorMessage } from './errors';
+import { reasonsText, verdictBadge } from './verdict';
+
+/** The player of a row, for the actions on them (watch the game, report, block) */
+export interface RowPlayer { playerId: number; pseudo: string; attemptId?: number; won: boolean }
 
 interface Props {
   api: MultiApi;
@@ -13,12 +17,15 @@ interface Props {
   myPlayerId: number;
   /** Changes when the results may have changed (a game just ended, the screen came back) */
   refreshKey: number;
+  /** Players hidden on this phone */
+  blocked: number[];
+  onRowPress: (player: RowPlayer) => void;
 }
 
 const PERIODS: Period[] = ['day', 'week', 'month'];
 
 /** Rankings of the day (moves then time), of the week and of the month (points) */
-export default function Leaderboard({ api, colors, myPlayerId, refreshKey }: Props) {
+export default function Leaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress }: Props) {
   const { t } = useTranslation();
   const [period, setPeriod] = useState<Period>('day');
   const [board, setBoard] = useState<Board | null>(null);
@@ -49,6 +56,8 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey }: Pro
     row.playerId === myPlayerId ? t('multi.you') : null,
     statusText(row),
     row.status === 'won' ? t('multi.points', { count: row.points }) : null,
+    row.verdict === 'cheater' ? t('multi.cheater') : null,
+    row.verdict === 'suspect' ? `${t('multi.suspect')} : ${reasonsText(t, row.reasons)}` : null,
   ].filter(Boolean).join(', ');
 
   const periodLabel = (row: PeriodRow) => [
@@ -56,7 +65,9 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey }: Pro
     t('multi.points', { count: row.points }), t('multi.wins', { count: row.wins }),
   ].filter(Boolean).join(', ');
 
-  const rows = board && board.period === period ? board.rows : [];
+  const visible = <T extends { playerId: number }>(list: T[]) => list.filter(r => !blocked.includes(r.playerId));
+  const rows = board && board.period === period ? visible(board.rows as { playerId: number }[]) : [];
+  const hidden = board && board.period === period ? board.rows.length - rows.length : 0;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -86,29 +97,52 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey }: Pro
         <Text style={[styles.muted, styles.state, { color: colors.textMuted }]}>{t('multi.leaderboard_empty')}</Text>
       )}
 
-      {!loading && !error && board?.period === 'day' && (board.rows as DayRow[]).map(row => {
+      {!loading && !error && board?.period === 'day' && visible(board.rows as DayRow[]).map(row => {
         const mine = row.playerId === myPlayerId;
+        const cheater = row.verdict === 'cheater';
         return (
-          <View key={row.playerId} style={[styles.row, mine && { backgroundColor: colors.primarySoft }]} accessible accessibilityLabel={dayLabel(row)}>
-            <Text style={[styles.rank, { color: colors.textMuted }]}>{row.rank ?? '–'}</Text>
-            <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{row.pseudo}</Text>
-            <Text style={[styles.detail, { color: row.status === 'won' ? colors.text : colors.textMuted }]}>{statusText(row)}</Text>
-            <Text style={[styles.score, { color: colors.primaryText }]}>{row.status === 'won' ? `+${row.points}` : ''}</Text>
-          </View>
+          <Pressable
+            key={row.playerId}
+            onPress={() => onRowPress({ playerId: row.playerId, pseudo: row.pseudo, attemptId: row.attemptId, won: row.status === 'won' })}
+            style={[styles.rowWrap, mine && { backgroundColor: colors.primarySoft }]}
+            accessibilityRole="button"
+            accessibilityLabel={dayLabel(row)}
+          >
+            <View style={styles.row}>
+              <Text style={[styles.rank, { color: colors.textMuted }]}>{row.rank ?? '–'}</Text>
+              <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{verdictBadge(row.verdict)} {row.pseudo}</Text>
+              <Text style={[styles.detail, { color: row.status === 'won' ? colors.text : colors.textMuted }, cheater && styles.struck]}>{statusText(row)}</Text>
+              <Text style={[styles.score, { color: cheater ? colors.danger : colors.primaryText }]}>{row.status === 'won' ? `+${row.points}` : ''}</Text>
+            </View>
+            {row.verdict === 'suspect' && (
+              <Text style={[styles.reason, { color: colors.warning }]} numberOfLines={2}>{reasonsText(t, row.reasons)}</Text>
+            )}
+            {cheater && <Text style={[styles.reason, { color: colors.danger }]}>{t('multi.cheater_note')}</Text>}
+          </Pressable>
         );
       })}
 
-      {!loading && !error && board && board.period !== 'day' && (board.rows as PeriodRow[]).map(row => {
+      {!loading && !error && board && board.period !== 'day' && visible(board.rows as PeriodRow[]).map(row => {
         const mine = row.playerId === myPlayerId;
         return (
-          <View key={row.playerId} style={[styles.row, mine && { backgroundColor: colors.primarySoft }]} accessible accessibilityLabel={periodLabel(row)}>
-            <Text style={[styles.rank, { color: colors.textMuted }]}>{row.rank}</Text>
-            <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{row.pseudo}</Text>
-            <Text style={[styles.detail, { color: colors.textMuted }]}>{t('multi.wins', { count: row.wins })}</Text>
-            <Text style={[styles.score, { color: colors.primaryText }]}>{t('multi.points_short', { count: row.points })}</Text>
-          </View>
+          <Pressable
+            key={row.playerId}
+            onPress={() => onRowPress({ playerId: row.playerId, pseudo: row.pseudo, won: false })}
+            style={[styles.rowWrap, mine && { backgroundColor: colors.primarySoft }]}
+            accessibilityRole="button"
+            accessibilityLabel={periodLabel(row)}
+          >
+            <View style={styles.row}>
+              <Text style={[styles.rank, { color: colors.textMuted }]}>{row.rank}</Text>
+              <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{row.pseudo}</Text>
+              <Text style={[styles.detail, { color: colors.textMuted }]}>{t('multi.wins', { count: row.wins })}</Text>
+              <Text style={[styles.score, { color: colors.primaryText }]}>{t('multi.points_short', { count: row.points })}</Text>
+            </View>
+          </Pressable>
         );
       })}
+
+      {hidden > 0 && <Text style={[styles.hidden, { color: colors.textMuted }]}>{t('multi.blocked_hidden', { count: hidden })}</Text>}
     </View>
   );
 }
@@ -154,13 +188,29 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 6,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  rowWrap: {
     paddingVertical: RFValue(9),
     paddingHorizontal: RFValue(8),
     borderRadius: 10,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: RFValue(8),
+  },
+  reason: {
+    fontSize: RFValue(12),
+    fontWeight: '600',
+    marginTop: 2,
+    marginLeft: RFValue(32),
+  },
+  struck: {
+    textDecorationLine: 'line-through',
+  },
+  hidden: {
+    fontSize: RFValue(12),
+    textAlign: 'center',
+    marginTop: RFValue(8),
   },
   rank: {
     width: RFValue(24),

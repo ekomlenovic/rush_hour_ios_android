@@ -6,6 +6,8 @@ export const MULTI_ERROR_CODES = [
   'network', 'timeout', 'bad_response', 'internal', 'rate_limited', 'unauthorized', 'invalid_request',
   'invalid_invite', 'invalid_pseudo', 'pseudo_taken', 'invalid_recovery_code',
   'preparing', 'already_finished', 'challenge_closed', 'too_late', 'no_game', 'invalid_moves', 'not_won',
+  'banned', 'forbidden', 'not_found', 'join_closed', 'invites_admin_only', 'invalid_admin_token', 'cannot_ban_admin', 'invalid_settings',
+  'replay_locked', 'replay_expired', 'replay_unavailable',
   'invalid_url', 'not_https', 'update_app', 'update_server', 'unknown',
 ] as const;
 

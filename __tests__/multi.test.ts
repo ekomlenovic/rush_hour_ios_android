@@ -141,7 +141,7 @@ describe('servers and games of the player', () => {
   const store = () => useMultiStore.getState();
 
   beforeEach(() => {
-    useMultiStore.setState({ accounts: [], activeUrl: null, introSeen: false, games: {} });
+    useMultiStore.setState({ accounts: [], activeUrl: null, introSeen: false, games: {}, blocked: {} });
   });
 
   it('a joined server becomes the active one; joining it again replaces the account', () => {
@@ -178,6 +178,17 @@ describe('servers and games of the player', () => {
     store().addAccount(account('https://a.example.com'));
     store().updateAccount('https://a.example.com', { pseudo: 'Léon', recoveryCode: 'NEW' });
     expect(store().accounts[0]).toMatchObject({ pseudo: 'Léon', recoveryCode: 'NEW', token: 'token-https://a.example.com' });
+  });
+
+  it('blocks players per server, and forgets them with the server', () => {
+    store().addAccount(account('https://a.example.com'));
+    store().setBlocked('https://a.example.com', { playerId: 7, pseudo: 'Troll' }, true);
+    store().setBlocked('https://a.example.com', { playerId: 7, pseudo: 'Troll' }, true);
+    store().setBlocked('https://a.example.com', { playerId: 8, pseudo: 'Spam' }, true);
+    store().setBlocked('https://a.example.com', { playerId: 8, pseudo: 'Spam' }, false);
+    expect(store().blocked['https://a.example.com']).toEqual([{ playerId: 7, pseudo: 'Troll' }]);
+    store().removeAccount('https://a.example.com');
+    expect(store().blocked).toEqual({});
   });
 
   it('a game is kept per server and per day', () => {
@@ -270,6 +281,20 @@ describe('translations of the multiplayer mode', () => {
     expect(Object.keys(multi.period).sort()).toEqual(['day', 'month', 'week']);
     expect(typeof multi.my_abandoned).toBe('string');
     expect(typeof multi.my_unfinished).toBe('string');
+    expect(Object.keys(multi.admin_tab).sort()).toEqual(['games', 'players', 'reports', 'settings']);
+    expect(Object.keys(multi.threshold).sort()).toEqual(Object.keys(require('../server/src/cheat').DEFAULT_THRESHOLDS).sort());
+    expect(Object.keys(multi.report_reason).sort()).toEqual(['cheating', 'other', 'pseudo']);
+    expect(Object.keys(multi.flag).sort()).toEqual(['clock_mismatch', 'copied', 'too_fast', 'unknown']);
+    expect([multi.admin_filter_suspects, multi.admin_filter_all].every(v => typeof v === 'string')).toBe(true);
+  });
+
+  it('every suspicion signal of the server is explained', () => {
+    const { flagText, verdictBadge } = require('../components/multi/verdict') as typeof import('../components/multi/verdict');
+    const t = ((key: string, values?: Record<string, unknown>) => `${key}${values ? JSON.stringify(values) : ''}`) as never;
+    expect(flagText(t, { code: 'too_fast', values: { msPerMove: 350, threshold: 600 } })).toBe('multi.flag.too_fast{"ms":350}');
+    expect(flagText(t, { code: 'copied', values: { pausePercent: 93, pauseMs: 180_000 } })).toBe('multi.flag.copied{"percent":93,"pause":"3:00"}');
+    expect(flagText(t, { code: 'clock_mismatch', values: {} })).toBe('multi.flag.clock_mismatch');
+    expect([verdictBadge('suspect'), verdictBadge('cheater'), verdictBadge(null)]).toEqual(['⚠️', '🤡', '']);
   });
 
   it('every server error has a message', () => {
@@ -294,5 +319,45 @@ describe('QR code drawn on the phone', () => {
       const dark = new Set(rows[r].flatMap(([start, length]) => Array.from({ length }, (_, i) => start + i)));
       for (let c = 0; c < size; c++) expect(dark.has(c)).toBe(qr.isDark(r, c));
     }
+  });
+});
+
+describe('replay of a multiplayer game', () => {
+  const { gapBefore, isLongPause, playbackDelay, timeAt, vehiclesAfter } = require('../utils/multi/replay') as typeof import('../utils/multi/replay');
+  const { toMoveRecord } = require('../utils/moveLog') as typeof import('../utils/moveLog');
+  const { solvePuzzle } = require('../utils/solver') as typeof import('../utils/solver');
+  const level = sampleLevels[0];
+  // The optimal solution, the 3rd move after a long pause
+  const times = [2000, 3000, 83_000, 84_500, 86_000, 87_000, 88_000, 89_000, 90_000, 91_000];
+  let vehicles = level.vehicles;
+  const log = solvePuzzle(level.vehicles, level.gridSize, level.exitRow, level.exitCol).moves.map((m, i) => {
+    const v = vehicles.find(x => x.id === m.vehicleId)!;
+    vehicles = vehicles.map(x => (x.id === m.vehicleId ? { ...x, row: m.toRow, col: m.toCol } : x));
+    return toMoveRecord(v, m.toRow, m.toCol, times[i] ?? 100_000 + i * 1000)!;
+  });
+
+  it('positions move by move, from the start to the end', () => {
+    expect(vehiclesAfter(level, log, 0)).toEqual(level.vehicles);
+    expect(vehiclesAfter(level, log, log.length)).toEqual(vehicles);
+    expect(vehiclesAfter(level, log, 99)).toEqual(vehicles);
+  });
+
+  it('plays at the real pace, faster with a speed', () => {
+    expect(gapBefore(log, 1)).toBe(2000);
+    expect(playbackDelay(log, 1, 1)).toBe(2000);
+    expect(playbackDelay(log, 2, 2)).toBe(500);
+    expect(playbackDelay(log, 4, 4)).toBe(375);
+  });
+
+  it('a long pause is shortened, and can be shown', () => {
+    expect(gapBefore(log, 3)).toBe(80_000);
+    expect(isLongPause(gapBefore(log, 3))).toBe(true);
+    expect(playbackDelay(log, 3, 1)).toBe(1500);
+    expect(isLongPause(gapBefore(log, 4))).toBe(false);
+  });
+
+  it('the clock shows the game time of the last move played', () => {
+    expect(timeAt(log, 0)).toBe(0);
+    expect(timeAt(log, 3)).toBe(83_000);
   });
 });

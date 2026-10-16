@@ -15,10 +15,16 @@ export class MultiApiError extends Error {
 }
 
 export interface ServerInfo { name: string; apiVersion: number; minAppVersion: string }
-export interface ApiPlayer { id: number; pseudo: string; createdAt: number }
+export interface ApiPlayer { id: number; pseudo: string; createdAt: number; isAdmin?: boolean }
 export interface JoinResult { token: string; recoveryCode?: string; player: ApiPlayer; server: { name: string } }
 
 export type GameStatus = 'playing' | 'won' | 'abandoned' | 'unfinished';
+
+/** Suspicion signals computed by the server (server/src/cheat.ts) */
+export type FlagCode = 'too_fast' | 'copied' | 'clock_mismatch';
+export interface Flag { code: FlagCode; values: Record<string, number> }
+/** ⚠️ suspect: automatic, with its reasons; 🤡 cheater: confirmed by the admin */
+export type Verdict = 'suspect' | 'cheater' | null;
 
 export interface DayRow {
   playerId: number;
@@ -29,6 +35,9 @@ export interface DayRow {
   moves: number | null;
   timeMs: number | null;
   points: number;
+  attemptId: number;
+  verdict: Verdict;
+  reasons: Flag[];
 }
 
 export interface PeriodRow { playerId: number; pseudo: string; rank: number; points: number; wins: number; played: number }
@@ -56,7 +65,66 @@ export interface Today {
 }
 
 export interface StartResult { date: string; number: number; startedAt: number; deadline: number; serverNow: number; level: Level }
-export interface SubmitResult { status: 'won'; moves: number; timeMs: number; minMoves: number; rank: number; points: number }
+export interface SubmitResult { status: 'won'; moves: number; timeMs: number; minMoves: number; rank: number; points: number; verdict?: Verdict }
+
+export interface Replay {
+  attemptId: number;
+  playerId: number;
+  pseudo: string;
+  date: string;
+  number: number;
+  level: Level;
+  moves: MoveRecord[];
+  timeMs: number;
+  verdict: Verdict;
+  reasons: Flag[];
+}
+
+export interface AdminGame {
+  attemptId: number;
+  playerId: number;
+  pseudo: string;
+  date: string;
+  moves: number;
+  minMoves: number | null;
+  timeMs: number;
+  clientMs: number | null;
+  backgroundMs: number | null;
+  flags: Flag[];
+  adminVerdict: 'cheater' | 'cleared' | null;
+  verdict: Verdict;
+  hasReplay: boolean;
+}
+
+export interface AdminPlayer extends ApiPlayer { banned: boolean; games: number; reports: number }
+
+export interface AdminReport {
+  id: number;
+  reason: string;
+  createdAt: number;
+  player: { id: number; pseudo: string };
+  reporter: { id: number; pseudo: string };
+}
+
+export type Difficulty = 'EASY' | 'NORMAL' | 'HARD' | 'EXPERT' | 'MASTER';
+
+export interface Thresholds {
+  minMsPerMove: number;
+  copyMinMoves: number;
+  copyPauseRatio: number;
+  copyMaxRhythmVariation: number;
+  clockToleranceMs: number;
+  clockToleranceRatio: number;
+}
+
+export interface AdminSettings {
+  joinOpen: boolean;
+  invitesAdminOnly: boolean;
+  /** 0 = Sunday */
+  difficultyByWeekday: Difficulty[];
+  replayRetentionDays: number;
+  thresholds: Thresholds;
+}
 export type Period = 'day' | 'week' | 'month';
 export type Leaderboard =
   | { period: 'day'; from: string; to: string; rows: DayRow[] }
@@ -117,6 +185,24 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
     abandon: (date: string) => call<{ status: 'abandoned'; minMoves: number | null }>('POST', '/challenge/abandon', { date }),
     leaderboard: (period: Period, date?: string) =>
       call<Leaderboard>('GET', `/leaderboard?period=${period}${date ? `&date=${date}` : ''}`),
+    replay: (attemptId: number) => call<Replay>('GET', `/replay/${attemptId}`),
+    report: (playerId: number, reason: string) => call<void>('POST', '/reports', { playerId, reason }),
+    claimAdmin: (adminToken: string) => call<ApiPlayer>('POST', '/admin/claim', { adminToken }),
+    admin: {
+      games: (filter: 'suspects' | 'all') => call<{ games: AdminGame[] }>('GET', `/admin/games?filter=${filter}`),
+      setVerdict: (attemptId: number, verdict: 'cheater' | 'cleared' | null) =>
+        call<{ verdict: string | null }>('POST', `/admin/games/${attemptId}/verdict`, { verdict }),
+      players: () => call<{ players: AdminPlayer[] }>('GET', '/admin/players'),
+      updatePlayer: (playerId: number, patch: { pseudo?: string; banned?: boolean }) =>
+        call<AdminPlayer>('PATCH', `/admin/players/${playerId}`, patch),
+      transferCode: (playerId: number) => call<{ recoveryCode: string }>('POST', `/admin/players/${playerId}/transfer`),
+      reports: () => call<{ reports: AdminReport[] }>('GET', '/admin/reports'),
+      deleteReport: (reportId: number) => call<void>('DELETE', `/admin/reports/${reportId}`),
+      newInviteCode: () => call<{ inviteCode: string }>('POST', '/admin/invite'),
+      settings: () => call<AdminSettings>('GET', '/admin/settings'),
+      updateSettings: (patch: Partial<Omit<AdminSettings, 'thresholds'>> & { thresholds?: Partial<Thresholds> }) =>
+        call<AdminSettings>('PATCH', '/admin/settings', patch),
+    },
   };
 }
 

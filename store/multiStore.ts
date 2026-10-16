@@ -19,7 +19,12 @@ export interface ServerAccount {
   token: string;
   recoveryCode: string;
   joinedAt: number;
+  /** Became admin with ADMIN_TOKEN (#50) */
+  isAdmin?: boolean;
 }
+
+/** A player hidden on this phone (their pseudo, to unblock them from the account screen) */
+export interface BlockedPlayer { playerId: number; pseudo: string }
 
 /** A multiplayer game in progress, resumed where it was left */
 export interface MultiGame {
@@ -47,6 +52,8 @@ interface MultiState {
   /** The explanation of the mode was shown */
   introSeen: boolean;
   games: Record<string, MultiGame>;
+  /** Players hidden on this phone, by server (#50) */
+  blocked: Record<string, BlockedPlayer[]>;
 
   /** Adds an account or replaces the one on the same server, and makes it the active one */
   addAccount: (account: ServerAccount) => void;
@@ -57,6 +64,7 @@ interface MultiState {
   setIntroSeen: () => void;
   saveGame: (game: MultiGame) => void;
   removeGame: (serverUrl: string, date: string) => void;
+  setBlocked: (serverUrl: string, player: BlockedPlayer, blocked: boolean) => void;
 }
 
 export const gameKey = (serverUrl: string, date: string) => `${serverUrl}|${date}`;
@@ -68,6 +76,7 @@ export const useMultiStore = create<MultiState>()(
       activeUrl: null,
       introSeen: false,
       games: {},
+      blocked: {},
 
       addAccount: (account) => set(state => ({
         accounts: [...state.accounts.filter(a => a.url !== account.url), account],
@@ -77,9 +86,11 @@ export const useMultiStore = create<MultiState>()(
       removeAccount: (url) => set(state => {
         const accounts = state.accounts.filter(a => a.url !== url);
         const games = Object.fromEntries(Object.entries(state.games).filter(([, g]) => g.serverUrl !== url));
+        const { [url]: _blocked, ...blocked } = state.blocked;
         return {
           accounts,
           games,
+          blocked,
           activeUrl: state.activeUrl === url ? (accounts[0]?.url ?? null) : state.activeUrl,
         };
       }),
@@ -98,12 +109,17 @@ export const useMultiStore = create<MultiState>()(
         const { [gameKey(serverUrl, date)]: _removed, ...games } = state.games;
         return { games };
       }),
+
+      setBlocked: (serverUrl, player, blocked) => set(state => {
+        const others = (state.blocked[serverUrl] ?? []).filter(p => p.playerId !== player.playerId);
+        return { blocked: { ...state.blocked, [serverUrl]: blocked ? [...others, player] : others } };
+      }),
     }),
     {
       name: 'rush-hours-multi',
       version: 1,
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: ({ accounts, activeUrl, introSeen, games }) => ({ accounts, activeUrl, introSeen, games }),
+      partialize: ({ accounts, activeUrl, introSeen, games, blocked }) => ({ accounts, activeUrl, introSeen, games, blocked }),
     },
   ),
 );
