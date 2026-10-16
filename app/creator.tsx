@@ -25,6 +25,7 @@ import PillSelector from '@/components/creator/PillSelector';
 import { vehicleStyles } from '@/components/creator/vehicleStyles';
 import { useTheme, fixedColors, TARGET_CAR_COLOR } from '@/theme';
 
+const BOARD_BORDER = 1.5;
 const EXIT_SIDES = ['Right', 'Left', 'Top', 'Bottom'] as const;
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -58,13 +59,15 @@ export default function LevelCreatorScreen() {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const boardSize = Math.min(screenWidth - BOARD_PADDING * 2, screenHeight * 0.48);
-  const cellSize = boardSize / gridSize;
+  // The frame border is drawn inside the board's width: cells only get what is left
+  const cellSize = (boardSize - BOARD_BORDER * 2) / gridSize;
 
   useEffect(() => { vehiclesRef.current = vehicles; }, [vehicles]);
 
   const measureBoard = useCallback(() => {
     boardRef.current?.measureInWindow((x, y) => {
-      boardPos.current = { x, y };
+      // Origin of the cells, inside the frame border
+      boardPos.current = { x: x + BOARD_BORDER, y: y + BOARD_BORDER };
     });
   }, []);
 
@@ -526,7 +529,7 @@ const styles = StyleSheet.create({
   pillText: { fontSize: 12, fontWeight: '700' },
 
   boardWrapper: { alignItems: 'center', paddingHorizontal: BOARD_PADDING, marginTop: 8 },
-  board: { position: 'relative', borderWidth: 1.5, borderRadius: 14, overflow: 'hidden' },
+  board: { position: 'relative', borderWidth: BOARD_BORDER, borderRadius: 14, overflow: 'hidden' },
   gridH: { position: 'absolute', left: 0, right: 0, height: StyleSheet.hairlineWidth },
   gridV: { position: 'absolute', top: 0, bottom: 0, width: StyleSheet.hairlineWidth },
 
