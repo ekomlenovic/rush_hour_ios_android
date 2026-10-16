@@ -7,10 +7,11 @@ import { Level } from '@/store/gameStore';
 import { Move } from '@/utils/solver';
 import { solvePuzzleAsync } from '@/utils/solver.background';
 import { vehiclesAtStep } from '@/utils/solutionReplay';
+import { REPLAY_SPEEDS, type ReplaySpeed } from '@/utils/multi/replay';
 import { describeVehicle, getMoveDirection, getVehicleLetters } from '@/utils/accessibility';
 import type { UiColors } from '@/theme';
 
-/** Time between two moves while the solution plays */
+/** Time between two moves while the solution plays at ×1 */
 const STEP_MS = 900;
 
 const noop = () => {};
@@ -32,6 +33,7 @@ export default function SolutionPlayer({ visible, level, colors, onClose }: Prop
   const [failed, setFailed] = useState(false);
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState<ReplaySpeed>(1);
 
   // Solve from the starting position each time the player opens it
   useEffect(() => {
@@ -64,9 +66,9 @@ export default function SolutionPlayer({ visible, level, colors, onClose }: Prop
       setPlaying(false);
       return;
     }
-    const timer = setTimeout(() => setStep(s => s + 1), STEP_MS);
+    const timer = setTimeout(() => setStep(s => s + 1), STEP_MS / speed);
     return () => clearTimeout(timer);
-  }, [visible, playing, step, moves, total]);
+  }, [visible, playing, step, moves, total, speed]);
 
   const vehicles = useMemo(
     () => (moves ? vehiclesAtStep(level.vehicles, moves, step) : level.vehicles),
@@ -171,6 +173,21 @@ export default function SolutionPlayer({ visible, level, colors, onClose }: Prop
                 </Pressable>
               ))}
             </View>
+
+            <View style={[styles.speeds, { backgroundColor: colors.neutralSoft }]} accessibilityRole="radiogroup" accessibilityLabel={t('solution.speed')}>
+              {REPLAY_SPEEDS.map(s => (
+                <Pressable
+                  key={s}
+                  onPress={() => setSpeed(s)}
+                  style={[styles.speed, s === speed && { backgroundColor: colors.primary }]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: s === speed }}
+                  accessibilityLabel={t('solution.speed_a11y', { speed: s })}
+                >
+                  <Text style={[styles.speedText, { color: s === speed ? colors.onPrimary : colors.text }]}>×{s}</Text>
+                </Pressable>
+              ))}
+            </View>
           </>
         )}
       </GestureHandlerRootView>
@@ -251,6 +268,22 @@ const styles = StyleSheet.create({
   },
   controlIcon: {
     fontSize: 18,
+    fontWeight: '800',
+  },
+  speeds: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    borderRadius: 12,
+    padding: 3,
+    marginTop: 16,
+  },
+  speed: {
+    paddingVertical: 7,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+  },
+  speedText: {
+    fontSize: 14,
     fontWeight: '800',
   },
 });
