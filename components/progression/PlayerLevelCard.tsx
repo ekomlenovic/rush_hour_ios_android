@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
-import { getFreezeCapacity, getLevelInfo, getPlayerTitle } from '@/data/progression';
+import { PLAYER_TITLES, getLevelInfo, getPlayerTitle } from '@/data/progression';
 import { RFValue } from '@/utils/responsive';
 import type { UiColors } from '@/theme';
 import XpBar from './XpBar';
@@ -14,14 +14,18 @@ interface Props {
   showNext?: boolean;
   /** "See the whole progression" link */
   onSeeAll?: () => void;
+  /** Shown under the XP bar (profile: key numbers) */
+  children?: React.ReactNode;
 }
 
 /** Player level of the profile: title, XP bar and the rewards of the next level */
-export default function PlayerLevelCard({ colors, showNext = true, onSeeAll }: Props) {
+export default function PlayerLevelCard({ colors, showNext = true, onSeeAll, children }: Props) {
   const { t } = useTranslation();
   const xp = useGameStore(s => s.xp);
+  const streakFreezes = useGameStore(s => s.streakFreezes);
   const info = getLevelInfo(xp);
   const title = t(`progression.titles.${getPlayerTitle(info.level)}`);
+  const nextTier = PLAYER_TITLES.find(tier => tier.minLevel > info.level);
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -38,18 +42,22 @@ export default function PlayerLevelCard({ colors, showNext = true, onSeeAll }: P
           {t('progression.xp_progress', { xp: info.xpInLevel, next: info.xpForNext })}
         </Text>
       </View>
+      {nextTier && (
+        <Text style={[styles.nextTitle, { color: colors.textMuted }]}>
+          {t('progression.next_title', { title: t(`progression.titles.${nextTier.id}`), level: nextTier.minLevel })}
+        </Text>
+      )}
+
+      {children}
 
       {showNext && (
-        <>
+        <View style={[styles.next, { borderTopColor: colors.border }]}>
           <Text style={[styles.subTitle, { color: colors.textMuted }]}>{t('progression.next_level', { level: info.level + 1 })}</Text>
-          {getLevelRewardLines(t, info.level + 1).map(line => (
+          {getLevelRewardLines(t, info.level + 1, streakFreezes).map(line => (
             <Text key={line} style={[styles.reward, { color: colors.text }]}>• {line}</Text>
           ))}
-        </>
+        </View>
       )}
-      <Text style={[styles.capacity, { color: colors.textMuted }]}>
-        {t('progression.freeze_capacity')} : {getFreezeCapacity(info.level)} ❄️
-      </Text>
       {onSeeAll && (
         <Pressable
           onPress={onSeeAll}
@@ -69,9 +77,10 @@ const styles = StyleSheet.create({
   level: { fontSize: RFValue(20), fontWeight: '800' },
   title: { fontSize: RFValue(16), fontWeight: '600' },
   xp: { fontSize: RFValue(12), fontWeight: '600', marginTop: 6 },
-  subTitle: { fontSize: RFValue(12), fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 10 },
+  nextTitle: { fontSize: RFValue(12), marginTop: 2 },
+  next: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: 8, paddingTop: 10, gap: 4 },
+  subTitle: { fontSize: RFValue(12), fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   reward: { fontSize: RFValue(14) },
-  capacity: { fontSize: RFValue(12), marginTop: 8 },
   seeAll: { marginTop: 10, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
   seeAllText: { fontSize: RFValue(14), fontWeight: '700' },
 });

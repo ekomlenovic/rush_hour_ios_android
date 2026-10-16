@@ -6,7 +6,7 @@ import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated'
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useGameStore } from '@/store/gameStore';
 import { useTranslation } from 'react-i18next';
-import { getLocalDateString, getWeekKey, getDaysLeftInWeek } from '@/utils/date';
+import { getLocalDateString, getWeekKey, getDaysLeftInWeek, formatTimeLeft } from '@/utils/date';
 import { getMissionsForDay, countMissionsDone } from '@/data/missions';
 import { getFreezeCapacity, getPlayerLevel, dailyWinXp, weeklyWinXp } from '@/data/progression';
 import { sampleLevels } from '@/data/sampleLevels';
@@ -30,11 +30,11 @@ const LOGO_SIZE = 92;
 /** Best result of a daily or weekly challenge: its reward is shown as "up to" */
 const MAX_STARS = 3;
 
-/** Whole hours until the next local midnight, when the next daily challenge comes */
-function hoursUntilTomorrow(now: Date): number {
+/** Time left until the next local midnight, when the next daily challenge comes */
+function timeUntilTomorrow(now: Date): string {
   const midnight = new Date(now);
   midnight.setHours(24, 0, 0, 0);
-  return Math.max(1, Math.ceil((midnight.getTime() - now.getTime()) / 3_600_000));
+  return formatTimeLeft(midnight.getTime() - now.getTime());
 }
 
 export default function HomeScreen() {
@@ -148,7 +148,7 @@ export default function HomeScreen() {
               title={t('home.daily_challenge')}
               done={!!dailyStatus?.completed}
               subtitle={dailyStatus?.completed
-                ? `${t('home.won_stars', { count: dailyStatus.stars })} · ${t('home.daily_next', { count: hoursUntilTomorrow(now) })}`
+                ? `${t('home.won_stars', { count: dailyStatus.stars })} · ${t('home.daily_next', { time: timeUntilTomorrow(now) })}`
                 : t('home.daily_desc')}
               reward={t('home.reward_xp', { xp: dailyWinXp(MAX_STARS) })}
               enteringDelay={450}

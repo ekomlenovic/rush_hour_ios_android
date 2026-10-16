@@ -63,6 +63,37 @@ export function formatDuration(ms: number): string {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
+/** A total of time played: '0 min', '42 min', '3 h 05'. */
+export function formatPlayTime(ms: number): string {
+  const totalMinutes = Math.floor(Math.max(0, ms) / 60_000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0) return `${hours} h ${String(minutes).padStart(2, '0')}`;
+  return `${minutes} min`;
+}
+
+/** Time left before an event: whole hours from 2 h ('23 h'), then '1 h 05', then '12 min'. */
+export function formatTimeLeft(ms: number): string {
+  const totalMinutes = Math.max(1, Math.ceil(ms / 60_000));
+  const hours = Math.floor(totalMinutes / 60);
+  if (hours >= 2) return `${hours} h`;
+  if (hours === 1) return `1 h ${String(totalMinutes % 60).padStart(2, '0')}`;
+  return `${totalMinutes} min`;
+}
+
+/** Days of a YYYY-MM month as YYYY-MM-DD keys, Monday-first weeks padded with null. */
+export function getMonthGrid(month: string): (string | null)[] {
+  const [year, monthIndex] = month.split('-').map(Number);
+  const offset = (new Date(year, monthIndex - 1, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(year, monthIndex, 0).getDate();
+  const cells: (string | null)[] = [
+    ...Array.from({ length: offset }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, i) => `${month}-${String(i + 1).padStart(2, '0')}`),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
+
 /** Days left in the current week, today included (Monday → 7, Sunday → 1). */
 export function getDaysLeftInWeek(d: Date = new Date()): number {
   return 7 - ((d.getDay() + 6) % 7);

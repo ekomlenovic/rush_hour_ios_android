@@ -23,7 +23,7 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 
 ## Archives des défis du jour — mode d'entraînement
 
-Les défis du jour **passés** se rejouent depuis les archives (Profil → « Archives des défis », ou toucher un jour passé du calendrier). Une archive est un **mode d'entraînement**, pas un défi : la règle « un seul essai » ne concerne que le jour même.
+Les défis du jour **passés** se rejouent depuis les archives : toucher un jour passé du **calendrier du profil**, qui remonte mois par mois (flèches ‹ ›) jusqu'au plus ancien jour rejouable. Il n'y a pas d'écran d'archives à part. Une archive est un **mode d'entraînement**, pas un défi : la règle « un seul essai » ne concerne que le jour même.
 
 | Règle | Implémentation |
 |---|---|
@@ -38,7 +38,7 @@ Les défis du jour **passés** se rejouent depuis les archives (Profil → « Ar
 | Progression sauvegardée par jour | `savedStates["archive-YYYY-MM-DD"]`, distincte de `daily-YYYY-MM-DD` |
 | N'affecte pas la progression de la carte | ID réservé `999997` |
 | Le **lundi** reste plus difficile | `generateDailyLevel` |
-| État de chaque jour : réussi le jour même (couleur des étoiles), réussi en archive (vert), jamais réussi | `getArchiveDayStatus`, `app/archives.tsx` |
+| État de chaque jour, **même code couleur partout**, avec sa légende sous le calendrier : réussi le jour même (case pleine, vert pâle à foncé selon les étoiles), réussi en archive (**contour vert, sans fond** : réussi, mais sans effet sur le streak), gel (bleu), pas réussi (gris), jour indisponible ou futur (numéro seul) | `getArchiveDayStatus`, `components/profile/StreakCalendar.tsx` |
 | Succès propres : **10 archives réussies**, un **mois complet** (tous les jours d'un mois passé réussis, le jour même ou en archive, dont au moins une archive) | `archives_10`, `archives_month` (`data/achievements.ts`) |
 
 ## Niveaux de la carte et niveaux personnalisés — mode d'entraînement
@@ -66,7 +66,8 @@ Le streak compte les jours consécutifs avec le défi du jour réussi.
 | Stock limité à **2 gels** au départ, **+1 emplacement** aux niveaux joueur 5, 10, 20 et 30 (6 au maximum) | `getFreezeCapacity` (`data/progression.ts`) |
 | On gagne un gel **tous les 7 jours de streak**, en finissant les **3 missions du jour** et à **chaque niveau joueur atteint** (rien si le stock est plein) | `advanceStreak` (`store/streak.ts`), missions, `addXp` (`store/gameStore.ts`) |
 | Pas de monnaie : un gel ne s'achète pas | |
-| Les jours gelés apparaissent en bleu dans le calendrier du profil | `frozenDates` |
+| Les jours gelés apparaissent en bleu dans le calendrier du profil | `frozenDates`, `StreakCalendar` |
+| Le profil montre les gels comme des **emplacements** : remplis, libres, puis ceux qu'un niveau joueur débloquera (5, 10, 20, 30) | `StreakCard` |
 
 ## Missions quotidiennes
 
@@ -120,6 +121,7 @@ Chaque victoire fait avancer une barre d'XP : la progression se voit même sur u
 | Titre par palier : Apprenti, Chauffeur (5), Pilote (10), Navigateur (15), As de la route (20), Maître du trafic (30), Légende (40) | `PLAYER_TITLES` |
 | Récompenses d'un niveau atteint : **1 gel**, un **emplacement de gel** aux niveaux 5, 10, 20 et 30, un **cosmétique** tous les 5 niveaux jusqu'au 35 | `getLevelRewardLines` (`components/progression/rewards.ts`) |
 | Affichage : badge sur l'accueil, carte dans le profil (avec les récompenses du prochain niveau), barre animée et montée de niveau sur l'écran de victoire, toast ailleurs | `PlayerLevelBadge`, `PlayerLevelCard`, `WinModal`, `AchievementToast` |
+| Le gel du prochain niveau reste **conditionnel** (« si ton stock n'est pas plein ») même quand le stock est plein aujourd'hui : un gel peut être utilisé d'ici là. La carte rappelle alors le stock actuel | `getLevelRewardLines` (`components/progression/rewards.ts`) |
 | Profil → « Voir toute la progression » : chaque niveau avec ses récompenses (aperçu des cosmétiques), puis les cosmétiques débloqués autrement, avec leur condition et l'avancement | `app/progression.tsx` |
 | Les joueurs existants reçoivent l'XP de leur progression passée (chaque victoire une fois, sans les récompenses de niveau) | migration v3 (`store/migrations.ts`) |
 | Pas de monnaie : l'XP ne se dépense pas | |
@@ -300,3 +302,5 @@ Les **commits** et les **titres d'issues** suivent les [Semantic Commit Messages
 | `chore` | maintenance : dépendances, version, nettoyage, CI |
 
 Exemples : `feat(achievements): popup de déblocage`, `fix(daily): progression non réinitialisée`, `chore: supprimer le code mort des jetons d'indice`.
+
+**Textes** : le jeu **tutoie** le joueur (« Touche un jour passé », « ton streak »), jamais de vouvoiement.

@@ -33,14 +33,15 @@ export function isArchiveDateAvailable(dateKey: string, today: string = getLocal
   return daysBetween(dateKey, today) >= 1 && daysBetween(getOldestArchiveDate(today), dateKey) >= 0;
 }
 
-/** Days that can be replayed, most recent first */
-export function getArchiveDates(today: string = getLocalDateString()): string[] {
-  const dates: string[] = [];
-  const oldest = getOldestArchiveDate(today);
-  for (let date = addDays(today, -1); daysBetween(oldest, date) >= 0; date = addDays(date, -1)) {
-    dates.push(date);
+/** Months (YYYY-MM) the profile calendar can show, oldest first: back to the oldest archive day */
+export function getCalendarMonths(today: string = getLocalDateString()): string[] {
+  const first = getOldestArchiveDate(today).slice(0, 7);
+  const last = today.slice(0, 7);
+  const months: string[] = [];
+  for (let month = first < last ? first : last; month <= last; month = addDays(`${month}-01`, 32).slice(0, 7)) {
+    months.push(month);
   }
-  return dates;
+  return months;
 }
 
 /** 'daily': won on the day itself, 'archive': won later as an archive, 'none': never won */
@@ -88,23 +89,4 @@ export function countCompleteArchiveMonths(
     if (allDone) complete++;
   }
   return complete;
-}
-
-export interface ArchiveMonth {
-  /** YYYY-MM */
-  month: string;
-  /** Days of the month that can be replayed, most recent first */
-  dates: string[];
-}
-
-/** Archive dates grouped by month, most recent month first */
-export function groupArchiveDatesByMonth(dates: string[]): ArchiveMonth[] {
-  const months: ArchiveMonth[] = [];
-  for (const date of dates) {
-    const month = date.slice(0, 7);
-    const last = months[months.length - 1];
-    if (last?.month === month) last.dates.push(date);
-    else months.push({ month, dates: [date] });
-  }
-  return months;
 }
