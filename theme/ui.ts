@@ -45,10 +45,14 @@ export interface UiColors {
   weekly: string;
   /** Favorite star */
   star: string;
+  /** Star count written as text: readable on the background and surfaces */
+  starText: string;
   /** Streak freeze in the calendar */
   frozen: string;
   /** Daily challenge result in the calendar, by number of stars (1 to 3) */
   dailyStars: [string, string, string];
+  /** Text on the light calendar fills (1-2 stars, frozen), whatever the theme */
+  onLightFill: string;
   /** Level nodes of the map, by difficulty */
   levelEasy: string;
   levelMedium: string;
@@ -96,6 +100,7 @@ export const fixedColors = {
   onPrimary: '#FFFFFF',
   frozen: '#7DD3FC',
   dailyStars: ['#A5D6A7', '#66BB6A', '#2E7D32'] as [string, string, string],
+  onLightFill: '#0F0F1A',
   levelEasy: '#10B981',
   levelMedium: '#F59E0B',
   levelHard: '#EF4444',
@@ -143,6 +148,7 @@ export const darkColors: UiColors = {
   dangerSoft: 'rgba(239,68,68,0.18)',
   weekly: '#F97316',
   star: '#FFD700',
+  starText: '#FFD700',
   mapRoad: '#262639',
   mapRoadEdge: 'rgba(255,255,255,0.07)',
   mapRoadDash: 'rgba(255,255,255,0.32)',
@@ -182,6 +188,7 @@ export const lightColors: UiColors = {
   dangerSoft: 'rgba(239,68,68,0.1)',
   weekly: '#C2410C',
   star: '#FFB800',
+  starText: '#A16207',
   mapRoad: '#D4D4E2',
   mapRoadEdge: 'rgba(0,0,0,0.05)',
   mapRoadDash: 'rgba(255,255,255,0.95)',
