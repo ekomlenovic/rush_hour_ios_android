@@ -1,14 +1,31 @@
 import { useEffect, useState } from 'react';
 import { AppState, Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../store/gameStore';
 import { planReminders } from './reminders';
 
 const CHANNEL_ID = 'reminders';
-const isSupported = Platform.OS === 'ios' || Platform.OS === 'android';
 
-if (isSupported) {
+/**
+ * expo-notifications, or null where it cannot run. Expo Go on Android throws as soon as
+ * the module is imported (SDK 53+): imported at the top, it took the whole root layout
+ * down with it. There, reminders are off and the rest of the app works.
+ */
+function loadNotifications(): typeof import('expo-notifications') | null {
+  if (Platform.OS !== 'ios' && Platform.OS !== 'android') return null;
+  if (Platform.OS === 'android' && Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return null;
+  try {
+    return require('expo-notifications');
+  } catch (error) {
+    console.warn('Reminders unavailable', error);
+    return null;
+  }
+}
+
+const Notifications = loadNotifications();
+
+if (Notifications) {
   // Reminders are useless while the app is open: keep them silent in foreground
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -22,7 +39,7 @@ if (isSupported) {
 
 /** Android 8+ needs the channel before scheduling; creating it again is a no-op */
 async function ensureChannel(name: string) {
-  if (Platform.OS !== 'android') return;
+  if (Platform.OS !== 'android' || !Notifications) return;
   await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
     name,
     importance: Notifications.AndroidImportance.DEFAULT,
@@ -34,7 +51,7 @@ let syncQueue: Promise<void> = Promise.resolve();
 
 /** Asks for the permission if needed. Local notifications only, no push token. */
 export async function requestReminderPermission(): Promise<boolean> {
-  if (!isSupported) return false;
+  if (!Notifications) return false;
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) return true;
   if (!current.canAskAgain) return false;
@@ -63,7 +80,7 @@ export function useReminderSync() {
   }, []);
 
   useEffect(() => {
-    if (!isSupported) return;
+    if (!Notifications) return;
     let outdated = false;
     const sync = async () => {
       if (outdated) return;

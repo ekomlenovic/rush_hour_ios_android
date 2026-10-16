@@ -9,6 +9,7 @@ import { cleanPseudo, pseudoKey, PSEUDO_MAX } from './pseudo';
 import { rankDay, rankPeriod, type GameResult, type GameStatus, type Verdict } from './leaderboard';
 import { analyzeGame, type Flag } from './cheat';
 import { loadSettings, SettingsError, updateSettings } from './settings';
+import { deletePage } from './deletePage';
 import { newInviteCode, newRecoveryCode, newToken, normalizeRecoveryCode, secretEquals, sha256 } from './secrets';
 import { addDays, isValidDate, periodBounds } from './time';
 
@@ -583,6 +584,9 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
       });
     });
   }, { prefix: '/api/v1' });
+
+  // Delete an account from the web (Google Play), with the recovery code
+  app.register(deletePage, { db, serverName: config.serverName });
 
   app.addHook('onClose', async () => {
     await challenges.stop();

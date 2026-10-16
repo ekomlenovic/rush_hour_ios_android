@@ -6,6 +6,7 @@ import { useTheme } from '@/theme';
 import { selectActiveAccount, useMultiStore } from '@/store/multiStore';
 import { useMultiApi } from '@/hooks/useMultiApi';
 import MultiHeader from '@/components/multi/MultiHeader';
+import KeyboardScreen from '@/components/KeyboardScreen';
 import AdminGames from '@/components/multi/admin/AdminGames';
 import AdminPlayers from '@/components/multi/admin/AdminPlayers';
 import AdminReports from '@/components/multi/admin/AdminReports';
@@ -23,7 +24,7 @@ export default function AdminScreen() {
   const [tab, setTab] = useState<Tab>('games');
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <KeyboardScreen style={[styles.container, { backgroundColor: colors.background }]}>
       <MultiHeader title={t('multi.admin_panel')} colors={colors} />
       <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
         {TABS.map(name => (
@@ -46,7 +47,7 @@ export default function AdminScreen() {
             : <AdminSettingsPanel api={api} colors={colors} serverUrl={account.url} />
         )}
       </ScrollView>
-    </View>
+    </KeyboardScreen>
   );
 }
 

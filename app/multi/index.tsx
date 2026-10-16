@@ -92,6 +92,8 @@ export default function MultiplayerScreen() {
       setCompat(checkCompatibility(info, APP_VERSION));
       setToday(day);
       setClockOffset(day.serverNow - Date.now());
+      // The clock on screen may have stood still while a game was played
+      setNow(Date.now());
       setRefreshKey(k => k + 1);
     } catch (e) {
       setError(e);
@@ -106,11 +108,14 @@ export default function MultiplayerScreen() {
     void load();
   }, [load]));
 
-  // Countdowns, and the puzzle of a server that was just started
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 30_000);
+  // Countdowns; every second while a game runs, its time is on the Resume button
+  const gameRunning = today?.me?.status === 'playing' || !!today?.pending;
+  useFocusEffect(useCallback(() => {
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), gameRunning ? 1000 : 30_000);
     return () => clearInterval(timer);
-  }, []);
+  }, [gameRunning]));
+  // The puzzle of a server that was just started
   useEffect(() => {
     if (today?.status !== 'preparing') return;
     const retry = setTimeout(load, 5000);
@@ -128,13 +133,6 @@ export default function MultiplayerScreen() {
   const blocked = (blockedByServer[account.url] ?? []).map(p => p.playerId);
   const me = today?.me;
   const finishedCount = today?.results.filter(r => r.status === 'won').length ?? 0;
-
-  const start = () => {
-    Alert.alert(t('multi.start_title'), t('multi.start_body'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('multi.start'), onPress: () => router.push('/multi/play') },
-    ]);
-  };
 
   const forgetServer = () => {
     Alert.alert(t('multi.account_gone_title'), t('multi.account_gone_body'), [
@@ -216,9 +214,18 @@ export default function MultiplayerScreen() {
               )}
 
               {today.status === 'ready' && !me && (
-                <Pressable onPress={start} disabled={compat !== 'ok'} style={[styles.primaryButton, { backgroundColor: colors.primary, opacity: compat === 'ok' ? 1 : 0.5 }]} accessibilityRole="button">
-                  <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>{t('multi.start')}</Text>
-                </Pressable>
+                <>
+                  <Pressable
+                    onPress={() => router.push('/multi/play')}
+                    disabled={compat !== 'ok'}
+                    style={[styles.primaryButton, { backgroundColor: colors.primary, opacity: compat === 'ok' ? 1 : 0.5 }]}
+                    accessibilityRole="button"
+                    accessibilityHint={t('multi.start_hint')}
+                  >
+                    <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>{t('multi.start')}</Text>
+                  </Pressable>
+                  <Text style={[styles.cardMuted, styles.startHint, { color: colors.textMuted }]}>{t('multi.start_hint')}</Text>
+                </>
               )}
 
               {me?.status === 'playing' && (
@@ -403,6 +410,10 @@ const styles = StyleSheet.create({
   cardMuted: {
     fontSize: RFValue(13),
     marginTop: 4,
+  },
+  startHint: {
+    textAlign: 'center',
+    marginTop: RFValue(8),
   },
   cardBody: {
     fontSize: RFValue(16),
