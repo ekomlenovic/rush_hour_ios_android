@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { pointsForRank, rankDay, rankPeriod, type GameResult } from '../src/leaderboard';
 
-const win = (playerId: number, moves: number, timeMs: number, date = '2026-10-16'): GameResult =>
-  ({ playerId, pseudo: `p${playerId}`, date, status: 'won', moves, timeMs });
+const win = (playerId: number, moves: number, timeMs: number, date = '2026-10-16', verdict: GameResult['verdict'] = null): GameResult =>
+  ({ playerId, pseudo: `p${playerId}`, date, status: 'won', moves, timeMs, attemptId: playerId, verdict, reasons: [] });
 const other = (playerId: number, status: GameResult['status'], date = '2026-10-16'): GameResult =>
-  ({ playerId, pseudo: `p${playerId}`, date, status, moves: null, timeMs: null });
+  ({ playerId, pseudo: `p${playerId}`, date, status, moves: null, timeMs: null, attemptId: playerId, verdict: null, reasons: [] });
 
 describe('ranking of a day', () => {
   it('moves first, then time', () => {
@@ -24,6 +24,18 @@ describe('ranking of a day', () => {
   it('games in progress, unfinished and abandoned come last with no rank nor points', () => {
     const rows = rankDay([other(1, 'abandoned'), other(2, 'unfinished'), win(3, 30, 1000), other(4, 'playing')]);
     expect(rows.map(r => [r.playerId, r.rank, r.points])).toEqual([[3, 1, 10], [4, null, 0], [2, null, 0], [1, null, 0]]);
+  });
+});
+
+describe('cheaters', () => {
+  it('a confirmed cheater keeps their rank but scores nothing: the others do not move up', () => {
+    const rows = rankDay([win(1, 10, 5000, '2026-10-16', 'cheater'), win(2, 12, 1000), win(3, 14, 1000, '2026-10-16', 'suspect')]);
+    expect(rows.map(r => [r.playerId, r.rank, r.points, r.verdict])).toEqual([[1, 1, 0, 'cheater'], [2, 2, 8, null], [3, 3, 6, 'suspect']]);
+  });
+
+  it('their wins do not count in the week', () => {
+    const rows = rankPeriod([win(1, 10, 5000, '2026-10-12', 'cheater'), win(2, 12, 1000, '2026-10-12')]);
+    expect(rows.map(r => [r.playerId, r.points, r.wins])).toEqual([[2, 8, 1], [1, 0, 0]]);
   });
 });
 

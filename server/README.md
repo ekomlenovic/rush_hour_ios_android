@@ -48,16 +48,37 @@ Il faut une machine avec Docker, un nom de domaine (par exemple duckdns) et un r
 |---|---|---|
 | `SERVER_SECRET` | *obligatoire* | graine secrète des puzzles (≥ 16 caractères). Qui la connaît peut calculer les puzzles à l'avance : ne jamais la partager |
 | `ADMIN_TOKEN` | *obligatoire* | jeton d'administration (≥ 16 caractères) |
-| `INVITE_CODE` | *généré* | code pour rejoindre le serveur. Vide : généré au premier démarrage et affiché dans les logs |
+| `INVITE_CODE` | *généré* | code pour rejoindre le serveur. Vide : généré au premier démarrage et affiché dans les logs. Un nouveau code généré depuis l'app (admin) le remplace |
 | `SERVER_NAME` | `Rush Hours` | nom affiché dans l'app |
 | `TZ` | `Europe/Paris` | fuseau du serveur |
 | `RELEASE_TIME` | `12:00` | heure de sortie du défi (`HH:MM`). Un défi dure jusqu'à la sortie du suivant |
 | `PREGENERATE_AHEAD` | `48h` | combien de temps avant sa sortie un puzzle est généré (`30m`, `12h`, `2d`…) |
-| `DIFFICULTY` | `NORMAL,MONDAY=HARD` | difficulté (`EASY`, `NORMAL`, `HARD`, `EXPERT`, `MASTER`), réglable par jour de la semaine en anglais. Un changement ne touche que les puzzles **pas encore sortis** |
+| `DIFFICULTY` | `NORMAL,MONDAY=HARD` | difficulté (`EASY`, `NORMAL`, `HARD`, `EXPERT`, `MASTER`), réglable par jour de la semaine en anglais. Un changement ne touche que les puzzles **pas encore sortis**. Réglable aussi depuis l'app (admin), qui l'emporte alors |
 | `GRACE_PERIOD` | `1h` | délai pour finir, après la sortie du défi suivant, une partie commencée à temps |
-| `REPLAY_RETENTION_DAYS` | `7` | durée de conservation des coups (replays). Les scores sont gardés |
+| `REPLAY_RETENTION_DAYS` | `7` | durée de conservation des coups (replays). Les scores sont gardés. Réglable aussi depuis l'app (admin) |
 | `TRUST_PROXY` | `loopback,uniquelocal` | proxys dont l'en-tête `X-Forwarded-For` est cru (limites de débit par IP) |
 | `PORT`, `HOST`, `DATA_DIR` | `3000`, `0.0.0.0`, `/data` | |
+
+## Administration
+
+Dans l'app : Multijoueur → Mon compte → **Devenir admin**, avec `ADMIN_TOKEN`. Le panneau admin permet de :
+- revoir les **parties suspectes** (signaux, replay), confirmer la triche (🤡 : le joueur garde son rang, 0 point) ou lever le soupçon ;
+- gérer les **joueurs** : renommer, exclure, donner un nouveau code de récupération à qui l'a perdu ;
+- traiter les **signalements** de pseudos ;
+- **régénérer le code d'invitation**, fermer les inscriptions, réserver les invitations à l'admin ;
+- régler la **difficulté** par jour, la **conservation des replays** et les **seuils de soupçon**.
+
+### Soupçons automatiques (⚠️)
+
+Calculés à l'envoi d'une victoire, visibles de tous avec leur raison. Le joueur garde ses points tant que l'admin n'a pas tranché.
+
+| Signal | Défaut |
+|---|---|
+| Trop rapide : temps moyen par coup sous le seuil | 600 ms |
+| « Recopié » : solution optimale d'au moins 8 coups, longue pause avant le 1er coup (≥ 60 % de la partie), puis un rythme très régulier (variation ≤ 0,3) | |
+| Horloge incohérente : le temps du téléphone et celui du serveur diffèrent de plus de 15 s ou 10 % (app modifiée) | |
+
+Le **temps passé hors de l'app** est montré à l'admin seulement : ce n'est jamais un soupçon à lui seul.
 
 ## Sécurité
 
@@ -77,12 +98,20 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 | `POST /recover` `{ recoveryCode }` | nouveau jeton pour un compte (l'ancien téléphone est déconnecté) |
 | `GET /me`, `PATCH /me` `{ pseudo }`, `DELETE /me` | mon compte ; supprimer efface aussi mes parties |
 | `POST /me/recovery` | nouveau code de récupération (l'ancien ne marche plus) |
-| `GET /invite` | code d'invitation, pour inviter un ami |
+| `GET /invite` | code d'invitation, pour inviter un ami (refusé si l'admin réserve les invitations) |
 | `GET /challenge/today` | défi en cours (sans le puzzle), ma partie, partie de la veille encore jouable (`pending`), résultats du jour |
 | `POST /challenge/start` `{ date? }` | commence le défi en cours, ou reprend une partie → le puzzle (sans son optimum) |
 | `POST /challenge/submit` `{ date, moves, clientMs?, backgroundMs? }` | envoie les coups `{ vehicleId, delta, t }` d'une victoire → coups, temps, rang, points |
 | `POST /challenge/abandon` `{ date }` | abandonne la partie |
-| `GET /leaderboard?period=day\|week\|month&date=` | classement : coups puis temps pour un jour ; points pour une semaine ou un mois (10, 8, 6, 5, 4, 3, 2, puis 1 par victoire) |
+| `GET /leaderboard?period=day\|week\|month&date=` | classement : coups puis temps pour un jour ; points pour une semaine ou un mois (10, 8, 6, 5, 4, 3, 2, puis 1 par victoire). Chaque partie a son `verdict` (`suspect` avec ses `reasons`, `cheater`) |
+| `GET /replay/:id` | les coups d'une partie gagnée, avec leurs temps : seulement une fois ma partie du jour terminée, ou le défi fermé |
+| `POST /reports` `{ playerId, reason? }` | signaler un pseudo à l'admin |
+| `POST /admin/claim` `{ adminToken }` | devenir admin |
+| `GET /admin/games?filter=suspects\|all`, `POST /admin/games/:id/verdict` `{ verdict }` | parties à revoir ; `cheater`, `cleared` ou `null` |
+| `GET /admin/players`, `PATCH /admin/players/:id` `{ pseudo?, banned? }`, `POST /admin/players/:id/transfer` | joueurs, renommer, exclure, nouveau code de récupération |
+| `GET /admin/reports`, `DELETE /admin/reports/:id` | signalements |
+| `POST /admin/invite` | nouveau code d'invitation |
+| `GET /admin/settings`, `PATCH /admin/settings` | inscriptions, invitations, difficulté, conservation des replays, seuils |
 
 ## Développement
 
