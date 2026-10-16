@@ -10,7 +10,7 @@ describe('joining a server', () => {
   it('/info is public and tells the API version', async () => {
     const { request } = open();
     expect(await request('GET', '/info')).toEqual({
-      status: 200, body: { name: 'Rush Hours', apiVersion: 1, minAppVersion: '1.2.0' },
+      status: 200, body: { name: 'Rush Hours', apiVersion: 1, minAppVersion: '1.1.6' },
     });
   });
 
@@ -40,6 +40,13 @@ describe('joining a server', () => {
     for (const pseudo of ['LÉO', 'leo', 'Leo']) {
       expect((await request('POST', '/join', undefined, { inviteCode: 'invite-code-for-tests', pseudo })).body).toEqual({ error: 'pseudo_taken' });
     }
+  });
+
+  it('a member can get the invite code to invite a friend', async () => {
+    const { join, request } = open();
+    const { token } = await join('Léo');
+    expect((await request('GET', '/invite', token)).body).toEqual({ inviteCode: 'invite-code-for-tests' });
+    expect((await request('GET', '/invite')).status).toBe(401);
   });
 
   it('everything else needs a valid token', async () => {
