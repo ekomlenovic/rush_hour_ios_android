@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Linking, TextInput, Switch, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Linking, TextInput, Switch, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { useTheme, type UiColors } from '@/theme';
 import MultiHeader from '@/components/multi/MultiHeader';
+import KeyboardScreen from '@/components/KeyboardScreen';
 import CodeBlock from '@/components/multi/CodeBlock';
 import { multiErrorMessage } from '@/components/multi/errors';
 import { buildCompose, buildNginx, deviceTimeZone, domainOf, SECRET_PLACEHOLDER, SETUP_COMMANDS } from '@/utils/multi/serverSetup';
@@ -52,7 +53,7 @@ export default function CreateServerScreen() {
   const input = [styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }];
 
   return (
-    <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardScreen style={[styles.container, { backgroundColor: colors.background }]}>
       <MultiHeader title={t('multi.create_title')} colors={colors} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={[styles.intro, { color: colors.textMuted }]}>{t('multi.create_desc')}</Text>
@@ -156,7 +157,7 @@ export default function CreateServerScreen() {
           <Text style={[styles.linkText, { color: colors.primaryText }]}>{t('multi.create_open_guide')}</Text>
         </Pressable>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardScreen>
   );
 }
 
