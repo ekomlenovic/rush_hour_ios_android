@@ -1,0 +1,402 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, RefreshControl, Alert, ActivityIndicator } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import Constants from 'expo-constants';
+import { useTranslation } from 'react-i18next';
+import { RFValue } from '@/utils/responsive';
+import { formatDuration } from '@/utils/date';
+import { useTheme } from '@/theme';
+import { selectActiveAccount, useMultiStore } from '@/store/multiStore';
+import { useMultiApi } from '@/hooks/useMultiApi';
+import { checkCompatibility, type Today } from '@/utils/multi/api';
+import { formatRemaining } from '@/utils/multi/format';
+import { serverHost } from '@/utils/multi/serverUrl';
+import MultiHeader from '@/components/multi/MultiHeader';
+import Leaderboard from '@/components/multi/Leaderboard';
+import InviteSheet from '@/components/multi/InviteSheet';
+import ServerPickerSheet from '@/components/multi/ServerPickerSheet';
+import { errorCode, multiErrorMessage } from '@/components/multi/errors';
+
+const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
+
+/** First visit: what the multiplayer mode is, then join or create a server */
+function Intro() {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const router = useRouter();
+  const setIntroSeen = useMultiStore(s => s.setIntroSeen);
+  const steps = ['multi.intro_step_server', 'multi.intro_step_daily', 'multi.intro_step_rank'] as const;
+
+  return (
+    <ScrollView contentContainerStyle={styles.content}>
+      <Animated.Text entering={FadeInDown.springify()} style={[styles.introEmoji]}>🏁</Animated.Text>
+      <Text style={[styles.introTitle, { color: colors.text }]} accessibilityRole="header">{t('multi.intro_title')}</Text>
+      <Text style={[styles.introText, { color: colors.textMuted }]}>{t('multi.intro_desc')}</Text>
+      {steps.map((key, i) => (
+        <Animated.View key={key} entering={FadeInDown.delay(100 + i * 100).springify()} style={[styles.step, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.stepNumber, { color: colors.primaryText }]}>{i + 1}</Text>
+          <Text style={[styles.stepText, { color: colors.text }]}>{t(key)}</Text>
+        </Animated.View>
+      ))}
+      <Text style={[styles.introNote, { color: colors.textMuted }]}>{t('multi.intro_optional')}</Text>
+      <Pressable
+        onPress={() => { setIntroSeen(); router.push('/multi/join'); }}
+        style={[styles.primaryButton, { backgroundColor: colors.primary }]}
+        accessibilityRole="button"
+      >
+        <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>{t('multi.join_server')}</Text>
+      </Pressable>
+      <Pressable
+        onPress={() => { setIntroSeen(); router.push('/multi/create'); }}
+        style={[styles.secondaryButton, { borderColor: colors.primary }]}
+        accessibilityRole="button"
+      >
+        <Text style={[styles.secondaryButtonText, { color: colors.primaryText }]}>{t('multi.create_server')}</Text>
+      </Pressable>
+    </ScrollView>
+  );
+}
+
+export default function MultiplayerScreen() {
+  const { t } = useTranslation();
+  const { colors, isDark } = useTheme();
+  const router = useRouter();
+  const accounts = useMultiStore(s => s.accounts);
+  const activeUrl = useMultiStore(s => s.activeUrl);
+  const setActive = useMultiStore(s => s.setActive);
+  const removeAccount = useMultiStore(s => s.removeAccount);
+  const account = useMultiStore(selectActiveAccount);
+  const api = useMultiApi(account);
+
+  const [today, setToday] = useState<Today | null>(null);
+  const [clockOffset, setClockOffset] = useState(0);
+  const [error, setError] = useState<unknown>(null);
+  const [compat, setCompat] = useState<'ok' | 'update_app' | 'update_server'>('ok');
+  const [loading, setLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [now, setNow] = useState(Date.now());
+  const [isPickerVisible, setPickerVisible] = useState(false);
+  const [isInviteVisible, setInviteVisible] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!api) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const [info, day] = await Promise.all([api.info(), api.today()]);
+      setCompat(checkCompatibility(info, APP_VERSION));
+      setToday(day);
+      setClockOffset(day.serverNow - Date.now());
+      setRefreshKey(k => k + 1);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [api]);
+
+  // Reload when coming back (from a game) or when the server changes
+  useFocusEffect(useCallback(() => {
+    setToday(null);
+    void load();
+  }, [load]));
+
+  // Countdowns, and the puzzle of a server that was just started
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    if (today?.status !== 'preparing') return;
+    const retry = setTimeout(load, 5000);
+    return () => clearTimeout(retry);
+  }, [today?.status, load]);
+
+  if (!account) return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <MultiHeader title={t('multi.title')} colors={colors} />
+      <Intro />
+    </View>
+  );
+
+  const serverNow = now + clockOffset;
+  const me = today?.me;
+  const finishedCount = today?.results.filter(r => r.status === 'won').length ?? 0;
+
+  const start = () => {
+    Alert.alert(t('multi.start_title'), t('multi.start_body'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('multi.start'), onPress: () => router.push('/multi/play') },
+    ]);
+  };
+
+  const forgetServer = () => {
+    Alert.alert(t('multi.account_gone_title'), t('multi.account_gone_body'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('multi.leave_server'), style: 'destructive', onPress: () => removeAccount(account.url) },
+    ]);
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <MultiHeader
+        title={t('multi.title')}
+        colors={colors}
+        right={(
+          <Pressable onPress={() => router.push('/multi/account')} accessibilityRole="button" accessibilityLabel={t('multi.account')} hitSlop={8}>
+            <Text style={{ fontSize: RFValue(22) }}>👤</Text>
+          </Pressable>
+        )}
+      />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={loading && !!today} onRefresh={load} tintColor={colors.primary} />}
+      >
+        <Pressable
+          onPress={() => setPickerVisible(true)}
+          style={[styles.serverChip, { backgroundColor: colors.card }]}
+          accessibilityRole="button"
+          accessibilityLabel={t('multi.server_a11y', { name: account.name, pseudo: account.pseudo })}
+          accessibilityHint={t('multi.servers')}
+        >
+          <Text style={[styles.serverName, { color: colors.text }]} numberOfLines={1}>🖥️ {account.name} ▾</Text>
+          <Text style={[styles.serverHost, { color: colors.textMuted }]} numberOfLines={1}>{serverHost(account.url)} · {account.pseudo}</Text>
+        </Pressable>
+
+        {compat !== 'ok' && (
+          <Text style={[styles.banner, { backgroundColor: colors.warningSoft, color: colors.text }]}>{multiErrorMessage(t, compat)}</Text>
+        )}
+
+        {/* The challenge of the day */}
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          {!today && loading && <ActivityIndicator color={colors.primary} style={styles.cardState} />}
+
+          {!today && !loading && !!error && (
+            <View style={styles.cardState}>
+              <Text style={[styles.errorText, { color: colors.danger }]}>{multiErrorMessage(t, error)}</Text>
+              {errorCode(error) === 'unauthorized' ? (
+                <Pressable onPress={forgetServer} accessibilityRole="button">
+                  <Text style={[styles.link, { color: colors.primaryText }]}>{t('multi.leave_server')}</Text>
+                </Pressable>
+              ) : (
+                <Pressable onPress={load} accessibilityRole="button">
+                  <Text style={[styles.link, { color: colors.primaryText }]}>{t('multi.retry')}</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+
+          {today && (
+            <>
+              <Text style={[styles.cardTitle, { color: colors.text }]} accessibilityRole="header">{t('multi.challenge_number', { number: today.number })}</Text>
+              <Text style={[styles.cardMuted, { color: colors.textMuted }]}>
+                {finishedCount === 0 ? t('multi.nobody_yet') : t('multi.players_done', { count: finishedCount })}
+              </Text>
+
+              {today.pending && (
+                <Pressable
+                  onPress={() => router.push(`/multi/play?date=${today.pending!.date}`)}
+                  style={[styles.pending, { backgroundColor: colors.warningSoft }]}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.pendingText, { color: colors.text }]}>
+                    ⏳ {t('multi.pending', { time: formatRemaining(t, today.pending.deadline - serverNow) })}
+                  </Text>
+                </Pressable>
+              )}
+
+              {today.status === 'preparing' && (
+                <Text style={[styles.cardBody, { color: colors.textMuted }]}>⚙️ {t('multi.preparing')}</Text>
+              )}
+
+              {today.status === 'ready' && !me && (
+                <Pressable onPress={start} disabled={compat !== 'ok'} style={[styles.primaryButton, { backgroundColor: colors.primary, opacity: compat === 'ok' ? 1 : 0.5 }]} accessibilityRole="button">
+                  <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>{t('multi.start')}</Text>
+                </Pressable>
+              )}
+
+              {me?.status === 'playing' && (
+                <Pressable onPress={() => router.push(`/multi/play?date=${today.date}`)} style={[styles.primaryButton, { backgroundColor: colors.warning }]} accessibilityRole="button">
+                  <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>
+                    {t('multi.resume', { time: formatDuration(Math.max(0, serverNow - me.startedAt)) })}
+                  </Text>
+                </Pressable>
+              )}
+
+              {me?.status === 'won' && (
+                <Text style={[styles.cardBody, { color: colors.success }]}>
+                  ✅ {t('multi.my_win', { moves: me.moves, time: formatDuration(me.timeMs ?? 0), min: me.minMoves })}
+                </Text>
+              )}
+              {(me?.status === 'abandoned' || me?.status === 'unfinished') && (
+                <Text style={[styles.cardBody, { color: colors.textMuted }]}>{t(`multi.my_${me.status}`, { min: me.minMoves })}</Text>
+              )}
+
+              <Text style={[styles.cardMuted, { color: colors.textMuted, marginTop: RFValue(10) }]}>
+                {t('multi.next_in', { time: formatRemaining(t, today.closesAt - serverNow) })}
+              </Text>
+            </>
+          )}
+        </View>
+
+        <Pressable onPress={() => setInviteVisible(true)} style={[styles.secondaryButton, { borderColor: colors.primary }]} accessibilityRole="button">
+          <Text style={[styles.secondaryButtonText, { color: colors.primaryText }]}>📨 {t('multi.invite')}</Text>
+        </Pressable>
+
+        {api && <Leaderboard api={api} colors={colors} myPlayerId={account.playerId} refreshKey={refreshKey} />}
+      </ScrollView>
+
+      <ServerPickerSheet
+        visible={isPickerVisible}
+        accounts={accounts}
+        activeUrl={activeUrl}
+        colors={colors}
+        isDark={isDark}
+        onSelect={(url) => { setActive(url); setPickerVisible(false); }}
+        onAdd={() => { setPickerVisible(false); router.push('/multi/join'); }}
+        onClose={() => setPickerVisible(false)}
+      />
+      {api && (
+        <InviteSheet visible={isInviteVisible} account={account} api={api} colors={colors} isDark={isDark} onClose={() => setInviteVisible(false)} />
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    padding: RFValue(20),
+    paddingBottom: RFValue(48),
+  },
+  introEmoji: {
+    fontSize: RFValue(56),
+    textAlign: 'center',
+    marginTop: RFValue(8),
+  },
+  introTitle: {
+    fontSize: RFValue(26),
+    fontWeight: '800',
+    textAlign: 'center',
+    marginTop: RFValue(8),
+  },
+  introText: {
+    fontSize: RFValue(15),
+    lineHeight: RFValue(22),
+    textAlign: 'center',
+    marginVertical: RFValue(14),
+  },
+  step: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: RFValue(14),
+    marginBottom: RFValue(10),
+    gap: RFValue(12),
+  },
+  stepNumber: {
+    fontSize: RFValue(20),
+    fontWeight: '900',
+    width: RFValue(22),
+    textAlign: 'center',
+  },
+  stepText: {
+    flex: 1,
+    fontSize: RFValue(14),
+    lineHeight: RFValue(20),
+    fontWeight: '600',
+  },
+  introNote: {
+    fontSize: RFValue(13),
+    lineHeight: RFValue(18),
+    textAlign: 'center',
+    marginVertical: RFValue(10),
+  },
+  primaryButton: {
+    marginTop: RFValue(14),
+    paddingVertical: RFValue(15),
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    fontSize: RFValue(17),
+    fontWeight: '800',
+  },
+  secondaryButton: {
+    marginTop: RFValue(14),
+    paddingVertical: RFValue(13),
+    borderRadius: 16,
+    borderWidth: 2,
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    fontSize: RFValue(16),
+    fontWeight: '700',
+  },
+  serverChip: {
+    borderRadius: 14,
+    paddingVertical: RFValue(10),
+    paddingHorizontal: RFValue(14),
+    marginBottom: RFValue(14),
+  },
+  serverName: {
+    fontSize: RFValue(16),
+    fontWeight: '800',
+  },
+  serverHost: {
+    fontSize: RFValue(12),
+    marginTop: 2,
+  },
+  banner: {
+    borderRadius: 12,
+    padding: RFValue(12),
+    fontSize: RFValue(14),
+    fontWeight: '600',
+    marginBottom: RFValue(14),
+    overflow: 'hidden',
+  },
+  card: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: RFValue(18),
+  },
+  cardState: {
+    alignItems: 'center',
+    paddingVertical: RFValue(20),
+    gap: 8,
+  },
+  cardTitle: {
+    fontSize: RFValue(22),
+    fontWeight: '800',
+  },
+  cardMuted: {
+    fontSize: RFValue(13),
+    marginTop: 4,
+  },
+  cardBody: {
+    fontSize: RFValue(16),
+    fontWeight: '700',
+    marginTop: RFValue(14),
+  },
+  pending: {
+    borderRadius: 12,
+    padding: RFValue(12),
+    marginTop: RFValue(12),
+  },
+  pendingText: {
+    fontSize: RFValue(14),
+    fontWeight: '700',
+  },
+  errorText: {
+    fontSize: RFValue(14),
+    textAlign: 'center',
+  },
+  link: {
+    fontSize: RFValue(15),
+    fontWeight: '700',
+  },
+});
