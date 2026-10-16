@@ -9,6 +9,7 @@ import { selectActiveAccount, useMultiStore } from '@/store/multiStore';
 import { useMultiApi } from '@/hooks/useMultiApi';
 import { buildRecoveryLink, serverHost } from '@/utils/multi/serverUrl';
 import MultiHeader from '@/components/multi/MultiHeader';
+import KeyboardScreen from '@/components/KeyboardScreen';
 import QrCode from '@/components/multi/QrCode';
 import { multiErrorMessage } from '@/components/multi/errors';
 
@@ -106,7 +107,7 @@ export default function MultiAccountScreen() {
   ]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <KeyboardScreen style={[styles.container, { backgroundColor: colors.background }]}>
       <MultiHeader title={t('multi.account')} colors={colors} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={[styles.server, { color: colors.text }]}>{account.name}</Text>
@@ -220,7 +221,7 @@ export default function MultiAccountScreen() {
           <Text style={[styles.dangerText, { color: colors.danger }]}>{t('multi.delete_data')}</Text>
         </Pressable>
       </ScrollView>
-    </View>
+    </KeyboardScreen>
   );
 }
 

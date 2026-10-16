@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import { useMultiStore } from '@/store/multiStore';
 import { checkCompatibility, multiApi } from '@/utils/multi/api';
 import { normalizeServerUrl, parseInviteLink, parseRecoveryLink } from '@/utils/multi/serverUrl';
 import MultiHeader from '@/components/multi/MultiHeader';
+import KeyboardScreen from '@/components/KeyboardScreen';
 import { multiErrorMessage } from '@/components/multi/errors';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
@@ -101,7 +102,7 @@ export default function JoinScreen() {
   const input = [styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }];
 
   return (
-    <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardScreen style={[styles.container, { backgroundColor: colors.background }]}>
       <MultiHeader title={mode === 'join' ? t('multi.join_title') : t('multi.recover_title')} colors={colors} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={[styles.intro, { color: colors.textMuted }]}>{mode === 'join' ? t('multi.join_desc') : t('multi.recover_desc')}</Text>
@@ -178,7 +179,7 @@ export default function JoinScreen() {
           <Text style={[styles.tipText, { color: colors.textMuted }]}>💡 {t('multi.join_tip')}</Text>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardScreen>
   );
 }
 
