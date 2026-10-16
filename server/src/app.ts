@@ -8,7 +8,7 @@ import { applyMoves, type MoveRecord } from './core';
 import { cleanPseudo, pseudoKey, PSEUDO_MAX } from './pseudo';
 import { rankDay, rankPeriod, type GameResult, type GameStatus, type Verdict } from './leaderboard';
 import { analyzeGame, type Flag } from './cheat';
-import { loadSettings, SettingsError, updateSettings } from './settings';
+import { loadSettings, resetSettings, SettingsError, updateSettings } from './settings';
 import { deletePage } from './deletePage';
 import { newInviteCode, newRecoveryCode, newToken, normalizeRecoveryCode, secretEquals, sha256 } from './secrets';
 import { addDays, isValidDate, periodBounds } from './time';
@@ -580,6 +580,18 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
           try {
             updateSettings(db, config, request.body, now());
             // A new difficulty: the puzzles not released yet are generated again right away
+            void challenges.tick();
+            return settingsView();
+          } catch (e) {
+            if (e instanceof SettingsError) throw new ApiError(400, e.code, { field: e.message });
+            throw e;
+          }
+        });
+
+        // Back to the docker-compose
+        admin.post('/admin/settings/reset', async () => {
+          try {
+            resetSettings(db, config, now());
             void challenges.tick();
             return settingsView();
           } catch (e) {

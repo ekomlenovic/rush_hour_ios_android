@@ -90,8 +90,8 @@ export function localDate(instant: number, timeZone: string): string {
 export interface ReleaseChange {
   /** First date released at that time */
   from: string;
-  /** 'HH:MM' */
-  releaseTime: string;
+  /** 'HH:MM'; null: back to RELEASE_TIME */
+  releaseTime: string | null;
 }
 
 export interface Schedule {
@@ -105,7 +105,7 @@ export interface Schedule {
 /** Release time of the challenge of a date */
 export function releaseTimeOn(date: string, schedule: Schedule): string {
   let time = schedule.releaseTime;
-  for (const change of schedule.changes ?? []) if (change.from <= date) time = change.releaseTime;
+  for (const change of schedule.changes ?? []) if (change.from <= date) time = change.releaseTime ?? schedule.releaseTime;
   return time;
 }
 

@@ -120,6 +120,21 @@ export default function AdminSettingsPanel({ api, colors, isDark, serverUrl }: P
     },
   ]);
 
+  const reset = () => Alert.alert(t('multi.admin_reset_title'), t('multi.admin_reset_body'), [
+    { text: t('common.cancel'), style: 'cancel' },
+    {
+      text: t('multi.admin_reset'), style: 'destructive', onPress: async () => {
+        try {
+          const next = await api.admin.resetSettings();
+          loaded(next);
+          updateAccount(serverUrl, { name: next.serverName });
+        } catch (e) {
+          Alert.alert(t('common.error'), multiErrorMessage(t, e));
+        }
+      },
+    },
+  ]);
+
   if (!settings) return <ActivityIndicator color={colors.primary} />;
 
   const dayName = (day: number) => new Date(2026, 9, 18 + day).toLocaleDateString(i18n.language, { weekday: 'long' });
@@ -307,6 +322,13 @@ export default function AdminSettingsPanel({ api, colors, isDark, serverUrl }: P
             colors={colors}
           />
         ))}
+      </View>
+
+      <View style={card}>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>{t('multi.admin_reset_help')}</Text>
+        <View style={styles.actions}>
+          <AdminButton label={t('multi.admin_reset')} onPress={reset} background={colors.dangerSoft} color={colors.danger} />
+        </View>
       </View>
     </View>
   );

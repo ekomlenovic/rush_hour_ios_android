@@ -903,6 +903,10 @@
     "admin_thresholds_help": "A game beyond a threshold is marked ⚠️ suspect, with the reason, for everyone to see. Nothing is punished without your decision.",
     "admin_less": "Decrease",
     "admin_more": "Increase",
+    "admin_reset": "Reset",
+    "admin_reset_help": "Puts all these settings back to the values of your docker-compose.yml. The invite code does not change.",
+    "admin_reset_title": "Reset the settings?",
+    "admin_reset_body": "Every setting goes back to the docker-compose.yml. The release time changes from the next challenge on.",
     "threshold": {
       "minMsPerMove": "Minimum time per move",
       "copyMinMoves": "\"Copied\": from (moves)",

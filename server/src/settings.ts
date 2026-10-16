@@ -68,6 +68,36 @@ export class SettingsError extends Error {
 
 const isNumber = (v: unknown, min: number, max: number) => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
 
+/**
+ * The release changes once the release time becomes `time` (null: RELEASE_TIME again).
+ * The challenge being played keeps its release: the new time applies from the next one on.
+ */
+function withReleaseTime(config: Config, settings: AdminSettings, time: string | null, now: number): ReleaseChange[] {
+  const schedule = scheduleOf(config, settings);
+  const from = addDays(currentChallengeDate(now, schedule), 1);
+  const changes = settings.releaseChanges;
+  const effective = changes.filter(c => c.from <= from).at(-1)?.releaseTime ?? null;
+  if (time === effective) return changes;
+  const next = time ?? config.releaseTime;
+  if (next !== releaseTimeOn(from, schedule) && zonedTimeToInstant(from, next, config.timeZone) - now < MIN_RELEASE_NOTICE_MS) {
+    throw new SettingsError('releaseTime', 'release_too_soon');
+  }
+  // The first change keeps the environment's time for the past, even if RELEASE_TIME changes later
+  const kept = changes.length ? changes.filter(c => c.from < from) : [{ from: '0000-01-01', releaseTime: config.releaseTime }];
+  return [...kept, { from, releaseTime: time }];
+}
+
+/**
+ * Back to the environment variables: the release time from the next challenge on,
+ * the rest at once. The invite code stays.
+ */
+export function resetSettings(db: Database, config: Config, now: number): AdminSettings {
+  const releaseChanges = withReleaseTime(config, loadSettings(db, config), null, now);
+  // The release changes stay, so that the challenges already out never move
+  setSetting(db, KEY, JSON.stringify(releaseChanges.length ? { releaseChanges } : {}));
+  return loadSettings(db, config);
+}
+
 /** Validates a change sent by the admin and saves it; returns the new settings */
 export function updateSettings(db: Database, config: Config, patch: Record<string, unknown>, now: number): AdminSettings {
   const current = loadSettings(db, config);
@@ -125,18 +155,7 @@ export function updateSettings(db: Database, config: Config, patch: Record<strin
   if ('releaseTime' in patch) {
     const time = patch.releaseTime;
     if (typeof time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new SettingsError('releaseTime');
-    // The challenge being played keeps its release: the new time applies from the next one on
-    const schedule = scheduleOf(config, current);
-    const from = addDays(currentChallengeDate(now, schedule), 1);
-    if (time !== releaseTimeOn(from, schedule)) {
-      if (zonedTimeToInstant(from, time, config.timeZone) - now < MIN_RELEASE_NOTICE_MS) {
-        throw new SettingsError('releaseTime', 'release_too_soon');
-      }
-      // The first change keeps the environment's time for the past, even if RELEASE_TIME changes later
-      const changes = next.releaseChanges.length ? next.releaseChanges.filter(c => c.from < from)
-        : [{ from: '0000-01-01', releaseTime: config.releaseTime }];
-      next.releaseChanges = [...changes, { from, releaseTime: time }];
-    }
+    next.releaseChanges = withReleaseTime(config, current, time, now);
     next.releaseTime = time;
   }
   // Only what the admin changed: the rest keeps following the environment
