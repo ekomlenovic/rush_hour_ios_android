@@ -92,6 +92,8 @@ export default function MultiplayerScreen() {
       setCompat(checkCompatibility(info, APP_VERSION));
       setToday(day);
       setClockOffset(day.serverNow - Date.now());
+      // The clock on screen may have stood still while a game was played
+      setNow(Date.now());
       setRefreshKey(k => k + 1);
     } catch (e) {
       setError(e);
@@ -106,11 +108,14 @@ export default function MultiplayerScreen() {
     void load();
   }, [load]));
 
-  // Countdowns, and the puzzle of a server that was just started
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 30_000);
+  // Countdowns; every second while a game runs, its time is on the Resume button
+  const gameRunning = today?.me?.status === 'playing' || !!today?.pending;
+  useFocusEffect(useCallback(() => {
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), gameRunning ? 1000 : 30_000);
     return () => clearInterval(timer);
-  }, []);
+  }, [gameRunning]));
+  // The puzzle of a server that was just started
   useEffect(() => {
     if (today?.status !== 'preparing') return;
     const retry = setTimeout(load, 5000);

@@ -257,7 +257,7 @@ Le jeu se joue entièrement avec VoiceOver (iOS) et TalkBack (Android).
 | L'indice est **annoncé** (véhicule et direction), pas seulement surligné | `handleHint` (`app/game.tsx`) |
 | La victoire, les succès et les missions terminées sont annoncés | `WinModal`, `AchievementToast` |
 | Option **« Lettres sur les véhicules »** (désactivée par défaut) pour distinguer les véhicules sans les couleurs | `showVehicleLetters` |
-| Les animations suivent le réglage système « Réduire les animations » | `ReducedMotionConfig` (`app/_layout.tsx`) |
+| Les animations suivent le réglage système « Réduire les animations » | comportement par défaut de Reanimated (`ReduceMotion.System`) ; ne pas ajouter de `ReducedMotionConfig` |
 | Créateur : « Ajouter au plateau » place le véhicule sur la **première case libre** (on ne peut pas glisser au lecteur d'écran) ; toucher deux fois fait pivoter, l'action « Supprimer » retire | `findFreeCell` (`utils/creatorGeometry.ts`) |
 | Tout nouveau bouton a un `accessibilityRole`, et un `accessibilityLabel` traduit s'il ne contient qu'une icône | clés `a11y.*` des fichiers de traduction |
 
