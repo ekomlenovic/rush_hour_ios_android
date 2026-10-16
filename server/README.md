@@ -77,6 +77,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 | `POST /recover` `{ recoveryCode }` | nouveau jeton pour un compte (l'ancien téléphone est déconnecté) |
 | `GET /me`, `PATCH /me` `{ pseudo }`, `DELETE /me` | mon compte ; supprimer efface aussi mes parties |
 | `POST /me/recovery` | nouveau code de récupération (l'ancien ne marche plus) |
+| `GET /invite` | code d'invitation, pour inviter un ami |
 | `GET /challenge/today` | défi en cours (sans le puzzle), ma partie, partie de la veille encore jouable (`pending`), résultats du jour |
 | `POST /challenge/start` `{ date? }` | commence le défi en cours, ou reprend une partie → le puzzle (sans son optimum) |
 | `POST /challenge/submit` `{ date, moves, clientMs?, backgroundMs? }` | envoie les coups `{ vehicleId, delta, t }` d'une victoire → coups, temps, rang, points |
