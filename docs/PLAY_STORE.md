@@ -18,7 +18,7 @@ Le multijoueur envoie des données **à un serveur choisi par le joueur** (hébe
 | Activité dans l'app → **Autres actions** (coups joués et leurs temps, scores) | Oui | Non | Oui | Fonctionnement de l'app, prévention de la fraude (anti-triche) |
 | Activité dans l'app → **Autres contenus générés par l'utilisateur** (signalements de pseudos) | Oui | Non | Oui | Fonctionnement de l'app |
 
-- « Partagée : Non » : la donnée part vers le serveur que **le joueur choisit lui-même** en le rejoignant, ce qui est un transfert à l'initiative de l'utilisateur. ⚠️ À relire au moment de remplir le formulaire : si Google considère l'hébergeur du serveur comme un tiers, cocher « Partagée » avec la même finalité.
+- « Partagée : Non » : la donnée part vers le serveur que **le joueur choisit lui-même** en le rejoignant, ce qui est un transfert à l'initiative de l'utilisateur.
 - Rien n'est utilisé pour la publicité, l'analyse ou le suivi.
 - L'adresse IP n'est pas une catégorie à déclarer à part : elle sert seulement à la connexion, le serveur ne la garde pas dans ses logs.
 
