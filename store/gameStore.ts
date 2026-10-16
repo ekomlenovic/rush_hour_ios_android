@@ -5,14 +5,14 @@ import * as Haptics from 'expo-haptics';
 import { sampleLevels } from '../data/sampleLevels';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
 import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
-import { DailyMissionsState, MissionCounter, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
+import { DailyMissionsState, MissionCounter, MissionReward, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
 import { getLocalDateString, daysBetween } from '../utils/date';
 import type {
   AppOpenInfo, AttemptStats, ChallengeDetails, ChallengeResult, Level, LevelProgress, LevelSaveState, PlayerStats, ThemeMode, Vehicle,
 } from './types';
 import { MAX_STREAK_FREEZES, settleStreak, advanceStreak } from './streak';
 import {
-  ACHIEVEMENT_XP, MISSIONS_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, weeklyWinXp,
+  ACHIEVEMENT_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp,
 } from '../data/progression';
 import { isArchiveDateAvailable } from '../utils/archives';
 import {
@@ -119,7 +119,7 @@ interface GameState {
   /** Today's missions and their counters */
   dailyMissions: DailyMissionsState | null;
   /** All missions of the day just completed, not shown to the player yet (not persisted) */
-  pendingMissionReward: { freezeGranted: boolean } | null;
+  pendingMissionReward: MissionReward | null;
 
   /** Last time the app was opened (ISO date YYYY-MM-DD) for comeback detection */
   lastOpenDate: string | null;
@@ -177,7 +177,7 @@ interface GameState {
   updateStreak: (dateKey: string) => void;
   recordAppOpen: () => AppOpenInfo;
   addStreakFreeze: () => boolean;
-  consumeMissionReward: () => { freezeGranted: boolean } | null;
+  consumeMissionReward: () => MissionReward | null;
   consumeLevelUps: () => number[];
   selectCosmetic: (kind: CosmeticKind, id: string) => boolean;
   markCosmeticsSeen: (keys: string[]) => void;
@@ -230,7 +230,7 @@ export const useGameStore = create<GameState>()(
         });
       };
 
-      /** Advances today's mission counters; completing them all grants a streak freeze */
+      /** Advances today's mission counters; completing them all grants XP and a streak freeze (more XP if the stock is full) */
       const bumpMissions = (increments: Partial<Record<MissionCounter, number>>) => {
         const state = get();
         const missions = getMissionsForDay(state.dailyMissions, getLocalDateString(new Date()));
@@ -250,8 +250,9 @@ export const useGameStore = create<GameState>()(
           stats: { ...state.stats, missionDaysCompleted: state.stats.missionDaysCompleted + 1 },
         });
         const freezeGranted = get().addStreakFreeze();
-        set({ pendingMissionReward: { freezeGranted } });
-        addXp(MISSIONS_XP);
+        const xp = missionsXp(freezeGranted);
+        set({ pendingMissionReward: { freezeGranted, xp } });
+        addXp(xp);
         get().checkAchievements();
       };
 
