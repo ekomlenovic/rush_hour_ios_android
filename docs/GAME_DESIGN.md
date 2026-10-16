@@ -159,6 +159,76 @@ Pour changer de téléphone sans perdre sa progression, **sans serveur ni compte
 
 > ⚠️ Un nouveau champ sauvegardé est exporté automatiquement. S'il est propre au téléphone, l'ajouter à `DEVICE_FIELDS`.
 
+## Multijoueur — entre amis, sur un serveur auto-hébergé
+
+Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`server/`) et y inviter ses amis. L'app reste hors ligne tant qu'on n'a rejoint aucun serveur, et le multijoueur n'a **aucun effet** sur le reste du jeu.
+
+### Principes
+
+| Règle | Implémentation |
+|---|---|
+| Aucun effet sur le streak, la carte, l'XP, les succès, les missions, les cosmétiques ; pas de notification | partie jouée hors du store du jeu (`app/multi/play.tsx`, `utils/multi/game.ts`) |
+| Pas de serveur central : l'app ne contacte que les serveurs ajoutés par le joueur, en **HTTPS** uniquement | `normalizeServerUrl` (`utils/multi/serverUrl.ts`) |
+| **Plusieurs serveurs**, une identité par serveur | `store/multiStore.ts` |
+| Identités (jeton, code de récupération) **jamais** dans le `.rushsave` : elles vivent dans un store à part | `useMultiStore` (clé `rush-hours-multi`) |
+| Version de l'API vérifiée : « mets à jour l'app » ou « le serveur est trop ancien » | `checkCompatibility` (`utils/multi/api.ts`), `API_VERSION` / `MIN_APP_VERSION` (`server/src/app.ts`) |
+| Liens `rush-hours://multi/join?server=…&code=…` (invitation) et `…&mode=recover` (récupération), ouverts par Expo Router sur l'écran prérempli | `buildInviteLink`, `buildRecoveryLink` |
+| QR codes **dessinés sur le téléphone** : un code d'invitation ou de récupération ne part jamais vers un service en ligne | `components/multi/QrCode.tsx` |
+
+### Défi multijoueur
+
+| Règle | Implémentation |
+|---|---|
+| **Pas** le défi du jour du téléphone : puzzle généré par le serveur avec une **graine secrète** (`SERVER_SECRET`), impossible à calculer à l'avance | `puzzleSeed` (`server/src/secrets.ts`) |
+| Généré **à l'avance** dans un worker (`PREGENERATE_AHEAD`), **sortie à heure fixe** (`RELEASE_TIME`, fuseau `TZ`) ; une journée va de sortie à sortie | `Challenges` (`server/src/challenges.ts`), `server/src/time.ts` |
+| Difficulté par jour de la semaine ; un changement ne touche que les puzzles **pas encore sortis** | `Challenges.ensure` |
+| **Un seul essai** : « Commencer » crée un ticket unique ; on reprend là où on s'était arrêté, le **chrono du serveur** continue | `POST /challenge/start` |
+| Pas d'indice, pas d'annuler, pas de recommencer ; **abandonner** possible | `app/multi/play.tsx` |
+| Le puzzle est envoyé **sans son optimum**, révélé une fois la partie finie | `puzzleFor` |
+| Victoire envoyée comme **journal de coups horodatés**, **rejoué** par le serveur avec les règles de l'app | `applyMoves` (`utils/moveLog.ts`), `POST /challenge/submit` |
+| Temps officiel = temps du **serveur** ; le temps du téléphone et le temps hors de l'app sont envoyés comme signaux | `submission` (`utils/multi/game.ts`) |
+| **Délai de grâce** (`GRACE_PERIOD`) : une partie commencée avant la sortie suivante peut être finie après, sinon elle est « non terminée » | `Challenges.deadline` |
+
+### Classements
+
+| Règle | Implémentation |
+|---|---|
+| Jour : **coups, puis temps** ; égalité parfaite = même rang ; puis en cours, non terminé, abandon | `rankDay` (`server/src/leaderboard.ts`) |
+| Semaine (ISO) et mois : **points** par jour, 10, 8, 6, 5, 4, 3, 2 puis 1 par victoire, 0 sinon | `RANK_POINTS`, `rankPeriod` |
+| Scores gardés pour toujours ; **coups** effacés après `REPLAY_RETENTION_DAYS` | `Challenges.purgeReplays` |
+
+### Anti-triche
+
+| Règle | Implémentation |
+|---|---|
+| Impossible par construction : faux score (rejeu), temps trafiqué (chrono serveur), puzzle préparé (graine secrète), deuxième essai (ticket), inconnu sans code d'invitation | |
+| **⚠️ Suspect**, automatique, **visible de tous avec sa raison** : trop rapide, « recopié » (longue pause puis solution parfaite au rythme régulier), horloge incohérente. Le joueur garde ses points | `analyzeGame` (`server/src/cheat.ts`) |
+| Seuils réglables par l'admin | `server/src/settings.ts` |
+| **Temps hors de l'app** : montré à l'admin seulement, **jamais un soupçon à lui seul** | `GET /admin/games` |
+| **🤡 Tricheur**, confirmé par l'admin après le replay : **garde son rang**, score barré, **0 point** ; les autres **ne remontent pas** | `rankDay` |
+| L'admin peut lever un soupçon ou annuler sa décision | `POST /admin/games/:id/verdict` |
+| Pas de détection multi-compte (faux positifs sur un réseau d'entreprise) ; un ami qui donne la solution reste possible | |
+
+### Replay
+
+| Règle | Implémentation |
+|---|---|
+| Voir la partie de quelqu'un **seulement une fois sa propre partie du jour finie** (gagnée ou abandonnée) ou le défi fermé ; l'admin toujours | `GET /replay/:id` |
+| Au **rythme réel** avec le chrono, ×1 / ×2 / ×4, coup par coup ; pauses de plus de 5 s **raccourcies et affichées** | `utils/multi/replay.ts`, `app/multi/replay.tsx` |
+
+### Comptes et modération
+
+| Règle | Implémentation |
+|---|---|
+| Rejoindre : adresse + **code d'invitation** + pseudo (2 à 20 caractères, unique sans tenir compte de la casse ni des accents) | `POST /join`, `pseudoKey` |
+| **Code de récupération** pour changer de téléphone (l'ancien est déconnecté) ; l'admin peut en donner un nouveau | `POST /recover`, `POST /admin/players/:id/transfer` |
+| **Signaler** un pseudo (à l'admin) et **bloquer** un joueur (masqué sur ce téléphone seulement) | `POST /reports`, `blocked` (`store/multiStore.ts`) |
+| **Supprimer ses données** depuis l'app ou depuis le web avec le code de récupération (Google Play) | `DELETE /me`, `/delete-account` (`server/src/deletePage.ts`) |
+| Admin : devenir admin avec `ADMIN_TOKEN` ; exclure, renommer, régénérer le code d'invitation, fermer les inscriptions, réserver les invitations, régler difficulté, conservation et seuils. Les réglages de l'app l'emportent sur l'environnement | `server/src/settings.ts`, `app/multi/admin.tsx` |
+| Pas de validation manuelle des inscriptions | |
+
+> ⚠️ Toute évolution qui change l'API doit monter `API_VERSION` (serveur et app), et `MIN_APP_VERSION` si une ancienne app ne peut plus jouer.
+
 ## Succès
 
 - Définis à un seul endroit : `data/achievements.ts`. Les **identifiants sont persistés** : ne jamais renommer un succès, seulement en ajouter.
@@ -197,7 +267,7 @@ Le jeu se joue entièrement avec VoiceOver (iOS) et TalkBack (Android).
 
 ## Roadmap
 
-Les évolutions prévues sont suivies dans l'epic #19 sur GitHub. Chacune doit respecter les règles ci-dessus.
+Les évolutions prévues sont suivies dans l'epic #19 sur GitHub (multijoueur : #46). Chacune doit respecter les règles ci-dessus.
 
 ## Tests
 
@@ -208,8 +278,9 @@ Les règles ci-dessus sont vérifiées par les tests de `__tests__/` (Jest). Tou
 | `npm test` | tous les tests |
 | `npm run test:tz` | les tests dans trois fuseaux horaires (New York, Paris, Auckland) : un bug de date peut ne se voir qu'à l'ouest de l'heure UTC (#20) |
 | `npm run typecheck` | vérification TypeScript |
+| `cd server && npm test` | tests du serveur multijoueur (Vitest) |
 
-La CI (`.github/workflows/tests.yml`) lance le typecheck et les tests dans les trois fuseaux sur chaque pull request.
+La CI (`.github/workflows/tests.yml`) lance le typecheck et les tests dans les trois fuseaux sur chaque pull request. `.github/workflows/server.yml` teste le serveur et publie son image Docker sur GHCR (`:multi` depuis la branche `multi`, `:latest` depuis `main`).
 
 Le build de l'app (`.github/workflows/build.yml`) ne se lance **qu'à la main** (Actions → Run workflow). Lancé sur `main`, il publie une release et met à jour les sources SideStore / Android ; lancé sur une autre branche, il ne fait que builder.
 

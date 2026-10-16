@@ -11,6 +11,8 @@ Serveur **auto-hébergé** pour s'affronter entre amis sur un **défi multijoueu
 
 Il faut une machine avec Docker, un nom de domaine (par exemple duckdns) et un reverse proxy en **HTTPS** (nginx, Caddy…). L'app refuse les serveurs en `http://`.
 
+> 💡 Le plus simple : dans l'app, **Multijoueur → Créer mon serveur**. Le guide pas à pas génère le `docker-compose.yml` et le site nginx avec tes réglages, puis **teste la connexion** depuis le téléphone.
+
 1. Copier [`docker-compose.yml`](docker-compose.yml) et remplir `SERVER_SECRET` et `ADMIN_TOKEN` avec deux longues valeurs aléatoires :
    ```sh
    openssl rand -hex 32
@@ -29,7 +31,7 @@ Il faut une machine avec Docker, un nom de domaine (par exemple duckdns) et un r
        server_name monserveur.duckdns.org;
        # ssl_certificate … (Let's Encrypt)
 
-       location /api/ {
+       location / {
            limit_req zone=rushhours burst=20 nodelay;
            proxy_pass http://127.0.0.1:3000;
            proxy_set_header Host $host;
@@ -38,7 +40,9 @@ Il faut une machine avec Docker, un nom de domaine (par exemple duckdns) et un r
        }
    }
    ```
-4. Vérifier : `https://monserveur.duckdns.org/api/v1/info` doit répondre.
+   Le certificat : par exemple `sudo certbot certonly --nginx -d monserveur.duckdns.org`.
+4. Vérifier : `https://monserveur.duckdns.org/api/v1/info` doit répondre (ou « Tester la connexion » dans l'app).
+5. Rejoindre son serveur depuis l'app avec le code d'invitation, puis **Mon compte → Devenir admin** avec `ADMIN_TOKEN`.
 
 **Mise à jour** : `docker compose pull && docker compose up -d`. **Sauvegarde** : le volume `rush-hours-data` (un fichier SQLite).
 
@@ -79,6 +83,13 @@ Calculés à l'envoi d'une victoire, visibles de tous avec leur raison. Le joueu
 | Horloge incohérente : le temps du téléphone et celui du serveur diffèrent de plus de 15 s ou 10 % (app modifiée) | |
 
 Le **temps passé hors de l'app** est montré à l'admin seulement : ce n'est jamais un soupçon à lui seul.
+
+## Supprimer un compte
+
+- Dans l'app : Multijoueur → Mon compte → **Supprimer mes données**.
+- Sur le web, sans l'app : **`https://<ton serveur>/delete-account`**, avec le code de récupération (exigence de Google Play). Page sans script, tentatives limitées.
+
+Le compte et toutes ses parties sont effacés. Rien n'est envoyé ailleurs que sur ce serveur.
 
 ## Sécurité
 

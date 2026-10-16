@@ -286,6 +286,7 @@ describe('translations of the multiplayer mode', () => {
     expect(Object.keys(multi.report_reason).sort()).toEqual(['cheating', 'other', 'pseudo']);
     expect(Object.keys(multi.flag).sort()).toEqual(['clock_mismatch', 'copied', 'too_fast', 'unknown']);
     expect([multi.admin_filter_suspects, multi.admin_filter_all].every(v => typeof v === 'string')).toBe(true);
+    expect(Object.keys(multi.setup_test_fail).sort()).toEqual(['address', 'reach', 'server', 'version']);
   });
 
   it('every suspicion signal of the server is explained', () => {
@@ -359,5 +360,61 @@ describe('replay of a multiplayer game', () => {
   it('the clock shows the game time of the last move played', () => {
     expect(timeAt(log, 0)).toBe(0);
     expect(timeAt(log, 3)).toBe(83_000);
+  });
+});
+
+describe('create my server', () => {
+  const { buildCompose, buildNginx, domainOf, SECRET_PLACEHOLDER } = require('../utils/multi/serverSetup') as typeof import('../utils/multi/serverSetup');
+  const { testConnection } = require('../utils/multi/connectionTest') as typeof import('../utils/multi/connectionTest');
+  const fs = require('fs') as typeof import('fs');
+  const path = require('path') as typeof import('path');
+  const choices = { name: 'Les amis du jeudi', timeZone: 'Europe/Paris', releaseTime: '18:30', difficulty: 'HARD,SUNDAY=EXPERT' };
+
+  const envKeys = (yaml: string) => [...yaml.matchAll(/^ {6}([A-Z_]+):/gm)].map(m => m[1]);
+
+  it('the docker-compose.yml of the guide has the same settings as the one of the server', () => {
+    const reference = fs.readFileSync(path.join(__dirname, '../server/docker-compose.yml'), 'utf8');
+    expect(envKeys(buildCompose(choices))).toEqual(envKeys(reference));
+  });
+
+  it('is filled with the choices of the player, the secrets left to paste', () => {
+    const compose = buildCompose(choices);
+    expect(compose).toContain('SERVER_NAME: "Les amis du jeudi"');
+    expect(compose).toContain('RELEASE_TIME: "18:30"');
+    expect(compose).toContain('DIFFICULTY: "HARD,SUNDAY=EXPERT"');
+    expect(compose.match(new RegExp(SECRET_PLACEHOLDER, 'g'))).toHaveLength(2);
+    // A quote in the name cannot break the file
+    expect(buildCompose({ ...choices, name: 'Le "club"' })).toContain('SERVER_NAME: "Le club"');
+    expect(buildCompose({ ...choices, name: '  ' })).toContain('SERVER_NAME: "Rush Hours"');
+  });
+
+  it('the nginx site uses the domain of the player', () => {
+    expect(domainOf(' https://EkRushHours.duckdns.org/api/v1 ')).toBe('ekrushhours.duckdns.org');
+    const site = buildNginx('https://ekrushhours.duckdns.org/');
+    expect(site).toContain('server_name ekrushhours.duckdns.org;');
+    expect(site).toContain('/etc/letsencrypt/live/ekrushhours.duckdns.org/fullchain.pem');
+    expect(site).toContain('proxy_pass http://127.0.0.1:3000;');
+  });
+
+  const answer = (status: number, body?: unknown) => jest.fn().mockResolvedValue({
+    status, ok: status >= 200 && status < 300,
+    json: async () => { if (body === undefined) throw new Error('not json'); return body; },
+  });
+
+  it('a working server', async () => {
+    const result = await testConnection('ekrushhours.duckdns.org', '1.1.6', answer(200, { name: 'EK', apiVersion: 1, minAppVersion: '1.1.6' }) as never);
+    expect(result).toEqual({ ok: true, url: 'https://ekrushhours.duckdns.org', info: { name: 'EK', apiVersion: 1, minAppVersion: '1.1.6' } });
+  });
+
+  it.each([
+    ['http://ekrushhours.duckdns.org', answer(200, {}), { step: 'address', error: 'not_https' }],
+    ['not a server', answer(200, {}), { step: 'address', error: 'invalid_url' }],
+    ['ekrushhours.duckdns.org', jest.fn().mockRejectedValue(new TypeError('Network request failed')), { step: 'reach', error: 'network' }],
+    ['ekrushhours.duckdns.org', answer(502), { step: 'server', error: 'bad_response' }],
+    ['ekrushhours.duckdns.org', answer(404, { error: 'not_found' }), { step: 'server', error: 'not_found' }],
+    ['ekrushhours.duckdns.org', answer(200, { hello: 'nginx' }), { step: 'server', error: 'bad_response' }],
+    ['ekrushhours.duckdns.org', answer(200, { name: 'EK', apiVersion: 2, minAppVersion: '1.1.6' }), { step: 'version', error: 'update_app' }],
+  ])('%s: says which step fails', async (input, fetchMock, expected) => {
+    expect(await testConnection(input, '1.1.6', fetchMock as never)).toMatchObject({ ok: false, ...expected });
   });
 });
