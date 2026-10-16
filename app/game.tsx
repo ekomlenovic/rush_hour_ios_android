@@ -291,11 +291,7 @@ export default function GameScreen() {
           }));
         }
 
-        // Auto-clear hint highlight after 8 seconds
-        setTimeout(() => {
-          setHintVehicleId(null);
-          setHintRemainingMoves(null);
-        }, 8000);
+        // The highlight stays until the next touch on the screen (see handleScreenTouch)
       } else {
         haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       }
@@ -307,6 +303,13 @@ export default function GameScreen() {
     }
   }, [vehicles, currentLevel, won, isHintLoading, recordHintUsed, t]);
 
+  // Any touch on the screen dismisses the hint highlight
+  const handleScreenTouch = useCallback(() => {
+    if (hintVehicleId === null) return;
+    setHintVehicleId(null);
+    setHintRemainingMoves(null);
+  }, [hintVehicleId]);
+
   const minMoves = computedMinMoves ?? currentLevel?.minMoves ?? 0;
   const score = calculateScore(moveCount, minMoves);
   const stars = getStars(moveCount, minMoves);
@@ -317,7 +320,7 @@ export default function GameScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]} onTouchStart={handleScreenTouch}>
       {/* Header */}
       <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
