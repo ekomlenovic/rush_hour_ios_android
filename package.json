@@ -12,6 +12,7 @@
     "test:tz": "TZ=America/New_York jest && TZ=Europe/Paris jest && TZ=Pacific/Auckland jest"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "babel-preset-expo": "~57.0.0",
     "expo": "^57.0.26",
