@@ -275,7 +275,7 @@ export interface CarSkin {
 }
 
 export const CAR_SKINS: Record<CarSkinId, CarSkin> = {
-  classic: {},
+  classic: { icon: '🚗' },
   taxi: { color: '#FACC15', icon: '🚕' },
   bus: { color: '#F59E0B', icon: '🚌' },
   police: { color: '#1E3A8A', icon: '🚓' },
