@@ -461,7 +461,14 @@
     "denied_body": "Allow notifications for Rush Hours in your phone settings to get reminders.",
     "prompt_title": "A little reminder? 🔔",
     "prompt_body": "Want a daily reminder so you never miss the daily challenge and keep your streak? You can change the time in the options.",
-    "prompt_yes": "Yes, remind me"
+    "prompt_yes": "Yes, remind me",
+    "test": "Test reminders",
+    "test_desc": "Sends a notification in a few seconds",
+    "test_button": "Test",
+    "test_sent_title": "Notification sent 🔔",
+    "test_sent_body_one": "It arrives in {{count}} second, even if you leave the app.",
+    "test_sent_body_other": "It arrives in {{count}} seconds, even if you leave the app.",
+    "test_failed_body": "Notifications are not available: allow them in the phone settings (they do not work in Expo Go on Android)."
   },
   "a11y": {
     "target_car": "Red car, the one to get out",

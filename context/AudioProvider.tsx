@@ -69,8 +69,10 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       const baseGoal = isEnabled ? 0.4 : 0;
       let finalGoal = baseGoal;
 
-      // Soft Loop Logic: Fade out at end, fade in at start
-      if (isEnabled && duration > 0) {
+      // Soft Loop Logic: Fade out at end, fade in at start. Only while playing: once the
+      // track is loaded and before it plays, currentTime is 0 so the goal would be 0, the
+      // volume never rises and play() never runs (no music at all)
+      if (isEnabled && player.playing && duration > 0) {
         const FADE_DURATION = 3;
         if (currentTime < FADE_DURATION) {
           finalGoal = (currentTime / FADE_DURATION) * baseGoal;
@@ -92,7 +94,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       // Handle play/pause with safety checks. 
       // We no longer need the isActive check here because the interval 
       // is guaranteed to be destroyed when the app is backgrounded.
-      if (isEnabled && player.volume > 0 && !player.playing) {
+      if (isEnabled && !player.playing) {
         player.play();
       } else if (!isEnabled && player.playing && player.volume <= 0.01) {
         player.pause();
