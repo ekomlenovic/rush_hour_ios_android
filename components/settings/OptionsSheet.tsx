@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Switch, Alert, Modal, ScrollView } from 'react-native';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
@@ -34,6 +35,7 @@ interface Props {
 export default function OptionsSheet({ visible, colors, showMapLevels = false, onClose }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const isHapticsEnabled = useGameStore(s => s.isHapticsEnabled);
   const toggleHapticsEnabled = useGameStore(s => s.toggleHapticsEnabled);
   const showVehicleLetters = useGameStore(s => s.showVehicleLetters);
@@ -168,6 +170,23 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
             }}
             scrollEventThrottle={16}
           >
+            <View style={settingsStyles.settingRow}>
+              <View style={settingsStyles.settingText}>
+                <Text style={[settingsStyles.settingLabel, { color: colors.text }]}>{t('home.how_to_play')}</Text>
+                <Text style={[settingsStyles.settingSub, { color: colors.textMuted }]}>{t('home.how_to_play_desc')}</Text>
+              </View>
+              <Pressable
+                onPress={() => {
+                  onClose();
+                  router.push('/tutorial');
+                }}
+                accessibilityRole="button"
+                style={[styles.updateButton, { backgroundColor: colors.card }]}
+              >
+                <Text style={[styles.updateButtonText, { color: colors.primaryText }]}>{t('home.open')}</Text>
+              </Pressable>
+            </View>
+
             <View style={settingsStyles.settingRow}>
               <View style={settingsStyles.settingText}>
                 <Text style={[settingsStyles.settingLabel, { color: colors.text }]}>{t('common.language')}</Text>
