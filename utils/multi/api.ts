@@ -211,6 +211,7 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
       settings: () => call<AdminSettings>('GET', '/admin/settings'),
       updateSettings: (patch: AdminSettingsPatch) =>
         call<AdminSettings>('PATCH', '/admin/settings', patch),
+      resetSettings: () => call<AdminSettings>('POST', '/admin/settings/reset'),
     },
   };
 }

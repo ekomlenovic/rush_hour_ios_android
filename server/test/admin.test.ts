@@ -418,3 +418,55 @@ describe('server, grace period and pregeneration', () => {
     expect(challenges.get('2026-10-20')).toBeUndefined();
   });
 });
+
+describe('reset', () => {
+  it('everything goes back to the environment, but the invite code', async () => {
+    const s = open();
+    const admin = await s.joinAdmin();
+    const code = (await s.request('POST', '/admin/invite', admin.token)).body.inviteCode;
+    await s.request('PATCH', '/admin/settings', admin.token, {
+      joinOpen: false, serverName: 'Copains', gracePeriodMs: 0, pregenerateAheadMs: 3_600_000,
+      difficultyByWeekday: Array(7).fill('EXPERT'), replayRetentionDays: 30, thresholds: { minMsPerMove: 100 },
+    });
+    const res = await s.request('POST', '/admin/settings/reset', admin.token);
+    expect(res.body).toMatchObject({
+      joinOpen: true, invitesAdminOnly: false, serverName: 'Rush Hours', gracePeriodMs: 3_600_000,
+      pregenerateAheadMs: 48 * 3_600_000, replayRetentionDays: 7, releaseTime: '12:00',
+      difficultyByWeekday: ['NORMAL', 'HARD', 'NORMAL', 'NORMAL', 'NORMAL', 'NORMAL', 'NORMAL'],
+      thresholds: { minMsPerMove: 600 },
+    });
+    expect((await s.request('GET', '/invite', admin.token)).body.inviteCode).toBe(code);
+  });
+
+  it('the release time goes back from the next challenge on, and follows RELEASE_TIME again', async () => {
+    const s = open();
+    const admin = await s.joinAdmin();
+    await s.request('PATCH', '/admin/settings', admin.token, { releaseTime: '18:00' });
+    s.clock.now = paris('2026-10-18', '20:00');
+    const res = await s.request('POST', '/admin/settings/reset', admin.token);
+    expect(res.body).toMatchObject({ releaseTime: '12:00', nextReleaseAt: paris('2026-10-19', '12:00') });
+    expect(s.challenges.releaseAt('2026-10-17')).toBe(paris('2026-10-17', '18:00'));
+    expect(s.challenges.closesAt('2026-10-18')).toBe(paris('2026-10-19', '12:00'));
+    // Restarted with another RELEASE_TIME: the coming challenges follow it, the past stays
+    const config = testConfig({ RELEASE_TIME: '07:00' });
+    const schedule = scheduleOf(config, loadSettings(s.db, config));
+    expect(releaseAt('2026-10-16', schedule)).toBe(paris('2026-10-16', '12:00'));
+    expect(releaseAt('2026-10-17', schedule)).toBe(paris('2026-10-17', '18:00'));
+    expect(releaseAt('2026-10-19', schedule)).toBe(paris('2026-10-19', '07:00'));
+  });
+
+  it('is refused when the next challenge would come out in less than 1 h', async () => {
+    const s = open();
+    const admin = await s.joinAdmin();
+    await s.request('PATCH', '/admin/settings', admin.token, { releaseTime: '18:00', joinOpen: false });
+    s.clock.now = paris('2026-10-18', '11:30');
+    expect((await s.request('POST', '/admin/settings/reset', admin.token)).body).toEqual({ error: 'release_too_soon', field: 'releaseTime' });
+    expect((await s.request('GET', '/admin/settings', admin.token)).body).toMatchObject({ joinOpen: false, releaseTime: '18:00' });
+  });
+
+  it('is for the admin only', async () => {
+    const { join, request } = open();
+    const leo = await join('Léo');
+    expect((await request('POST', '/admin/settings/reset', leo.token)).body).toEqual({ error: 'forbidden' });
+  });
+});

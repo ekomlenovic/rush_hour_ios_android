@@ -903,6 +903,10 @@
     "admin_thresholds_help": "Une partie qui dépasse un seuil est marquée ⚠️ suspecte, avec la raison, visible de tous. Rien n'est puni sans ta décision.",
     "admin_less": "Diminuer",
     "admin_more": "Augmenter",
+    "admin_reset": "Réinitialiser",
+    "admin_reset_help": "Remet tous ces réglages aux valeurs de ton docker-compose.yml. Le code d'invitation ne change pas.",
+    "admin_reset_title": "Réinitialiser les réglages ?",
+    "admin_reset_body": "Tous les réglages reviennent à ceux du docker-compose.yml. L'heure de sortie change à partir du prochain défi.",
     "threshold": {
       "minMsPerMove": "Temps minimum par coup",
       "copyMinMoves": "« Recopié » : à partir de (coups)",

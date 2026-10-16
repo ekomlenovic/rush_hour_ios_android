@@ -73,7 +73,7 @@ Dans l'app : Multijoueur → Mon compte → **Devenir admin**, avec `ADMIN_TOKEN
 - renommer le serveur, régler l'**heure de sortie**, le **délai de grâce** et la **pré-génération** ;
 - régler la **difficulté** par jour, la **conservation des replays** et les **seuils de soupçon**.
 
-Un réglage changé dans l'app l'emporte ensuite sur sa variable d'environnement. Les secrets (`SERVER_SECRET`, `ADMIN_TOKEN`), le fuseau `TZ` et `PORT`, `HOST`, `DATA_DIR`, `TRUST_PROXY` ne se règlent que dans le `docker-compose.yml`.
+Un réglage changé dans l'app l'emporte ensuite sur sa variable d'environnement. Les secrets (`SERVER_SECRET`, `ADMIN_TOKEN`), le fuseau `TZ` et `PORT`, `HOST`, `DATA_DIR`, `TRUST_PROXY` ne se règlent que dans le `docker-compose.yml`. Le bouton **Réinitialiser** remet tous les réglages aux valeurs du `docker-compose.yml` (l'heure de sortie à partir du prochain défi, le code d'invitation ne change pas).
 
 ### Soupçons automatiques (⚠️)
 
@@ -126,6 +126,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 | `GET /admin/reports`, `DELETE /admin/reports/:id` | signalements |
 | `POST /admin/invite` | nouveau code d'invitation |
 | `GET /admin/settings`, `PATCH /admin/settings` | nom, heure de sortie (`release_too_soon` si le prochain défi sortirait dans moins d'une heure), délai de grâce, pré-génération, inscriptions, invitations, difficulté, conservation des replays, seuils. La réponse donne aussi `timeZone` et `nextReleaseAt` |
+| `POST /admin/settings/reset` | retour aux variables d'environnement (sauf le code d'invitation) |
 
 ## Développement
 
