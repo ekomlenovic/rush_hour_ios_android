@@ -1,4 +1,5 @@
-import { DIFFICULTY_LEVELS, generateDailyLevel, generateLevel, generateWeeklyLevel, transformLevel } from '../utils/generator';
+import { DIFFICULTY_LEVELS, generateDailyLevel, generateLevel, transformLevel } from '../utils/generator';
+import { generateWeeklyLevel } from '../utils/weekly';
 import { solvePuzzle } from '../utils/solver';
 import { checkWin } from '../utils/collision';
 import { sampleLevels } from '../data/sampleLevels';
