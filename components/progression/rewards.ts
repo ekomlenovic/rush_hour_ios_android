@@ -3,11 +3,17 @@ import { getFreezeCapacity, getLevelUpReward } from '@/data/progression';
 import type { MissionReward } from '@/data/missions';
 import { getLevelCosmetics } from '@/data/cosmetics';
 
-/** What reaching a player level gives, one line per reward */
-export function getLevelRewardLines(t: TFunction, level: number): string[] {
-  const lines = [t('progression.reward_freeze')];
+/**
+ * What reaching a player level gives, one line per reward.
+ * `freezes`: the current stock, to say when it is full (a freeze may still be used before the level is reached).
+ */
+export function getLevelRewardLines(t: TFunction, level: number, freezes?: number): string[] {
+  const capacity = getFreezeCapacity(level);
+  const lines = [freezes !== undefined && freezes >= capacity
+    ? t('progression.reward_freeze_full', { count: freezes, capacity })
+    : t('progression.reward_freeze')];
   if (getLevelUpReward(level).freezeSlot) {
-    lines.push(t('progression.reward_slot', { count: getFreezeCapacity(level) }));
+    lines.push(t('progression.reward_slot', { count: capacity }));
   }
   for (const cosmetic of getLevelCosmetics(level)) {
     lines.push(t('progression.reward_cosmetic', { name: `${cosmetic.icon} ${t(`cosmetics.${cosmetic.kind}.${cosmetic.id}`)}` }));

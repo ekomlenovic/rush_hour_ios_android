@@ -2,55 +2,22 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameStore } from '@/store/gameStore';
-import { getFreezeCapacity, getPlayerLevel } from '@/data/progression';
 import PlayerLevelCard from '@/components/progression/PlayerLevelCard';
+import StreakCard from '@/components/profile/StreakCard';
+import AchievementsSection from '@/components/profile/AchievementsSection';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
-import { getLocalDateString, formatDuration, parseLocalDateString } from '@/utils/date';
-import { isArchiveDateAvailable } from '@/utils/archives';
-import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, buildAchievementContext } from '@/data/achievements';
-import { fixedColors, useTheme } from '@/theme';
-
-
-function getCalendarDays() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayStr = getLocalDateString(today);
-
-  // Monday-first day of week: 0=Mon, ..., 6=Sun
-  const todayDow = (today.getDay() + 6) % 7;
-
-  // Start from Monday, 4 weeks before this week's Monday
-  const startDate = new Date(today);
-  startDate.setDate(today.getDate() - todayDow - 28);
-
-  const days = [];
-  for (let i = 0; i < 35; i++) {
-    const d = new Date(startDate);
-    d.setDate(startDate.getDate() + i);
-    const dateString = getLocalDateString(d);
-    days.push({
-      date: d,
-      dateString,
-      isToday: dateString === todayStr,
-      isFuture: d > today,
-    });
-  }
-  return days;
-}
+import { formatDuration, formatPlayTime } from '@/utils/date';
+import { ACHIEVEMENTS, buildAchievementContext } from '@/data/achievements';
+import { useTheme } from '@/theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { t, i18n } = useTranslation();
-  
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const { colors } = useTheme();
-  const bgColor = colors.background;
-  const textColor = colors.text;
-  const secondaryTextColor = colors.textMuted;
-  const cardColor = colors.surface;
-  const borderColor = colors.border;
-  const accentColor = colors.primary;
 
   const progress = useGameStore((state) => state.progress || []);
   const currentStreak = useGameStore((state) => state.currentStreak || 0);
@@ -62,11 +29,6 @@ export default function ProfileScreen() {
   const archiveProgress = useGameStore((state) => state.archiveProgress || {});
   const createdLevels = useGameStore((state) => state.createdLevels);
   const stats = useGameStore((state) => state.stats);
-  const streakFreezes = useGameStore((state) => state.streakFreezes);
-  const frozenDates = useGameStore((state) => state.frozenDates);
-  const frozenSet = useMemo(() => new Set(frozenDates), [frozenDates]);
-  const xp = useGameStore((state) => state.xp);
-  const freezeCapacity = getFreezeCapacity(getPlayerLevel(xp));
 
   const totalStars = useMemo(() => progress.reduce((sum, p) => sum + (p.stars || 0), 0), [progress]);
   const context = useMemo(
@@ -75,187 +37,91 @@ export default function ProfileScreen() {
   );
   const perfectRate = context.completedLevels > 0 ? Math.round((context.perfectLevels / context.completedLevels) * 100) : 0;
 
-  const days = useMemo(() => getCalendarDays(), []);
-  const weekDays = [
-    t('profile.mon', 'L'),
-    t('profile.tue', 'M'),
-    t('profile.wed', 'M'),
-    t('profile.thu', 'J'),
-    t('profile.fri', 'V'),
-    t('profile.sat', 'S'),
-    t('profile.sun', 'D'),
+  const keyNumbers = [
+    { value: String(currentStreak), label: t('profile.key_streak', { count: currentStreak }), color: colors.warning },
+    { value: String(bestStreak), label: t('profile.key_best_streak'), color: colors.warning },
+    { value: String(totalStars), label: t('profile.key_stars', { count: totalStars }), color: colors.starText },
+    { value: `${achievements.length}/${ACHIEVEMENTS.length}`, label: t('profile.key_achievements'), color: colors.primaryText },
+  ];
+
+  const statGroups = [
+    {
+      title: t('profile.group_campaign'),
+      rows: [
+        [t('profile.levels_won'), String(context.completedLevels)],
+        [t('profile.stars'), String(totalStars)],
+        [t('profile.perfect_rate'), `${perfectRate} %`],
+        [t('profile.no_hint_levels'), String(context.noHintLevels)],
+      ],
+    },
+    {
+      title: t('profile.group_challenges'),
+      rows: [
+        [t('profile.dailies_won'), String(context.dailies)],
+        [t('profile.fastest_daily'), context.fastestDailyMs !== null ? formatDuration(context.fastestDailyMs) : '—'],
+        [t('profile.weeklies_won'), String(context.weeklies)],
+        [t('profile.archives_won'), String(context.archives)],
+      ],
+    },
+    {
+      title: t('profile.group_game'),
+      rows: [
+        [t('profile.play_time'), formatPlayTime(stats.totalPlayTimeMs)],
+        [t('profile.total_moves'), String(stats.totalMoves)],
+        [t('profile.hints_used'), String(totalHintsUsed)],
+      ],
+    },
   ];
 
   return (
-    <View style={[styles.container, { backgroundColor: bgColor }]}>
-      <View style={[styles.header, { borderBottomColor: borderColor }]}>
-        <Text style={[styles.title, { color: textColor }]} accessibilityRole="header">{t('profile.title', 'Profile')}</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + RFValue(12) }]}>
+        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('profile.title')}</Text>
         <Pressable onPress={() => router.back()} style={styles.closeButton} accessibilityRole="button" hitSlop={8}>
-          <Text style={{ color: colors.primaryText, fontSize: RFValue(16), fontWeight: '600' }}>{t('common.close')}</Text>
+          <Text style={[styles.closeText, { color: colors.primaryText }]}>{t('common.close')}</Text>
         </Pressable>
       </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <Animated.View entering={FadeInDown.delay(50).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>{t('progression.player_level')}</Text>
-          <PlayerLevelCard colors={colors} onSeeAll={() => router.push('/progression')} />
-        </Animated.View>
-
-        <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>{t('profile.stats', 'Statistics')}</Text>
-          <View style={styles.statsGrid}>
-            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>{context.completedLevels}</Text>
-              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.levels_completed', 'Levels Completed')}</Text>
-            </View>
-            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>{totalStars}</Text>
-              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.total_stars', 'Total Stars')}</Text>
-            </View>
-            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>🔥 {currentStreak}</Text>
-              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.current_streak', 'Current Streak')}</Text>
-            </View>
-            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>{bestStreak}</Text>
-              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.best_streak', 'Best Streak')}</Text>
-            </View>
-            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>❄️ {streakFreezes}/{freezeCapacity}</Text>
-              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.streak_freezes')}</Text>
-            </View>
-            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>{context.dailies}</Text>
-              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.dailies_completed', 'Dailies Completed')}</Text>
-            </View>
-            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>💡 {totalHintsUsed}</Text>
-              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.hints_used', 'Hints Used')}</Text>
-            </View>
-            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>⏳ {formatDuration(stats.totalPlayTimeMs)}</Text>
-              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.play_time')}</Text>
-            </View>
-            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>{perfectRate}%</Text>
-              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.perfect_rate')}</Text>
-            </View>
-            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>{context.noHintLevels}</Text>
-              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.no_hint_levels')}</Text>
-            </View>
-            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>{stats.totalMoves}</Text>
-              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.total_moves')}</Text>
-            </View>
-            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>
-                {context.fastestDailyMs !== null ? formatDuration(context.fastestDailyMs) : '—'}
-              </Text>
-              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.fastest_daily')}</Text>
-            </View>
-            <View style={[styles.statCard, { backgroundColor: cardColor, borderColor }]}>
-              <Text style={[styles.statValue, { color: textColor }]}>{context.weeklies}</Text>
-              <Text style={[styles.statLabel, { color: secondaryTextColor }]}>{t('profile.weeklies_completed')}</Text>
-            </View>
-          </View>
-        </Animated.View>
-
-        <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>{t('profile.streak_calendar', 'Streak Calendar')}</Text>
-          <View style={[styles.calendarCard, { backgroundColor: cardColor, borderColor }]}>
-            <View style={styles.calendarRow}>
-              {weekDays.map((day, i) => (
-                <Text key={i} style={[styles.weekDayText, { color: secondaryTextColor }]}>{day}</Text>
+      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + RFValue(40) }]}>
+        <Animated.View entering={FadeInDown.delay(50).duration(400)}>
+          <PlayerLevelCard colors={colors} ring onSeeAll={() => router.push('/progression')}>
+            <View style={styles.keyNumbers}>
+              {keyNumbers.map(item => (
+                <View key={item.label} style={[styles.keyNumber, { backgroundColor: colors.card }]} accessible accessibilityLabel={`${item.value} ${item.label}`}>
+                  <Text style={[styles.keyValue, { color: item.color }]}>{item.value}</Text>
+                  <Text style={[styles.keyLabel, { color: colors.textMuted }]}>{item.label}</Text>
+                </View>
               ))}
             </View>
-            {[0, 1, 2, 3, 4].map((weekIdx) => (
-              <View key={weekIdx} style={styles.calendarRow}>
-                {days.slice(weekIdx * 7, weekIdx * 7 + 7).map((day) => {
-                  if (day.isFuture) {
-                    return <View key={day.dateString} style={[styles.calendarCell, { backgroundColor: 'transparent' }]} />;
-                  }
-                  const daily = dailyChallengeProgress?.[day.dateString];
-                  const cellBgColor = daily?.completed
-                    ? colors.dailyStars[daily.stars - 1] ?? colors.dailyStars[2]
-                    : frozenSet.has(day.dateString) ? colors.frozen
-                    : borderColor;
-                  const cellStyle = [
-                    styles.calendarCell,
-                    {
-                      backgroundColor: cellBgColor,
-                      borderColor: day.isToday ? accentColor : 'transparent',
-                      borderWidth: day.isToday ? 2 : 0,
-                    },
-                  ];
-                  // A past day opens its daily from the archives
-                  if (!isArchiveDateAvailable(day.dateString)) {
-                    return <View key={day.dateString} style={cellStyle} />;
-                  }
-                  return (
-                    <Pressable
-                      key={day.dateString}
-                      onPress={() => router.push(`/game?levelId=archive&date=${day.dateString}`)}
-                      style={({ pressed }) => [...cellStyle, pressed && { opacity: 0.6 }]}
-                      accessibilityRole="button"
-                      accessibilityLabel={parseLocalDateString(day.dateString).toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' })}
-                      accessibilityHint={t('archives.day_hint')}
-                    />
-                  );
-                })}
-              </View>
-            ))}
-            <Text style={[styles.calendarHint, { color: secondaryTextColor }]}>{t('profile.calendar_hint')}</Text>
-          </View>
-          <Pressable
-            onPress={() => router.push('/archives')}
-            style={({ pressed }) => [styles.archivesButton, { backgroundColor: cardColor, borderColor, opacity: pressed ? 0.7 : 1 }]}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.archivesButtonText, { color: colors.primaryText }]}>🗄️ {t('profile.archives')} →</Text>
-          </Pressable>
+          </PlayerLevelCard>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(300).duration(400)} style={[styles.section, { paddingBottom: RFValue(40) }]}>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>
-            {t('profile.achievements', 'Achievements')} · {achievements.length}/{ACHIEVEMENTS.length}
-          </Text>
-          {ACHIEVEMENT_CATEGORIES.map((category) => (
-            <View key={category} style={styles.achievementCategory}>
-              <Text style={[styles.categoryTitle, { color: secondaryTextColor }]}>{t(`achievements.categories.${category}`)}</Text>
-              <View style={styles.achievementsList}>
-                {ACHIEVEMENTS.filter(a => a.category === category).map((ach) => {
-                  const isUnlocked = achievements.includes(ach.id);
-                  const isSecret = ach.hidden && !isUnlocked;
-                  const current = Math.min(ach.value(context), ach.target);
-                  const showProgress = !isUnlocked && !isSecret && ach.target > 1;
-                  return (
-                    <View key={ach.id} style={[styles.achievementCard, { backgroundColor: cardColor, borderColor }]}>
-                      <View style={[styles.achievementIconContainer, { opacity: isUnlocked ? 1 : 0.4 }]}>
-                        <Text style={styles.achievementIcon}>{isUnlocked ? ach.icon : '🔒'}</Text>
-                      </View>
-                      <View style={styles.achievementTextContainer}>
-                        <Text style={[styles.achievementName, { color: textColor, opacity: isUnlocked ? 1 : 0.6 }]}>
-                          {isSecret ? '???' : t(`achievements.${ach.id}`)}
-                        </Text>
-                        <Text style={[styles.achievementDesc, { color: secondaryTextColor, opacity: isUnlocked ? 1 : 0.6 }]}>
-                          {isSecret ? t('achievements.secret_desc') : t(`achievements.${ach.id}_desc`)}
-                        </Text>
-                        {showProgress && (
-                          <View style={styles.progressRow}>
-                            <View style={[styles.progressTrack, { backgroundColor: borderColor }]}>
-                              <View style={[styles.progressFill, { width: `${(current / ach.target) * 100}%`, backgroundColor: accentColor }]} />
-                            </View>
-                            <Text style={[styles.progressText, { color: secondaryTextColor }]}>{current}/{ach.target}</Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
+        <Animated.View entering={FadeInDown.delay(100).duration(400)}>
+          <StreakCard colors={colors} />
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(150).duration(400)} style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]} accessibilityRole="header">{t('profile.stats')}</Text>
+          {statGroups.map(group => (
+            <View key={group.title} style={[styles.statGroup, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.groupTitle, { color: colors.textMuted }]}>{group.title}</Text>
+              {group.rows.map(([label, value], i) => (
+                <View
+                  key={label}
+                  style={[styles.statRow, i < group.rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}
+                  accessible
+                  accessibilityLabel={`${label} : ${value}`}
+                >
+                  <Text style={[styles.statLabel, { color: colors.textMuted }]}>{label}</Text>
+                  <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+                </View>
+              ))}
             </View>
           ))}
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(200).duration(400)}>
+          <AchievementsSection colors={colors} context={context} />
         </Animated.View>
       </ScrollView>
     </View>
@@ -270,10 +136,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: RFValue(50),
     paddingBottom: RFValue(15),
     borderBottomWidth: 1,
-    position: 'relative',
   },
   title: {
     fontSize: RFValue(20),
@@ -285,151 +149,72 @@ const styles = StyleSheet.create({
     bottom: RFValue(15),
     padding: RFValue(5),
   },
+  closeText: {
+    fontSize: RFValue(16),
+    fontWeight: '600',
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     padding: RFValue(20),
+    gap: RFValue(20),
+  },
+  keyNumbers: {
+    flexDirection: 'row',
+    gap: RFValue(6),
+    marginTop: RFValue(8),
+  },
+  keyNumber: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: RFValue(10),
+    paddingHorizontal: RFValue(4),
+    borderRadius: RFValue(12),
+  },
+  keyValue: {
+    fontSize: RFValue(19),
+    fontWeight: '800',
+  },
+  keyLabel: {
+    fontSize: RFValue(11),
+    textAlign: 'center',
   },
   section: {
-    marginBottom: RFValue(24),
+    gap: RFValue(12),
   },
   sectionTitle: {
     fontSize: RFValue(18),
-    fontWeight: '600',
-    marginBottom: RFValue(12),
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  statCard: {
-    width: '48%',
-    padding: RFValue(16),
-    borderRadius: RFValue(12),
-    borderWidth: 1,
-    marginBottom: RFValue(12),
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: fixedColors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  statValue: {
-    fontSize: RFValue(24),
-    fontWeight: 'bold',
-    marginBottom: RFValue(4),
-  },
-  statLabel: {
-    fontSize: RFValue(12),
-    textAlign: 'center',
-  },
-  calendarCard: {
-    padding: RFValue(12),
-    borderRadius: RFValue(12),
-    borderWidth: 1,
-    shadowColor: fixedColors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  calendarRow: {
-    flexDirection: 'row',
-    marginBottom: RFValue(4),
-  },
-  weekDayText: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: RFValue(11),
-    fontWeight: '600',
-  },
-  calendarCell: {
-    flex: 1,
-    aspectRatio: 1,
-    borderRadius: RFValue(4),
-    marginHorizontal: RFValue(2),
-  },
-  calendarHint: {
-    fontSize: RFValue(12),
-    textAlign: 'center',
-    marginTop: RFValue(6),
-  },
-  archivesButton: {
-    marginTop: RFValue(12),
-    padding: RFValue(14),
-    borderRadius: RFValue(12),
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  archivesButtonText: {
-    fontSize: RFValue(15),
     fontWeight: '700',
   },
-  achievementCategory: {
-    marginBottom: RFValue(16),
+  statGroup: {
+    borderRadius: RFValue(16),
+    borderWidth: 1,
+    paddingHorizontal: RFValue(16),
+    paddingVertical: RFValue(6),
   },
-  categoryTitle: {
-    fontSize: RFValue(13),
+  groupTitle: {
+    fontSize: RFValue(12),
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: RFValue(8),
+    paddingTop: RFValue(10),
+    paddingBottom: RFValue(4),
   },
-  progressRow: {
+  statRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: RFValue(8),
-  },
-  progressTrack: {
-    flex: 1,
-    height: RFValue(6),
-    borderRadius: RFValue(3),
-    overflow: 'hidden',
-    marginRight: RFValue(8),
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: RFValue(3),
-  },
-  progressText: {
-    fontSize: RFValue(11),
-    fontWeight: '600',
-  },
-  achievementsList: {
+    justifyContent: 'space-between',
+    minHeight: 44,
     gap: RFValue(12),
   },
-  achievementCard: {
-    flexDirection: 'row',
-    padding: RFValue(16),
-    borderRadius: RFValue(12),
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  achievementIconContainer: {
-    width: RFValue(48),
-    height: RFValue(48),
-    borderRadius: RFValue(24),
-    backgroundColor: fixedColors.neutralSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: RFValue(16),
-  },
-  achievementIcon: {
-    fontSize: RFValue(24),
-  },
-  achievementTextContainer: {
+  statLabel: {
     flex: 1,
+    fontSize: RFValue(15),
   },
-  achievementName: {
-    fontSize: RFValue(16),
-    fontWeight: 'bold',
-    marginBottom: RFValue(4),
-  },
-  achievementDesc: {
-    fontSize: RFValue(13),
+  statValue: {
+    fontSize: RFValue(17),
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
 });

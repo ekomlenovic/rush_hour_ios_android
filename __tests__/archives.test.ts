@@ -1,7 +1,7 @@
 import { generateDailyLevel } from '../utils/generator';
 import {
-  ARCHIVE_FIRST_DATE, ARCHIVE_MAX_DAYS, countCompleteArchiveMonths, getArchiveDates, getArchiveDayStatus,
-  groupArchiveDatesByMonth, isArchiveDateAvailable,
+  ARCHIVE_FIRST_DATE, ARCHIVE_MAX_DAYS, countCompleteArchiveMonths, getArchiveDayStatus, getCalendarMonths,
+  getOldestArchiveDate, isArchiveDateAvailable,
 } from '../utils/archives';
 import { resolveLevel } from '../utils/levelResolver';
 import { addDays } from '../utils/date';
@@ -59,7 +59,7 @@ describe('archive dates', () => {
     const later = '2027-06-01';
     expect(isArchiveDateAvailable(addDays(later, -ARCHIVE_MAX_DAYS), later)).toBe(true);
     expect(isArchiveDateAvailable(addDays(later, -ARCHIVE_MAX_DAYS - 1), later)).toBe(false);
-    expect(getArchiveDates(later)).toHaveLength(ARCHIVE_MAX_DAYS);
+    expect(getOldestArchiveDate(later)).toBe(addDays(later, -ARCHIVE_MAX_DAYS));
   });
 
   it('reject malformed dates', () => {
@@ -68,15 +68,10 @@ describe('archive dates', () => {
     }
   });
 
-  it('are listed from the most recent, grouped by month', () => {
-    const dates = getArchiveDates('2026-11-02');
-    expect(dates[0]).toBe('2026-11-01');
-    expect(dates[dates.length - 1]).toBe(ARCHIVE_FIRST_DATE);
-    expect(groupArchiveDatesByMonth(dates).map(m => [m.month, m.dates.length])).toEqual([['2026-11', 1], ['2026-10', 18]]);
-  });
-
-  it('none on the first day of the generator', () => {
-    expect(getArchiveDates(ARCHIVE_FIRST_DATE)).toEqual([]);
+  it('give the months of the calendar, oldest first', () => {
+    expect(getCalendarMonths(ARCHIVE_FIRST_DATE)).toEqual(['2026-10']);
+    expect(getCalendarMonths('2026-11-02')).toEqual(['2026-10', '2026-11']);
+    expect(getCalendarMonths('2027-01-31')).toEqual(['2026-11', '2026-12', '2027-01']);
   });
 });
 
