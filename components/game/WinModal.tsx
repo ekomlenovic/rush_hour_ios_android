@@ -71,10 +71,9 @@ export default function WinModal({
           style={[styles.winCard, { backgroundColor: colors.surface }]}
         >
           <ScrollView style={styles.winScroll} contentContainerStyle={styles.winContent} showsVerticalScrollIndicator={false} bounces={false}>
-          {/* The stars of the map (LevelNode) */}
           <View style={styles.winStars} accessible accessibilityLabel={t('a11y.level_stars', { count: stars })}>
             {[1, 2, 3].map(i => (
-              <Ionicons key={i} name={i <= stars ? 'star' : 'star-outline'} size={36} color={i <= stars ? colors.star : colors.border} />
+              <Ionicons key={i} name={i <= stars ? 'star' : 'star-outline'} size={36} color={i <= stars ? colors.star : colors.textMuted} />
             ))}
           </View>
           <Text style={[styles.winTitle, { color: colors.primaryText }]} accessibilityRole="header">{t('game.level_complete')}</Text>
@@ -87,15 +86,13 @@ export default function WinModal({
             </Text>
           )}
           {timeMs !== null && timeMs > 0 && (
-            <IconText icon="timer-outline" color={colors.textMuted} style={styles.winTime} textStyle={styles.winTimeText}>
+            <IconText icon="time-outline" color={colors.textMuted} style={styles.winTime} textStyle={styles.winTimeText}>
               {formatDuration(timeMs)}
             </IconText>
           )}
           {unlocks.length > 0 && (
             <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
-              <IconText icon="trophy" color={colors.warning} size={14} style={styles.winUnlocksHeader} textStyle={styles.winUnlocksTitle}>
-                {t('achievements.unlocked')}
-              </IconText>
+              <IconText icon="trophy" color={colors.warning} textStyle={styles.winUnlocksTitle}>{t('achievements.unlocked')}</IconText>
               {unlocks.filter(id => ACHIEVEMENTS_BY_ID[id]).map((id) => (
                 <Text key={id} style={[styles.winUnlockItem, { color: colors.text }]}>
                   {t(`achievements.${id}`)}
@@ -118,9 +115,7 @@ export default function WinModal({
           )}
           {levelUps.map(level => (
             <View key={level} style={[styles.winUnlocks, { backgroundColor: colors.primarySoft }]}>
-              <IconText icon="arrow-up-circle" color={colors.primaryText} size={14} style={styles.winUnlocksHeader} textStyle={styles.winUnlocksTitle}>
-                {t('progression.level_up', { level })}
-              </IconText>
+              <IconText icon="arrow-up-circle" color={colors.primaryText} textStyle={styles.winUnlocksTitle}>{t('progression.level_up', { level })}</IconText>
               {getLevelRewardLines(t, level).map(line => (
                 <Text key={line} style={[styles.winRewardItem, { color: colors.text }]}>{line}</Text>
               ))}
@@ -128,9 +123,7 @@ export default function WinModal({
           ))}
           {missionReward && (
             <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
-              <IconText icon="flag" color={colors.warning} size={14} style={styles.winUnlocksHeader} textStyle={styles.winUnlocksTitle}>
-                {t('missions.completed')}
-              </IconText>
+              <IconText icon="flag" color={colors.warning} textStyle={styles.winUnlocksTitle}>{t('missions.completed')}</IconText>
               <Text style={[styles.winUnlockItem, { color: colors.text }]}>
                 {missionRewardText(t, missionReward)}
               </Text>
@@ -138,21 +131,19 @@ export default function WinModal({
           )}
           <View style={styles.solutionRow}>
             <Pressable
-              style={[styles.smallButton, styles.withIcon, { backgroundColor: colors.card }]}
+              style={[styles.smallButton, { backgroundColor: colors.card }]}
               onPress={onShowSolution}
               accessibilityRole="button"
             >
-              <Ionicons name="play-circle-outline" size={18} color={colors.primaryText} />
-              <Text style={[styles.smallButtonText, { color: colors.primaryText }]}>{t('solution.show')}</Text>
+              <IconText icon="play-circle-outline" color={colors.primaryText} textStyle={styles.smallButtonText}>{t('solution.show')}</IconText>
             </Pressable>
             {onRetry && !isOptimal && (
               <Pressable
-                style={[styles.smallButton, styles.withIcon, { backgroundColor: colors.card }]}
+                style={[styles.smallButton, { backgroundColor: colors.card }]}
                 onPress={onRetry}
                 accessibilityRole="button"
               >
-                <Ionicons name="refresh" size={18} color={colors.primaryText} />
-                <Text style={[styles.smallButtonText, { color: colors.primaryText }]}>{t('solution.retry')}</Text>
+                <IconText icon="refresh" color={colors.primaryText} textStyle={styles.smallButtonText}>{t('solution.retry')}</IconText>
               </Pressable>
             )}
           </View>
@@ -234,7 +225,7 @@ const styles = StyleSheet.create({
   },
   winStars: {
     flexDirection: 'row',
-    gap: 4,
+    gap: 6,
     marginBottom: 8,
   },
   winTitle: {
@@ -291,14 +282,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     alignItems: 'center',
   },
-  winUnlocksHeader: {
-    marginBottom: 6,
-  },
   winUnlocksTitle: {
     fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    marginBottom: 6,
   },
   winUnlockItem: {
     fontSize: 15,

@@ -78,7 +78,7 @@
     "hard_reset_progress": "Réinitialiser la progression",
     "subtitle": "Glisse. Réfléchis. Évade-toi.",
     "daily_challenge": "Défi quotidien",
-    "daily_done": "Défi terminé !",
+    "daily_done": "Défi terminé ! ⭐{{stars}}",
     "update_desc": "Une nouvelle version ({{version}}) est disponible. Veux-tu mettre à jour ?",
     "check_for_update": "Vérifier les mises à jour",
     "hard_reset_confirm_desc": "Cela effacera TOUT : ta progression, tes étoiles et tes niveaux personnalisés. Tu es sûr ?",
@@ -86,7 +86,7 @@
     "done": "Terminé",
     "profile": "Profil",
     "weekly_challenge": "Défi hebdomadaire",
-    "weekly_done": "Hebdo terminé !",
+    "weekly_done": "Hebdo terminé ! ⭐{{stars}}",
     "streak": "{{count}} jours de suite 🔥",
     "welcome_back": "Bon retour !",
     "welcome_back_desc": "Tu étais absent {{days}} jours. Bonne reprise !",
@@ -167,7 +167,10 @@
     "weekly_already_completed": "Défi de la semaine déjà réussi ! Rendez-vous lundi.",
     "archive_title": "Archive · {{date}}",
     "qr_a11y": "QR code du niveau {{name}}",
-    "share_message_named": "Défie-moi sur Rush Hours ! Peux-tu battre « {{name}} » en {{moves}} coups ?\n{{url}}"
+    "share_message_named": "Défie-moi sur Rush Hours ! Peux-tu battre « {{name}} » en {{moves}} coups ?\n{{url}}",
+    "daily_done": "Défi du jour terminé !",
+    "weekly_done": "Défi de la semaine terminé !",
+    "challenge_moves": "Tes coups : {{moves}} · Solution optimale : {{best}}"
   },
   "tutorial": {
     "title": "Tutoriel",
@@ -623,7 +626,11 @@
     "next": "Coup suivant",
     "last": "Aller à la fin",
     "speed": "Vitesse",
-    "speed_a11y": "Vitesse fois {{speed}}"
+    "speed_a11y": "Vitesse fois {{speed}}",
+    "title_mine": "Ta solution",
+    "show_mine": "Voir ma solution",
+    "mine": "Moi · {{count}}",
+    "optimal": "Optimale · {{count}}"
   },
   "progression": {
     "level": "Niveau {{level}}",
