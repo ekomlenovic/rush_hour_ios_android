@@ -163,7 +163,6 @@ export default function HomeScreen() {
                 ? `${t('home.won_stars', { count: weeklyStatus.stars })} · ${t('home.weekly_next', { count: daysLeftInWeek })}`
                 : t('home.weekly_days_left', { count: daysLeftInWeek })}
               reward={t('home.reward_xp', { xp: weeklyWinXp(MAX_STARS) })}
-              progress={daysLeftInWeek / 7}
               enteringDelay={500}
               onPress={() => router.push(`/game?levelId=weekly&week=${weekKey}`)}
             />

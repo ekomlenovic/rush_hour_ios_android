@@ -77,6 +77,7 @@ Le streak compte les jours consécutifs avec le défi du jour réussi.
 | Jamais deux missions sur le même compteur (pas de « 3 niveaux » et « 5 niveaux » le même jour) | |
 | Les missions « niveau » ne comptent que **la carte et les niveaux personnalisés**, jamais les défis. Seule la mission « Réussis le défi du jour » porte sur un défi | `bumpMissions` (`store/gameStore.ts`) |
 | Toutes les missions sont **réalisables dès le début** du jeu (le niveau 1 est déjà en 7×7) | |
+| Une mission « rapide » compte les victoires en **moins d'une minute** ; une mission « nouveau niveau » compte les niveaux réussis pour la première fois | `FAST_WIN_MS`, `bumpMissions` |
 | Récompense : finir les 3 missions donne **100 XP et 1 gel de streak**, une fois par jour. Si le stock de gels est plein, le gel est remplacé par **50 XP de plus** (150 XP au total), pour que les missions rapportent toujours quelque chose | `missionsXp` (`data/progression.ts`), `addStreakFreeze` |
 | L'écran des missions annonce la récompense (XP et gel, ou XP seule si le stock est plein) | `MissionsSheet` |
 | Les identifiants de mission sont sauvegardés pour la journée : ne jamais en renommer, seulement en ajouter | |

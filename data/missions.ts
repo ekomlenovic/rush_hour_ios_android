@@ -10,6 +10,8 @@ export type MissionCounter =
   | 'noHintWins'
   | 'cleanWins'
   | 'bigGridWins'
+  | 'newLevelWins'
+  | 'fastWins'
   | 'dailyDone'
   | 'moves'
   | 'playMs';
@@ -40,6 +42,9 @@ export interface MissionReward {
 
 export const MISSIONS_PER_DAY = 3;
 
+/** A win counts for the "fast" missions under this time */
+export const FAST_WIN_MS = 60 * 1000;
+
 /** IDs are persisted for the current day: never rename one, only add new ones. */
 export const MISSIONS: MissionDef[] = [
   { id: 'win_3', icon: '🏁', counter: 'levelWins', target: 3 },
@@ -51,6 +56,17 @@ export const MISSIONS: MissionDef[] = [
   { id: 'daily', icon: '📅', counter: 'dailyDone', target: 1 },
   { id: 'moves_100', icon: '👣', counter: 'moves', target: 100 },
   { id: 'play_10min', icon: '⏳', counter: 'playMs', target: 10 * 60 * 1000 },
+  { id: 'win_8', icon: '🛣️', counter: 'levelWins', target: 8 },
+  { id: 'perfect_3', icon: '🌟', counter: 'perfectWins', target: 3 },
+  { id: 'no_hint_3', icon: '💡', counter: 'noHintWins', target: 3 },
+  { id: 'clean_3', icon: '🏹', counter: 'cleanWins', target: 3 },
+  { id: 'big_grid_3', icon: '🧭', counter: 'bigGridWins', target: 3 },
+  { id: 'moves_250', icon: '🦶', counter: 'moves', target: 250 },
+  { id: 'play_20min', icon: '⌛', counter: 'playMs', target: 20 * 60 * 1000 },
+  { id: 'new_2', icon: '🆕', counter: 'newLevelWins', target: 2 },
+  { id: 'new_4', icon: '🚀', counter: 'newLevelWins', target: 4 },
+  { id: 'fast_1', icon: '⚡', counter: 'fastWins', target: 1 },
+  { id: 'fast_3', icon: '🏎️', counter: 'fastWins', target: 3 },
 ];
 
 export const MISSIONS_BY_ID: Record<string, MissionDef> = Object.fromEntries(MISSIONS.map(m => [m.id, m]));
