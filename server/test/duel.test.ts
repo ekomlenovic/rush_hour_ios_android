@@ -1,7 +1,7 @@
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  COUNTDOWN_MS, CREATES_WINDOW_MS, Duels, MAX_CREATES, MAX_DUEL_MS, MAX_MESSAGES_PER_SECOND, MAX_WRONG_CODES, OVER_TTL_MS,
+  COUNTDOWN_MS, CREATES_WINDOW_MS, Duels, MAX_CREATES, MAX_DUEL_MS, MAX_MESSAGES_PER_SECOND, MAX_SPECTATORS, MAX_WRONG_CODES, OVER_TTL_MS,
   RECONNECT_GRACE_MS, WAITING_TTL_MS,
   normalizeDuelCode, type DuelConnection, type ServerMessage,
 } from '../src/duel';
@@ -14,6 +14,7 @@ const PLAYERS: Record<string, { id: number; pseudo: string }> = {
   'token-leo': { id: 1, pseudo: 'Léo' },
   'token-emma': { id: 2, pseudo: 'Emma' },
   'token-sam': { id: 3, pseudo: 'Sam' },
+  'token-zoe': { id: 4, pseudo: 'Zoé' },
 };
 
 /** Lets the generation of the puzzle (a promise) finish */
@@ -268,7 +269,7 @@ describe('duels', () => {
     const forSam = duels.list(3);
     expect(forSam).toEqual([{
       code: leo.last('duel')!.duel.code, difficulty: 'HARD', status: 'waiting', private: false,
-      players: [{ id: 1, pseudo: 'Léo' }], createdAt: 1_000_000, startsAt: null, mine: false,
+      players: [{ id: 1, pseudo: 'Léo' }], createdAt: 1_000_000, startsAt: null, mine: false, spectators: 0,
     }]);
     // Emma sees her private duel too
     expect(duels.list(2).map(d => [d.players[0].pseudo, d.mine])).toEqual([['Emma', true], ['Léo', false]]);
@@ -276,9 +277,108 @@ describe('duels', () => {
     sam.send({ type: 'join', code: forSam[0].code! });
     await settle();
     const playing = duels.list(2).find(d => d.status === 'playing')!;
-    expect(playing).toMatchObject({ code: null, players: [{ pseudo: 'Léo' }, { pseudo: 'Sam' }], mine: false });
-    expect(duels.list(1).find(d => d.status === 'playing')!.code).not.toBeNull();
+    // With its code, to watch it
+    expect(playing).toMatchObject({ code: forSam[0].code, players: [{ pseudo: 'Léo' }, { pseudo: 'Sam' }], mine: false });
   });
+
+  it('a spectator sees both boards live, and the players see how many watch', async () => {
+    const { connect, started, duels } = setup();
+    const { leo, emma } = await started();
+    const code = leo.last('duel')!.duel.code;
+    leo.send({ type: 'move', vehicleId: 'v1', delta: 2 });
+
+    const sam = connect('token-sam');
+    sam.send({ type: 'watch', code: code.toLowerCase() });
+    // From where the game is, as seen by Léo, without the optimum
+    expect(sam.last('duel')!.duel).toMatchObject({
+      code, status: 'playing', spectating: true, spectators: 1,
+      me: { id: 1, moves: [{ vehicleId: 'v1', delta: 2 }] }, opponent: { id: 2, moves: [] }, level: { minMoves: 0 },
+    });
+    expect(leo.last('spectators')).toEqual({ type: 'spectators', count: 1 });
+    expect(emma.last('spectators')).toEqual({ type: 'spectators', count: 1 });
+    expect(duels.list(1)[0].spectators).toBe(1);
+
+    emma.send({ type: 'move', vehicleId: 'v1', delta: 2 });
+    expect(sam.last('move')).toMatchObject({ playerId: 2, move: { vehicleId: 'v1', delta: 2 } });
+    // Nothing to play
+    sam.send({ type: 'move', vehicleId: 'target', delta: 4 });
+    expect(sam.last('error')).toEqual({ type: 'error', error: 'no_duel' });
+    sam.send({ type: 'rematch' });
+    expect(leo.last('rematch')).toBeUndefined();
+
+    emma.send({ type: 'move', vehicleId: 'target', delta: 4 });
+    expect(sam.last('end')!.result).toMatchObject({ winnerId: 2, reason: 'won' });
+
+    // A rematch: the spectator sees the new game
+    leo.send({ type: 'rematch' });
+    emma.send({ type: 'rematch' });
+    await settle();
+    expect(sam.last('duel')!.duel).toMatchObject({ status: 'playing', spectating: true, me: { moves: [] } });
+
+    // Gone: the players are told
+    sam.send({ type: 'leave' });
+    expect(leo.last('spectators')).toEqual({ type: 'spectators', count: 0 });
+    expect(duels.duelOf(1)!.spectators).toBe(0);
+  });
+
+  it('watching: a wrong code, a private duel with its code, my own duel, and leaving a room to watch', async () => {
+    const { connect, duels } = setup();
+    const leo = connect('token-leo');
+    const emma = connect('token-emma');
+    const sam = connect('token-sam');
+    sam.send({ type: 'watch', code: 'ZZZZZ' });
+    expect(sam.last('error')).toEqual({ type: 'error', error: 'duel_not_found' });
+
+    // A private duel: whoever has the code watches it, even before an opponent comes
+    leo.send({ type: 'create', private: true });
+    const code = leo.last('duel')!.duel.code;
+    sam.send({ type: 'watch', code });
+    expect(sam.last('duel')!.duel).toMatchObject({ status: 'waiting', spectating: true, me: { id: 1 }, opponent: null });
+    // Léo, watching his own duel: he is its player
+    leo.send({ type: 'watch', code });
+    expect(leo.last('duel')!.duel).toMatchObject({ spectating: false, spectators: 1 });
+
+    // Emma leaves her open room to watch
+    emma.send({ type: 'create' });
+    const emmaCode = emma.last('duel')!.duel.code;
+    emma.send({ type: 'watch', code });
+    expect(duels.duelOf(2)).toBeNull();
+    expect(duels.list(3).map(d => d.code)).not.toContain(emmaCode);
+    expect(leo.last('spectators')).toEqual({ type: 'spectators', count: 2 });
+
+    // Sam stops watching to play it, Emma still watches
+    sam.send({ type: 'join', code });
+    await settle();
+    expect(emma.last('duel')!.duel).toMatchObject({ status: 'playing', spectators: 1, me: { id: 1 }, opponent: { id: 3 } });
+
+    // The duel is gone: the spectators are told
+    leo.send({ type: 'leave' });
+    sam.send({ type: 'leave' });
+    expect(emma.last('closed')).toEqual({ type: 'closed' });
+  });
+
+  it('a spectator who loses the connection no longer counts, and a duel has a limit of spectators', async () => {
+    const { connect, started, duels } = setup();
+    const { leo } = await started();
+    const code = leo.last('duel')!.duel.code;
+    const sam = connect('token-sam');
+    sam.send({ type: 'watch', code });
+    sam.disconnect();
+    expect(leo.last('spectators')).toEqual({ type: 'spectators', count: 0 });
+
+    // A player of the duel can not watch another one
+    const zoe = connect('token-zoe');
+    zoe.send({ type: 'create' });
+    leo.send({ type: 'watch', code: zoe.last('duel')!.duel.code });
+    expect(leo.last('error')).toEqual({ type: 'error', error: 'already_in_duel' });
+
+    const full = duels as unknown as { duels: Map<string, { spectators: Set<number> }> };
+    const spectators = full.duels.get(code)!.spectators;
+    for (let id = 100; spectators.size < MAX_SPECTATORS; id++) spectators.add(id);
+    zoe.send({ type: 'watch', code });
+    expect(zoe.last('error')).toEqual({ type: 'error', error: 'too_many_spectators' });
+  });
+
 
   it('closes a connection that floods the server, even before saying who it is', () => {
     const { connect, clock } = setup();

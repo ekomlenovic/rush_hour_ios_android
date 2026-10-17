@@ -137,7 +137,7 @@ export interface AdminSettings {
 export type AdminSettingsPatch = Partial<Omit<AdminSettings, 'thresholds' | 'timeZone' | 'nextReleaseAt'>> & { thresholds?: Partial<Thresholds> };
 /** A duel in the list of the server (server/src/duel.ts): open ones to join, the ones being played */
 export interface DuelListing {
-  /** To join it: open public duels and my own; null otherwise */
+  /** To join or watch it: public duels and my own; null otherwise (a server older than the spectators: only open ones) */
   code: string | null;
   difficulty: Difficulty;
   status: 'waiting' | 'preparing' | 'playing';
@@ -146,6 +146,8 @@ export interface DuelListing {
   createdAt: number;
   startsAt: number | null;
   mine: boolean;
+  /** How many watch it; absent from a server older than the spectators */
+  spectators?: number;
 }
 
 export interface DuelRankRow { playerId: number; pseudo: string; rank: number; wins: number; losses: number; draws: number; played: number }
