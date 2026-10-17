@@ -312,6 +312,7 @@ Les icônes de l'interface sont des **Ionicons** (`@expo/vector-icons/Ionicons`)
 | Boutons, pastilles, cadenas, icônes des missions et des succès : Ionicons | `IoniconName` (`utils/icons.ts`) pour typer une icône dans les données |
 | Une icône devant un texte passe par `IconText` ; dans une ligne de texte, l'icône peut être imbriquée dans le `<Text>` | `components/IconText.tsx` |
 | Un bouton qui n'a qu'une icône (fermer, réglages…) suit la règle d'accessibilité : `accessibilityLabel` traduit | clés `a11y.*` |
+| Les paliers d'une même série de succès répètent leur icône (1, 2 puis 3 flammes) plutôt que de la dupliquer | `iconCount`, `AchievementIcon` |
 | Les symboles typographiques dans un texte (`←`, `✓`, `★`, `↕`) restent permis | |
 
 Les emojis ne restent que là où une icône ne peut pas s'afficher ou n'a pas d'équivalent :
