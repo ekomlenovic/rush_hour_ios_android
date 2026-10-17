@@ -8,7 +8,7 @@ import type { UiColors } from '@/theme';
 import type { RowPlayer } from './Leaderboard';
 import { multiErrorMessage } from './errors';
 import { REPORT_REASONS, type ReportReason } from './verdict';
-import IconText, { type IconName } from './IconText';
+import IconText, { type IconName } from '@/components/IconText';
 
 interface Props {
   player: RowPlayer | null;

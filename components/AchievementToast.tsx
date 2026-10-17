@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, AccessibilityInfo } from 'react-nati
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import AchievementIcon from '@/components/profile/AchievementIcon';
 import { useGameStore } from '@/store/gameStore';
 import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
 import type { MissionReward } from '@/data/missions';
@@ -64,7 +65,7 @@ export default function AchievementToast() {
   const achievement = current.kind === 'achievement' ? ACHIEVEMENTS_BY_ID[current.id] : null;
   if (current.kind === 'achievement' && !achievement) return null;
 
-  const icon = achievement ? achievement.icon : current.kind === 'levelUp' ? '🎉' : '🎯';
+  const icon = achievement ? achievement.icon : current.kind === 'levelUp' ? 'trending-up' : 'flag';
   const label = achievement ? t('achievements.unlocked')
     : current.kind === 'levelUp' ? t('progression.level_up_label')
     : t('missions.completed');
@@ -87,7 +88,7 @@ export default function AchievementToast() {
           accessibilityHint={t('a11y.close')}
           style={[styles.toast, { backgroundColor: colors.surface, borderColor: colors.warning }]}
         >
-          <Text style={styles.icon}>{icon}</Text>
+          <AchievementIcon icon={icon} count={achievement?.iconCount} size={30} color={colors.warning} style={styles.icon} />
           <View style={styles.textContainer}>
             <Text style={[styles.label, { color: colors.warning }]}>{label}</Text>
             <Text style={[styles.name, { color: colors.text }]}>{name}</Text>
@@ -120,7 +121,6 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   icon: {
-    fontSize: 30,
     marginRight: 12,
   },
   textContainer: {

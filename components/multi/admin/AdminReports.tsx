@@ -7,7 +7,7 @@ import { multiErrorMessage } from '../errors';
 import { reportReasonText } from '../verdict';
 import AdminButton from './AdminButton';
 import { adminStyles as styles } from './styles';
-import IconText from '../IconText';
+import IconText from '@/components/IconText';
 
 interface Props { api: MultiApi; colors: UiColors }
 

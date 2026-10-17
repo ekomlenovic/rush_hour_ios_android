@@ -303,6 +303,23 @@ Le jeu se joue entièrement avec VoiceOver (iOS) et TalkBack (Android).
 | Créateur : « Ajouter au plateau » place le véhicule sur la **première case libre** (on ne peut pas glisser au lecteur d'écran) ; toucher deux fois fait pivoter, l'action « Supprimer » retire | `findFreeCell` (`utils/creatorGeometry.ts`) |
 | Tout nouveau bouton a un `accessibilityRole`, et un `accessibilityLabel` traduit s'il ne contient qu'une icône | clés `a11y.*` des fichiers de traduction |
 
+## Icônes
+
+Les icônes de l'interface sont des **Ionicons** (`@expo/vector-icons/Ionicons`), pas des emojis : elles prennent la couleur du thème (clair / sombre), sont nettes à toutes les tailles et s'affichent pareil sur iOS et Android.
+
+| Règle | Implémentation |
+|---|---|
+| Boutons, pastilles, cadenas, icônes des missions et des succès : Ionicons | `IoniconName` (`utils/icons.ts`) pour typer une icône dans les données |
+| Une icône devant un texte passe par `IconText` ; dans une ligne de texte, l'icône peut être imbriquée dans le `<Text>` | `components/IconText.tsx` |
+| Un bouton qui n'a qu'une icône (fermer, réglages…) suit la règle d'accessibilité : `accessibilityLabel` traduit | clés `a11y.*` |
+| Les paliers d'une même série de succès répètent leur icône (1, 2 puis 3 flammes) plutôt que de la dupliquer | `iconCount`, `AchievementIcon` |
+| Les symboles typographiques dans un texte (`←`, `✓`, `★`, `↕`) restent permis | |
+
+Les emojis ne restent que là où une icône ne peut pas s'afficher ou n'a pas d'équivalent :
+
+- les **textes qui sortent de l'app** : résultat partagé (`utils/shareResult.ts`), titres des notifications, alertes système ;
+- les **illustrations** : décor et panneaux des zones de la carte (`components/map/zones.ts`), icône des skins sur la voiture cible et vignettes des effets (`theme/board.ts`, `data/cosmetics.ts`).
+
 ## Retour du joueur
 
 - Après **3 jours ou plus** d'absence : message de bienvenue (`recordAppOpen`, `hooks/useAppOpenAlert.ts`).

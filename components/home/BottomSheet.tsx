@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Modal, KeyboardAvoidingView } from 'react-native';
 import { BlurView } from 'expo-blur';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
@@ -30,7 +31,7 @@ export default function BottomSheet({ visible, title, colors, isDark, onClose, o
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: colors.text }]} accessibilityRole="header">{title}</Text>
             <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('a11y.close')} hitSlop={8}>
-              <Text style={{ fontSize: RFValue(20), color: colors.textMuted, padding: 8 }}>✕</Text>
+              <Ionicons name="close" size={RFValue(22)} color={colors.textMuted} style={{ padding: 8 }} />
             </Pressable>
           </View>
           {children}

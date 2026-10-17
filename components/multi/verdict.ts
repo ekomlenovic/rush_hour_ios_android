@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import type { Flag, Verdict } from '@/utils/multi/api';
 import { formatDuration } from '@/utils/date';
-import type { IconName } from './IconText';
+import type { IconName } from '@/components/IconText';
 
 /** Suspect (automatic) or cheater (confirmed by the admin) */
 export const verdictIcon = (verdict: NonNullable<Verdict>): IconName => (verdict === 'cheater' ? 'ban' : 'warning');

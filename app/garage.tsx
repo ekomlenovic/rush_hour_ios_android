@@ -17,6 +17,7 @@ import WinEffect from '@/components/effects/WinEffect';
 import XpBar from '@/components/progression/XpBar';
 import CosmeticThumb from '@/components/garage/CosmeticThumb';
 import { describeUnlock } from '@/components/garage/describeUnlock';
+import IconText from '@/components/IconText';
 
 const KINDS: CosmeticKind[] = ['board', 'skin', 'palette', 'effect'];
 
@@ -67,7 +68,7 @@ export default function GarageScreen() {
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
           <Text style={[styles.backText, { color: colors.textMuted }]}>← {t('common.home')}</Text>
         </Pressable>
-        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">🚘 {t('cosmetics.garage')}</Text>
+        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('cosmetics.garage')}</Text>
         <Text style={[styles.count, { color: colors.textMuted }]}>
           {t('cosmetics.unlocked_count', { unlocked: unlocked.length, total: COSMETICS.length })}
         </Text>
@@ -88,9 +89,9 @@ export default function GarageScreen() {
             />
           </View>
           {previewed && (
-            <Text style={[styles.previewNote, { color: colors.warning }]}>
-              🔒 {t('cosmetics.preview')} : {t(`cosmetics.${previewed.kind}.${previewed.id}`)}
-            </Text>
+            <IconText icon="lock-closed" color={colors.warning} textStyle={styles.previewNote}>
+              {t('cosmetics.preview')} : {t(`cosmetics.${previewed.kind}.${previewed.id}`)}
+            </IconText>
           )}
         </View>
 
@@ -143,7 +144,7 @@ export default function GarageScreen() {
                   newKeys.has(key) && <Text style={[styles.itemState, { color: colors.success }]}>{t('cosmetics.new')}</Text>
                 ) : (
                   <>
-                    <Text style={[styles.itemCondition, { color: colors.textMuted }]} numberOfLines={3}>🔒 {condition}</Text>
+                    <IconText icon="lock-closed" color={colors.textMuted} textStyle={styles.itemCondition} numberOfLines={3}>{condition}</IconText>
                     <XpBar colors={colors} ratio={unlockProgress(def, context)} height={4} />
                   </>
                 )}

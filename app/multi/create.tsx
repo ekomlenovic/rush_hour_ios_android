@@ -12,7 +12,7 @@ import { multiErrorMessage } from '@/components/multi/errors';
 import { buildCompose, buildNginx, deviceTimeZone, domainOf, SECRET_PLACEHOLDER, SETUP_COMMANDS } from '@/utils/multi/serverSetup';
 import { testConnection, type ConnectionResult } from '@/utils/multi/connectionTest';
 import type { Difficulty } from '@/utils/multi/api';
-import IconText from '@/components/multi/IconText';
+import IconText from '@/components/IconText';
 
 /** Full documentation of the server: every setting, updates, backups */
 export const SERVER_DOCS_URL = 'https://github.com/ekomlenovic/rush_hour_ios_android/blob/main/server/README.md';

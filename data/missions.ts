@@ -4,6 +4,8 @@
  * (see docs/GAME_DESIGN.md).
  */
 
+import type { IoniconName } from '../utils/icons';
+
 export type MissionCounter =
   | 'levelWins'
   | 'perfectWins'
@@ -19,7 +21,7 @@ export type MissionCounter =
 export interface MissionDef {
   /** Also the i18n key: missions.list.<id> */
   id: string;
-  icon: string;
+  icon: IoniconName;
   counter: MissionCounter;
   target: number;
 }
@@ -47,26 +49,26 @@ export const FAST_WIN_MS = 60 * 1000;
 
 /** IDs are persisted for the current day: never rename one, only add new ones. */
 export const MISSIONS: MissionDef[] = [
-  { id: 'win_3', icon: '🏁', counter: 'levelWins', target: 3 },
-  { id: 'win_5', icon: '🚗', counter: 'levelWins', target: 5 },
-  { id: 'perfect_2', icon: '⭐', counter: 'perfectWins', target: 2 },
-  { id: 'no_hint', icon: '🧠', counter: 'noHintWins', target: 1 },
-  { id: 'clean', icon: '🎯', counter: 'cleanWins', target: 1 },
-  { id: 'big_grid', icon: '🗺️', counter: 'bigGridWins', target: 1 },
-  { id: 'daily', icon: '📅', counter: 'dailyDone', target: 1 },
-  { id: 'moves_100', icon: '👣', counter: 'moves', target: 100 },
-  { id: 'play_10min', icon: '⏳', counter: 'playMs', target: 10 * 60 * 1000 },
-  { id: 'win_8', icon: '🛣️', counter: 'levelWins', target: 8 },
-  { id: 'perfect_3', icon: '🌟', counter: 'perfectWins', target: 3 },
-  { id: 'no_hint_3', icon: '💡', counter: 'noHintWins', target: 3 },
-  { id: 'clean_3', icon: '🏹', counter: 'cleanWins', target: 3 },
-  { id: 'big_grid_3', icon: '🧭', counter: 'bigGridWins', target: 3 },
-  { id: 'moves_250', icon: '🦶', counter: 'moves', target: 250 },
-  { id: 'play_20min', icon: '⌛', counter: 'playMs', target: 20 * 60 * 1000 },
-  { id: 'new_2', icon: '🆕', counter: 'newLevelWins', target: 2 },
-  { id: 'new_4', icon: '🚀', counter: 'newLevelWins', target: 4 },
-  { id: 'fast_1', icon: '⚡', counter: 'fastWins', target: 1 },
-  { id: 'fast_3', icon: '🏎️', counter: 'fastWins', target: 3 },
+  { id: 'win_3', icon: 'flag', counter: 'levelWins', target: 3 },
+  { id: 'win_5', icon: 'car', counter: 'levelWins', target: 5 },
+  { id: 'perfect_2', icon: 'star', counter: 'perfectWins', target: 2 },
+  { id: 'no_hint', icon: 'bulb', counter: 'noHintWins', target: 1 },
+  { id: 'clean', icon: 'locate', counter: 'cleanWins', target: 1 },
+  { id: 'big_grid', icon: 'map', counter: 'bigGridWins', target: 1 },
+  { id: 'daily', icon: 'calendar', counter: 'dailyDone', target: 1 },
+  { id: 'moves_100', icon: 'footsteps', counter: 'moves', target: 100 },
+  { id: 'play_10min', icon: 'hourglass', counter: 'playMs', target: 10 * 60 * 1000 },
+  { id: 'win_8', icon: 'trail-sign', counter: 'levelWins', target: 8 },
+  { id: 'perfect_3', icon: 'sparkles', counter: 'perfectWins', target: 3 },
+  { id: 'no_hint_3', icon: 'school', counter: 'noHintWins', target: 3 },
+  { id: 'clean_3', icon: 'ribbon', counter: 'cleanWins', target: 3 },
+  { id: 'big_grid_3', icon: 'compass', counter: 'bigGridWins', target: 3 },
+  { id: 'moves_250', icon: 'walk', counter: 'moves', target: 250 },
+  { id: 'play_20min', icon: 'time', counter: 'playMs', target: 20 * 60 * 1000 },
+  { id: 'new_2', icon: 'add-circle', counter: 'newLevelWins', target: 2 },
+  { id: 'new_4', icon: 'rocket', counter: 'newLevelWins', target: 4 },
+  { id: 'fast_1', icon: 'flash', counter: 'fastWins', target: 1 },
+  { id: 'fast_3', icon: 'speedometer', counter: 'fastWins', target: 3 },
 ];
 
 export const MISSIONS_BY_ID: Record<string, MissionDef> = Object.fromEntries(MISSIONS.map(m => [m.id, m]));

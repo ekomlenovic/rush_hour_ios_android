@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, Text } from 'react-native';
-import IconText, { type IconName } from '../IconText';
+import IconText, { type IconName } from '@/components/IconText';
 import { adminStyles } from './styles';
 
 interface Props {

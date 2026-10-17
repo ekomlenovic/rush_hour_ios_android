@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import type { IoniconName } from '@/utils/icons';
 
-export type IconName = React.ComponentProps<typeof Ionicons>['name'];
+export type IconName = IoniconName;
 
 interface Props {
   icon: IconName;
