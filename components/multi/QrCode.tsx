@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { PixelRatio, View, StyleSheet } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import qrcode from 'qrcode-generator';
 import { fixedColors } from '@/theme';
 
@@ -25,6 +26,12 @@ export function qrRuns(text: string): { size: number; rows: [number, number][][]
 
 const QUIET_ZONE = 4;
 
+/** SVG path of the dark modules, in module units with the quiet zone around */
+export function qrPath(rows: [number, number][][]): string {
+  return rows.map((runs, r) => runs.map(([start, length]) =>
+    `M${start + QUIET_ZONE} ${r + QUIET_ZONE}h${length}v1h${-length}z`).join('')).join('');
+}
+
 interface Props {
   value: string;
   size: number;
@@ -34,24 +41,26 @@ interface Props {
 /**
  * QR code drawn on the phone: an invitation or a recovery code is a secret,
  * it never goes to an online QR service.
+ * One SVG path on a whole number of pixels per module: views of fractional
+ * size left seams between the rows and made the code unreadable.
  */
 export default function QrCode({ value, size, accessibilityLabel }: Props) {
   const { size: modules, rows } = useMemo(() => qrRuns(value), [value]);
-  const cell = size / (modules + QUIET_ZONE * 2);
+  const path = useMemo(() => qrPath(rows), [rows]);
+  const total = modules + QUIET_ZONE * 2;
+  const cell = Math.max(PixelRatio.roundToNearestPixel(size / total), 1 / PixelRatio.get());
+  const side = cell * total;
   return (
     <View
-      style={[styles.container, { width: size, height: size, padding: cell * QUIET_ZONE }]}
+      style={[styles.container, { width: side, height: side }]}
       accessible
       accessibilityRole="image"
       accessibilityLabel={accessibilityLabel}
     >
-      {rows.map((runs, r) => (
-        <View key={r} style={{ height: cell, width: cell * modules }}>
-          {runs.map(([start, length]) => (
-            <View key={start} style={[styles.module, { left: start * cell, width: length * cell, height: cell }]} />
-          ))}
-        </View>
-      ))}
+      {/* Black on white to be scanned, in dark mode too */}
+      <Svg width={side} height={side} viewBox={`0 0 ${total} ${total}`}>
+        <Path d={path} fill={fixedColors.qrForeground} />
+      </Svg>
     </View>
   );
 }
@@ -60,11 +69,6 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: fixedColors.qrBackground,
     borderRadius: 12,
-  },
-  module: {
-    position: 'absolute',
-    top: 0,
-    // Black on white to be scanned, in dark mode too
-    backgroundColor: fixedColors.qrForeground,
+    overflow: 'hidden',
   },
 });
