@@ -471,6 +471,7 @@
     "archives_month_desc": "Win every daily challenge of a month, catching up on missed days in the archives"
   },
   "share": {
+    "share_short": "Share",
     "share_result": "Share my result",
     "title_daily": "Daily {{date}} 🧩",
     "title_monday": "💀 Monday daily {{date}}",
@@ -628,6 +629,8 @@
     "speed": "Speed",
     "speed_a11y": "Speed times {{speed}}",
     "title_mine": "Your solution",
+    "mine_short": "Mine",
+    "optimal_short": "Optimal",
     "show_mine": "See my solution",
     "mine": "Me · {{count}}",
     "optimal": "Optimal · {{count}}"

@@ -15,6 +15,7 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 | Une fois réussi, le plateau est **verrouillé** jusqu'au lendemain | `isDailyCompleted` désactive le plateau |
 | La **solution optimale** n'est visible **qu'une fois le défi réussi** (écran de victoire, puis bandeau « déjà réussi ») : jamais avant, pour ne pas gâcher l'essai unique | `SolutionPlayer` (`components/game/SolutionPlayer.tsx`) |
 | Défi réussi : le bandeau « déjà réussi » montre **les coups joués** et l'optimum, et on peut revoir **sa propre solution** comme la solution optimale (le journal de coups du meilleur résultat est gardé) | `ChallengeDoneBanner`, `ChallengeResult.moveLog`, `movesFromLog` (`utils/solutionReplay.ts`) |
+| « Continuer » après la victoire d'un défi **reste sur l'écran du défi**, avec ce bandeau ; on revient à la carte par « ← Carte » | `handleWinContinue` (`app/game.tsx`) |
 | Même puzzle pour tout le monde à une date donnée | `generateDailyLevel(dateStr)` est déterministe |
 | Le **lundi**, le puzzle est plus difficile | `isMondayDaily` |
 | La réussite fait avancer le **streak** | `completeDailyChallenge` → `updateStreak` |
