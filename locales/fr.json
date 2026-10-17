@@ -1135,8 +1135,7 @@
       "head_to_head": "Vos duels",
       "head_to_head_a11y": "Vos duels : toi {{mine}}, {{pseudo}} {{theirs}}, {{draws}} nuls",
       "ready": "Prêt",
-      "not_ready": "À générer",
-      "unavailable": "Indisponible"
+      "not_ready": "À générer"
     },
     "errors": {
       "network": "Le serveur ne répond pas. Vérifie ta connexion et l'adresse du serveur.",
@@ -1181,7 +1180,7 @@
       "opponent_left": "Ton adversaire a quitté le duel.",
       "duel_unreachable": "Impossible d'ouvrir le duel : le reverse proxy du serveur doit laisser passer les WebSockets (voir le guide du serveur).",
       "duel_replaced": "Ton compte joue maintenant sur un autre téléphone : le duel continue là-bas.",
-      "puzzle_unavailable": "Aucun puzzle prêt à ce niveau pour l'instant, et il est trop long à générer : choisis un autre niveau ou réessaie plus tard.",
+      "puzzle_unavailable": "Le serveur n'a pas pu préparer de puzzle pour ce duel. Réessaie, ou choisis un autre niveau.",
       "unknown": "Une erreur inattendue est survenue."
     }
   }

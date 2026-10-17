@@ -347,8 +347,6 @@ export function buildApp(deps: AppDeps) {
         duels: duels.list(request.player.id),
         // Puzzles ready by difficulty: a duel of a difficulty with none waits for its puzzle
         ready: puzzles.counts(),
-        // None ready and too long to generate for now (master): such a duel cannot start
-        unavailable: puzzles.unavailable(),
       }));
 
       // Duel rankings: wins, then fewer losses

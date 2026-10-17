@@ -15,12 +15,10 @@ interface NewDuelProps {
   onCreate: (difficulty: DuelDifficulty, isPrivate: boolean) => void;
   /** Puzzles ready by difficulty on the server; null: unknown (older server) */
   ready: Partial<Record<Difficulty, number>> | null;
-  /** Difficulties with no puzzle ready and too long to generate for now */
-  unavailable: Difficulty[];
 }
 
 /** A new duel: its difficulty, and whether it is private (joined with its code only) */
-export function NewDuelSheet({ visible, colors, isDark, onClose, onCreate, ready, unavailable }: NewDuelProps) {
+export function NewDuelSheet({ visible, colors, isDark, onClose, onCreate, ready }: NewDuelProps) {
   const { t } = useTranslation();
   const [difficulty, setDifficulty] = useState<DuelDifficulty>('NORMAL');
   const [isPrivate, setPrivate] = useState(false);
@@ -32,24 +30,21 @@ export function NewDuelSheet({ visible, colors, isDark, onClose, onCreate, ready
         const selected = d === difficulty;
         // A puzzle generated ahead: the duel starts at once; otherwise it is generated when someone joins
         const isReady = ready ? (ready[d] ?? 0) > 0 : null;
-        const off = unavailable.includes(d);
-        const status = off ? t('multi.duel.unavailable') : isReady === null ? null : isReady ? t('multi.duel.ready') : t('multi.duel.not_ready');
-        const tint = off ? colors.danger : isReady ? colors.success : colors.warning;
+        const status = isReady === null ? null : isReady ? t('multi.duel.ready') : t('multi.duel.not_ready');
         return (
           <Pressable
             key={d}
             onPress={() => setDifficulty(d)}
-            disabled={off}
-            style={[styles.option, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primarySoft : 'transparent', opacity: off ? 0.6 : 1 }]}
+            style={[styles.option, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primarySoft : 'transparent' }]}
             accessibilityRole="radio"
-            accessibilityState={{ selected, disabled: off }}
+            accessibilityState={{ selected }}
             accessibilityLabel={[t(`difficulty.${d}`), status].filter(Boolean).join(', ')}
           >
             <Text style={[styles.optionText, { color: selected ? colors.primaryText : colors.text }]}>{t(`difficulty.${d}`)}</Text>
             <View style={styles.optionEnd}>
               {status && (
-                <View style={[styles.ready, { backgroundColor: off ? colors.dangerSoft : isReady ? colors.successSoft : colors.warningSoft }]}>
-                  <Text style={[styles.readyText, { color: tint }]}>{status}</Text>
+                <View style={[styles.ready, { backgroundColor: isReady ? colors.successSoft : colors.warningSoft }]}>
+                  <Text style={[styles.readyText, { color: isReady ? colors.success : colors.warning }]}>{status}</Text>
                 </View>
               )}
               {selected && <Text style={[styles.optionText, { color: colors.primaryText }]}>✓</Text>}
@@ -66,12 +61,7 @@ export function NewDuelSheet({ visible, colors, isDark, onClose, onCreate, ready
         <Switch value={isPrivate} onValueChange={setPrivate} accessibilityLabel={t('multi.duel.private')} />
       </View>
 
-      <Pressable
-        onPress={() => onCreate(difficulty, isPrivate)}
-        disabled={unavailable.includes(difficulty)}
-        style={[styles.button, { backgroundColor: colors.primary, opacity: unavailable.includes(difficulty) ? 0.5 : 1 }]}
-        accessibilityRole="button"
-      >
+      <Pressable onPress={() => onCreate(difficulty, isPrivate)} style={[styles.button, { backgroundColor: colors.primary }]} accessibilityRole="button">
         <Text style={[styles.buttonText, { color: colors.onPrimary }]}>{t('multi.duel.create')}</Text>
       </Pressable>
     </BottomSheet>
