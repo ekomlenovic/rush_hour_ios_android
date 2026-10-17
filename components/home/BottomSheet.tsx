@@ -14,18 +14,17 @@ interface Props {
   onClose: () => void;
   /** Android back button; not set, the back button does not close the sheet */
   onRequestClose?: () => void;
-  /** The sheet has a text field: it goes up with the keyboard */
-  avoidKeyboard?: boolean;
   children: React.ReactNode;
 }
 
 /** Sheet sliding from the bottom over a blurred background, with a title and a close button */
-export default function BottomSheet({ visible, title, colors, isDark, onClose, onRequestClose, avoidKeyboard = false, children }: Props) {
+export default function BottomSheet({ visible, title, colors, isDark, onClose, onRequestClose, children }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onRequestClose}>
-      <KeyboardAvoidingView style={styles.modalOverlay} behavior="padding" enabled={avoidKeyboard}>
+      {/* A sheet with a text field stays above the keyboard (see KeyboardScreen) */}
+      <KeyboardAvoidingView style={styles.modalOverlay} behavior="padding">
         <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
         <View style={[styles.modalContent, { backgroundColor: colors.surface, paddingBottom: Math.max(48, insets.bottom + 24) }]}>
           <View style={styles.modalHeader}>

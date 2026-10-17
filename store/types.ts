@@ -36,6 +36,8 @@ export interface Level {
   updatedAt: number;
   /** Whether the level is marked as a favorite */
   isFavorite?: boolean;
+  /** Name given by the player (custom levels), travels in the share link */
+  name?: string;
 }
 
 /** Player progress for a specific level */

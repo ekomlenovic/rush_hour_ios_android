@@ -10,6 +10,7 @@ import type { MissionReward } from '@/data/missions';
 import XpBar from '@/components/progression/XpBar';
 import { getLevelRewardLines, missionRewardText } from '@/components/progression/rewards';
 import WinEffect from '@/components/effects/WinEffect';
+import ShareIcon from '@/components/share/ShareIcon';
 
 interface Props {
   visible: boolean;
@@ -144,11 +145,12 @@ export default function WinModal({
           </View>
           {canShareResult && (
             <Pressable
-              style={[styles.winButton, styles.winShareButton, { borderColor: colors.primary }]}
+              style={[styles.winButton, styles.winShareButton, styles.withIcon, { borderColor: colors.primary }]}
               onPress={onShareResult}
               accessibilityRole="button"
             >
-              <Text style={[styles.winButtonText, { color: colors.primaryText }]}>📤 {t('share.share_result')}</Text>
+              <ShareIcon size={18} color={colors.primaryText} />
+              <Text style={[styles.winButtonText, { color: colors.primaryText }]}>{t('share.share_result')}</Text>
             </Pressable>
           )}
           <Pressable
@@ -286,6 +288,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginVertical: 2,
   },
+  withIcon: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   winButton: {
     paddingVertical: 14,
     paddingHorizontal: 48,

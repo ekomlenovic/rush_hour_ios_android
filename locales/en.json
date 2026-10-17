@@ -156,16 +156,18 @@
     "win_stats": "{{moves}} moves · Best: {{best}} · Score: {{score}}",
     "analyzing": "Analyzing Puzzle...",
     "share_level": "Share Level",
-    "qr_hint": "Scan to challenge a friend!",
-    "share_link": "Share Link",
-    "copy_url": "Copy URL",
+    "qr_hint": "Your friend scans it with the camera: the level opens in Rush Hours.",
+    "share_link": "Send…",
+    "copy_url": "Copy link",
     "load_error": "Could not load this level.",
     "share_message": "Challenge me on Rush Hours! Can you beat this level in {{moves}} moves?\n{{url}}",
     "goal_title": "Objective",
     "goal_desc": "Slide the red car to the exit at the top!",
     "daily_already_completed": "Today's challenge is already completed! Come back tomorrow.",
     "weekly_already_completed": "Weekly challenge already completed! See you Monday.",
-    "archive_title": "Archive · {{date}}"
+    "archive_title": "Archive · {{date}}",
+    "qr_a11y": "QR code of the level {{name}}",
+    "share_message_named": "Challenge me on Rush Hours! Can you beat \"{{name}}\" in {{moves}} moves?\n{{url}}"
   },
   "tutorial": {
     "title": "Tutorial",
@@ -212,12 +214,12 @@
     "top": "Top",
     "bottom": "Bottom",
     "collision_title": "Action Blocked",
-    "collision_desc": "The vehicle would overlap with another object. Please clear the path first."
+    "collision_desc": "The vehicle would overlap with another object. Please clear the path first.",
+    "name_title": "Name your level"
   },
   "custom_levels": {
     "delete_title": "Delete Level",
-    "delete_confirm": "Are you sure you want to delete this level?",
-    "level_stats": "{{count}} vehicles • {{moves}} min moves",
+    "delete_confirm": "Delete \"{{name}}\"? Your game in progress on this level will be lost.",
     "tabs": {
       "created": "Created",
       "imported": "Imported",
@@ -225,11 +227,26 @@
     },
     "import_placeholder": "Level link or code...",
     "empty_created": "You haven't created any levels yet.",
-    "empty_imported": "No imported levels found.",
+    "empty_imported": "No imported levels. Ask a friend for a link, or scan their QR code with the camera.",
     "empty_favorites": "No favorite levels yet.",
     "create_new": "Create New Level",
-    "import_success": "Level imported successfully!",
-    "import_error": "Invalid level URL or code."
+    "import_error": "Invalid link or code, or the level can't be solved.",
+    "stats_line": "{{size}}×{{size}} · {{count}} vehicles · {{moves}} moves",
+    "untitled": "Level {{n}}",
+    "untitled_imported": "Imported level {{n}}",
+    "stars_one": "{{count}} star",
+    "stars_other": "{{count}} stars",
+    "not_won": "Not won yet",
+    "import_title": "Import a level",
+    "import_hint": "Paste the link or code a friend sent you.",
+    "import_existing_title": "Already imported",
+    "import_existing": "You already have this level in Imported.",
+    "name_label": "Name (optional)",
+    "name_placeholder": "E.g. Monday traffic jam",
+    "save_name": "Save",
+    "rename": "Rename",
+    "more": "More actions, {{name}}",
+    "edit_imported": "Edit {{name}}: creates your own level in Created"
   },
   "difficulty": {
     "EASY": "Easy",
