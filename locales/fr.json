@@ -477,7 +477,18 @@
       "big_grid": "Termine un niveau en 7×7 ou plus",
       "daily": "Réussis le défi du jour",
       "moves_100": "Joue 100 coups",
-      "play_10min": "Joue 10 minutes"
+      "play_10min": "Joue 10 minutes",
+      "win_8": "Termine 8 niveaux",
+      "perfect_3": "Obtiens 3 ⭐ sur 3 niveaux",
+      "no_hint_3": "Termine 3 niveaux sans indice",
+      "clean_3": "Termine 3 niveaux sans indice ni annulation",
+      "big_grid_3": "Termine 3 niveaux en 7×7 ou plus",
+      "moves_250": "Joue 250 coups",
+      "play_20min": "Joue 20 minutes",
+      "new_2": "Réussis 2 niveaux pour la première fois",
+      "new_4": "Réussis 4 niveaux pour la première fois",
+      "fast_1": "Termine un niveau en moins d'une minute",
+      "fast_3": "Termine 3 niveaux en moins d'une minute chacun"
     }
   },
   "reminders": {
