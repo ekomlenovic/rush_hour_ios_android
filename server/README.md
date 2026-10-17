@@ -142,7 +142,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 | `POST /admin/invite` | nouveau code d'invitation |
 | `GET /admin/settings`, `PATCH /admin/settings` | nom, heure de sortie (`release_too_soon` si le prochain défi sortirait dans moins d'une heure), délai de grâce, pré-génération, inscriptions, invitations, difficulté, conservation des replays, seuils. La réponse donne aussi `timeZone` et `nextReleaseAt` |
 | `POST /admin/settings/reset` | retour aux variables d'environnement (sauf le code d'invitation) |
-| `GET /duels` | les duels du serveur : ouverts (avec leur code, pour les rejoindre sans qu'on le donne) et en cours ; les duels privés n'y sont que pour leur joueur. `ready` : puzzles prêts par niveau ; `metrics` : les vainqueurs possibles d'un duel (`["time", "moves"]`) |
+| `GET /duels` | les duels du serveur : ouverts (avec leur code, pour les rejoindre sans qu'on le donne) et en cours (avec leur code, pour les regarder, et leur nombre de `spectators`) ; les duels privés n'y sont que pour leur joueur. `ready` : puzzles prêts par niveau ; `metrics` : les vainqueurs possibles d'un duel (`["time", "moves"]`) |
 | `GET /duels/leaderboard?period=day\|week\|month\|all&date=` | classement des duels : victoires, puis moins de défaites |
 | `GET /duels/history` | mes derniers duels, et mon score contre chaque adversaire |
 | `GET /duels/:id` | un duel avec les coups des deux joueurs (replay) : pour ses joueurs et l'admin |
@@ -157,11 +157,12 @@ Messages JSON. Le premier est `{ "type": "auth", "token": "…" }` → `{ type: 
 |---|---|
 | `{ type: "create", difficulty?, metric?, private? }` | ouvre un duel → `{ type: "duel", duel }` avec son `code` ; `metric` : `"time"` (le premier sorti gagne, par défaut) ou `"moves"` (le moins de coups, le plus rapide à égalité) ; privé : absent de `GET /duels` |
 | `{ type: "join", code }` | rejoint un duel (`duel_not_found`, `duel_full`) ; 10 mauvais codes ferment la connexion |
+| `{ type: "watch", code }` | regarde un duel en spectateur (public, ou privé avec son code) : reçoit les mêmes messages que les joueurs, `duel.spectating` à `true`, `me` = le premier joueur ; 50 spectateurs au plus (`too_many_spectators`) ; `leave` arrête de regarder |
 | `{ type: "move", vehicleId, delta }` | un coup, vérifié puis envoyé aux deux : `{ type: "move", playerId, move }` (temps du serveur) |
 | `{ type: "leave" }` | quitte le duel (en pleine partie : défaite) |
 | `{ type: "rematch" }` | revanche, lancée quand les deux l'ont demandée |
 
-Le serveur envoie aussi `duel` (tout le duel : statut `waiting`, `preparing`, `playing`, `over`, puzzle, `startsAt`, coups des deux joueurs), `presence` (adversaire connecté ou non), `end` (`winnerId`, `reason` : `won`, `forfeit`, `disconnected`, `timeout` ; l'optimum, `duelId` pour le replay et `score` des deux joueurs l'un contre l'autre), `closed` et `error`.
+Le serveur envoie aussi `duel` (tout le duel : statut `waiting`, `preparing`, `playing`, `over`, puzzle, `startsAt`, coups des deux joueurs), `presence` (adversaire connecté ou non), `spectators` (nombre de spectateurs), `end` (`winnerId`, `reason` : `won`, `forfeit`, `disconnected`, `timeout` ; l'optimum, `duelId` pour le replay et `score` des deux joueurs l'un contre l'autre), `closed` et `error`.
 
 ## Développement
 

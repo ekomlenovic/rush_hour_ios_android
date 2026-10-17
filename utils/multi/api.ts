@@ -140,7 +140,7 @@ export type AdminSettingsPatch = Partial<Omit<AdminSettings, 'thresholds' | 'tim
 export type DuelMetric = 'time' | 'moves';
 
 export interface DuelListing {
-  /** To join it: open public duels and my own; null otherwise */
+  /** To join or watch it: public duels and my own; null otherwise (a server older than the spectators: only open ones) */
   code: string | null;
   difficulty: Difficulty;
   /** Absent on older servers: the time */
@@ -151,6 +151,8 @@ export interface DuelListing {
   createdAt: number;
   startsAt: number | null;
   mine: boolean;
+  /** How many watch it; absent from a server older than the spectators */
+  spectators?: number;
 }
 
 export interface DuelRankRow { playerId: number; pseudo: string; rank: number; wins: number; losses: number; draws: number; played: number }
