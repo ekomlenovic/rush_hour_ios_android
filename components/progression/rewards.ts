@@ -16,7 +16,7 @@ export function getLevelRewardLines(t: TFunction, level: number, freezes?: numbe
     lines.push(t('progression.reward_slot', { count: capacity }));
   }
   for (const cosmetic of getLevelCosmetics(level)) {
-    lines.push(t('progression.reward_cosmetic', { name: `${cosmetic.icon} ${t(`cosmetics.${cosmetic.kind}.${cosmetic.id}`)}` }));
+    lines.push(t('progression.reward_cosmetic', { name: t(`cosmetics.${cosmetic.kind}.${cosmetic.id}`) }));
   }
   return lines;
 }
