@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { UiColors } from '@/theme';
-import XpBar from '@/components/progression/XpBar';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -16,8 +15,6 @@ interface Props {
   /** Reward shown on the right while the challenge is still to do */
   reward: string;
   done: boolean;
-  /** Optional thin bar under the subtitle (time left in the week), 0 to 1 */
-  progress?: number;
   enteringDelay: number;
   onPress: () => void;
 }
@@ -26,7 +23,7 @@ interface Props {
  * Daily / weekly challenge of the home screen: a secondary card under the Play button.
  * Once won it is dimmed and shows when the next one comes, so it no longer calls for a tap.
  */
-export default function ChallengeCard({ colors, icon, title, subtitle, reward, done, progress, enteringDelay, onPress }: Props) {
+export default function ChallengeCard({ colors, icon, title, subtitle, reward, done, enteringDelay, onPress }: Props) {
   return (
     <AnimatedPressable
       entering={FadeInDown.delay(enteringDelay).springify()}
@@ -47,12 +44,7 @@ export default function ChallengeCard({ colors, icon, title, subtitle, reward, d
         <Text style={[styles.title, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
           {title}
         </Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]} numberOfLines={1}>{subtitle}</Text>
-        {progress !== undefined && !done ? (
-          <View style={styles.bar}>
-            <XpBar colors={colors} ratio={progress} height={4} />
-          </View>
-        ) : null}
+        <Text style={[styles.subtitle, { color: colors.textMuted }]} numberOfLines={2}>{subtitle}</Text>
       </View>
 
       {done ? null : (
@@ -95,9 +87,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 13,
     fontWeight: '500',
-  },
-  bar: {
-    marginTop: 6,
   },
   reward: {
     paddingVertical: 4,

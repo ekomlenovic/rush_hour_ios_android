@@ -477,7 +477,18 @@
       "big_grid": "Complete a 7×7 or bigger level",
       "daily": "Complete the daily challenge",
       "moves_100": "Play 100 moves",
-      "play_10min": "Play for 10 minutes"
+      "play_10min": "Play for 10 minutes",
+      "win_8": "Complete 8 levels",
+      "perfect_3": "Get 3 ⭐ on 3 levels",
+      "no_hint_3": "Complete 3 levels without hints",
+      "clean_3": "Complete 3 levels without hints or undo",
+      "big_grid_3": "Complete 3 levels of 7×7 or bigger",
+      "moves_250": "Play 250 moves",
+      "play_20min": "Play for 20 minutes",
+      "new_2": "Beat 2 levels for the first time",
+      "new_4": "Beat 4 levels for the first time",
+      "fast_1": "Complete a level in under a minute",
+      "fast_3": "Complete 3 levels in under a minute each"
     }
   },
   "reminders": {
