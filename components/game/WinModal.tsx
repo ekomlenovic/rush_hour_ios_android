@@ -92,10 +92,10 @@ export default function WinModal({
           )}
           {unlocks.length > 0 && (
             <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
-              <Text style={[styles.winUnlocksTitle, { color: colors.warning }]}>{t('achievements.unlocked')}</Text>
-              {unlocks.map((id) => (
+              <IconText icon="trophy" color={colors.warning} textStyle={styles.winUnlocksTitle}>{t('achievements.unlocked')}</IconText>
+              {unlocks.filter(id => ACHIEVEMENTS_BY_ID[id]).map((id) => (
                 <Text key={id} style={[styles.winUnlockItem, { color: colors.text }]}>
-                  {ACHIEVEMENTS_BY_ID[id]?.icon} {t(`achievements.${id}`)}
+                  {t(`achievements.${id}`)}
                 </Text>
               ))}
             </View>

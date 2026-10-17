@@ -482,8 +482,8 @@
   "missions": {
     "title": "Missions",
     "completed": "Daily missions complete!",
-    "reward_freeze": "+{{xp}} XP and +1 streak freeze ❄️",
-    "reward_full": "+{{xp}} XP (freeze stock full ❄️)",
+    "reward_freeze": "+{{xp}} XP and +1 streak freeze",
+    "reward_full": "+{{xp}} XP (freeze stock full)",
     "reward_hint": "Complete all 3 missions to earn {{xp}} XP and a streak freeze ❄️",
     "reward_hint_full": "Complete all 3 missions to earn {{xp}} XP (freeze stock full ❄️)",
     "all_done": "Well done, all of today's missions are complete!",
@@ -644,9 +644,9 @@
     "next_level": "Next level: {{level}}",
     "next_title": "Next title: {{title}} (lv. {{level}})",
     "rewards_title": "Rewards",
-    "reward_freeze": "+1 streak freeze ❄️ if your stock isn't full",
-    "reward_freeze_full": "+1 streak freeze ❄️ if your stock isn't full ({{count}}/{{capacity}} right now)",
-    "reward_slot": "New freeze slot: up to {{count}} ❄️",
+    "reward_freeze": "+1 streak freeze if your stock isn't full",
+    "reward_freeze_full": "+1 streak freeze if your stock isn't full ({{count}}/{{capacity}} right now)",
+    "reward_slot": "New freeze slot: up to {{count}} freezes",
     "reward_cosmetic": "Unlocked: {{name}}",
     "a11y_badge": "Level {{level}}, {{title}}, {{xp}} of {{next}} XP to the next level",
     "titles": {
