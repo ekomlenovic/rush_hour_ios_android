@@ -7,7 +7,7 @@ import { dressVariant, hardStarts, levelVariants, variantSources } from '../util
 
 const master = DIFFICULTY_LEVELS.MASTER;
 // Quick ones to explore: a 6×6 and a 7×7 level of 40 moves or more
-const SOURCES = variantSources(sampleLevels, master).filter(l => [96, 287].includes(l.id));
+const SOURCES = variantSources(sampleLevels, master).filter(l => [101, 292].includes(l.id));
 
 /** The optimal solution of a level, played by the rules of the game: does it win? */
 function solvesByTheRules(level: Level): boolean {
@@ -24,7 +24,7 @@ function solvesByTheRules(level: Level): boolean {
 
 describe('variants of the hard levels of the app (hardest duels)', () => {
   it('start from the levels of the range of the difficulty', () => {
-    expect(SOURCES.map(l => l.id)).toEqual([96, 287]);
+    expect(SOURCES.map(l => l.id)).toEqual([101, 292]);
     const sources = variantSources(sampleLevels, master);
     expect(sources.length).toBeGreaterThan(20);
     expect(sources.every(l => l.minMoves >= master.minMovesRequired && l.minMoves <= master.maxMovesRequired)).toBe(true);
