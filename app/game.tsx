@@ -108,7 +108,10 @@ export default function GameScreen() {
 
   // After the first daily won, offer the reminders once (see docs/GAME_DESIGN.md)
   const handleWinContinue = () => {
-    router.back();
+    // A challenge stays open on its result: going back under the closing modal
+    // only happened once it was gone, seconds later (see docs/GAME_DESIGN.md)
+    if (challengeKind) setWon(false);
+    else router.back();
     const state = useGameStore.getState();
     if (challengeKind !== 'daily' || state.notificationsPrompted || state.notificationsEnabled) return;
     state.markNotificationsPrompted();
