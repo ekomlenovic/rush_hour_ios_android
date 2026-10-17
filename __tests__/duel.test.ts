@@ -1,6 +1,6 @@
 import type { Level } from '../store/types';
 import {
-  countdownMs, duelElapsedMs, duelReducer, duelSocketUrl, iHaveWon, initialDuelState, myMove, normalizeDuelCode, outcome,
+  countdownMs, duelElapsedMs, duelReducer, duelSocketUrl, iHaveWon, initialDuelState, myMove, normalizeDuelCode, outcome, winnerOf,
   type DuelAction, type DuelServerMessage, type DuelState, type DuelView,
 } from '../utils/multi/duel';
 
@@ -132,6 +132,31 @@ describe('duel on the phone', () => {
     const back = run(over, { type: 'connection', status: 'offline' }, message({ type: 'ready', player: { id: 1, pseudo: 'Léo' }, duel: null }));
     expect(back.duel).toMatchObject({ status: 'over', opponentLeft: true });
     expect(run(playing(), message({ type: 'ready', player: { id: 1, pseudo: 'Léo' }, duel: null })).duel).toBeNull();
+  });
+
+  it('a spectator sees both boards move, and plays nothing', () => {
+    const watching = (patch: Partial<DuelView> = {}) => run(
+      initialDuelState,
+      message({ type: 'ready', player: { id: 3, pseudo: 'Sam' }, duel: null }),
+      message({ type: 'duel', duel: view({ spectating: true, spectators: 1, ...patch }) }),
+    );
+    let state = watching();
+    expect(state.duel).toMatchObject({ spectating: true, spectators: 1 });
+    state = run(state, message({ type: 'move', playerId: 1, move: { vehicleId: 'v1', delta: 2, t: 900 } }));
+    expect(state.duel!.me.vehicles.find(v => v.id === 'v1')).toMatchObject({ row: 3 });
+    expect(state.duel!.me.moves).toHaveLength(1);
+    state = run(state, message({ type: 'presence', playerId: 1, connected: false }), message({ type: 'spectators', count: 4 }));
+    expect(state.duel).toMatchObject({ spectators: 4, me: { connected: false } });
+
+    // Connected again: the duel stays until the server sends it again; gone meanwhile, it is said
+    state = run(state, message({ type: 'ready', player: { id: 3, pseudo: 'Sam' }, duel: null }));
+    expect(state.duel?.code).toBe('ABCD3');
+    expect(run(state, message({ type: 'error', error: 'duel_not_found' }))).toMatchObject({ duel: null, error: 'duel_not_found' });
+
+    state = run(state, message({ type: 'end', result: { winnerId: 2, reason: 'won', timeMs: 4000, minMoves: 2, duelId: 7, score: null }, level: LEVEL }));
+    expect(winnerOf(state.duel!)?.pseudo).toBe('Emma');
+    // A server older than the spectators: a player
+    expect(playing().duel).toMatchObject({ spectating: false, spectators: 0 });
   });
 });
 

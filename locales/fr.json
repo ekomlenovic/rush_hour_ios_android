@@ -1089,6 +1089,11 @@
       "result_win": "Tu as gagné !",
       "result_loss": "{{pseudo}} a gagné",
       "result_draw": "Égalité",
+      "result_winner": "{{pseudo}} a gagné !",
+      "watch": "Regarder",
+      "spectators_one": "{{count}} spectateur",
+      "spectators_other": "{{count}} spectateurs",
+      "spectator_rematch": "S'ils lancent une revanche, tu la regardes aussi.",
       "reason_forfeit": "{{pseudo}} a abandonné.",
       "reason_disconnected": "La connexion avec {{pseudo}} a été perdue.",
       "reason_timeout": "Personne n'a fini en 30 minutes.",
@@ -1198,6 +1203,7 @@
       "duel_unreachable": "Impossible d'ouvrir le duel : le reverse proxy du serveur doit laisser passer les WebSockets (voir le guide du serveur).",
       "duel_replaced": "Ton compte joue maintenant sur un autre téléphone : le duel continue là-bas.",
       "puzzle_unavailable": "Le serveur n'a pas pu préparer de puzzle pour ce duel. Réessaie, ou choisis un autre niveau.",
+      "too_many_spectators": "Trop de monde regarde déjà ce duel. Réessaie plus tard.",
       "unknown": "Une erreur inattendue est survenue."
     }
   }

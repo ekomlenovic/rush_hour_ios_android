@@ -7,7 +7,8 @@ import type { PuzzleSource } from './puzzlePool';
  * Duels 1v1 in real time: two players of the server on the same generated puzzle,
  * each one sees the board of the other move. The server is the referee: it replays
  * every move with the rules of the app, the first win it sees is the one that counts.
- * Nothing is stored: a duel lives in memory, for as long as it is played.
+ * Other players of the server can watch a duel live (spectators): they see both boards,
+ * and play nothing. Nothing is stored: a duel lives in memory, for as long as it is played.
  */
 
 /** Code to join a duel: no 0/O nor 1/I, easy to read out loud */
@@ -34,6 +35,8 @@ export const MAX_MESSAGES_PER_SECOND = 20;
 export const MAX_CREATES = 5;
 export const CREATES_WINDOW_MS = 60_000;
 export const MAX_DUEL_MOVES = 1000;
+/** Spectators of one duel at most: each move goes to each of them */
+export const MAX_SPECTATORS = 50;
 
 export interface DuelIdentity { id: number; pseudo: string }
 
@@ -74,6 +77,8 @@ export type ClientMessage =
   /** private: only who has the code can join; otherwise the duel is listed for everyone on the server */
   | { type: 'create'; difficulty?: Difficulty; private?: boolean }
   | { type: 'join'; code: string }
+  /** Watch a duel without playing it: a public one of the list, or a private one with its code */
+  | { type: 'watch'; code: string }
   | { type: 'move'; vehicleId: string; delta: number }
   | { type: 'leave' }
   | { type: 'rematch' };
@@ -82,7 +87,10 @@ export type EndReason = 'won' | 'forfeit' | 'disconnected' | 'timeout';
 
 export interface DuelPlayerView { id: number; pseudo: string; connected: boolean; moves: MoveRecord[]; wantsRematch: boolean }
 
-/** The whole duel as one player sees it: sent at the start and when they come back */
+/**
+ * The whole duel as one player sees it: sent at the start and when they come back.
+ * A spectator gets it too: `me` is then the first player, `opponent` the second one.
+ */
 export interface DuelView {
   code: string;
   difficulty: Difficulty;
@@ -95,11 +103,15 @@ export interface DuelView {
   me: DuelPlayerView;
   opponent: DuelPlayerView | null;
   result: DuelResult | null;
+  /** Seen by a spectator: nothing to play */
+  spectating: boolean;
+  /** How many watch it */
+  spectators: number;
 }
 
 /** A duel in the list of the server: the open ones to join, the ones being played */
 export interface DuelListing {
-  /** To join it: open public duels and my own; null otherwise */
+  /** To join or watch it: public duels and my own; null otherwise */
   code: string | null;
   difficulty: Difficulty;
   status: 'waiting' | 'preparing' | 'playing';
@@ -108,6 +120,7 @@ export interface DuelListing {
   createdAt: number;
   startsAt: number | null;
   mine: boolean;
+  spectators: number;
 }
 
 export interface DuelResult {
@@ -130,6 +143,8 @@ export type ServerMessage =
   | { type: 'move'; playerId: number; move: MoveRecord }
   | { type: 'presence'; playerId: number; connected: boolean }
   | { type: 'rematch'; playerId: number }
+  /** Someone started or stopped watching */
+  | { type: 'spectators'; count: number }
   | { type: 'end'; result: DuelResult; level: Level }
   | { type: 'closed' }
   | { type: 'error'; error: string };
@@ -156,6 +171,8 @@ interface Duel {
   result: DuelResult | null;
   /** Bumped at each new game: a puzzle generated for an earlier one is dropped */
   round: number;
+  /** Players who watch it */
+  spectators: Set<number>;
 }
 
 /** Counts events by key in a sliding window: too many, and the next one is refused */
@@ -201,7 +218,8 @@ function parseMessage(raw: string): ClientMessage | null {
       if (m.difficulty !== undefined && !DIFFICULTIES.includes(m.difficulty as Difficulty)) return null;
       if (m.private !== undefined && typeof m.private !== 'boolean') return null;
       return { type: 'create', difficulty: m.difficulty as Difficulty | undefined, private: m.private as boolean | undefined };
-    case 'join': return typeof m.code === 'string' && m.code.length <= 20 ? { type: 'join', code: m.code } : null;
+    case 'join': case 'watch':
+      return typeof m.code === 'string' && m.code.length <= 20 ? { type: m.type as 'join' | 'watch', code: m.code } : null;
     case 'move':
       return typeof m.vehicleId === 'string' && m.vehicleId.length <= 32 && Number.isInteger(m.delta)
         ? { type: 'move', vehicleId: m.vehicleId, delta: m.delta as number } : null;
@@ -214,6 +232,8 @@ function parseMessage(raw: string): ClientMessage | null {
 export class Duels {
   private readonly duels = new Map<string, Duel>();
   private readonly byPlayer = new Map<number, Duel>();
+  /** The duel each spectator watches */
+  private readonly watching = new Map<number, Duel>();
   private readonly connections = new Map<number, DuelConnection>();
   private readonly wrongCodes = new WindowLimiter(MAX_WRONG_CODES - 1, WRONG_CODES_WINDOW_MS);
   private readonly creates = new WindowLimiter(MAX_CREATES, CREATES_WINDOW_MS);
@@ -255,8 +275,8 @@ export class Duels {
       }
 
       if (message.type === 'auth') return;
-      if (message.type === 'join') {
-        const error = this.join(player, message.code);
+      if (message.type === 'join' || message.type === 'watch') {
+        const error = message.type === 'join' ? this.join(player, message.code) : this.watch(player, message.code);
         // Counted by player, not by connection: connecting again does not give more tries
         if (error === 'duel_not_found' && !this.wrongCodes.hit(player.id, now)) return refuse(4029, 'rate_limited');
         if (error) connection.send({ type: 'error', error });
@@ -283,6 +303,7 @@ export class Duels {
    * in on another phone): out of their duel at once, and their connection closed.
    */
   kick(playerId: number, reason: string) {
+    this.unwatch(playerId);
     const duel = this.byPlayer.get(playerId);
     if (duel) this.leave(duel, playerId);
     const connection = this.connections.get(playerId);
@@ -305,7 +326,7 @@ export class Duels {
       .map(d => {
         const mine = d.seats.some(s => s.player.id === playerId);
         return {
-          code: mine || d.status === 'waiting' ? d.code : null,
+          code: d.code,
           difficulty: d.difficulty,
           status: d.status as DuelListing['status'],
           private: d.isPrivate,
@@ -313,6 +334,7 @@ export class Duels {
           createdAt: d.createdAt,
           startsAt: d.startsAt,
           mine,
+          spectators: d.spectators.size,
         };
       });
   }
@@ -369,6 +391,8 @@ export class Duels {
   private detach(playerId: number, connection: DuelConnection) {
     if (this.connections.get(playerId) !== connection) return;
     this.connections.delete(playerId);
+    // A spectator watches again once connected again (the app asks)
+    this.unwatch(playerId);
     const duel = this.byPlayer.get(playerId);
     if (!duel) return;
     const seat = this.seat(duel, playerId)!;
@@ -381,10 +405,11 @@ export class Duels {
 
   // ── Messages ───────────────────────────────────────────────────────────────
 
-  private handle(player: DuelIdentity, message: Exclude<ClientMessage, { type: 'auth' | 'join' }>): string | null {
+  private handle(player: DuelIdentity, message: Exclude<ClientMessage, { type: 'auth' | 'join' | 'watch' }>): string | null {
     const duel = this.byPlayer.get(player.id);
     switch (message.type) {
       case 'create': {
+        this.unwatch(player.id);
         if (duel) {
           if (duel.status === 'preparing' || duel.status === 'playing') return 'already_in_duel';
           this.leave(duel, player.id);
@@ -394,7 +419,7 @@ export class Duels {
         const created: Duel = {
           code, difficulty: message.difficulty ?? 'NORMAL', isPrivate: message.private ?? false, status: 'waiting',
           seats: [this.newSeat(player)], level: null, startsAt: null,
-          createdAt: this.deps.now(), endedAt: null, result: null, round: 0,
+          createdAt: this.deps.now(), endedAt: null, result: null, round: 0, spectators: new Set(),
         };
         this.duels.set(code, created);
         this.byPlayer.set(player.id, created);
@@ -424,6 +449,7 @@ export class Duels {
       }
 
       case 'leave':
+        this.unwatch(player.id);
         if (duel) this.leave(duel, player.id);
         return null;
 
@@ -453,10 +479,45 @@ export class Duels {
       if (current.status === 'preparing' || current.status === 'playing') return 'already_in_duel';
       this.leave(current, player.id);
     }
+    this.unwatch(player.id);
     duel.seats.push(this.newSeat(player));
     this.byPlayer.set(player.id, duel);
     this.prepare(duel);
     return null;
+  }
+
+  /** Watching a duel: both boards live, from where the game is */
+  private watch(player: DuelIdentity, input: string): string | null {
+    const duel = this.duels.get(normalizeDuelCode(input));
+    if (!duel) return 'duel_not_found';
+    // One of its players: their own duel
+    if (this.byPlayer.get(player.id) === duel) {
+      this.sendTo(duel, player.id, { type: 'duel', duel: this.view(duel, player.id) });
+      return null;
+    }
+    if (this.watching.get(player.id) !== duel) {
+      if (duel.spectators.size >= MAX_SPECTATORS) return 'too_many_spectators';
+      const current = this.byPlayer.get(player.id);
+      if (current) {
+        if (current.status === 'preparing' || current.status === 'playing') return 'already_in_duel';
+        this.leave(current, player.id);
+      }
+      this.unwatch(player.id);
+      duel.spectators.add(player.id);
+      this.watching.set(player.id, duel);
+      this.broadcast(duel, { type: 'spectators', count: duel.spectators.size }, player.id);
+    }
+    this.connections.get(player.id)?.send({ type: 'duel', duel: this.view(duel, player.id) });
+    return null;
+  }
+
+  /** No longer watching (left, gone, or playing a duel of their own) */
+  private unwatch(playerId: number) {
+    const duel = this.watching.get(playerId);
+    if (!duel) return;
+    this.watching.delete(playerId);
+    duel.spectators.delete(playerId);
+    this.broadcast(duel, { type: 'spectators', count: duel.spectators.size });
   }
 
   // ── A game ─────────────────────────────────────────────────────────────────
@@ -545,6 +606,8 @@ export class Duels {
       if (this.byPlayer.get(seat.player.id) === duel) this.byPlayer.delete(seat.player.id);
     }
     this.broadcast(duel, { type: 'closed' });
+    for (const id of duel.spectators) if (this.watching.get(id) === duel) this.watching.delete(id);
+    duel.spectators.clear();
   }
 
   // ── Views ──────────────────────────────────────────────────────────────────
@@ -558,7 +621,8 @@ export class Duels {
   }
 
   private view(duel: Duel, playerId: number): DuelView {
-    const me = this.seat(duel, playerId)!;
+    // A spectator sees the duel from the side of its first player
+    const me = this.seat(duel, playerId) ?? duel.seats[0];
     const opponent = duel.seats.find(s => s !== me);
     const over = duel.status === 'over';
     return {
@@ -572,6 +636,8 @@ export class Duels {
       me: this.playerView(me),
       opponent: opponent ? this.playerView(opponent) : null,
       result: duel.result,
+      spectating: !this.seat(duel, playerId),
+      spectators: duel.spectators.size,
     };
   }
 
@@ -581,9 +647,12 @@ export class Duels {
 
   private sendViews(duel: Duel) {
     for (const seat of duel.seats) seat.connection?.send({ type: 'duel', duel: this.view(duel, seat.player.id) });
+    for (const id of duel.spectators) this.connections.get(id)?.send({ type: 'duel', duel: this.view(duel, id) });
   }
 
+  /** To the players and the spectators of the duel */
   private broadcast(duel: Duel, message: ServerMessage, exceptId?: number) {
     for (const seat of duel.seats) if (seat.player.id !== exceptId) seat.connection?.send(message);
+    for (const id of duel.spectators) if (id !== exceptId) this.connections.get(id)?.send(message);
   }
 }

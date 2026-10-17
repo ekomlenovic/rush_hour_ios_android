@@ -9,7 +9,7 @@ export const MULTI_ERROR_CODES = [
   'banned', 'forbidden', 'not_found', 'join_closed', 'invites_admin_only', 'invalid_admin_token', 'cannot_ban_admin', 'invalid_settings',
   'release_too_soon',
   'replay_locked', 'replay_expired', 'replay_unavailable',
-  'duel_not_found', 'duel_full', 'already_in_duel', 'no_duel', 'not_started', 'opponent_left', 'duel_unreachable', 'duel_replaced', 'puzzle_unavailable',
+  'duel_not_found', 'duel_full', 'already_in_duel', 'no_duel', 'not_started', 'opponent_left', 'duel_unreachable', 'duel_replaced', 'puzzle_unavailable', 'too_many_spectators',
   'invalid_url', 'not_https', 'update_app', 'update_server', 'unknown',
 ] as const;
 

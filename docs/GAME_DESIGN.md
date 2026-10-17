@@ -222,6 +222,7 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 | Chaque coup est **vérifié** par le serveur (mêmes règles que l'app) et relayé ; **la première victoire vue par le serveur gagne** ; temps = chrono du serveur | `applyMoves`, `duelReducer` (`utils/multi/duel.ts`) |
 | Quitter = perdre ; connexion perdue : **60 s** pour revenir (le duel reprend là où il était), sinon défaite ; personne n'a fini en 30 min : égalité | `RECONNECT_GRACE_MS`, `MAX_DUEL_MS` |
 | **Revanche** quand les deux la demandent : nouveau puzzle | `rematch` |
+| **Spectateurs** : un duel en cours de la liste se regarde d'un toucher (« Regarder »), un duel privé avec son code (un code d'un duel déjà commencé ouvre le duel en spectateur) ; les deux plateaux en direct, de la même taille, rien à jouer, revanches comprises. Les joueurs voient combien regardent (👁) ; 50 spectateurs au plus par duel ; pas de replay pour un spectateur | `watch` (`Duels`), `SpectatorResult` (`app/multi/duel.tsx`), `DuelsCard` |
 | Un duel **terminé est gardé** : score entre les deux joueurs (affiché à la fin), historique « Mes duels », **replay** des deux plateaux au rythme réel (coups effacés après `REPLAY_RETENTION_DAYS`, résultats gardés) | `DuelStore` (`server/src/duelStore.ts`), `DuelHistoryCard`, `app/multi/duel-replay.tsx` |
 | **Classement des duels** (semaine, mois, tout) : victoires, puis moins de défaites | `rankDuels`, `GET /duels/leaderboard`, `DuelLeaderboard` |
 | Aucun effet sur le reste du jeu (streak, XP…) | |

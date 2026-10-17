@@ -1089,6 +1089,11 @@
       "result_win": "You won!",
       "result_loss": "{{pseudo}} won",
       "result_draw": "Draw",
+      "result_winner": "{{pseudo}} won!",
+      "watch": "Watch",
+      "spectators_one": "{{count}} spectator",
+      "spectators_other": "{{count}} spectators",
+      "spectator_rematch": "If they play a rematch, you'll watch it too.",
       "reason_forfeit": "{{pseudo}} gave up.",
       "reason_disconnected": "The connection with {{pseudo}} was lost.",
       "reason_timeout": "Nobody finished within 30 minutes.",
@@ -1198,6 +1203,7 @@
       "duel_unreachable": "Cannot open the duel: the reverse proxy of the server must let WebSockets through (see the server guide).",
       "duel_replaced": "Your account now plays on another phone: the duel goes on there.",
       "puzzle_unavailable": "The server could not prepare a puzzle for this duel. Try again, or pick another level.",
+      "too_many_spectators": "Too many people are already watching this duel. Try again later.",
       "unknown": "Something unexpected happened."
     }
   }
