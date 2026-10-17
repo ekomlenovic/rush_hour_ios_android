@@ -6,7 +6,7 @@ import { sampleLevels } from '@/data/sampleLevels';
 import { DIFFICULTY_LEVELS } from '@/utils/generator';
 import { haptics, Haptics } from '@/utils/haptics';
 import { useLevelGenerator, GENERATION_TIME_MAP, DifficultyKey } from '@/hooks/useLevelGenerator';
-import type { UiColors } from '@/theme';
+import { fixedColors, type UiColors } from '@/theme';
 import IconText from '../IconText';
 import { settingsStyles as styles } from './styles';
 
@@ -76,9 +76,9 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
   return (
     <View>
       <Text style={[styles.sectionTitle, { color: colors.primaryText }]} accessibilityRole="header">{t('map.level_generator')}</Text>
-      <Text style={[styles.settingSub, { color: colors.warning, marginBottom: 16, fontWeight: '600' }]}>
+      <IconText icon="warning" color={colors.warning} style={{ marginBottom: 16 }} textStyle={[styles.settingSub, { fontWeight: '600' }]}>
         {t('map.generator_warning')}
-      </Text>
+      </IconText>
 
       <View style={{ marginBottom: 20 }}>
         <Text style={[styles.settingLabel, { color: colors.text }]}>{t('creator.difficulty')}: {t(`difficulty.${genDifficulty}`)}</Text>
@@ -114,9 +114,13 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
           accessibilityRole="button"
           accessibilityState={{ disabled: isGenerating, busy: isGenerating }}
         >
-          <Text style={styles.mainBtnText}>
-            {isGenerating ? t('map.generating') : t('map.generate_btn', { amount: genAmount, time: Math.ceil((genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000) })}
-          </Text>
+          {isGenerating ? (
+            <IconText icon="hourglass" color={fixedColors.onPrimary} textStyle={styles.mainBtnText}>{t('map.generating')}</IconText>
+          ) : (
+            <Text style={styles.mainBtnText}>
+              {t('map.generate_btn', { amount: genAmount, time: Math.ceil((genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000) })}
+            </Text>
+          )}
         </Pressable>
 
         {!isGenerating && generatedLevels.length > 0 && (
