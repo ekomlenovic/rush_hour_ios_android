@@ -212,9 +212,10 @@ export default function CustomLevelsScreen() {
                                         {t('custom_levels.stats_line', { size: pending.gridSize, count: pending.vehicles.length, moves: pending.minMoves })}
                                     </Text>
                                 </View>
+                                <Text style={[styles.nameLabel, { color: colors.textMuted }]}>{t('custom_levels.name_label')}</Text>
                                 <TextInput
-                                    style={[styles.input, styles.nameInput, { color: colors.text, backgroundColor: colors.neutralSoft, borderColor: colors.border }]}
-                                    placeholder={t('custom_levels.name_label')}
+                                    style={[styles.field, { color: colors.text, backgroundColor: colors.neutralSoft, borderColor: colors.border }]}
+                                    placeholder={t('custom_levels.name_placeholder')}
                                     placeholderTextColor={colors.textMuted}
                                     accessibilityLabel={t('custom_levels.name_label')}
                                     value={importName}
@@ -457,8 +458,10 @@ const styles = StyleSheet.create({
     importTitle: { fontSize: 17, fontWeight: '800' },
     importHint: { fontSize: 14, marginTop: -4 },
     inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    input: { flex: 1, height: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, fontSize: 15 },
-    nameInput: { flex: 0 },
+    field: { height: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, fontSize: 15 },
+    // minWidth 0: a long pasted link must not push the Paste button out of the card
+    input: { flex: 1, minWidth: 0, height: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, fontSize: 15 },
+    nameLabel: { fontSize: 13, fontWeight: '600', marginBottom: -4 },
     pasteBtn: { height: 48, paddingHorizontal: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 6 },
     pasteBtnText: { fontWeight: '700', fontSize: 14 },
     importError: { fontSize: 13, fontWeight: '600' },
