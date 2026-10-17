@@ -33,10 +33,10 @@ export const LONG_SOLUTION: MoveRecord[] = [
 
 /** Records what it is asked to generate, answers LEVEL */
 export function fakeGenerator(level: Level | null = LEVEL) {
-  const calls: { seed: string; difficulty: string }[] = [];
+  const calls: { seed: string; difficulty: string; kind?: string }[] = [];
   const generator: PuzzleGenerator = {
-    generate: async (seed, difficulty) => {
-      calls.push({ seed, difficulty });
+    generate: async (seed, difficulty, kind) => {
+      calls.push({ seed, difficulty, ...(kind ? { kind } : {}) });
       return level && { ...level };
     },
     close: async () => {},

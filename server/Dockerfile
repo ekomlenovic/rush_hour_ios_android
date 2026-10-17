@@ -7,6 +7,7 @@ RUN npm ci --no-audit --no-fund
 COPY store/ /src/store/
 COPY utils/ /src/utils/
 COPY theme/ /src/theme/
+COPY data/ /src/data/
 COPY server/ ./
 RUN npm run typecheck && npm run build
 

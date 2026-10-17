@@ -5,5 +5,7 @@
 !store/levelIds.ts
 !utils/
 !theme/
+# The levels of the app: the hardest ones are the base of the hardest duels
+!data/sampleLevels.ts
 server/node_modules
 server/dist

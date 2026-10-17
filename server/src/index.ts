@@ -20,12 +20,15 @@ async function main() {
   mkdirSync(config.dataDir, { recursive: true });
   const db = openDatabase(path.join(config.dataDir, 'rush-hours.db'));
   const generator = workerGenerator();
-  const { app, challenges } = buildApp({ config, db, generator, logger: true });
+  // The duel puzzles generated ahead: a worker of their own, a master one can take minutes
+  const poolGenerator = workerGenerator();
+  const { app, challenges, puzzles } = buildApp({ config, db, generator, poolGenerator, logger: true });
 
   const shutdown = async (signal: string) => {
     app.log.info({ signal }, 'shutting down');
     await app.close();
     await generator.close();
+    await poolGenerator.close();
     db.close();
     process.exit(0);
   };
@@ -38,6 +41,8 @@ async function main() {
     difficulty: config.difficultyByWeekday,
   }, 'Rush Hours server ready');
   challenges.start();
+  // The puzzles of the duels once the daily challenges are ready: they come first in the generation worker
+  void challenges.tick().then(() => puzzles.start()).then(() => app.log.info({ puzzles: puzzles.counts() }, 'duel puzzles ready'));
 }
 
 void main();

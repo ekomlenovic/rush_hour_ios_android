@@ -237,7 +237,11 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
     deleteAccount: () => call<void>('DELETE', '/me'),
     invite: () => call<{ inviteCode: string }>('GET', '/invite'),
     today: () => call<Today>('GET', '/challenge/today'),
-    duels: () => call<{ duels: DuelListing[] }>('GET', '/duels'),
+    /**
+     * ready: puzzles generated ahead by difficulty; unavailable: none ready and too long to
+     * generate for now (both absent on older servers)
+     */
+    duels: () => call<{ duels: DuelListing[]; ready?: Partial<Record<Difficulty, number>>; unavailable?: Difficulty[] }>('GET', '/duels'),
     duelLeaderboard: (period: Period | 'all', date?: string) =>
       call<DuelLeaderboard>('GET', `/duels/leaderboard?period=${period}${date ? `&date=${date}` : ''}`),
     duelHistory: () => call<{ duels: DuelHistoryItem[]; records: DuelRecordLine[] }>('GET', '/duels/history'),

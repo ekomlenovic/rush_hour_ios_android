@@ -1133,7 +1133,10 @@
       "replay_title": "Duel replay",
       "winner": "winner",
       "head_to_head": "Your duels",
-      "head_to_head_a11y": "Your duels: you {{mine}}, {{pseudo}} {{theirs}}, {{draws}} draws"
+      "head_to_head_a11y": "Your duels: you {{mine}}, {{pseudo}} {{theirs}}, {{draws}} draws",
+      "ready": "Ready",
+      "not_ready": "To generate",
+      "unavailable": "Unavailable"
     },
     "errors": {
       "network": "The server does not answer. Check your connection and the server address.",
@@ -1178,6 +1181,7 @@
       "opponent_left": "Your opponent left the duel.",
       "duel_unreachable": "Cannot open the duel: the reverse proxy of the server must let WebSockets through (see the server guide).",
       "duel_replaced": "Your account now plays on another phone: the duel goes on there.",
+      "puzzle_unavailable": "No puzzle ready at this level for now, and it takes too long to generate: pick another level or try again later.",
       "unknown": "Something unexpected happened."
     }
   }

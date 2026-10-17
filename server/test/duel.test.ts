@@ -6,6 +6,8 @@ import {
   normalizeDuelCode, type DuelConnection, type ServerMessage,
 } from '../src/duel';
 import type { PuzzleGenerator } from '../src/generation';
+import { PuzzlePool } from '../src/puzzlePool';
+import { openDatabase } from '../src/db';
 import { LEVEL, fakeGenerator, testServer } from './helpers';
 
 const PLAYERS: Record<string, { id: number; pseudo: string }> = {
@@ -19,8 +21,9 @@ const settle = () => new Promise(resolve => setImmediate(resolve));
 
 function setup(generator: PuzzleGenerator = fakeGenerator().generator) {
   const clock = { now: 1_000_000 };
+  // An empty pool, not filled: each duel generates its puzzle (the pool has its own tests)
   const duels = new Duels({
-    generator,
+    puzzles: new PuzzlePool({ db: openDatabase(':memory:'), generator }),
     now: () => clock.now,
     authenticate: (token) => (token === 'token-banned' ? 'banned' : PLAYERS[token] ?? null),
   });
@@ -83,15 +86,13 @@ describe('duels', () => {
     const leo = connect('token-leo');
     const emma = connect('token-emma');
     leo.send({ type: 'create', difficulty: 'HARD' });
-    // Generated while waiting for the opponent: a hard puzzle takes seconds
-    expect(calls).toEqual([{ seed: expect.stringMatching(/^duel:[0-9a-f]{32}$/), difficulty: 'HARD' }]);
+    expect(calls).toEqual([]);
     const code = leo.last('duel')!.duel.code;
     emma.send({ type: 'join', code: ` ${code.toLowerCase().slice(0, 2)}-${code.slice(2)} ` });
     expect(leo.last('duel')!.duel.status).toBe('preparing');
 
     await settle();
-    // ...and the one of a rematch during the game
-    expect(calls).toHaveLength(2);
+    expect(calls).toEqual([{ seed: expect.stringMatching(/^duel:[0-9a-f]{32}$/), difficulty: 'HARD', kind: 'duel' }]);
     const forLeo = leo.last('duel')!.duel;
     const forEmma = emma.last('duel')!.duel;
     expect(forLeo).toMatchObject({ status: 'playing', startsAt: clock.now + COUNTDOWN_MS, serverNow: clock.now, opponent: { pseudo: 'Emma', connected: true } });
@@ -174,11 +175,11 @@ describe('duels', () => {
     leo.send({ type: 'rematch' });
     expect(emma.last('rematch')).toEqual({ type: 'rematch', playerId: 1 });
     expect(emma.last('duel')!.duel.status).toBe('playing');
-    expect(fake.calls).toHaveLength(2);
+    expect(fake.calls).toHaveLength(1);
     emma.send({ type: 'rematch' });
     await settle();
-    // The rematch plays the puzzle generated during the game, and the next one is on its way
-    expect(fake.calls).toHaveLength(3);
+    // A new puzzle
+    expect(fake.calls).toHaveLength(2);
     const duel = leo.last('duel')!.duel;
     expect(duel).toMatchObject({ status: 'playing', result: null, startsAt: clock.now + COUNTDOWN_MS, me: { moves: [], wantsRematch: false } });
   });
@@ -249,7 +250,7 @@ describe('duels', () => {
     leo.send({ type: 'create' });
     emma.send({ type: 'join', code: leo.last('duel')!.duel.code });
     await settle();
-    expect(emma.last('error')).toEqual({ type: 'error', error: 'internal' });
+    expect(emma.last('error')).toEqual({ type: 'error', error: 'puzzle_unavailable' });
     expect(emma.last('closed')).toEqual({ type: 'closed' });
   });
 
@@ -293,21 +294,19 @@ describe('duels', () => {
     expect(stranger.closed).toEqual([{ code: 4029, reason: 'rate_limited' }]);
   });
 
-  it('limits the duels a player creates: each one generates a puzzle', () => {
-    const fake = fakeGenerator();
-    const { connect, clock } = setup(fake.generator);
+  it('limits the duels a player creates: each one takes a puzzle of the pool', () => {
+    const { connect, clock } = setup();
     const leo = connect('token-leo');
     for (let i = 0; i < MAX_CREATES; i++) {
       leo.send({ type: 'create', difficulty: 'MASTER' });
       clock.now += 1000;
     }
-    expect(fake.calls).toHaveLength(MAX_CREATES);
+    expect(leo.last('error')).toBeUndefined();
     leo.send({ type: 'create', difficulty: 'MASTER' });
     expect(leo.last('error')).toEqual({ type: 'error', error: 'rate_limited' });
-    expect(fake.calls).toHaveLength(MAX_CREATES);
     clock.now += CREATES_WINDOW_MS;
     leo.send({ type: 'create' });
-    expect(fake.calls).toHaveLength(MAX_CREATES + 1);
+    expect(leo.last('duel')!.duel.difficulty).toBe('NORMAL');
   });
 
   it('counts the wrong codes by player: connecting again gives no more tries', () => {
@@ -342,7 +341,9 @@ describe('duels over a WebSocket', () => {
   it('/duels lists the duels for a player of the server', async () => {
     server = testServer();
     const leo = await server.join('Léo');
-    expect(await server.request('GET', '/duels', leo.token)).toEqual({ status: 200, body: { duels: [] } });
+    expect(await server.request('GET', '/duels', leo.token)).toEqual({
+      status: 200, body: { duels: [], ready: { EASY: 0, NORMAL: 0, HARD: 0, EXPERT: 0, MASTER: 0 }, unavailable: [] },
+    });
     expect((await server.request('GET', '/duels')).status).toBe(401);
   });
 

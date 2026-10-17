@@ -232,7 +232,8 @@ export function duelReducer(state: DuelState, action: DuelAction): DuelState {
         case 'closed':
           if (!duel) return state;
           // After the end the result stays on screen; otherwise the room is gone (the opponent left before the start)
-          return duel.status === 'over' ? { ...state, duel: { ...duel, opponentLeft: true } } : { ...state, duel: null, error: 'opponent_left' };
+          // (an error just told, e.g. no puzzle, is the reason)
+          return duel.status === 'over' ? { ...state, duel: { ...duel, opponentLeft: true } } : { ...state, duel: null, error: state.error ?? 'opponent_left' };
 
         case 'error':
           // A move out of step: the server sends the real position, nothing to tell the player
