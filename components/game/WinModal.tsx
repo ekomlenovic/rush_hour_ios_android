@@ -12,7 +12,7 @@ import XpBar from '@/components/progression/XpBar';
 import { getLevelRewardLines, missionRewardText } from '@/components/progression/rewards';
 import WinEffect from '@/components/effects/WinEffect';
 import ShareIcon from '@/components/share/ShareIcon';
-import IconText from '@/components/multi/IconText';
+import IconText from '@/components/IconText';
 
 interface Props {
   visible: boolean;

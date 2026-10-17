@@ -26,7 +26,7 @@ import ShareLevelSheet from '@/components/share/ShareLevelSheet';
 import ShareIcon from '@/components/share/ShareIcon';
 import ChallengeDoneBanner from '@/components/game/ChallengeDoneBanner';
 import type { SolutionSource } from '@/components/game/SolutionPlayer';
-import IconText from '@/components/multi/IconText';
+import IconText from '@/components/IconText';
 import HintLoadingPill from '@/components/game/HintLoadingPill';
 import SolutionPlayer from '@/components/game/SolutionPlayer';
 

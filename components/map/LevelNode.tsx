@@ -9,6 +9,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Level } from '@/store/gameStore';
 import { fixedColors, type BoardColors, type UiColors } from '@/theme';
 import { PathPoint } from './path';
@@ -97,8 +98,10 @@ const LevelNode = React.memo(({
         !isUnlocked && !isCustom ? t('a11y.level_locked') : null,
       ].filter(Boolean).join(', ');
 
-  const label = isPadlockNode ? '🔒' : isTutorial ? '🎓' : isCustom ? '∞' : String(point.id);
-  const labelSize = isPadlockNode || isTutorial ? 24 : label.length >= 3 ? 19 : 23;
+  const glyph = isPadlockNode ? 'lock-closed' : isTutorial ? 'school' : null;
+  const label = isCustom ? '∞' : String(point.id);
+  const labelSize = glyph ? 24 : label.length >= 3 ? 19 : 23;
+  const labelColor = isLocked ? colors.mapLockedText : fixedColors.onPrimary;
 
   return (
     <Animated.View
@@ -137,16 +140,16 @@ const LevelNode = React.memo(({
             <Text
               style={[
                 styles.nodeText,
-                { fontSize: labelSize, color: isLocked ? colors.mapLockedText : fixedColors.onPrimary },
+                { fontSize: labelSize, color: labelColor },
                 isLocked && styles.nodeTextFlat,
               ]}
             >
-              {label}
+              {glyph ? <Ionicons name={glyph} size={labelSize} color={labelColor} /> : label}
             </Text>
           </View>
           {isLocked && !isPadlockNode && (
             <View style={[styles.lockBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={styles.lockIcon}>🔒</Text>
+              <Ionicons name="lock-closed" size={11} color={colors.textMuted} />
             </View>
           )}
         </Pressable>
@@ -245,9 +248,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
-  },
-  lockIcon: {
-    fontSize: 11,
   },
   nextPill: {
     position: 'absolute',

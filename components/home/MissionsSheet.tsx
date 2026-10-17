@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { RFValue } from '@/utils/responsive';
 import { DailyMissionsState, MISSIONS_BY_ID, MissionDef, getMissionProgress } from '@/data/missions';
 import { missionsXp } from '@/data/progression';
@@ -28,7 +29,7 @@ interface Props {
 export default function MissionsSheet({ visible, colors, isDark, missions, freezeStockFull, onClose }: Props) {
   const { t } = useTranslation();
   return (
-    <BottomSheet visible={visible} title={`🎯 ${t('missions.title')}`} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose}>
+    <BottomSheet visible={visible} title={t('missions.title')} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose}>
       <Text style={[styles.settingSub, { color: missions.rewarded ? colors.success : colors.textMuted, marginBottom: 20 }]}>
         {missions.rewarded
           ? t('missions.all_done')
@@ -41,7 +42,7 @@ export default function MissionsSheet({ visible, colors, isDark, missions, freez
         const done = progress >= mission.target;
         return (
           <View key={id} style={styles.missionRow} accessible accessibilityLabel={`${t(`missions.list.${id}`)}, ${formatMissionProgress(mission, progress)}`} accessibilityState={{ checked: done }}>
-            <Text style={styles.missionIcon}>{done ? '✅' : mission.icon}</Text>
+            <Ionicons name={done ? 'checkmark-circle' : mission.icon} size={26} color={done ? colors.success : colors.primaryText} style={styles.missionIcon} />
             <View style={styles.missionBody}>
               <Text style={[styles.missionLabel, { color: colors.text, opacity: done ? 0.6 : 1 }]}>{t(`missions.list.${id}`)}</Text>
               <View style={[styles.missionTrack, { backgroundColor: colors.card }]}>
@@ -67,7 +68,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   missionIcon: {
-    fontSize: 26,
     marginRight: 12,
   },
   missionBody: {

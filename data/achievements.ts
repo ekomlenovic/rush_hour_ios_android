@@ -1,6 +1,7 @@
 import type { ChallengeResult, Level, LevelProgress, PlayerStats } from '../store/gameStore';
 import { sampleLevels } from './sampleLevels';
 import { computeDayRuns, getLocalDateString, parseLocalDateString } from '../utils/date';
+import type { IoniconName } from '../utils/icons';
 import { countArchiveWins, countCompleteArchiveMonths } from '../utils/archives';
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -18,7 +19,9 @@ export const ACHIEVEMENT_CATEGORIES: AchievementCategory[] = [
 export interface AchievementDef {
   /** Also the i18n key: achievements.<id> and achievements.<id>_desc */
   id: string;
-  icon: string;
+  icon: IoniconName;
+  /** The icon repeated, for the steps of one series (1, 2 then 3 flames) */
+  iconCount?: 2 | 3;
   category: AchievementCategory;
   /** Shown as "???" until unlocked */
   hidden?: boolean;
@@ -114,98 +117,98 @@ const isUnder = (ms: number | null, limitMs: number) => (ms !== null && ms < lim
  */
 export const ACHIEVEMENTS: AchievementDef[] = [
   // Progress
-  { id: 'first_win', icon: '🚗', category: 'progress', target: 1, value: c => c.completedLevels },
-  { id: 'novice', icon: '🌟', category: 'progress', target: 5, value: c => c.completedLevels },
-  { id: 'expert', icon: '🏅', category: 'progress', target: 50, value: c => c.completedLevels },
-  { id: 'veteran', icon: '🎖️', category: 'progress', target: 100, value: c => c.completedLevels },
-  { id: 'levels_250', icon: '🏆', category: 'progress', target: 250, value: c => c.completedLevels },
-  { id: 'levels_500', icon: '👑', category: 'progress', target: 500, value: c => c.completedLevels },
-  { id: 'moves_1000', icon: '👣', category: 'progress', target: 1000, value: c => c.stats.totalMoves },
-  { id: 'moves_10000', icon: '🛣️', category: 'progress', target: 10000, value: c => c.stats.totalMoves },
-  { id: 'play_10h', icon: '⏳', category: 'progress', target: 10, value: c => Math.floor(c.stats.totalPlayTimeMs / HOUR_MS) },
+  { id: 'first_win', icon: 'car', category: 'progress', target: 1, value: c => c.completedLevels },
+  { id: 'novice', icon: 'sparkles', category: 'progress', target: 5, value: c => c.completedLevels },
+  { id: 'expert', icon: 'medal', category: 'progress', target: 50, value: c => c.completedLevels },
+  { id: 'veteran', icon: 'ribbon', category: 'progress', target: 100, value: c => c.completedLevels },
+  { id: 'levels_250', icon: 'trophy', category: 'progress', target: 250, value: c => c.completedLevels },
+  { id: 'levels_500', icon: 'podium', category: 'progress', target: 500, value: c => c.completedLevels },
+  { id: 'moves_1000', icon: 'footsteps', category: 'progress', target: 1000, value: c => c.stats.totalMoves },
+  { id: 'moves_10000', icon: 'footsteps', iconCount: 2, category: 'progress', target: 10000, value: c => c.stats.totalMoves },
+  { id: 'play_10h', icon: 'hourglass', category: 'progress', target: 10, value: c => Math.floor(c.stats.totalPlayTimeMs / HOUR_MS) },
 
   // Mastery
-  { id: 'perfectionist', icon: '⭐', category: 'mastery', target: 10, value: c => c.perfectLevels },
-  { id: 'perfect_50', icon: '🌠', category: 'mastery', target: 50, value: c => c.perfectLevels },
-  { id: 'perfect_100', icon: '💫', category: 'mastery', target: 100, value: c => c.perfectLevels },
-  { id: 'master_driver', icon: '🧠', category: 'mastery', target: 40, value: c => c.stats.hardestWinMoves },
-  { id: 'big_grid', icon: '🗺️', category: 'mastery', target: 1, value: c => c.stats.winsByGridSize['8'] || 0 },
-  { id: 'grid_explorer', icon: '🧭', category: 'mastery', target: 3, value: c => ['6', '7', '8'].filter(g => (c.stats.winsByGridSize[g] || 0) > 0).length },
-  { id: 'perfect_master', icon: '💎', category: 'mastery', target: 40, value: c => c.stats.hardestPerfectMoves },
+  { id: 'perfectionist', icon: 'star', category: 'mastery', target: 10, value: c => c.perfectLevels },
+  { id: 'perfect_50', icon: 'star', iconCount: 2, category: 'mastery', target: 50, value: c => c.perfectLevels },
+  { id: 'perfect_100', icon: 'star', iconCount: 3, category: 'mastery', target: 100, value: c => c.perfectLevels },
+  { id: 'master_driver', icon: 'bulb', category: 'mastery', target: 40, value: c => c.stats.hardestWinMoves },
+  { id: 'big_grid', icon: 'map', category: 'mastery', target: 1, value: c => c.stats.winsByGridSize['8'] || 0 },
+  { id: 'grid_explorer', icon: 'compass', category: 'mastery', target: 3, value: c => ['6', '7', '8'].filter(g => (c.stats.winsByGridSize[g] || 0) > 0).length },
+  { id: 'perfect_master', icon: 'diamond', category: 'mastery', target: 40, value: c => c.stats.hardestPerfectMoves },
   // Minimum moves of the hardest level won, then won with 3 stars (the optimal solution)
-  { id: 'min_moves_20', icon: '🚦', category: 'mastery', target: 20, value: c => c.stats.hardestWinMoves },
-  { id: 'min_moves_30', icon: '🚧', category: 'mastery', target: 30, value: c => c.stats.hardestWinMoves },
-  { id: 'min_moves_50', icon: '🏔️', category: 'mastery', target: 50, value: c => c.stats.hardestWinMoves },
-  { id: 'min_moves_60', icon: '🐉', category: 'mastery', target: 60, value: c => c.stats.hardestWinMoves },
-  { id: 'optimal_20', icon: '📐', category: 'mastery', target: 20, value: c => c.stats.hardestPerfectMoves },
-  { id: 'optimal_30', icon: '🎼', category: 'mastery', target: 30, value: c => c.stats.hardestPerfectMoves },
-  { id: 'optimal_50', icon: '🔮', category: 'mastery', target: 50, value: c => c.stats.hardestPerfectMoves },
-  { id: 'optimal_60', icon: '🪐', category: 'mastery', target: 60, value: c => c.stats.hardestPerfectMoves },
-  { id: 'optimal_hard_10', icon: '🧮', category: 'mastery', target: 10, value: c => c.hardPerfectLevels },
-  { id: 'optimal_hard_25', icon: '♟️', category: 'mastery', target: 25, value: c => c.hardPerfectLevels },
+  { id: 'min_moves_20', icon: 'trending-up', category: 'mastery', target: 20, value: c => c.stats.hardestWinMoves },
+  { id: 'min_moves_30', icon: 'trending-up', iconCount: 2, category: 'mastery', target: 30, value: c => c.stats.hardestWinMoves },
+  { id: 'min_moves_50', icon: 'trending-up', iconCount: 3, category: 'mastery', target: 50, value: c => c.stats.hardestWinMoves },
+  { id: 'min_moves_60', icon: 'nuclear', category: 'mastery', target: 60, value: c => c.stats.hardestWinMoves },
+  { id: 'optimal_20', icon: 'prism', category: 'mastery', target: 20, value: c => c.stats.hardestPerfectMoves },
+  { id: 'optimal_30', icon: 'prism', iconCount: 2, category: 'mastery', target: 30, value: c => c.stats.hardestPerfectMoves },
+  { id: 'optimal_50', icon: 'prism', iconCount: 3, category: 'mastery', target: 50, value: c => c.stats.hardestPerfectMoves },
+  { id: 'optimal_60', icon: 'telescope', category: 'mastery', target: 60, value: c => c.stats.hardestPerfectMoves },
+  { id: 'optimal_hard_10', icon: 'cube', category: 'mastery', target: 10, value: c => c.hardPerfectLevels },
+  { id: 'optimal_hard_25', icon: 'cube', iconCount: 2, category: 'mastery', target: 25, value: c => c.hardPerfectLevels },
 
   // Purity (map and custom levels only: the daily never has hints)
-  { id: 'clean_run', icon: '🎯', category: 'purity', target: 1, value: c => c.noHelpLevels },
-  { id: 'no_hint_25', icon: '🧘', category: 'purity', target: 25, value: c => c.noHintLevels },
-  { id: 'no_hint_100', icon: '🦉', category: 'purity', target: 100, value: c => c.noHintLevels },
-  { id: 'first_try_50', icon: '🎳', category: 'purity', target: 50, value: c => c.stats.firstTryWins },
+  { id: 'clean_run', icon: 'locate', category: 'purity', target: 1, value: c => c.noHelpLevels },
+  { id: 'no_hint_25', icon: 'leaf', category: 'purity', target: 25, value: c => c.noHintLevels },
+  { id: 'no_hint_100', icon: 'leaf', iconCount: 2, category: 'purity', target: 100, value: c => c.noHintLevels },
+  { id: 'first_try_50', icon: 'bowling-ball', category: 'purity', target: 50, value: c => c.stats.firstTryWins },
 
   // Speed
-  { id: 'speed_30', icon: '⚡', category: 'speed', target: 1, value: c => isUnder(c.stats.fastestWinMs, 30_000) },
-  { id: 'daily_sprint', icon: '⏱️', category: 'speed', target: 1, value: c => isUnder(c.fastestDailyMs, 60_000) },
+  { id: 'speed_30', icon: 'flash', category: 'speed', target: 1, value: c => isUnder(c.stats.fastestWinMs, 30_000) },
+  { id: 'daily_sprint', icon: 'stopwatch', category: 'speed', target: 1, value: c => isUnder(c.fastestDailyMs, 60_000) },
 
   // Daily & weekly challenges
-  { id: 'daily_winner', icon: '📅', category: 'daily', target: 1, value: c => c.dailies },
-  { id: 'daily_devotee', icon: '📆', category: 'daily', target: 7, value: c => c.dailies },
-  { id: 'daily_30', icon: '🗓️', category: 'daily', target: 30, value: c => c.dailies },
-  { id: 'daily_100', icon: '💯', category: 'daily', target: 100, value: c => c.dailies },
-  { id: 'daily_perfect', icon: '✨', category: 'daily', target: 1, value: c => c.perfectDailies },
-  { id: 'daily_perfect_7', icon: '🌈', category: 'daily', target: 7, value: c => c.perfectDailyRun },
-  { id: 'monday_survivor', icon: '💀', category: 'daily', target: 1, value: c => c.mondayDailies },
-  { id: 'weekly_warrior', icon: '⚔️', category: 'daily', target: 1, value: c => c.weeklies },
-  { id: 'weekly_4', icon: '🛡️', category: 'daily', target: 4, value: c => c.weeklies },
-  { id: 'weekly_12', icon: '🏰', category: 'daily', target: 12, value: c => c.weeklies },
-  { id: 'weekly_perfect', icon: '🥇', category: 'daily', target: 1, value: c => c.perfectWeeklies },
-  { id: 'daily_365', icon: '🎂', category: 'daily', target: 365, value: c => c.dailies },
-  { id: 'missions_1', icon: '🎯', category: 'daily', target: 1, value: c => c.stats.missionDaysCompleted },
-  { id: 'missions_7', icon: '📋', category: 'daily', target: 7, value: c => c.stats.missionDaysCompleted },
-  { id: 'missions_30', icon: '🗂️', category: 'daily', target: 30, value: c => c.stats.missionDaysCompleted },
-  { id: 'weekend_warrior', icon: '🛋️', category: 'daily', target: 1, value: c => c.weekendDailies },
-  { id: 'archives_10', icon: '🗄️', category: 'daily', target: 10, value: c => c.archives },
-  { id: 'archives_month', icon: '📜', category: 'daily', target: 1, value: c => c.archiveMonths },
+  { id: 'daily_winner', icon: 'calendar', category: 'daily', target: 1, value: c => c.dailies },
+  { id: 'daily_devotee', icon: 'calendar', iconCount: 2, category: 'daily', target: 7, value: c => c.dailies },
+  { id: 'daily_30', icon: 'calendar', iconCount: 3, category: 'daily', target: 30, value: c => c.dailies },
+  { id: 'daily_100', icon: 'today', category: 'daily', target: 100, value: c => c.dailies },
+  { id: 'daily_perfect', icon: 'color-wand', category: 'daily', target: 1, value: c => c.perfectDailies },
+  { id: 'daily_perfect_7', icon: 'color-filter', category: 'daily', target: 7, value: c => c.perfectDailyRun },
+  { id: 'monday_survivor', icon: 'skull', category: 'daily', target: 1, value: c => c.mondayDailies },
+  { id: 'weekly_warrior', icon: 'shield', category: 'daily', target: 1, value: c => c.weeklies },
+  { id: 'weekly_4', icon: 'shield', iconCount: 2, category: 'daily', target: 4, value: c => c.weeklies },
+  { id: 'weekly_12', icon: 'shield', iconCount: 3, category: 'daily', target: 12, value: c => c.weeklies },
+  { id: 'weekly_perfect', icon: 'shield-checkmark', category: 'daily', target: 1, value: c => c.perfectWeeklies },
+  { id: 'daily_365', icon: 'infinite', category: 'daily', target: 365, value: c => c.dailies },
+  { id: 'missions_1', icon: 'flag', category: 'daily', target: 1, value: c => c.stats.missionDaysCompleted },
+  { id: 'missions_7', icon: 'flag', iconCount: 2, category: 'daily', target: 7, value: c => c.stats.missionDaysCompleted },
+  { id: 'missions_30', icon: 'flag', iconCount: 3, category: 'daily', target: 30, value: c => c.stats.missionDaysCompleted },
+  { id: 'weekend_warrior', icon: 'bed', category: 'daily', target: 1, value: c => c.weekendDailies },
+  { id: 'archives_10', icon: 'archive', category: 'daily', target: 10, value: c => c.archives },
+  { id: 'archives_month', icon: 'newspaper', category: 'daily', target: 1, value: c => c.archiveMonths },
 
   // Streak
-  { id: 'streak_3', icon: '🔥', category: 'streak', target: 3, value: c => c.bestStreak },
-  { id: 'streak_7', icon: '🔥', category: 'streak', target: 7, value: c => c.bestStreak },
-  { id: 'streak_30', icon: '🔥', category: 'streak', target: 30, value: c => c.bestStreak },
-  { id: 'streak_100', icon: '☄️', category: 'streak', target: 100, value: c => c.bestStreak },
-  { id: 'streak_365', icon: '🌋', category: 'streak', target: 365, value: c => c.bestStreak },
-  { id: 'frozen_save', icon: '❄️', category: 'streak', target: 1, value: c => c.stats.freezesUsed },
+  { id: 'streak_3', icon: 'flame', category: 'streak', target: 3, value: c => c.bestStreak },
+  { id: 'streak_7', icon: 'flame', iconCount: 2, category: 'streak', target: 7, value: c => c.bestStreak },
+  { id: 'streak_30', icon: 'flame', iconCount: 3, category: 'streak', target: 30, value: c => c.bestStreak },
+  { id: 'streak_100', icon: 'bonfire', category: 'streak', target: 100, value: c => c.bestStreak },
+  { id: 'streak_365', icon: 'sunny', category: 'streak', target: 365, value: c => c.bestStreak },
+  { id: 'frozen_save', icon: 'snow', category: 'streak', target: 1, value: c => c.stats.freezesUsed },
 
   // Creator & sharing
-  { id: 'creator_star', icon: '🎨', category: 'creator', target: 5, value: c => c.createdLevels },
-  { id: 'creator_puzzle', icon: '🧩', category: 'creator', target: 20, value: c => c.hardestCreatedMoves },
-  { id: 'sharer', icon: '📤', category: 'creator', target: 1, value: c => c.stats.levelsShared },
-  { id: 'result_sharer', icon: '📣', category: 'creator', target: 1, value: c => c.stats.resultsShared },
-  { id: 'importer', icon: '📥', category: 'creator', target: 1, value: c => c.stats.levelsImported },
-  { id: 'prolific', icon: '🏗️', category: 'creator', target: 25, value: c => c.createdLevels },
-  { id: 'collector', icon: '📚', category: 'creator', target: 10, value: c => c.stats.levelsImported },
+  { id: 'creator_star', icon: 'brush', category: 'creator', target: 5, value: c => c.createdLevels },
+  { id: 'creator_puzzle', icon: 'extension-puzzle', category: 'creator', target: 20, value: c => c.hardestCreatedMoves },
+  { id: 'sharer', icon: 'share-social', category: 'creator', target: 1, value: c => c.stats.levelsShared },
+  { id: 'result_sharer', icon: 'megaphone', category: 'creator', target: 1, value: c => c.stats.resultsShared },
+  { id: 'importer', icon: 'download', category: 'creator', target: 1, value: c => c.stats.levelsImported },
+  { id: 'prolific', icon: 'brush', iconCount: 2, category: 'creator', target: 25, value: c => c.createdLevels },
+  { id: 'collector', icon: 'download', iconCount: 2, category: 'creator', target: 10, value: c => c.stats.levelsImported },
 
   // Secrets
-  { id: 'night_owl', icon: '🌙', category: 'secret', hidden: true, target: 1, value: c => c.stats.nightWins },
-  { id: 'new_year', icon: '🎆', category: 'secret', hidden: true, target: 1, value: c => c.stats.newYearWins },
-  { id: 'undo_500', icon: '⏪', category: 'secret', hidden: true, target: 500, value: c => c.stats.totalUndos },
-  { id: 'comeback_30', icon: '🏡', category: 'secret', hidden: true, target: 30, value: c => c.stats.longestAbsenceDays },
-  { id: 'insomniac', icon: '🦇', category: 'secret', hidden: true, target: 10, value: c => c.stats.nightWins },
-  { id: 'early_bird', icon: '🐓', category: 'secret', hidden: true, target: 1, value: c => c.stats.earlyDailyWins },
-  { id: 'stubborn', icon: '🐐', category: 'secret', hidden: true, target: 10, value: c => c.stats.maxResetsBeforeWin },
-  { id: 'marathon', icon: '🏃', category: 'secret', hidden: true, target: 30, value: c => Math.floor(c.stats.longestWinMs / 60_000) },
-  { id: 'last_minute', icon: '⌛', category: 'secret', hidden: true, target: 1, value: c => c.stats.lastMinuteWeeklies },
-  { id: 'hint_addict', icon: '🔦', category: 'secret', hidden: true, target: 100, value: c => c.totalHintsUsed },
-  { id: 'friday_13', icon: '🐈‍⬛', category: 'secret', hidden: true, target: 1, value: c => c.stats.specialDayWins['fri13'] || 0 },
-  { id: 'christmas', icon: '🎄', category: 'secret', hidden: true, target: 1, value: c => c.stats.specialDayWins['12-25'] || 0 },
-  { id: 'halloween', icon: '🎃', category: 'secret', hidden: true, target: 1, value: c => c.stats.specialDayWins['10-31'] || 0 },
-  { id: 'pi_day', icon: '🥧', category: 'secret', hidden: true, target: 1, value: c => c.stats.specialDayWins['03-14'] || 0 },
+  { id: 'night_owl', icon: 'moon', category: 'secret', hidden: true, target: 1, value: c => c.stats.nightWins },
+  { id: 'new_year', icon: 'balloon', category: 'secret', hidden: true, target: 1, value: c => c.stats.newYearWins },
+  { id: 'undo_500', icon: 'arrow-undo', category: 'secret', hidden: true, target: 500, value: c => c.stats.totalUndos },
+  { id: 'comeback_30', icon: 'home', category: 'secret', hidden: true, target: 30, value: c => c.stats.longestAbsenceDays },
+  { id: 'insomniac', icon: 'moon', iconCount: 2, category: 'secret', hidden: true, target: 10, value: c => c.stats.nightWins },
+  { id: 'early_bird', icon: 'partly-sunny', category: 'secret', hidden: true, target: 1, value: c => c.stats.earlyDailyWins },
+  { id: 'stubborn', icon: 'refresh', category: 'secret', hidden: true, target: 10, value: c => c.stats.maxResetsBeforeWin },
+  { id: 'marathon', icon: 'walk', category: 'secret', hidden: true, target: 30, value: c => Math.floor(c.stats.longestWinMs / 60_000) },
+  { id: 'last_minute', icon: 'alarm', category: 'secret', hidden: true, target: 1, value: c => c.stats.lastMinuteWeeklies },
+  { id: 'hint_addict', icon: 'flashlight', category: 'secret', hidden: true, target: 100, value: c => c.totalHintsUsed },
+  { id: 'friday_13', icon: 'paw', category: 'secret', hidden: true, target: 1, value: c => c.stats.specialDayWins['fri13'] || 0 },
+  { id: 'christmas', icon: 'gift', category: 'secret', hidden: true, target: 1, value: c => c.stats.specialDayWins['12-25'] || 0 },
+  { id: 'halloween', icon: 'bug', category: 'secret', hidden: true, target: 1, value: c => c.stats.specialDayWins['10-31'] || 0 },
+  { id: 'pi_day', icon: 'pie-chart', category: 'secret', hidden: true, target: 1, value: c => c.stats.specialDayWins['03-14'] || 0 },
 ];
 
 export const ACHIEVEMENTS_BY_ID: Record<string, AchievementDef> = Object.fromEntries(
