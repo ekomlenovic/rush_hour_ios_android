@@ -1,20 +1,20 @@
 import { calculateScore, getStars, starsFromScore } from '../utils/scoring';
 
 describe('stars (rules in docs/GAME_DESIGN.md)', () => {
-  it('3 stars for the optimal solution, 2 within a quarter of the optimum (rounded up), otherwise 1', () => {
+  it('3 stars for the optimal solution, 2 within half of the optimum (rounded up), otherwise 1', () => {
     expect(getStars(12, 12)).toBe(3);
     expect(getStars(13, 12)).toBe(2);
-    expect(getStars(15, 12)).toBe(2);
-    expect(getStars(16, 12)).toBe(1);
+    expect(getStars(18, 12)).toBe(2);
+    expect(getStars(19, 12)).toBe(1);
   });
 
   it('gives harder levels a proportional margin for 2 stars', () => {
-    expect(getStars(50, 40)).toBe(2);
-    expect(getStars(51, 40)).toBe(1);
-    expect(getStars(25, 20)).toBe(2);
-    expect(getStars(26, 20)).toBe(1);
-    expect(getStars(8, 6)).toBe(2);
-    expect(getStars(9, 6)).toBe(1);
+    expect(getStars(60, 40)).toBe(2);
+    expect(getStars(61, 40)).toBe(1);
+    expect(getStars(30, 20)).toBe(2);
+    expect(getStars(31, 20)).toBe(1);
+    expect(getStars(9, 6)).toBe(2);
+    expect(getStars(10, 6)).toBe(1);
     expect(getStars(2, 1)).toBe(2);
   });
 

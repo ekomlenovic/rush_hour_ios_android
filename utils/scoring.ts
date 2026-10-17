@@ -8,9 +8,9 @@ export function calculateScore(moveCount: number, minMoves: number): number {
   return Math.max(0, maxScore - penalty);
 }
 
-/** Extra moves still worth 2 stars: a quarter of the optimum, rounded up (12 → 3, 40 → 10) */
+/** Extra moves still worth 2 stars: half of the optimum, rounded up (12 → 6, 40 → 20) */
 export function twoStarTolerance(minMoves: number): number {
-  return Math.max(1, Math.ceil(minMoves / 4));
+  return Math.max(1, Math.ceil(minMoves / 2));
 }
 
 /** 3 stars for the optimal solution, 2 within twoStarTolerance extra moves, otherwise 1 (see docs/GAME_DESIGN.md) */
