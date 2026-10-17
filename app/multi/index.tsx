@@ -90,6 +90,9 @@ export default function MultiplayerScreen() {
     try {
       const [info, day] = await Promise.all([api.info(), api.today()]);
       setCompat(checkCompatibility(info, APP_VERSION));
+      // The admin may have renamed the server in the app
+      const current = selectActiveAccount(useMultiStore.getState());
+      if (current && info.name && info.name !== current.name) useMultiStore.getState().updateAccount(current.url, { name: info.name });
       setToday(day);
       setClockOffset(day.serverNow - Date.now());
       // The clock on screen may have stood still while a game was played

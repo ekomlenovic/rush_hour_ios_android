@@ -76,7 +76,7 @@ ${message?.ok ? '' : `<p>${t.intro}</p>
 `;
 }
 
-export async function deletePage(app: FastifyInstance, { db, serverName }: { db: Database; serverName: string }) {
+export async function deletePage(app: FastifyInstance, { db, serverName }: { db: Database; serverName: () => string }) {
   await app.register(rateLimit, {
     max: 10,
     timeWindow: '15 minutes',
@@ -88,7 +88,7 @@ export async function deletePage(app: FastifyInstance, { db, serverName }: { db:
     const lang = langOf(request.headers['accept-language']);
     const limited = error.statusCode === 429;
     reply.status(limited ? 429 : 400).type('text/html; charset=utf-8')
-      .send(page(lang, serverName, { ok: false, text: limited ? TEXT[lang].limited : TEXT[lang].wrong }));
+      .send(page(lang, serverName(), { ok: false, text: limited ? TEXT[lang].limited : TEXT[lang].wrong }));
   });
 
   app.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string', bodyLimit: 2048 }, (_req, body, done) => {
@@ -103,7 +103,7 @@ export async function deletePage(app: FastifyInstance, { db, serverName }: { db:
   });
 
   app.get('/delete-account', async (request, reply) =>
-    reply.type('text/html; charset=utf-8').send(page(langOf(request.headers['accept-language']), serverName)));
+    reply.type('text/html; charset=utf-8').send(page(langOf(request.headers['accept-language']), serverName())));
 
   app.post<{ Body: { code?: string } }>('/delete-account', async (request, reply) => {
     const lang = langOf(request.headers['accept-language']);
@@ -115,6 +115,6 @@ export async function deletePage(app: FastifyInstance, { db, serverName }: { db:
     return reply
       .status(deleted ? 200 : 403)
       .type('text/html; charset=utf-8')
-      .send(page(lang, serverName, { ok: deleted, text: deleted ? TEXT[lang].done : TEXT[lang].wrong }));
+      .send(page(lang, serverName(), { ok: deleted, text: deleted ? TEXT[lang].done : TEXT[lang].wrong }));
   });
 }

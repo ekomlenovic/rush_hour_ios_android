@@ -18,7 +18,7 @@ type Tab = typeof TABS[number];
 /** Panel of the admin of the server (#50): suspect games, players, reports, settings */
 export default function AdminScreen() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const account = useMultiStore(selectActiveAccount);
   const api = useMultiApi(account);
   const [tab, setTab] = useState<Tab>('games');
@@ -44,7 +44,7 @@ export default function AdminScreen() {
           tab === 'games' ? <AdminGames api={api} colors={colors} />
             : tab === 'players' ? <AdminPlayers api={api} colors={colors} myPlayerId={account.playerId} />
             : tab === 'reports' ? <AdminReports api={api} colors={colors} />
-            : <AdminSettingsPanel api={api} colors={colors} serverUrl={account.url} />
+            : <AdminSettingsPanel api={api} colors={colors} isDark={isDark} serverUrl={account.url} />
         )}
       </ScrollView>
     </KeyboardScreen>

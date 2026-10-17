@@ -53,12 +53,12 @@ Il faut une machine avec Docker, un nom de domaine (par exemple duckdns) et un r
 | `SERVER_SECRET` | *obligatoire* | graine secrète des puzzles (≥ 16 caractères). Qui la connaît peut calculer les puzzles à l'avance : ne jamais la partager |
 | `ADMIN_TOKEN` | *obligatoire* | jeton d'administration (≥ 16 caractères) |
 | `INVITE_CODE` | *généré* | code pour rejoindre le serveur. Vide : généré au premier démarrage et affiché dans les logs. Un nouveau code généré depuis l'app (admin) le remplace |
-| `SERVER_NAME` | `Rush Hours` | nom affiché dans l'app |
+| `SERVER_NAME` | `Rush Hours` | nom affiché dans l'app. Réglable aussi depuis l'app (admin) |
 | `TZ` | `Europe/Paris` | fuseau du serveur |
-| `RELEASE_TIME` | `12:00` | heure de sortie du défi (`HH:MM`). Un défi dure jusqu'à la sortie du suivant |
-| `PREGENERATE_AHEAD` | `48h` | combien de temps avant sa sortie un puzzle est généré (`30m`, `12h`, `2d`…) |
+| `RELEASE_TIME` | `12:00` | heure de sortie du défi (`HH:MM`). Un défi dure jusqu'à la sortie du suivant. Réglable aussi depuis l'app (admin) : le changement s'applique **à partir du prochain défi** (celui en cours dure plus ou moins longtemps), et il est refusé si le prochain défi sortait alors dans moins d'une heure |
+| `PREGENERATE_AHEAD` | `48h` | combien de temps avant sa sortie un puzzle est généré (`30m`, `12h`, `2d`…). Réglable aussi depuis l'app (admin) |
 | `DIFFICULTY` | `NORMAL,MONDAY=HARD` | difficulté (`EASY`, `NORMAL`, `HARD`, `EXPERT`, `MASTER`), réglable par jour de la semaine en anglais. Un changement ne touche que les puzzles **pas encore sortis**. Réglable aussi depuis l'app (admin), qui l'emporte alors |
-| `GRACE_PERIOD` | `1h` | délai pour finir, après la sortie du défi suivant, une partie commencée à temps |
+| `GRACE_PERIOD` | `1h` | délai pour finir, après la sortie du défi suivant, une partie commencée à temps. Réglable aussi depuis l'app (admin) |
 | `REPLAY_RETENTION_DAYS` | `7` | durée de conservation des coups (replays). Les scores sont gardés. Réglable aussi depuis l'app (admin) |
 | `TRUST_PROXY` | `loopback,uniquelocal` | proxys dont l'en-tête `X-Forwarded-For` est cru (limites de débit par IP) |
 | `PORT`, `HOST`, `DATA_DIR` | `3000`, `0.0.0.0`, `/data` | |
@@ -70,7 +70,10 @@ Dans l'app : Multijoueur → Mon compte → **Devenir admin**, avec `ADMIN_TOKEN
 - gérer les **joueurs** : renommer, exclure, donner un nouveau code de récupération à qui l'a perdu ;
 - traiter les **signalements** de pseudos ;
 - **régénérer le code d'invitation**, fermer les inscriptions, réserver les invitations à l'admin ;
+- renommer le serveur, régler l'**heure de sortie**, le **délai de grâce** et la **pré-génération** ;
 - régler la **difficulté** par jour, la **conservation des replays** et les **seuils de soupçon**.
+
+Un réglage changé dans l'app l'emporte ensuite sur sa variable d'environnement. Les secrets (`SERVER_SECRET`, `ADMIN_TOKEN`), le fuseau `TZ` et `PORT`, `HOST`, `DATA_DIR`, `TRUST_PROXY` ne se règlent que dans le `docker-compose.yml`. Le bouton **Réinitialiser** remet tous les réglages aux valeurs du `docker-compose.yml` (l'heure de sortie à partir du prochain défi, le code d'invitation ne change pas).
 
 ### Soupçons automatiques (⚠️)
 
@@ -122,7 +125,8 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 | `GET /admin/players`, `PATCH /admin/players/:id` `{ pseudo?, banned? }`, `POST /admin/players/:id/transfer` | joueurs, renommer, exclure, nouveau code de récupération |
 | `GET /admin/reports`, `DELETE /admin/reports/:id` | signalements |
 | `POST /admin/invite` | nouveau code d'invitation |
-| `GET /admin/settings`, `PATCH /admin/settings` | inscriptions, invitations, difficulté, conservation des replays, seuils |
+| `GET /admin/settings`, `PATCH /admin/settings` | nom, heure de sortie (`release_too_soon` si le prochain défi sortirait dans moins d'une heure), délai de grâce, pré-génération, inscriptions, invitations, difficulté, conservation des replays, seuils. La réponse donne aussi `timeZone` et `nextReleaseAt` |
+| `POST /admin/settings/reset` | retour aux variables d'environnement (sauf le code d'invitation) |
 
 ## Développement
 
