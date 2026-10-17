@@ -95,12 +95,15 @@ export interface ChallengeResult {
   /** Moves of the best result and the level's optimum, for result sharing */
   moves?: number;
   minMoves?: number;
+  /** Moves of the best result, to replay the player's own solution */
+  moveLog?: MoveRecord[];
 }
 
 /** Extra details recorded with a challenge result */
 export interface ChallengeDetails {
   moves: number;
   minMoves: number;
+  moveLog?: MoveRecord[];
 }
 
 /** Lifetime player statistics */
