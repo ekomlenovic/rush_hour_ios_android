@@ -471,6 +471,7 @@
     "archives_month_desc": "Réussir tous les défis du jour d'un mois, en rattrapant les jours manqués dans les archives"
   },
   "share": {
+    "share_short": "Partager",
     "share_result": "Partager mon résultat",
     "title_daily": "Défi du {{date}} 🧩",
     "title_monday": "💀 Défi du lundi {{date}}",
@@ -628,6 +629,8 @@
     "speed": "Vitesse",
     "speed_a11y": "Vitesse fois {{speed}}",
     "title_mine": "Ta solution",
+    "mine_short": "La mienne",
+    "optimal_short": "Optimale",
     "show_mine": "Voir ma solution",
     "mine": "Moi · {{count}}",
     "optimal": "Optimale · {{count}}"
