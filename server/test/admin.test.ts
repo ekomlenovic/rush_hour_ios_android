@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { INVITE, LONG_SOLUTION, SOLUTION, paris, testConfig, testServer } from './helpers';
 import { loadSettings, scheduleOf } from '../src/settings';
 import { releaseAt } from '../src/time';
+import { getSetting } from '../src/db';
 
 let server: ReturnType<typeof testServer>;
 const open = (options?: Parameters<typeof testServer>[0]) => (server = testServer(options));
@@ -266,6 +267,8 @@ describe('settings', () => {
     [{ thresholds: { unknown: 1 } }, 'thresholds.unknown'],
     [{ serverName: '   ' }, 'serverName'],
     [{ serverName: 'x'.repeat(41) }, 'serverName'],
+    [{ serverName: 'Rush\nHours' }, 'serverName'],
+    [{ serverName: 'Rush \u202eHours' }, 'serverName'],
     [{ releaseTime: '24:00' }, 'releaseTime'],
     [{ releaseTime: '9:00' }, 'releaseTime'],
     [{ gracePeriodMs: -1 }, 'gracePeriodMs'],
@@ -378,6 +381,13 @@ describe('release time', () => {
 });
 
 describe('server, grace period and pregeneration', () => {
+  it('only saves the settings it knows', async () => {
+    const s = open();
+    const admin = await s.joinAdmin();
+    await s.request('PATCH', '/admin/settings', admin.token, { constructor: 1, toString: 'x', unknown: true, joinOpen: false });
+    expect(JSON.parse(getSetting(s.db, 'admin_settings')!)).toEqual({ joinOpen: false });
+  });
+
   it('what the admin did not change keeps following the environment', async () => {
     const s = open();
     const admin = await s.joinAdmin();

@@ -7,6 +7,7 @@ const HOUR_MS = 3_600_000;
 /** A new release time may not bring the next challenge closer than this */
 export const MIN_RELEASE_NOTICE_MS = HOUR_MS;
 export const SERVER_NAME_MAX = 40;
+const INVISIBLE = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/;
 
 /**
  * What the admin can change from the app, without restarting the server (#50).
@@ -139,7 +140,8 @@ export function updateSettings(db: Database, config: Config, patch: Record<strin
   }
   if ('serverName' in patch) {
     const name = typeof patch.serverName === 'string' ? patch.serverName.trim() : '';
-    if (!name || [...name].length > SERVER_NAME_MAX) throw new SettingsError('serverName');
+    // Shown to every player: no control or direction characters that could garble or disguise it
+    if (!name || [...name].length > SERVER_NAME_MAX || INVISIBLE.test(name)) throw new SettingsError('serverName');
     next.serverName = name;
   }
   if ('gracePeriodMs' in patch) {
@@ -161,7 +163,7 @@ export function updateSettings(db: Database, config: Config, patch: Record<strin
   // Only what the admin changed: the rest keeps following the environment
   const saved = JSON.parse(getSetting(db, KEY) ?? '{}') as Record<string, unknown>;
   for (const key of Object.keys(patch)) {
-    if (key in next && key !== 'releaseChanges') saved[key] = next[key as keyof AdminSettings];
+    if (Object.hasOwn(next, key) && key !== 'releaseChanges') saved[key] = next[key as keyof AdminSettings];
   }
   if ('releaseTime' in patch) saved.releaseChanges = next.releaseChanges;
   setSetting(db, KEY, JSON.stringify(saved));
