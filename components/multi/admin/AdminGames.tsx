@@ -6,9 +6,10 @@ import { formatDuration } from '@/utils/date';
 import type { AdminGame, MultiApi } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
 import { multiErrorMessage } from '../errors';
-import { reasonsText, verdictBadge } from '../verdict';
+import { reasonsText, verdictIcon } from '../verdict';
 import AdminButton from './AdminButton';
 import { adminStyles as styles } from './styles';
+import IconText from '../IconText';
 
 interface Props { api: MultiApi; colors: UiColors }
 
@@ -64,7 +65,11 @@ export default function AdminGames({ api, colors }: Props) {
       {games?.length === 0 && <Text style={[styles.empty, { color: colors.textMuted }]}>{t('multi.admin_no_games')}</Text>}
       {games?.map(game => (
         <View key={game.attemptId} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.title, { color: colors.text }]}>{verdictBadge(game.verdict)} {game.pseudo} · {game.date}</Text>
+          {game.verdict ? (
+            <IconText icon={verdictIcon(game.verdict)} color={game.verdict === 'cheater' ? colors.danger : colors.warning} textStyle={[styles.title, { color: colors.text }]}>
+              {game.pseudo} · {game.date}
+            </IconText>
+          ) : <Text style={[styles.title, { color: colors.text }]}>{game.pseudo} · {game.date}</Text>}
           <Text style={[styles.muted, { color: colors.textMuted }]}>
             {t('multi.moves', { count: game.moves })}{game.minMoves ? ` / ${game.minMoves}` : ''} · {formatDuration(game.timeMs)}
             {game.clientMs !== null ? ` · ${t('multi.admin_phone_time', { time: formatDuration(game.clientMs) })}` : ''}
@@ -80,13 +85,13 @@ export default function AdminGames({ api, colors }: Props) {
           )}
           <View style={styles.actions}>
             {game.hasReplay && (
-              <AdminButton label={`▶ ${t('multi.watch_game')}`} onPress={() => router.push(`/multi/replay?attemptId=${game.attemptId}`)} background={colors.neutralSoft} color={colors.text} />
+              <AdminButton label={t('multi.watch_game')} icon="play" onPress={() => router.push(`/multi/replay?attemptId=${game.attemptId}`)} background={colors.neutralSoft} color={colors.text} />
             )}
             {game.adminVerdict !== 'cheater' && (
-              <AdminButton label={`🤡 ${t('multi.admin_cheater')}`} onPress={() => confirmCheater(game)} background={colors.dangerSoft} color={colors.danger} />
+              <AdminButton label={t('multi.admin_cheater')} icon="ban" onPress={() => confirmCheater(game)} background={colors.dangerSoft} color={colors.danger} />
             )}
             {game.adminVerdict !== 'cleared' && game.flags.length > 0 && (
-              <AdminButton label={`✓ ${t('multi.admin_clear')}`} onPress={() => setVerdict(game, 'cleared')} background={colors.successSoft} color={colors.success} />
+              <AdminButton label={t('multi.admin_clear')} icon="checkmark" onPress={() => setVerdict(game, 'cleared')} background={colors.successSoft} color={colors.success} />
             )}
             {game.adminVerdict && (
               <AdminButton label={t('multi.admin_undo_verdict')} onPress={() => setVerdict(game, null)} background={colors.neutralSoft} color={colors.text} />

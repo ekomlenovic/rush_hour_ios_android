@@ -7,6 +7,7 @@ import { multiErrorMessage } from '../errors';
 import { reportReasonText } from '../verdict';
 import AdminButton from './AdminButton';
 import { adminStyles as styles } from './styles';
+import IconText from '../IconText';
 
 interface Props { api: MultiApi; colors: UiColors }
 
@@ -42,7 +43,7 @@ export default function AdminReports({ api, colors }: Props) {
     <View>
       {reports.map(report => (
         <View key={report.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.title, { color: colors.text }]}>🚩 {report.player.pseudo}</Text>
+          <IconText icon="flag" color={colors.warning} textStyle={[styles.title, { color: colors.text }]}>{report.player.pseudo}</IconText>
           <Text style={[styles.warning, { color: colors.warning }]}>{reportReasonText(t, report.reason || 'other')}</Text>
           <Text style={[styles.muted, { color: colors.textMuted }]}>
             {t('multi.admin_reported_by', { pseudo: report.reporter.pseudo, date: new Date(report.createdAt).toLocaleDateString(i18n.language) })}

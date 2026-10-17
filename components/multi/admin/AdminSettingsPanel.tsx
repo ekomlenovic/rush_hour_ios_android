@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, Alert, Switch, Share, TextInput, Pressable } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { AdminSettings, AdminSettingsPatch, Difficulty, MultiApi, Thresholds } from '@/utils/multi/api';
@@ -292,7 +293,7 @@ export default function AdminSettingsPanel({ api, colors, isDark, serverUrl }: P
               accessibilityState={{ selected }}
             >
               <Text style={{ fontSize: RFValue(16), fontWeight: '700', color: selected ? colors.primaryText : colors.text }}>{t(`difficulty.${difficulty}`)}</Text>
-              {selected && <Text style={{ fontSize: RFValue(16), fontWeight: '800', color: colors.primaryText }}>✓</Text>}
+              {selected && <Ionicons name="checkmark" size={RFValue(18)} color={colors.primaryText} />}
             </Pressable>
           );
         })}

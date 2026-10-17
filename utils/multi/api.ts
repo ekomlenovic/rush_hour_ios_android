@@ -136,10 +136,15 @@ export interface AdminSettings {
 }
 export type AdminSettingsPatch = Partial<Omit<AdminSettings, 'thresholds' | 'timeZone' | 'nextReleaseAt'>> & { thresholds?: Partial<Thresholds> };
 /** A duel in the list of the server (server/src/duel.ts): open ones to join, the ones being played */
+/** What decides the winner of a duel: the first red car out, or the fewest moves */
+export type DuelMetric = 'time' | 'moves';
+
 export interface DuelListing {
   /** To join or watch it: public duels and my own; null otherwise (a server older than the spectators: only open ones) */
   code: string | null;
   difficulty: Difficulty;
+  /** Absent on older servers: the time */
+  metric?: DuelMetric;
   status: 'waiting' | 'preparing' | 'playing';
   private: boolean;
   players: { id: number; pseudo: string }[];
@@ -159,6 +164,7 @@ export interface DuelHistoryItem {
   id: number;
   endedAt: number;
   difficulty: Difficulty;
+  metric?: DuelMetric;
   reason: DuelEndReason;
   winnerId: number | null;
   opponent: { id: number; pseudo: string };
@@ -175,6 +181,7 @@ export interface DuelReplay {
   id: number;
   date: string;
   difficulty: Difficulty;
+  metric?: DuelMetric;
   level: Level;
   reason: DuelEndReason;
   winnerId: number | null;
@@ -240,7 +247,7 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
     invite: () => call<{ inviteCode: string }>('GET', '/invite'),
     today: () => call<Today>('GET', '/challenge/today'),
     /** ready: puzzles ready ahead by difficulty (absent on older servers) */
-    duels: () => call<{ duels: DuelListing[]; ready?: Partial<Record<Difficulty, number>> }>('GET', '/duels'),
+    duels: () => call<{ duels: DuelListing[]; ready?: Partial<Record<Difficulty, number>>; metrics?: DuelMetric[] }>('GET', '/duels'),
     duelLeaderboard: (period: Period | 'all', date?: string) =>
       call<DuelLeaderboard>('GET', `/duels/leaderboard?period=${period}${date ? `&date=${date}` : ''}`),
     duelHistory: () => call<{ duels: DuelHistoryItem[]; records: DuelRecordLine[] }>('GET', '/duels/history'),

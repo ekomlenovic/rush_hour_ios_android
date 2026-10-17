@@ -11,6 +11,7 @@ import { normalizeServerUrl, parseInviteLink, parseRecoveryLink } from '@/utils/
 import MultiHeader from '@/components/multi/MultiHeader';
 import KeyboardScreen from '@/components/KeyboardScreen';
 import { multiErrorMessage } from '@/components/multi/errors';
+import IconText from '@/components/multi/IconText';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 
@@ -176,7 +177,7 @@ export default function JoinScreen() {
         </Pressable>
 
         <View style={[styles.tip, { backgroundColor: colors.card }]}>
-          <Text style={[styles.tipText, { color: colors.textMuted }]}>💡 {t('multi.join_tip')}</Text>
+          <IconText icon="bulb-outline" color={colors.textMuted} size={RFValue(16)} style={styles.tipRow} textStyle={styles.tipText}>{t('multi.join_tip')}</IconText>
         </View>
       </ScrollView>
     </KeyboardScreen>
@@ -240,6 +241,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: RFValue(12),
     marginTop: RFValue(6),
+  },
+  tipRow: {
+    alignItems: 'flex-start',
   },
   tipText: {
     fontSize: RFValue(13),

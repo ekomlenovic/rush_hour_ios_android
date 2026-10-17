@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, AccessibilityInfo } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
@@ -8,11 +9,12 @@ import { useTheme } from '@/theme';
 import Board from '@/components/Board';
 import MultiHeader from '@/components/multi/MultiHeader';
 import { multiErrorMessage } from '@/components/multi/errors';
-import { reasonsText, verdictBadge } from '@/components/multi/verdict';
+import { reasonsText, verdictIcon } from '@/components/multi/verdict';
 import { selectActiveAccount, useMultiStore } from '@/store/multiStore';
 import { useMultiApi } from '@/hooks/useMultiApi';
 import type { Replay } from '@/utils/multi/api';
 import { REPLAY_SPEEDS, gapBefore, isLongPause, playbackDelay, timeAt, vehiclesAfter, type ReplaySpeed } from '@/utils/multi/replay';
+import IconText from '@/components/multi/IconText';
 
 const noop = () => {};
 
@@ -84,12 +86,12 @@ export default function ReplayScreen() {
   };
 
   const controls = [
-    { icon: '⏮', label: t('solution.first'), onPress: () => goTo(0), disabled: step === 0 },
-    { icon: '◀', label: t('solution.prev'), onPress: () => goTo(step - 1), disabled: step === 0 },
-    { icon: playing ? '⏸' : '▶', label: playing ? t('solution.pause') : t('solution.play'), onPress: togglePlay, disabled: false, primary: true },
-    { icon: '▶▶', label: t('solution.next'), onPress: () => goTo(step + 1), disabled: step >= total },
-    { icon: '⏭', label: t('solution.last'), onPress: () => goTo(total), disabled: step >= total },
-  ];
+    { icon: 'play-skip-back', label: t('solution.first'), onPress: () => goTo(0), disabled: step === 0 },
+    { icon: 'play-back', label: t('solution.prev'), onPress: () => goTo(step - 1), disabled: step === 0 },
+    { icon: playing ? 'pause' : 'play', label: playing ? t('solution.pause') : t('solution.play'), onPress: togglePlay, disabled: false, primary: true },
+    { icon: 'play-forward', label: t('solution.next'), onPress: () => goTo(step + 1), disabled: step >= total },
+    { icon: 'play-skip-forward', label: t('solution.last'), onPress: () => goTo(total), disabled: step >= total },
+  ] as const;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -100,14 +102,19 @@ export default function ReplayScreen() {
           {replay.level.minMoves ? ` · ${t('multi.optimum', { count: replay.level.minMoves })}` : ''}
         </Text>
         {replay.verdict && (
-          <Text style={[styles.verdict, { color: replay.verdict === 'cheater' ? colors.danger : colors.warning }]}>
-            {verdictBadge(replay.verdict)} {replay.verdict === 'cheater' ? t('multi.cheater') : `${t('multi.suspect')} : ${reasonsText(t, replay.reasons)}`}
-          </Text>
+          <IconText
+            icon={verdictIcon(replay.verdict)}
+            color={replay.verdict === 'cheater' ? colors.danger : colors.warning}
+            style={styles.verdictRow}
+            textStyle={styles.verdict}
+          >
+            {replay.verdict === 'cheater' ? t('multi.cheater') : `${t('multi.suspect')} : ${reasonsText(t, replay.reasons)}`}
+          </IconText>
         )}
 
         <View style={styles.clock} accessible accessibilityLabel={t('multi.time_a11y', { time: formatDuration(timeAt(replay.moves, step)) })}>
-          <Text style={[styles.clockText, { color: colors.text }]}>⏱ {formatDuration(timeAt(replay.moves, step))}</Text>
-          <Text style={[styles.pause, { color: colors.warning, opacity: pauseShown ? 1 : 0 }]}>⏸ {formatDuration(nextGap)}</Text>
+          <IconText icon="timer-outline" color={colors.text} textStyle={styles.clockText}>{formatDuration(timeAt(replay.moves, step))}</IconText>
+          <IconText icon="pause" color={colors.warning} style={{ opacity: pauseShown ? 1 : 0 }} textStyle={styles.pause}>{formatDuration(nextGap)}</IconText>
         </View>
 
         <View style={styles.board}>
@@ -133,12 +140,12 @@ export default function ReplayScreen() {
               key={i}
               onPress={c.onPress}
               disabled={c.disabled}
-              style={[styles.control, { backgroundColor: c.primary ? colors.primary : colors.card, opacity: c.disabled ? 0.35 : 1 }]}
+              style={[styles.control, { backgroundColor: 'primary' in c ? colors.primary : colors.card, opacity: c.disabled ? 0.35 : 1 }]}
               accessibilityRole="button"
               accessibilityLabel={c.label}
               accessibilityState={{ disabled: c.disabled }}
             >
-              <Text style={[styles.controlIcon, { color: c.primary ? colors.onPrimary : colors.text }]}>{c.icon}</Text>
+              <Ionicons name={c.icon} size={20} color={'primary' in c ? colors.onPrimary : colors.text} />
             </Pressable>
           ))}
         </View>
@@ -184,11 +191,14 @@ const styles = StyleSheet.create({
     fontSize: RFValue(13),
     textAlign: 'center',
   },
+  verdictRow: {
+    justifyContent: 'center',
+    marginTop: RFValue(6),
+  },
   verdict: {
     fontSize: RFValue(13),
     fontWeight: '700',
     textAlign: 'center',
-    marginTop: RFValue(6),
   },
   clock: {
     alignItems: 'center',
@@ -202,7 +212,6 @@ const styles = StyleSheet.create({
   pause: {
     fontSize: RFValue(13),
     fontWeight: '700',
-    marginTop: 2,
   },
   board: {
     alignItems: 'center',
@@ -234,10 +243,6 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  controlIcon: {
-    fontSize: 18,
-    fontWeight: '800',
   },
   speeds: {
     flexDirection: 'row',

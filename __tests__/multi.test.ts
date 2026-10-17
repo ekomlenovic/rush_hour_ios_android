@@ -294,12 +294,12 @@ describe('translations of the multiplayer mode', () => {
   });
 
   it('every suspicion signal of the server is explained', () => {
-    const { flagText, verdictBadge } = require('../components/multi/verdict') as typeof import('../components/multi/verdict');
+    const { flagText, verdictIcon } = require('../components/multi/verdict') as typeof import('../components/multi/verdict');
     const t = ((key: string, values?: Record<string, unknown>) => `${key}${values ? JSON.stringify(values) : ''}`) as never;
     expect(flagText(t, { code: 'too_fast', values: { msPerMove: 350, threshold: 600 } })).toBe('multi.flag.too_fast{"ms":350}');
     expect(flagText(t, { code: 'copied', values: { pausePercent: 93, pauseMs: 180_000 } })).toBe('multi.flag.copied{"percent":93,"pause":"3:00"}');
     expect(flagText(t, { code: 'clock_mismatch', values: {} })).toBe('multi.flag.clock_mismatch');
-    expect([verdictBadge('suspect'), verdictBadge('cheater'), verdictBadge(null)]).toEqual(['⚠️', '🤡', '']);
+    expect([verdictIcon('suspect'), verdictIcon('cheater')]).toEqual(['warning', 'ban']);
   });
 
   it('every server error has a message', () => {
