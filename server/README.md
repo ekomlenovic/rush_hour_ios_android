@@ -70,6 +70,10 @@ Il faut une machine avec Docker, un nom de domaine (par exemple duckdns) et un r
 | `TRUST_PROXY` | `loopback,uniquelocal` | proxys dont l'en-tête `X-Forwarded-For` est cru (limites de débit par IP) |
 | `PORT`, `HOST`, `DATA_DIR` | `3000`, `0.0.0.0`, `/data` | |
 
+### Puzzles des duels
+
+Le serveur garde une **réserve de puzzles générés à l'avance** pour les duels (10 par niveau, 3 en Maître), dans la base : un duel démarre aussitôt, et la réserve se remplit en arrière-plan dans un worker à part, une fois les défis du jour prêts. Les duels Expert et Maître sont des **variantes des niveaux durs de l'app** (symétrie, autre position de départ vérifiée par le solveur, couleurs mélangées) : toute la réserve est prête en une quarantaine de secondes au premier démarrage. Une génération de plus de 3 minutes est abandonnée, et ce niveau laissé de côté une heure.
+
 ## Administration
 
 Dans l'app : Multijoueur → Mon compte → **Devenir admin**, avec `ADMIN_TOKEN`. Le panneau admin permet de :
@@ -135,7 +139,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 | `POST /admin/invite` | nouveau code d'invitation |
 | `GET /admin/settings`, `PATCH /admin/settings` | nom, heure de sortie (`release_too_soon` si le prochain défi sortirait dans moins d'une heure), délai de grâce, pré-génération, inscriptions, invitations, difficulté, conservation des replays, seuils. La réponse donne aussi `timeZone` et `nextReleaseAt` |
 | `POST /admin/settings/reset` | retour aux variables d'environnement (sauf le code d'invitation) |
-| `GET /duels` | les duels du serveur : ouverts (avec leur code, pour les rejoindre sans qu'on le donne) et en cours ; les duels privés n'y sont que pour leur joueur |
+| `GET /duels` | les duels du serveur : ouverts (avec leur code, pour les rejoindre sans qu'on le donne) et en cours ; les duels privés n'y sont que pour leur joueur. `ready` : puzzles prêts par niveau |
 | `GET /duels/leaderboard?period=day\|week\|month\|all&date=` | classement des duels : victoires, puis moins de défaites |
 | `GET /duels/history` | mes derniers duels, et mon score contre chaque adversaire |
 | `GET /duels/:id` | un duel avec les coups des deux joueurs (replay) : pour ses joueurs et l'admin |

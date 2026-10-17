@@ -82,6 +82,16 @@ const MIGRATIONS: string[] = [
   CREATE INDEX duels_player1 ON duels(player1_id);
   CREATE INDEX duels_player2 ON duels(player2_id);
   `,
+  // Puzzles generated ahead for the duels (server/src/puzzlePool.ts)
+  `
+  CREATE TABLE puzzle_pool (
+    id INTEGER PRIMARY KEY,
+    difficulty TEXT NOT NULL,
+    level_json TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX puzzle_pool_difficulty ON puzzle_pool(difficulty, id);
+  `,
 ];
 
 export function openDatabase(path: string): Database {

@@ -15,6 +15,7 @@ import { newInviteCode, newRecoveryCode, newToken, normalizeRecoveryCode, secret
 import { addDays, isValidDate, periodBounds } from './time';
 import { AUTH_TIMEOUT_MS, Duels, type ServerMessage } from './duel';
 import { DuelStore, rankDuels } from './duelStore';
+import { PuzzlePool } from './puzzlePool';
 
 /** Version of this API: the app refuses a server it does not know how to talk to */
 export const API_VERSION = 1;
@@ -33,6 +34,8 @@ export interface AppDeps {
   config: Config;
   db: Database;
   generator: PuzzleGenerator;
+  /** Fills the pool of duel puzzles (a worker of its own); the generator by default */
+  poolGenerator?: PuzzleGenerator;
   now?: () => number;
   logger?: boolean | object;
   /** Limits of the duel WebSockets, smaller in tests */
@@ -142,8 +145,9 @@ export function buildApp(deps: AppDeps) {
   // ── Duels ──────────────────────────────────────────────────────────────────
 
   const duelStore = new DuelStore(db, config.timeZone);
+  const puzzles = new PuzzlePool({ db, generator, fillGenerator: deps.poolGenerator, log: app.log, now });
   const duels = new Duels({
-    generator, now, log: app.log,
+    puzzles, now, log: app.log,
     save: (record) => duelStore.save(record),
     authenticate: (token) => {
       const player = token ? findByToken.get(sha256(token)) as Player | undefined : undefined;
@@ -339,7 +343,13 @@ export function buildApp(deps: AppDeps) {
       });
 
       // The duels of the server: open ones to join, and the ones being played
-      auth.get('/duels', async (request) => ({ duels: duels.list(request.player.id) }));
+      auth.get('/duels', async (request) => ({
+        duels: duels.list(request.player.id),
+        // Puzzles ready by difficulty: a duel of a difficulty with none waits for its puzzle
+        ready: puzzles.counts(),
+        // None ready and too long to generate for now (master): such a duel cannot start
+        unavailable: puzzles.unavailable(),
+      }));
 
       // Duel rankings: wins, then fewer losses
       auth.get<{ Querystring: { period?: 'day' | 'week' | 'month' | 'all'; date?: string } }>('/duels/leaderboard', {
@@ -764,13 +774,14 @@ export function buildApp(deps: AppDeps) {
   app.addHook('preClose', async () => {
     clearInterval(duelSweep);
     duels.closeAll();
+    puzzles.stop();
   });
 
   app.addHook('onClose', async () => {
     await challenges.stop();
   });
 
-  return { app, challenges, duels };
+  return { app, challenges, duels, puzzles };
 }
 
 

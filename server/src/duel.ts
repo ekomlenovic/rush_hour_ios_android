@@ -1,7 +1,7 @@
-import { randomBytes, randomInt } from 'node:crypto';
+import { randomInt } from 'node:crypto';
 import { applyMoves, type Level, type MoveRecord, type Vehicle } from './core';
 import { DIFFICULTIES, type Difficulty } from './config';
-import type { PuzzleGenerator } from './generation';
+import type { PuzzleSource } from './puzzlePool';
 
 /**
  * Duels 1v1 in real time: two players of the server on the same generated puzzle,
@@ -30,7 +30,7 @@ export const MAX_WRONG_CODES = 10;
 export const WRONG_CODES_WINDOW_MS = 15 * 60_000;
 /** Messages of a connection in one second before it is closed (flooding) */
 export const MAX_MESSAGES_PER_SECOND = 20;
-/** Duels a player can create in CREATES_WINDOW_MS: each one generates a puzzle, which takes seconds */
+/** Duels a player can create in CREATES_WINDOW_MS: each one takes a puzzle, which takes seconds to generate again */
 export const MAX_CREATES = 5;
 export const CREATES_WINDOW_MS = 60_000;
 export const MAX_DUEL_MOVES = 1000;
@@ -53,7 +53,8 @@ export interface HeadToHead { wins: { playerId: number; count: number }[]; draws
 
 /** What the duels need of the rest of the server */
 export interface DuelDeps {
-  generator: PuzzleGenerator;
+  /** The puzzles of the duels: ready ahead (pool), else generated */
+  puzzles: PuzzleSource;
   /** Keeps a finished duel: its id (for its replay) and the score of the two players since they first met */
   save?: (record: DuelRecord) => { id: number; score: HeadToHead } | null;
   now: () => number;
@@ -155,8 +156,6 @@ interface Duel {
   result: DuelResult | null;
   /** Bumped at each new game: a puzzle generated for an earlier one is dropped */
   round: number;
-  /** The puzzle of the next game, generated ahead (while waiting for the opponent, during a game for the rematch) */
-  next: Promise<Level | null> | null;
 }
 
 /** Counts events by key in a sliding window: too many, and the next one is refused */
@@ -395,10 +394,8 @@ export class Duels {
         const created: Duel = {
           code, difficulty: message.difficulty ?? 'NORMAL', isPrivate: message.private ?? false, status: 'waiting',
           seats: [this.newSeat(player)], level: null, startsAt: null,
-          createdAt: this.deps.now(), endedAt: null, result: null, round: 0, next: null,
+          createdAt: this.deps.now(), endedAt: null, result: null, round: 0,
         };
-        // A hard puzzle takes seconds: it is ready by the time someone joins
-        created.next = this.generate(created.difficulty);
         this.duels.set(code, created);
         this.byPlayer.set(player.id, created);
         this.sendTo(created, player.id, { type: 'duel', duel: this.view(created, player.id) });
@@ -479,13 +476,13 @@ export class Duels {
     for (const seat of duel.seats) Object.assign(seat, { vehicles: [], moves: [], wantsRematch: false });
     this.sendViews(duel);
 
-    const next = duel.next ?? this.generate(duel.difficulty);
-    duel.next = null;
-    void next.then(level => {
+    // From the pool of puzzles generated ahead: at once, nearly always
+    void this.deps.puzzles.take(duel.difficulty).catch(() => null).then(level => {
       // Left, or a newer game, while the puzzle was generated
       if (duel.round !== round || duel.status !== 'preparing' || !this.duels.has(duel.code)) return;
       if (!level) {
-        this.broadcast(duel, { type: 'error', error: 'internal' });
+        // None ready, and too long to generate now (master)
+        this.broadcast(duel, { type: 'error', error: 'puzzle_unavailable' });
         return this.close(duel);
       }
       duel.level = level;
@@ -493,22 +490,7 @@ export class Duels {
       duel.startsAt = this.deps.now() + COUNTDOWN_MS;
       for (const seat of duel.seats) seat.vehicles = level.vehicles.map(v => ({ ...v }));
       this.sendViews(duel);
-      // The puzzle of a rematch, ready at the end
-      duel.next = this.generate(duel.difficulty);
     });
-  }
-
-  /** A random puzzle; a generation that fails is tried again with another seed */
-  private async generate(difficulty: Difficulty): Promise<Level | null> {
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const level = await this.deps.generator.generate(`duel:${randomBytes(16).toString('hex')}`, difficulty);
-        if (level) return level;
-      } catch (err) {
-        this.deps.log?.error({ err }, 'duel generation failed');
-      }
-    }
-    return null;
   }
 
   private end(duel: Duel, winner: Seat | null, reason: EndReason) {

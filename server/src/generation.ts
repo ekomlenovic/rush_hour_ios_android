@@ -1,21 +1,34 @@
 import { Worker } from 'node:worker_threads';
 import path from 'node:path';
-import { DIFFICULTY_LEVELS, generateSeededLevelSync, MULTI_LEVEL_ID, type Level } from './core';
+import { DIFFICULTY_LEVELS, generateSeededLevelSync, levelVariant, MULTI_LEVEL_ID, sampleLevels, type Level } from './core';
 import type { Difficulty } from './config';
 
-/** Makes the puzzle of a seed; the same seed and difficulty always give the same puzzle */
+/**
+ * What a puzzle is for: a daily challenge is always generated from scratch; a duel of
+ * the hardest difficulties is a variant of a level of the app (a master puzzle can take
+ * many minutes to generate, a variant a second at most).
+ */
+export type PuzzleKind = 'challenge' | 'duel';
+export const VARIANT_DIFFICULTIES: readonly Difficulty[] = ['EXPERT', 'MASTER'];
+
+/** Makes the puzzle of a seed; the same seed, difficulty and kind always give the same puzzle */
 export interface PuzzleGenerator {
-  generate(seed: string, difficulty: Difficulty): Promise<Level | null>;
+  generate(seed: string, difficulty: Difficulty, kind?: PuzzleKind): Promise<Level | null>;
   close(): Promise<void>;
 }
 
-export function generatePuzzle(seed: string, difficulty: Difficulty): Level | null {
-  return generateSeededLevelSync(seed, MULTI_LEVEL_ID, DIFFICULTY_LEVELS[difficulty]);
+export function generatePuzzle(seed: string, difficulty: Difficulty, kind: PuzzleKind = 'challenge'): Level | null {
+  const config = DIFFICULTY_LEVELS[difficulty];
+  if (kind === 'duel' && VARIANT_DIFFICULTIES.includes(difficulty)) {
+    const variant = levelVariant(sampleLevels, seed, MULTI_LEVEL_ID, config);
+    if (variant) return variant;
+  }
+  return generateSeededLevelSync(seed, MULTI_LEVEL_ID, config);
 }
 
 /** In the calling thread: for tests and tools */
 export const inlineGenerator: PuzzleGenerator = {
-  generate: async (seed, difficulty) => generatePuzzle(seed, difficulty),
+  generate: async (seed, difficulty, kind) => generatePuzzle(seed, difficulty, kind),
   close: async () => {},
 };
 
@@ -48,17 +61,20 @@ export function workerGenerator(workerFile = path.join(__dirname, 'worker.cjs'))
   };
 
   return {
-    generate(seed, difficulty) {
+    generate(seed, difficulty, kind = 'challenge') {
       worker ??= start();
       const id = nextId++;
       return new Promise((resolve, reject) => {
         pending.set(id, { resolve, reject });
-        worker!.postMessage({ id, seed, difficulty });
+        worker!.postMessage({ id, seed, difficulty, kind });
       });
     },
     async close() {
       await worker?.terminate();
       worker = null;
+      // The puzzles asked for will never come
+      for (const job of pending.values()) job.reject(new Error('generator closed'));
+      pending.clear();
     },
   };
 }

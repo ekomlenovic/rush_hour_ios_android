@@ -97,6 +97,9 @@ describe('duel on the phone', () => {
 
   it('the opponent leaves: during the game the room is gone, after the end the result stays', () => {
     expect(run(playing(), message({ type: 'closed' }))).toMatchObject({ duel: null, error: 'opponent_left' });
+    // Closed for a reason the server told
+    expect(run(playing(), message({ type: 'error', error: 'puzzle_unavailable' }), message({ type: 'closed' })))
+      .toMatchObject({ duel: null, error: 'puzzle_unavailable' });
     const over = run(playing(), message({ type: 'end', result: { winnerId: 1, reason: 'forfeit', timeMs: null, minMoves: 2, duelId: null, score: null }, level: LEVEL }), message({ type: 'closed' }));
     expect(over.duel).toMatchObject({ status: 'over', opponentLeft: true });
   });
