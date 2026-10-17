@@ -9,7 +9,7 @@ import { formatDuration } from '@/utils/date';
 import { useTheme } from '@/theme';
 import { selectActiveAccount, useMultiStore } from '@/store/multiStore';
 import { useMultiApi } from '@/hooks/useMultiApi';
-import { checkCompatibility, type Today } from '@/utils/multi/api';
+import { checkCompatibility, type Period, type Today } from '@/utils/multi/api';
 import { formatRemaining } from '@/utils/multi/format';
 import { serverHost } from '@/utils/multi/serverUrl';
 import MultiHeader from '@/components/multi/MultiHeader';
@@ -18,10 +18,21 @@ import PlayerActionsSheet from '@/components/multi/PlayerActionsSheet';
 import InviteSheet from '@/components/multi/InviteSheet';
 import ServerPickerSheet from '@/components/multi/ServerPickerSheet';
 import DuelsCard from '@/components/multi/DuelsCard';
+import DuelHistoryCard from '@/components/multi/DuelHistoryCard';
+import DuelLeaderboard from '@/components/multi/DuelLeaderboard';
+import HomeTabBar from '@/components/home/HomeTabBar';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { joinableCount, useServerDuels } from '@/hooks/useServerDuels';
 import { DuelCodeSheet, NewDuelSheet } from '@/components/multi/DuelSheets';
 import { errorCode, multiErrorMessage } from '@/components/multi/errors';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
+
+/** The tabs at the bottom: the challenge of the day, the rankings of the week and the month, the duels */
+type MultiTab = 'challenge' | 'weekly' | 'duels';
+const DAY: Period[] = ['day'];
+const WEEK_MONTH: Period[] = ['week', 'month'];
 
 /** First visit: what the multiplayer mode is, then join or create a server */
 function Intro() {
@@ -86,6 +97,11 @@ export default function MultiplayerScreen() {
   const [isNewDuelVisible, setNewDuelVisible] = useState(false);
   const [isDuelCodeVisible, setDuelCodeVisible] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<RowPlayer | null>(null);
+  const [tab, setTab] = useState<MultiTab>('challenge');
+  const [rankingKind, setRankingKind] = useState<'challenges' | 'duels'>('challenges');
+  const insets = useSafeAreaInsets();
+  const serverDuels = useServerDuels(api);
+  const joinable = joinableCount(serverDuels.duels);
 
   const load = useCallback(async () => {
     if (!api) return;
@@ -154,9 +170,14 @@ export default function MultiplayerScreen() {
         title={t('multi.title')}
         colors={colors}
         right={(
-          <Pressable onPress={() => router.push('/multi/account')} accessibilityRole="button" accessibilityLabel={t('multi.account')} hitSlop={8}>
-            <Text style={{ fontSize: RFValue(22) }}>👤</Text>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable onPress={() => setInviteVisible(true)} accessibilityRole="button" accessibilityLabel={t('multi.invite')} hitSlop={8}>
+              <Ionicons name="person-add" size={RFValue(21)} color={colors.primaryText} />
+            </Pressable>
+            <Pressable onPress={() => router.push('/multi/account')} accessibilityRole="button" accessibilityLabel={t('multi.account')} hitSlop={8}>
+              <Ionicons name="person-circle" size={RFValue(25)} color={colors.primaryText} />
+            </Pressable>
+          </View>
         )}
       />
       <ScrollView
@@ -179,6 +200,7 @@ export default function MultiplayerScreen() {
         )}
 
         {/* The challenge of the day */}
+        {tab === 'challenge' && <>
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {!today && loading && <ActivityIndicator color={colors.primary} style={styles.cardState} />}
 
@@ -260,8 +282,56 @@ export default function MultiplayerScreen() {
         </View>
 
         {api && (
-          <DuelsCard
+          <Leaderboard
             api={api}
+            colors={colors}
+            myPlayerId={account.playerId}
+            refreshKey={refreshKey}
+            blocked={blocked}
+            onRowPress={setSelectedPlayer}
+            periods={DAY}
+            title={t('multi.leaderboard_day')}
+          />
+        )}
+        </>}
+
+        {/* The rankings of the week and of the month: challenges or duels */}
+        {tab === 'weekly' && api && <>
+          <View style={[styles.segment, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
+            {(['challenges', 'duels'] as const).map(kind => (
+              <Pressable
+                key={kind}
+                onPress={() => setRankingKind(kind)}
+                style={[styles.segmentItem, kind === rankingKind && { backgroundColor: colors.surface }]}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: kind === rankingKind }}
+              >
+                <Ionicons name={kind === 'challenges' ? 'calendar' : 'flash'} size={16} color={kind === rankingKind ? colors.primaryText : colors.textMuted} />
+                <Text style={[styles.segmentText, { color: kind === rankingKind ? colors.text : colors.textMuted }]}>{t(`multi.ranking_${kind}`)}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {rankingKind === 'challenges' ? (
+            <Leaderboard
+              api={api}
+              colors={colors}
+              myPlayerId={account.playerId}
+              refreshKey={refreshKey}
+              blocked={blocked}
+              onRowPress={setSelectedPlayer}
+              periods={WEEK_MONTH}
+              title={t('multi.ranking_challenges_title')}
+            />
+          ) : (
+            <DuelLeaderboard api={api} colors={colors} myPlayerId={account.playerId} refreshKey={refreshKey} blocked={blocked} onRowPress={setSelectedPlayer} />
+          )}
+        </>}
+
+        {/* The duels: live, and mine */}
+        {tab === 'duels' && api && <>
+          <DuelsCard
+            duels={serverDuels.duels}
+            loadedAt={serverDuels.loadedAt}
             colors={colors}
             myPlayerId={account.playerId}
             clockOffset={clockOffset}
@@ -270,23 +340,33 @@ export default function MultiplayerScreen() {
             onCode={() => setDuelCodeVisible(true)}
             onOpen={(code) => router.push(code ? `/multi/duel?join=${code}` : '/multi/duel')}
           />
-        )}
-
-        <Pressable onPress={() => setInviteVisible(true)} style={[styles.secondaryButton, { borderColor: colors.primary }]} accessibilityRole="button">
-          <Text style={[styles.secondaryButtonText, { color: colors.primaryText }]}>📨 {t('multi.invite')}</Text>
-        </Pressable>
-
-        {api && (
-          <Leaderboard
+          <DuelHistoryCard
             api={api}
             colors={colors}
             myPlayerId={account.playerId}
             refreshKey={refreshKey}
-            blocked={blocked}
-            onRowPress={setSelectedPlayer}
+            onReplay={(duelId) => router.push(`/multi/duel-replay?duelId=${duelId}`)}
           />
-        )}
+        </>}
       </ScrollView>
+
+      <HomeTabBar
+        colors={colors}
+        bottomInset={insets.bottom}
+        activeKey={tab}
+        tabs={[
+          { key: 'challenge', icon: 'calendar', label: t('multi.tab_challenge'), onPress: () => setTab('challenge') },
+          { key: 'weekly', icon: 'trophy', label: t('multi.tab_weekly'), onPress: () => setTab('weekly') },
+          {
+            key: 'duels',
+            icon: 'flash',
+            label: t('multi.tab_duels'),
+            badge: joinable,
+            accessibilityLabel: joinable > 0 ? `${t('multi.tab_duels')}, ${t('multi.duel.open_count', { count: joinable })}` : t('multi.tab_duels'),
+            onPress: () => setTab('duels'),
+          },
+        ]}
+      />
 
       <ServerPickerSheet
         visible={isPickerVisible}
@@ -389,6 +469,29 @@ const styles = StyleSheet.create({
     lineHeight: RFValue(18),
     textAlign: 'center',
     marginVertical: RFValue(10),
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(14),
+  },
+  segment: {
+    flexDirection: 'row',
+    borderRadius: 14,
+    padding: 4,
+  },
+  segmentItem: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: RFValue(9),
+    borderRadius: 11,
+  },
+  segmentText: {
+    fontSize: RFValue(14),
+    fontWeight: '800',
   },
   primaryButton: {
     marginTop: RFValue(14),

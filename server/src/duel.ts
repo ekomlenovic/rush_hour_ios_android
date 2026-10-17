@@ -31,9 +31,25 @@ export const MAX_DUEL_MOVES = 1000;
 
 export interface DuelIdentity { id: number; pseudo: string }
 
+/** A finished duel, to keep */
+export interface DuelRecord {
+  difficulty: Difficulty;
+  level: Level;
+  startedAt: number;
+  endedAt: number;
+  reason: EndReason;
+  winnerId: number | null;
+  players: { id: number; moves: MoveRecord[] }[];
+}
+
+/** Wins of each of two players against the other, and their draws */
+export interface HeadToHead { wins: { playerId: number; count: number }[]; draws: number }
+
 /** What the duels need of the rest of the server */
 export interface DuelDeps {
   generator: PuzzleGenerator;
+  /** Keeps a finished duel: its id (for its replay) and the score of the two players since they first met */
+  save?: (record: DuelRecord) => { id: number; score: HeadToHead } | null;
   now: () => number;
   /** The player of a token; 'banned' for a player excluded by the admin */
   authenticate: (token: string) => DuelIdentity | 'banned' | null;
@@ -94,6 +110,10 @@ export interface DuelResult {
   /** Time of the winner, from the start */
   timeMs: number | null;
   minMoves: number;
+  /** The duel kept on the server (replay); null if it could not be */
+  duelId: number | null;
+  /** All the duels of these two players, this one included */
+  score: HeadToHead | null;
 }
 
 export type ServerMessage =
@@ -448,11 +468,25 @@ export class Duels {
     duel.status = 'over';
     duel.endedAt = now;
     const last = winner?.moves[winner.moves.length - 1];
+    const winnerId = winner?.player.id ?? null;
+    let saved: { id: number; score: HeadToHead } | null = null;
+    if (duel.level && duel.startsAt !== null && duel.seats.length === 2) {
+      try {
+        saved = this.deps.save?.({
+          difficulty: duel.difficulty, level: duel.level, startedAt: duel.startsAt, endedAt: now, reason, winnerId,
+          players: duel.seats.map(s => ({ id: s.player.id, moves: s.moves })),
+        }) ?? null;
+      } catch (err) {
+        this.deps.log?.error({ err }, 'duel not saved');
+      }
+    }
     duel.result = {
-      winnerId: winner?.player.id ?? null,
+      winnerId,
       reason,
       timeMs: reason === 'won' && last ? last.t : null,
       minMoves: duel.level?.minMoves ?? 0,
+      duelId: saved?.id ?? null,
+      score: saved?.score ?? null,
     };
     for (const seat of duel.seats) seat.disconnectedAt = null;
     this.broadcast(duel, { type: 'end', result: duel.result, level: duel.level! });

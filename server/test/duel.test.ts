@@ -154,7 +154,7 @@ describe('duels', () => {
     leo.send({ type: 'move', vehicleId: 'v1', delta: 2 });
     clock.now += 3000;
     emma.send({ type: 'move', vehicleId: 'target', delta: 4 });
-    const end = { type: 'end', result: { winnerId: 2, reason: 'won', timeMs: 5000, minMoves: 2 }, level: LEVEL };
+    const end = { type: 'end', result: { winnerId: 2, reason: 'won', timeMs: 5000, minMoves: 2, duelId: null, score: null }, level: LEVEL };
     expect(leo.last('end')).toEqual(end);
     expect(emma.last('end')).toEqual(end);
 

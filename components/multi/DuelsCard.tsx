@@ -1,21 +1,20 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { useFocusEffect } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import Animated, { FadeInDown, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { formatDuration } from '@/utils/date';
-import type { DuelListing, MultiApi } from '@/utils/multi/api';
+import type { DuelListing } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
 
-/** The list follows the server this often while the screen is shown */
-const REFRESH_MS = 4000;
-
 interface Props {
-  api: MultiApi;
+  duels: DuelListing[] | null;
+  /** When the list was last loaded (phone clock), for the time of the duels being played */
+  loadedAt: number;
   colors: UiColors;
   myPlayerId: number;
-  /** Server clock minus phone clock, for the time of the duels being played */
+  /** Server clock minus phone clock */
   clockOffset: number;
   disabled: boolean;
   onCreate: () => void;
@@ -24,47 +23,68 @@ interface Props {
   onOpen: (code: string | null) => void;
 }
 
+/** A dot that beats: the list is live */
+function LiveDot({ color }: { color: string }) {
+  const opacity = useSharedValue(1);
+  useEffect(() => {
+    opacity.value = withRepeat(withTiming(0.25, { duration: 900 }), -1, true);
+  }, [opacity]);
+  const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  return <Animated.View style={[styles.liveDot, { backgroundColor: color }, style]} />;
+}
+
 /**
- * The duels of the server, under the challenge of the day: the open ones, joined in
- * one tap (no code needed), and the ones being played. The list grows with the duels.
+ * The duels of the server, live: the open ones, joined in one tap (no code needed),
+ * and the ones being played. The list grows with the duels.
  */
-export default function DuelsCard({ api, colors, myPlayerId, clockOffset, disabled, onCreate, onCode, onOpen }: Props) {
+export default function DuelsCard({ duels, loadedAt, colors, myPlayerId, clockOffset, disabled, onCreate, onCode, onOpen }: Props) {
   const { t } = useTranslation();
-  const [duels, setDuels] = useState<DuelListing[] | null>(null);
-  const [now, setNow] = useState(Date.now());
-
-  useFocusEffect(useCallback(() => {
-    let active = true;
-    const load = () => api.duels()
-      .then(r => { if (active) { setDuels(r.duels); setNow(Date.now()); } })
-      // An older server has no duels: the card stays empty
-      .catch(() => { if (active) setDuels([]); });
-    void load();
-    const timer = setInterval(load, REFRESH_MS);
-    return () => { active = false; clearInterval(timer); };
-  }, [api]));
-
-  const open = duels?.filter(d => d.status === 'waiting' && !d.mine) ?? [];
+  const open = duels?.filter(d => d.status === 'waiting') ?? [];
+  const playing = duels?.filter(d => d.status !== 'waiting') ?? [];
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">⚔️ {t('multi.duel.title')}</Text>
-        {open.length > 0 && (
-          <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-            <Text style={[styles.badgeText, { color: colors.onPrimary }]}>{t('multi.duel.open_count', { count: open.length })}</Text>
-          </View>
-        )}
+        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('multi.duel.live_title')}</Text>
+        <View style={[styles.live, { backgroundColor: colors.successSoft }]} accessible accessibilityLabel={t('multi.duel.live_a11y')}>
+          <LiveDot color={colors.success} />
+          <Text style={[styles.liveText, { color: colors.success }]}>{t('multi.duel.live')}</Text>
+        </View>
+        <Pressable
+          onPress={onCode}
+          disabled={disabled}
+          style={[styles.iconButton, { backgroundColor: colors.neutralSoft }]}
+          accessibilityRole="button"
+          accessibilityLabel={t('multi.duel.have_code')}
+          hitSlop={6}
+        >
+          <Ionicons name="keypad" size={18} color={colors.text} />
+        </Pressable>
       </View>
-      <Text style={[styles.muted, { color: colors.textMuted }]}>{t('multi.duel.card_desc')}</Text>
+
+      {duels === null && <ActivityIndicator color={colors.primary} style={styles.state} />}
 
       {duels !== null && duels.length === 0 && (
-        <Text style={[styles.empty, { color: colors.textMuted }]}>{t('multi.duel.none_open')}</Text>
+        <View style={styles.empty}>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.primarySoft }]}>
+            <Ionicons name="flash" size={RFValue(28)} color={colors.primaryText} />
+          </View>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('multi.duel.none_open')}</Text>
+          <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('multi.duel.card_desc')}</Text>
+        </View>
       )}
 
-      {duels?.map(duel => (
-        <Animated.View key={`${duel.createdAt}-${duel.players[0]?.id}`} entering={FadeInDown.springify()} exiting={FadeIn.duration(0)} layout={LinearTransition}>
-          <DuelRow duel={duel} colors={colors} myPlayerId={myPlayerId} serverNow={now + clockOffset} disabled={disabled} onOpen={onOpen} />
+      {open.length > 0 && <Text style={[styles.section, { color: colors.textMuted }]}>{t('multi.duel.section_open')}</Text>}
+      {open.map(duel => (
+        <Animated.View key={`${duel.createdAt}-${duel.players[0]?.id}`} entering={FadeInDown.springify()} exiting={FadeOut} layout={LinearTransition}>
+          <OpenRow duel={duel} colors={colors} disabled={disabled} onOpen={onOpen} />
+        </Animated.View>
+      ))}
+
+      {playing.length > 0 && <Text style={[styles.section, { color: colors.textMuted }]}>{t('multi.duel.section_playing')}</Text>}
+      {playing.map(duel => (
+        <Animated.View key={`${duel.createdAt}-${duel.players[0]?.id}`} entering={FadeInDown.springify()} exiting={FadeOut} layout={LinearTransition}>
+          <PlayingRow duel={duel} colors={colors} myPlayerId={myPlayerId} serverNow={loadedAt + clockOffset} disabled={disabled} onOpen={onOpen} />
         </Animated.View>
       ))}
 
@@ -75,16 +95,52 @@ export default function DuelsCard({ api, colors, myPlayerId, clockOffset, disabl
         accessibilityRole="button"
         accessibilityHint={t('multi.duel.button_hint')}
       >
+        <Ionicons name="add-circle" size={RFValue(20)} color={colors.onPrimary} />
         <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>{t('multi.duel.create')}</Text>
-      </Pressable>
-      <Pressable onPress={onCode} disabled={disabled} style={styles.link} accessibilityRole="button">
-        <Text style={[styles.linkText, { color: colors.primaryText }]}>{t('multi.duel.have_code')}</Text>
       </Pressable>
     </View>
   );
 }
 
-interface RowProps {
+/** The initial of a player in a round */
+function Avatar({ pseudo, colors, mine = false }: { pseudo: string; colors: UiColors; mine?: boolean }) {
+  return (
+    <View style={[styles.avatar, { backgroundColor: mine ? colors.primary : colors.neutralSoft }]}>
+      <Text style={[styles.avatarText, { color: mine ? colors.onPrimary : colors.text }]}>{pseudo.slice(0, 1).toUpperCase()}</Text>
+    </View>
+  );
+}
+
+function OpenRow({ duel, colors, disabled, onOpen }: { duel: DuelListing; colors: UiColors; disabled: boolean; onOpen: (code: string | null) => void }) {
+  const { t } = useTranslation();
+  const creator = duel.players[0];
+  const label = duel.mine ? t('multi.duel.my_open') : creator.pseudo;
+  const action = duel.mine ? t('multi.duel.back_to_it') : t('multi.duel.fight');
+  const difficulty = t(`difficulty.${duel.difficulty}`);
+  return (
+    <Pressable
+      onPress={() => onOpen(duel.mine ? null : duel.code)}
+      disabled={disabled}
+      style={[styles.row, { backgroundColor: duel.mine ? colors.primarySoft : colors.card }]}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}, ${difficulty}${duel.private ? `, ${t('multi.duel.private')}` : ''}, ${action}`}
+    >
+      <Avatar pseudo={creator.pseudo} colors={colors} mine={duel.mine} />
+      <View style={styles.rowMain}>
+        <View style={styles.rowTitle}>
+          {duel.private && <Ionicons name="lock-closed" size={13} color={colors.textMuted} />}
+          <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{label}</Text>
+        </View>
+        <Text style={[styles.detail, { color: colors.textMuted }]}>{difficulty} · {t('multi.duel.waiting_short')}</Text>
+      </View>
+      <View style={[styles.action, { backgroundColor: duel.mine ? colors.neutralSoft : colors.primary }]}>
+        <Text style={[styles.actionText, { color: duel.mine ? colors.text : colors.onPrimary }]}>{action}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+interface PlayingRowProps {
   duel: DuelListing;
   colors: UiColors;
   myPlayerId: number;
@@ -93,36 +149,13 @@ interface RowProps {
   onOpen: (code: string | null) => void;
 }
 
-function DuelRow({ duel, colors, myPlayerId, serverNow, disabled, onOpen }: RowProps) {
+function PlayingRow({ duel, colors, myPlayerId, serverNow, disabled, onOpen }: PlayingRowProps) {
   const { t } = useTranslation();
   const [first, second] = duel.players;
   const name = (p: { id: number; pseudo: string }) => (p.id === myPlayerId ? t('multi.duel.me') : p.pseudo);
-  const difficulty = t(`difficulty.${duel.difficulty}`);
-
-  if (duel.status === 'waiting') {
-    const label = duel.mine ? t('multi.duel.my_open') : first.pseudo;
-    const action = duel.mine ? t('multi.duel.back_to_it') : t('multi.duel.fight');
-    return (
-      <Pressable
-        onPress={() => onOpen(duel.mine ? null : duel.code)}
-        disabled={disabled}
-        style={[styles.row, { backgroundColor: duel.mine ? colors.primarySoft : colors.card }]}
-        accessibilityRole="button"
-        accessibilityLabel={`${label}, ${difficulty}${duel.private ? `, ${t('multi.duel.private')}` : ''}, ${action}`}
-      >
-        <View style={styles.rowMain}>
-          <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{duel.private ? '🔒 ' : ''}{label}</Text>
-          <Text style={[styles.detail, { color: colors.textMuted }]}>{difficulty} · {t('multi.duel.waiting_short')}</Text>
-        </View>
-        <View style={[styles.action, { backgroundColor: duel.mine ? colors.neutralSoft : colors.primary }]}>
-          <Text style={[styles.actionText, { color: duel.mine ? colors.text : colors.onPrimary }]}>{action}</Text>
-        </View>
-      </Pressable>
-    );
-  }
-
-  const time = duel.startsAt !== null && serverNow > duel.startsAt ? formatDuration(serverNow - duel.startsAt) : null;
   const versus = second ? t('multi.duel.vs', { a: name(first), b: name(second) }) : name(first);
+  const time = duel.startsAt !== null && serverNow > duel.startsAt ? formatDuration(serverNow - duel.startsAt) : null;
+  const difficulty = t(`difficulty.${duel.difficulty}`);
   return (
     <Pressable
       onPress={() => onOpen(null)}
@@ -131,70 +164,137 @@ function DuelRow({ duel, colors, myPlayerId, serverNow, disabled, onOpen }: RowP
       accessibilityRole={duel.mine ? 'button' : 'text'}
       accessibilityLabel={`${versus}, ${difficulty}, ${t('multi.duel.playing_short')}${duel.mine ? `, ${t('multi.duel.back_to_it')}` : ''}`}
     >
+      <View style={styles.pair}>
+        <Avatar pseudo={first.pseudo} colors={colors} mine={first.id === myPlayerId} />
+        {second && <View style={styles.pairSecond}><Avatar pseudo={second.pseudo} colors={colors} mine={second.id === myPlayerId} /></View>}
+      </View>
       <View style={styles.rowMain}>
         <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{versus}</Text>
-        <Text style={[styles.detail, { color: colors.textMuted }]}>
-          {difficulty} · {t('multi.duel.playing_short')}{time ? ` · ⏱ ${time}` : ''}
-        </Text>
+        <Text style={[styles.detail, { color: colors.textMuted }]}>{difficulty}{time ? ` · ${time}` : ''}</Text>
       </View>
-      {duel.mine && (
+      {duel.mine ? (
         <View style={[styles.action, { backgroundColor: colors.warning }]}>
           <Text style={[styles.actionText, { color: colors.onPrimary }]}>{t('multi.duel.back_to_it')}</Text>
         </View>
+      ) : (
+        <Ionicons name="flash" size={18} color={colors.warning} />
       )}
     </Pressable>
   );
 }
+
+const AVATAR = RFValue(34);
 
 const styles = StyleSheet.create({
   card: {
     borderRadius: 18,
     borderWidth: 1,
     padding: RFValue(18),
-    marginTop: RFValue(16),
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: RFValue(8),
   },
   title: {
+    flex: 1,
     fontSize: RFValue(22),
     fontWeight: '800',
   },
-  badge: {
+  live: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     borderRadius: 999,
-    paddingVertical: 3,
-    paddingHorizontal: RFValue(10),
+    paddingVertical: 4,
+    paddingHorizontal: 10,
   },
-  badgeText: {
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  liveText: {
     fontSize: RFValue(12),
     fontWeight: '800',
   },
-  muted: {
-    fontSize: RFValue(13),
-    marginTop: 4,
-    marginBottom: RFValue(8),
+  iconButton: {
+    width: RFValue(34),
+    height: RFValue(34),
+    borderRadius: RFValue(17),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  state: {
+    paddingVertical: RFValue(20),
   },
   empty: {
-    fontSize: RFValue(14),
+    alignItems: 'center',
+    paddingVertical: RFValue(16),
+    gap: RFValue(6),
+  },
+  emptyIcon: {
+    width: RFValue(56),
+    height: RFValue(56),
+    borderRadius: RFValue(28),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: RFValue(4),
+  },
+  emptyTitle: {
+    fontSize: RFValue(16),
+    fontWeight: '800',
     textAlign: 'center',
-    paddingVertical: RFValue(14),
+  },
+  emptyText: {
+    fontSize: RFValue(13),
+    lineHeight: RFValue(19),
+    textAlign: 'center',
+  },
+  section: {
+    fontSize: RFValue(12),
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: RFValue(14),
+    marginBottom: 2,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: RFValue(10),
     paddingVertical: RFValue(10),
-    paddingHorizontal: RFValue(12),
+    paddingHorizontal: RFValue(10),
     borderRadius: 12,
     marginTop: RFValue(6),
+  },
+  avatar: {
+    width: AVATAR,
+    height: AVATAR,
+    borderRadius: AVATAR / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: RFValue(15),
+    fontWeight: '900',
+  },
+  pair: {
+    flexDirection: 'row',
+  },
+  pairSecond: {
+    marginLeft: -AVATAR / 3,
   },
   rowMain: {
     flex: 1,
   },
+  rowTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   pseudo: {
+    flexShrink: 1,
     fontSize: RFValue(15),
     fontWeight: '700',
   },
@@ -213,7 +313,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   primaryButton: {
-    marginTop: RFValue(14),
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: RFValue(16),
     paddingVertical: RFValue(15),
     borderRadius: 16,
     alignItems: 'center',
@@ -221,13 +324,5 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: RFValue(17),
     fontWeight: '800',
-  },
-  link: {
-    alignItems: 'center',
-    paddingTop: RFValue(12),
-  },
-  linkText: {
-    fontSize: RFValue(14),
-    fontWeight: '700',
   },
 });

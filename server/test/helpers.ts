@@ -64,7 +64,7 @@ export function testServer(options: { env?: Record<string, string>; level?: Leve
   const { calls } = fake;
   const generator = options.generator ?? fake.generator;
   const config = testConfig(options.env);
-  const { app, challenges } = buildApp({ config, db, generator, now: () => clock.now });
+  const { app, challenges, duels } = buildApp({ config, db, generator, now: () => clock.now });
 
   const request = async (method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, token?: string, body?: object) => {
     const res = await app.inject({
@@ -95,5 +95,5 @@ export function testServer(options: { env?: Record<string, string>; level?: Leve
     return player;
   };
 
-  return { app, db, challenges, clock, calls, config, request, join, joinAdmin, play };
+  return { app, db, challenges, duels, clock, calls, config, request, join, joinAdmin, play };
 }

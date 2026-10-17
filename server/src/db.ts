@@ -57,6 +57,31 @@ const MIGRATIONS: string[] = [
     UNIQUE (reporter_id, player_id)
   );
   `,
+  // Duels 1v1: results for the scores and rankings, moves for the replays (purged like the games)
+  `
+  CREATE TABLE duels (
+    id INTEGER PRIMARY KEY,
+    -- Day of the end, in the time zone of the server (rankings, admin reset)
+    date TEXT NOT NULL,
+    difficulty TEXT NOT NULL,
+    level_json TEXT NOT NULL,
+    min_moves INTEGER NOT NULL,
+    started_at INTEGER NOT NULL,
+    ended_at INTEGER NOT NULL,
+    reason TEXT NOT NULL CHECK (reason IN ('won', 'forfeit', 'disconnected', 'timeout')),
+    -- NULL: a draw
+    winner_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
+    player1_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    player2_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    moves1 INTEGER NOT NULL,
+    moves2 INTEGER NOT NULL,
+    moves1_json TEXT,
+    moves2_json TEXT
+  );
+  CREATE INDEX duels_date ON duels(date);
+  CREATE INDEX duels_player1 ON duels(player1_id);
+  CREATE INDEX duels_player2 ON duels(player2_id);
+  `,
 ];
 
 export function openDatabase(path: string): Database {
