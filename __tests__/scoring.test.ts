@@ -1,11 +1,30 @@
-import { calculateScore, getStars } from '../utils/scoring';
+import { calculateScore, getStars, starsFromScore } from '../utils/scoring';
 
 describe('stars (rules in docs/GAME_DESIGN.md)', () => {
-  it('3 stars for the optimal solution, 2 within 3 extra moves, otherwise 1', () => {
+  it('3 stars for the optimal solution, 2 within half of the optimum (rounded up), otherwise 1', () => {
     expect(getStars(12, 12)).toBe(3);
     expect(getStars(13, 12)).toBe(2);
-    expect(getStars(15, 12)).toBe(2);
-    expect(getStars(16, 12)).toBe(1);
+    expect(getStars(18, 12)).toBe(2);
+    expect(getStars(19, 12)).toBe(1);
+  });
+
+  it('gives harder levels a proportional margin for 2 stars', () => {
+    expect(getStars(60, 40)).toBe(2);
+    expect(getStars(61, 40)).toBe(1);
+    expect(getStars(30, 20)).toBe(2);
+    expect(getStars(31, 20)).toBe(1);
+    expect(getStars(9, 6)).toBe(2);
+    expect(getStars(10, 6)).toBe(1);
+    expect(getStars(2, 1)).toBe(2);
+  });
+
+  it('can be found back from the score alone', () => {
+    for (const minMoves of [6, 12, 20, 40]) {
+      for (let moves = minMoves; moves < minMoves * 3; moves++) {
+        expect(starsFromScore(calculateScore(moves, minMoves), minMoves)).toBe(getStars(moves, minMoves));
+      }
+    }
+    expect(starsFromScore(0, 12)).toBe(1);
   });
 });
 

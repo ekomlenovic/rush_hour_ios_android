@@ -50,7 +50,7 @@ Les défis du jour **passés** se rejouent depuis les archives : toucher un jour
 | **Annuler compte comme un coup** | `undo` incrémente `moveCount` : annuler n'est pas gratuit pour le score |
 | **Recommencer** remet le compteur à zéro | `resetLevel` |
 | Progression sauvegardée par niveau | `savedStates[levelId]` |
-| Étoiles : 3 ⭐ = solution optimale, 2 ⭐ ≤ optimal + 3, sinon 1 ⭐ | `getStars` (`utils/scoring.ts`) |
+| Étoiles **proportionnelles au niveau** : 3 ⭐ = solution optimale, 2 ⭐ ≤ optimal + 50 % (arrondi au-dessus : +6 à 12 coups, +10 à 20, +20 à 40), sinon 1 ⭐. Les victoires déjà enregistrées ont été recomptées avec cette règle (l'XP déjà gagnée ne change pas) | `getStars`, `twoStarTolerance` (`utils/scoring.ts`), migration v4 (`store/migrations.ts`) |
 | On garde le meilleur score et les meilleures étoiles | `completeLevel` |
 | Après une victoire, on peut **revoir la solution optimale** : elle se joue toute seule depuis la position de départ, et on avance ou recule coup par coup | `SolutionPlayer`, `vehiclesAtStep` (`utils/solutionReplay.ts`) |
 | Si la victoire n'est pas optimale, l'écran de victoire affiche l'écart et propose **« Réessayer pour 3 ⭐ »** : une nouvelle tentative depuis le départ (compteurs remis à zéro, ce n'est pas un recommencer) | `handleRetry` (`app/game.tsx`) |

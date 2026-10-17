@@ -1,6 +1,7 @@
 import { useGameStore, Level } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
 import { resetStore } from './helpers';
+import { calculateScore } from '../utils/scoring';
 import { ACHIEVEMENT_XP, MISSIONS_XP, dailyWinXp, levelWinXp, weeklyWinXp } from '../data/progression';
 
 const options = useGameStore.persist.getOptions();
@@ -10,8 +11,8 @@ const merge = (persisted: Record<string, unknown>) =>
   options.merge!(persisted, useGameStore.getInitialState());
 
 describe('persisted state', () => {
-  it('is at version 3', () => {
-    expect(options.version).toBe(3);
+  it('is at version 4', () => {
+    expect(options.version).toBe(4);
   });
 
   it('keeps the player data and leaves the in-game state out', () => {
@@ -85,6 +86,28 @@ describe('migrate', () => {
   it('v3 is up to date: nothing changes', () => {
     const saved = { currentStreak: 3, bestStreak: 5, lastStreakDate: '2026-10-14', dailyChallengeProgress: {}, xp: 1234 };
     expect(migrate(saved, 3)).toEqual(saved);
+  });
+});
+
+describe('migrate v3 → v4', () => {
+  it('recounts the stars of past wins with the proportional rule', () => {
+    const hard = sampleLevels.find(l => l.minMoves === 40)!;
+    const easy = sampleLevels.find(l => l.minMoves === 12)!;
+    const state = migrate({
+      progress: [
+        { levelId: hard.id, completed: true, bestScore: calculateScore(58, 40), stars: 1 },
+        { levelId: easy.id, completed: true, bestScore: calculateScore(19, 12), stars: 1 },
+        { levelId: 999999, completed: true, bestScore: 100, stars: 2 },
+      ],
+      dailyChallengeProgress: {
+        '2026-10-13': { completed: true, score: calculateScore(29, 20), stars: 1, moves: 29, minMoves: 20 },
+        '2026-10-12': { completed: true, score: 1000, stars: 1 },
+      },
+      xp: 1234,
+    }, 3);
+    expect((state.progress as { stars: number }[]).map(p => p.stars)).toEqual([2, 1, 2]);
+    expect(state.dailyChallengeProgress).toMatchObject({ '2026-10-13': { stars: 2 }, '2026-10-12': { stars: 1 } });
+    expect(state.xp).toBe(1234);
   });
 });
 
