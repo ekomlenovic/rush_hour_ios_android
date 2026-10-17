@@ -1,4 +1,4 @@
-import { MISSIONS, MISSIONS_BY_ID, MISSIONS_PER_DAY, getMissionsForDay, pickMissions, countMissionsDone } from '../data/missions';
+import { FAST_WIN_MS, MISSIONS, MISSIONS_BY_ID, MISSIONS_PER_DAY, getMissionsForDay, pickMissions, countMissionsDone } from '../data/missions';
 import { useGameStore, MAX_STREAK_FREEZES } from '../store/gameStore';
 import { MISSIONS_FULL_STOCK_XP, MISSIONS_XP } from '../data/progression';
 import { sampleLevels } from '../data/sampleLevels';
@@ -72,6 +72,14 @@ describe('mission counters in the store', () => {
     winMapLevel(sampleLevels[2], { stars: 3, undos: 1 });
     expect(counters()).toMatchObject({ levelWins: 3, perfectWins: 2, noHintWins: 2, cleanWins: 1 });
     expect(counters().bigGridWins).toBe(sampleLevels.slice(0, 3).filter(l => l.gridSize >= 7).length);
+  });
+
+  it('count first wins and wins under a minute', () => {
+    winMapLevel(sampleLevels[0]);
+    winMapLevel(sampleLevels[0]);
+    state().loadLevel(sampleLevels[1]);
+    state().completeLevel(sampleLevels[1].id, 300, 3, FAST_WIN_MS);
+    expect(counters()).toMatchObject({ levelWins: 3, newLevelWins: 2, fastWins: 2 });
   });
 
   it('count moves and play time', () => {

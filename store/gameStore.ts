@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { sampleLevels } from '../data/sampleLevels';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
 import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
-import { DailyMissionsState, MissionCounter, MissionReward, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
+import { DailyMissionsState, FAST_WIN_MS, MissionCounter, MissionReward, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
 import { getLocalDateString, daysBetween } from '../utils/date';
 import { diffMove, toMoveRecord } from '../utils/moveLog';
 import type {
@@ -473,6 +473,8 @@ export const useGameStore = create<GameState>()(
             noHintWins: noHint ? 1 : 0,
             cleanWins: noHelp ? 1 : 0,
             bigGridWins: currentLevel.gridSize >= 7 ? 1 : 0,
+            newLevelWins: existing?.completed ? 0 : 1,
+            fastWins: timeMs !== undefined && timeMs < FAST_WIN_MS ? 1 : 0,
           });
         }
         get().checkAchievements();
