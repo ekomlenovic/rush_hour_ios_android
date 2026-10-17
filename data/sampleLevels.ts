@@ -369,6 +369,479 @@ export const sampleLevels: Level[] = [
   },
   {
     "id": 6,
+    "gridSize": 6,
+    "exitRow": 6,
+    "exitCol": 4,
+    "minMoves": 7,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 0,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v2",
+        "row": 2,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v3",
+        "row": 3,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 0,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 3,
+        "col": 3,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 3,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      }
+    ],
+    "updatedAt": 1792242207593
+  },
+  {
+    "id": 7,
+    "gridSize": 6,
+    "exitRow": 1,
+    "exitCol": 6,
+    "minMoves": 8,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 1,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 1,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v2",
+        "row": 2,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 3,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      }
+    ],
+    "updatedAt": 1792242207695
+  },
+  {
+    "id": 8,
+    "gridSize": 6,
+    "exitRow": 2,
+    "exitCol": 6,
+    "minMoves": 9,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 2,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 1,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      },
+      {
+        "id": "v2",
+        "row": 1,
+        "col": 4,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v3",
+        "row": 0,
+        "col": 5,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v4",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 0,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 5,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 3,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 5,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      }
+    ],
+    "updatedAt": 1792242208076
+  },
+  {
+    "id": 9,
+    "gridSize": 6,
+    "exitRow": 255,
+    "exitCol": 4,
+    "minMoves": 10,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 4,
+        "col": 4,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 2,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v2",
+        "row": 0,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 2,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 1,
+        "col": 1,
+        "length": 3,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 4,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 3,
+        "col": 3,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 0,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 4,
+        "col": 2,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F59E0B"
+      }
+    ],
+    "updatedAt": 1792242209076
+  },
+  {
+    "id": 10,
+    "gridSize": 6,
+    "exitRow": 255,
+    "exitCol": 5,
+    "minMoves": 11,
+    "vehicles": [
+      {
+        "id": "target",
+        "row": 4,
+        "col": 5,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": true,
+        "color": "#EF4444"
+      },
+      {
+        "id": "v1",
+        "row": 3,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#10B981"
+      },
+      {
+        "id": "v2",
+        "row": 4,
+        "col": 0,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#3B82F6"
+      },
+      {
+        "id": "v3",
+        "row": 5,
+        "col": 3,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#EC4899"
+      },
+      {
+        "id": "v4",
+        "row": 2,
+        "col": 3,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#06B6D4"
+      },
+      {
+        "id": "v5",
+        "row": 1,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#8B5CF6"
+      },
+      {
+        "id": "v6",
+        "row": 2,
+        "col": 1,
+        "length": 2,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#F97316"
+      },
+      {
+        "id": "v7",
+        "row": 1,
+        "col": 4,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#64748B"
+      },
+      {
+        "id": "v8",
+        "row": 1,
+        "col": 0,
+        "length": 3,
+        "orientation": "vertical",
+        "isTarget": false,
+        "color": "#14B8A6"
+      },
+      {
+        "id": "v9",
+        "row": 0,
+        "col": 2,
+        "length": 2,
+        "orientation": "horizontal",
+        "isTarget": false,
+        "color": "#F59E0B"
+      }
+    ],
+    "updatedAt": 1792242212755
+  },
+  {
+    "id": 11,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 255,
@@ -477,7 +950,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741331
   },
   {
-    "id": 7,
+    "id": 12,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 4,
@@ -586,7 +1059,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741675
   },
   {
-    "id": 8,
+    "id": 13,
     "gridSize": 6,
     "exitRow": 3,
     "exitCol": 255,
@@ -704,7 +1177,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741959
   },
   {
-    "id": 9,
+    "id": 14,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 0,
@@ -822,7 +1295,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741122
   },
   {
-    "id": 10,
+    "id": 15,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 3,
@@ -922,7 +1395,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741149
   },
   {
-    "id": 11,
+    "id": 16,
     "gridSize": 6,
     "exitRow": 0,
     "exitCol": 255,
@@ -1040,7 +1513,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741088
   },
   {
-    "id": 12,
+    "id": 17,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 1,
@@ -1149,7 +1622,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741224
   },
   {
-    "id": 13,
+    "id": 18,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 6,
@@ -1258,7 +1731,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600740879
   },
   {
-    "id": 14,
+    "id": 19,
     "gridSize": 6,
     "exitRow": 5,
     "exitCol": 6,
@@ -1367,7 +1840,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600740928
   },
   {
-    "id": 15,
+    "id": 20,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 255,
@@ -1476,7 +1949,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741080
   },
   {
-    "id": 16,
+    "id": 21,
     "gridSize": 6,
     "exitRow": 3,
     "exitCol": 6,
@@ -1594,7 +2067,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741061
   },
   {
-    "id": 17,
+    "id": 22,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 255,
@@ -1712,7 +2185,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741085
   },
   {
-    "id": 18,
+    "id": 23,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 2,
@@ -1821,7 +2294,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600740927
   },
   {
-    "id": 19,
+    "id": 24,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 2,
@@ -1930,7 +2403,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741112
   },
   {
-    "id": 20,
+    "id": 25,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 255,
@@ -2048,7 +2521,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741273
   },
   {
-    "id": 21,
+    "id": 26,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 7,
@@ -2166,7 +2639,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600744953
   },
   {
-    "id": 22,
+    "id": 27,
     "gridSize": 6,
     "exitRow": 1,
     "exitCol": 255,
@@ -2257,7 +2730,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600745919
   },
   {
-    "id": 23,
+    "id": 28,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 2,
@@ -2366,7 +2839,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600745978
   },
   {
-    "id": 24,
+    "id": 29,
     "gridSize": 6,
     "exitRow": 1,
     "exitCol": 6,
@@ -2484,7 +2957,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741280
   },
   {
-    "id": 25,
+    "id": 30,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 1,
@@ -2593,7 +3066,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741373
   },
   {
-    "id": 26,
+    "id": 31,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 7,
@@ -2711,7 +3184,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600742700
   },
   {
-    "id": 27,
+    "id": 32,
     "gridSize": 6,
     "exitRow": 4,
     "exitCol": 255,
@@ -2820,7 +3293,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600742801
   },
   {
-    "id": 28,
+    "id": 33,
     "gridSize": 6,
     "exitRow": 3,
     "exitCol": 6,
@@ -2929,7 +3402,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600742957
   },
   {
-    "id": 29,
+    "id": 34,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 5,
@@ -3047,7 +3520,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600744462
   },
   {
-    "id": 30,
+    "id": 35,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 3,
@@ -3165,7 +3638,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600744605
   },
   {
-    "id": 31,
+    "id": 36,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 0,
@@ -3283,7 +3756,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600744736
   },
   {
-    "id": 32,
+    "id": 37,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 255,
@@ -3401,7 +3874,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600745096
   },
   {
-    "id": 33,
+    "id": 38,
     "gridSize": 6,
     "exitRow": 3,
     "exitCol": 255,
@@ -3510,7 +3983,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600745262
   },
   {
-    "id": 34,
+    "id": 39,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 0,
@@ -3628,7 +4101,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600745498
   },
   {
-    "id": 35,
+    "id": 40,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 5,
@@ -3746,7 +4219,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600746337
   },
   {
-    "id": 36,
+    "id": 41,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 3,
@@ -3855,7 +4328,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741224
   },
   {
-    "id": 37,
+    "id": 42,
     "gridSize": 6,
     "exitRow": 3,
     "exitCol": 255,
@@ -3973,7 +4446,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741735
   },
   {
-    "id": 38,
+    "id": 43,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 1,
@@ -4091,7 +4564,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600742822
   },
   {
-    "id": 39,
+    "id": 44,
     "gridSize": 6,
     "exitRow": 3,
     "exitCol": 6,
@@ -4200,7 +4673,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600742906
   },
   {
-    "id": 40,
+    "id": 45,
     "gridSize": 6,
     "exitRow": 0,
     "exitCol": 255,
@@ -4318,7 +4791,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600743512
   },
   {
-    "id": 41,
+    "id": 46,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 4,
@@ -4445,7 +4918,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600747050
   },
   {
-    "id": 42,
+    "id": 47,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 7,
@@ -4581,7 +5054,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600836991
   },
   {
-    "id": 43,
+    "id": 48,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 255,
@@ -4717,7 +5190,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600757060
   },
   {
-    "id": 44,
+    "id": 49,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 7,
@@ -4853,7 +5326,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600778238
   },
   {
-    "id": 45,
+    "id": 50,
     "gridSize": 7,
     "exitRow": 0,
     "exitCol": 7,
@@ -4989,7 +5462,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600755919
   },
   {
-    "id": 46,
+    "id": 51,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 0,
@@ -5116,7 +5589,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600781308
   },
   {
-    "id": 47,
+    "id": 52,
     "gridSize": 6,
     "exitRow": 4,
     "exitCol": 255,
@@ -5234,7 +5707,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600782229
   },
   {
-    "id": 48,
+    "id": 53,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 255,
@@ -5352,7 +5825,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741517
   },
   {
-    "id": 49,
+    "id": 54,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 4,
@@ -5479,7 +5952,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600745439
   },
   {
-    "id": 50,
+    "id": 55,
     "gridSize": 7,
     "exitRow": 2,
     "exitCol": 7,
@@ -5606,7 +6079,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600771115
   },
   {
-    "id": 51,
+    "id": 56,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 1,
@@ -5742,7 +6215,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600828750
   },
   {
-    "id": 52,
+    "id": 57,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 2,
@@ -5878,7 +6351,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600795703
   },
   {
-    "id": 53,
+    "id": 58,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 5,
@@ -6005,7 +6478,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600802028
   },
   {
-    "id": 54,
+    "id": 59,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 1,
@@ -6141,7 +6614,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600797198
   },
   {
-    "id": 55,
+    "id": 60,
     "gridSize": 7,
     "exitRow": 0,
     "exitCol": 255,
@@ -6277,7 +6750,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600763785
   },
   {
-    "id": 56,
+    "id": 61,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 7,
@@ -6413,7 +6886,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600881969
   },
   {
-    "id": 57,
+    "id": 62,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 7,
@@ -6549,7 +7022,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600773817
   },
   {
-    "id": 58,
+    "id": 63,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 7,
@@ -6685,7 +7158,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600823048
   },
   {
-    "id": 59,
+    "id": 64,
     "gridSize": 7,
     "exitRow": 0,
     "exitCol": 7,
@@ -6821,7 +7294,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600814386
   },
   {
-    "id": 60,
+    "id": 65,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 7,
@@ -6957,7 +7430,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741755
   },
   {
-    "id": 61,
+    "id": 66,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 3,
@@ -7093,7 +7566,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600759577
   },
   {
-    "id": 62,
+    "id": 67,
     "gridSize": 7,
     "exitRow": 0,
     "exitCol": 255,
@@ -7229,7 +7702,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600788837
   },
   {
-    "id": 63,
+    "id": 68,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 4,
@@ -7329,7 +7802,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600744714
   },
   {
-    "id": 64,
+    "id": 69,
     "gridSize": 6,
     "exitRow": 1,
     "exitCol": 6,
@@ -7456,7 +7929,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741435
   },
   {
-    "id": 65,
+    "id": 70,
     "gridSize": 6,
     "exitRow": 4,
     "exitCol": 255,
@@ -7574,7 +8047,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600741381
   },
   {
-    "id": 66,
+    "id": 71,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 4,
@@ -7710,7 +8183,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600878116
   },
   {
-    "id": 67,
+    "id": 72,
     "gridSize": 7,
     "exitRow": 1,
     "exitCol": 7,
@@ -7837,7 +8310,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600872406
   },
   {
-    "id": 68,
+    "id": 73,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 255,
@@ -7964,7 +8437,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600768231
   },
   {
-    "id": 69,
+    "id": 74,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 3,
@@ -8100,7 +8573,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600788426
   },
   {
-    "id": 70,
+    "id": 75,
     "gridSize": 6,
     "exitRow": 4,
     "exitCol": 255,
@@ -8227,7 +8700,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600773671
   },
   {
-    "id": 71,
+    "id": 76,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 0,
@@ -8363,7 +8836,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600806421
   },
   {
-    "id": 72,
+    "id": 77,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 7,
@@ -8499,7 +8972,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600791155
   },
   {
-    "id": 73,
+    "id": 78,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 2,
@@ -8617,7 +9090,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600777235
   },
   {
-    "id": 74,
+    "id": 79,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 4,
@@ -8726,7 +9199,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600775499
   },
   {
-    "id": 75,
+    "id": 80,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 3,
@@ -8862,7 +9335,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600756352
   },
   {
-    "id": 76,
+    "id": 81,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 6,
@@ -8989,7 +9462,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600743370
   },
   {
-    "id": 77,
+    "id": 82,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 5,
@@ -9125,7 +9598,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600747093
   },
   {
-    "id": 78,
+    "id": 83,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 255,
@@ -9261,7 +9734,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600807789
   },
   {
-    "id": 79,
+    "id": 84,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 7,
@@ -9397,7 +9870,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600762193
   },
   {
-    "id": 80,
+    "id": 85,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 1,
@@ -9515,7 +9988,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600762278
   },
   {
-    "id": 81,
+    "id": 86,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 5,
@@ -9651,7 +10124,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600795009
   },
   {
-    "id": 82,
+    "id": 87,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 255,
@@ -9787,7 +10260,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600888143
   },
   {
-    "id": 83,
+    "id": 88,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 255,
@@ -9923,7 +10396,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600875715
   },
   {
-    "id": 84,
+    "id": 89,
     "gridSize": 7,
     "exitRow": 2,
     "exitCol": 255,
@@ -10059,7 +10532,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600749917
   },
   {
-    "id": 85,
+    "id": 90,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 7,
@@ -10195,7 +10668,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600752921
   },
   {
-    "id": 86,
+    "id": 91,
     "gridSize": 6,
     "exitRow": 1,
     "exitCol": 6,
@@ -10322,7 +10795,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600765315
   },
   {
-    "id": 87,
+    "id": 92,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 7,
@@ -10458,7 +10931,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600784333
   },
   {
-    "id": 88,
+    "id": 93,
     "gridSize": 7,
     "exitRow": 2,
     "exitCol": 255,
@@ -10594,7 +11067,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600924298
   },
   {
-    "id": 89,
+    "id": 94,
     "gridSize": 7,
     "exitRow": 1,
     "exitCol": 7,
@@ -10730,7 +11203,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600761297
   },
   {
-    "id": 90,
+    "id": 95,
     "gridSize": 6,
     "exitRow": 4,
     "exitCol": 255,
@@ -10857,7 +11330,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600743204
   },
   {
-    "id": 91,
+    "id": 96,
     "gridSize": 7,
     "exitRow": 0,
     "exitCol": 7,
@@ -10993,7 +11466,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600755825
   },
   {
-    "id": 92,
+    "id": 97,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 255,
@@ -11111,7 +11584,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600758553
   },
   {
-    "id": 93,
+    "id": 98,
     "gridSize": 6,
     "exitRow": 1,
     "exitCol": 255,
@@ -11229,7 +11702,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600762330
   },
   {
-    "id": 94,
+    "id": 99,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 1,
@@ -11365,7 +11838,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600794160
   },
   {
-    "id": 95,
+    "id": 100,
     "gridSize": 6,
     "exitRow": 0,
     "exitCol": 255,
@@ -11474,7 +11947,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600768657
   },
   {
-    "id": 96,
+    "id": 101,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 6,
@@ -11592,7 +12065,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1773600768657
   },
   {
-    "id": 97,
+    "id": 102,
     "gridSize": 7,
     "exitRow": 0,
     "exitCol": 255,
@@ -11728,7 +12201,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708428995
   },
   {
-    "id": 98,
+    "id": 103,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 7,
@@ -11837,7 +12310,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708481346
   },
   {
-    "id": 99,
+    "id": 104,
     "gridSize": 6,
     "exitRow": 4,
     "exitCol": 6,
@@ -11955,7 +12428,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708439690
   },
   {
-    "id": 100,
+    "id": 105,
     "gridSize": 6,
     "exitRow": 3,
     "exitCol": 255,
@@ -12082,7 +12555,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708465306
   },
   {
-    "id": 101,
+    "id": 106,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 2,
@@ -12182,7 +12655,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708487802
   },
   {
-    "id": 102,
+    "id": 107,
     "gridSize": 6,
     "exitRow": 4,
     "exitCol": 255,
@@ -12318,7 +12791,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708434235
   },
   {
-    "id": 103,
+    "id": 108,
     "gridSize": 6,
     "exitRow": 0,
     "exitCol": 6,
@@ -12427,7 +12900,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708435463
   },
   {
-    "id": 104,
+    "id": 109,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 0,
@@ -12554,7 +13027,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708438914
   },
   {
-    "id": 105,
+    "id": 110,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 3,
@@ -12681,7 +13154,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708431596
   },
   {
-    "id": 106,
+    "id": 111,
     "gridSize": 7,
     "exitRow": 6,
     "exitCol": 7,
@@ -12817,7 +13290,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708445520
   },
   {
-    "id": 107,
+    "id": 112,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 2,
@@ -12944,7 +13417,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708433602
   },
   {
-    "id": 108,
+    "id": 113,
     "gridSize": 6,
     "exitRow": 3,
     "exitCol": 6,
@@ -13071,7 +13544,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708435340
   },
   {
-    "id": 109,
+    "id": 114,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 255,
@@ -13189,7 +13662,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708441888
   },
   {
-    "id": 110,
+    "id": 115,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 4,
@@ -13316,7 +13789,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708443703
   },
   {
-    "id": 111,
+    "id": 116,
     "gridSize": 6,
     "exitRow": 5,
     "exitCol": 6,
@@ -13443,7 +13916,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708459050
   },
   {
-    "id": 112,
+    "id": 117,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 5,
@@ -13579,7 +14052,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708725687
   },
   {
-    "id": 113,
+    "id": 118,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 2,
@@ -13715,7 +14188,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708672333
   },
   {
-    "id": 114,
+    "id": 119,
     "gridSize": 6,
     "exitRow": 1,
     "exitCol": 255,
@@ -13842,7 +14315,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708481634
   },
   {
-    "id": 115,
+    "id": 120,
     "gridSize": 7,
     "exitRow": 1,
     "exitCol": 255,
@@ -13978,7 +14451,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708815292
   },
   {
-    "id": 116,
+    "id": 121,
     "gridSize": 7,
     "exitRow": 0,
     "exitCol": 255,
@@ -14114,7 +14587,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708732746
   },
   {
-    "id": 117,
+    "id": 122,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 2,
@@ -14223,7 +14696,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708422233
   },
   {
-    "id": 118,
+    "id": 123,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 2,
@@ -14350,7 +14823,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708442001
   },
   {
-    "id": 119,
+    "id": 124,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 255,
@@ -14486,7 +14959,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708602755
   },
   {
-    "id": 120,
+    "id": 125,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 3,
@@ -14622,7 +15095,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708684693
   },
   {
-    "id": 121,
+    "id": 126,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 255,
@@ -14749,7 +15222,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708550600
   },
   {
-    "id": 122,
+    "id": 127,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 2,
@@ -14885,7 +15358,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708603127
   },
   {
-    "id": 123,
+    "id": 128,
     "gridSize": 7,
     "exitRow": 0,
     "exitCol": 255,
@@ -15021,7 +15494,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708547627
   },
   {
-    "id": 124,
+    "id": 129,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 255,
@@ -15157,7 +15630,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708525992
   },
   {
-    "id": 125,
+    "id": 130,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 4,
@@ -15284,7 +15757,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708535989
   },
   {
-    "id": 126,
+    "id": 131,
     "gridSize": 7,
     "exitRow": 6,
     "exitCol": 7,
@@ -15420,7 +15893,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708680367
   },
   {
-    "id": 127,
+    "id": 132,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 0,
@@ -15547,7 +16020,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708462905
   },
   {
-    "id": 128,
+    "id": 133,
     "gridSize": 7,
     "exitRow": 2,
     "exitCol": 255,
@@ -15683,7 +16156,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708473428
   },
   {
-    "id": 129,
+    "id": 134,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 4,
@@ -15792,7 +16265,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708473765
   },
   {
-    "id": 130,
+    "id": 135,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 0,
@@ -15901,7 +16374,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708478345
   },
   {
-    "id": 131,
+    "id": 136,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 255,
@@ -16028,7 +16501,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708647869
   },
   {
-    "id": 132,
+    "id": 137,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 3,
@@ -16146,7 +16619,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708465546
   },
   {
-    "id": 133,
+    "id": 138,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 2,
@@ -16264,7 +16737,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708479019
   },
   {
-    "id": 134,
+    "id": 139,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 5,
@@ -16400,7 +16873,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708553321
   },
   {
-    "id": 135,
+    "id": 140,
     "gridSize": 7,
     "exitRow": 2,
     "exitCol": 7,
@@ -16536,7 +17009,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708539111
   },
   {
-    "id": 136,
+    "id": 141,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 4,
@@ -16672,7 +17145,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708560997
   },
   {
-    "id": 137,
+    "id": 142,
     "gridSize": 7,
     "exitRow": 1,
     "exitCol": 7,
@@ -16781,7 +17254,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708457227
   },
   {
-    "id": 138,
+    "id": 143,
     "gridSize": 6,
     "exitRow": 1,
     "exitCol": 6,
@@ -16908,7 +17381,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708419231
   },
   {
-    "id": 139,
+    "id": 144,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 255,
@@ -17044,7 +17517,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708422241
   },
   {
-    "id": 140,
+    "id": 145,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 1,
@@ -17171,7 +17644,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708424771
   },
   {
-    "id": 141,
+    "id": 146,
     "gridSize": 6,
     "exitRow": 5,
     "exitCol": 6,
@@ -17307,7 +17780,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708425677
   },
   {
-    "id": 142,
+    "id": 147,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 4,
@@ -17443,7 +17916,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708667535
   },
   {
-    "id": 143,
+    "id": 148,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 5,
@@ -17561,7 +18034,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708452095
   },
   {
-    "id": 144,
+    "id": 149,
     "gridSize": 7,
     "exitRow": 1,
     "exitCol": 255,
@@ -17697,7 +18170,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708744356
   },
   {
-    "id": 145,
+    "id": 150,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 2,
@@ -17815,7 +18288,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708426521
   },
   {
-    "id": 146,
+    "id": 151,
     "gridSize": 7,
     "exitRow": 2,
     "exitCol": 255,
@@ -17951,7 +18424,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708643101
   },
   {
-    "id": 147,
+    "id": 152,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 3,
@@ -18069,7 +18542,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708420875
   },
   {
-    "id": 148,
+    "id": 153,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 255,
@@ -18196,7 +18669,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708427709
   },
   {
-    "id": 149,
+    "id": 154,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 4,
@@ -18332,7 +18805,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708450266
   },
   {
-    "id": 150,
+    "id": 155,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 5,
@@ -18468,7 +18941,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708432123
   },
   {
-    "id": 151,
+    "id": 156,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 3,
@@ -18604,7 +19077,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708499883
   },
   {
-    "id": 152,
+    "id": 157,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 5,
@@ -18722,7 +19195,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708419836
   },
   {
-    "id": 153,
+    "id": 158,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 7,
@@ -18858,7 +19331,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708494127
   },
   {
-    "id": 154,
+    "id": 159,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 1,
@@ -18967,7 +19440,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708446055
   },
   {
-    "id": 155,
+    "id": 160,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 7,
@@ -19103,7 +19576,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708709148
   },
   {
-    "id": 156,
+    "id": 161,
     "gridSize": 7,
     "exitRow": 1,
     "exitCol": 7,
@@ -19239,7 +19712,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708533766
   },
   {
-    "id": 157,
+    "id": 162,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 4,
@@ -19375,7 +19848,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708775065
   },
   {
-    "id": 158,
+    "id": 163,
     "gridSize": 6,
     "exitRow": 5,
     "exitCol": 6,
@@ -19493,7 +19966,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708540975
   },
   {
-    "id": 159,
+    "id": 164,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 2,
@@ -19593,7 +20066,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708456802
   },
   {
-    "id": 160,
+    "id": 165,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 6,
@@ -19702,7 +20175,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708460085
   },
   {
-    "id": 161,
+    "id": 166,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 1,
@@ -19838,7 +20311,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708519724
   },
   {
-    "id": 162,
+    "id": 167,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 7,
@@ -19974,7 +20447,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708439781
   },
   {
-    "id": 163,
+    "id": 168,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 5,
@@ -20110,7 +20583,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708542941
   },
   {
-    "id": 164,
+    "id": 169,
     "gridSize": 6,
     "exitRow": 0,
     "exitCol": 6,
@@ -20246,7 +20719,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708457504
   },
   {
-    "id": 165,
+    "id": 170,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 3,
@@ -20382,7 +20855,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708535976
   },
   {
-    "id": 166,
+    "id": 171,
     "gridSize": 7,
     "exitRow": 0,
     "exitCol": 255,
@@ -20518,7 +20991,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708540061
   },
   {
-    "id": 167,
+    "id": 172,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 4,
@@ -20654,7 +21127,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708869261
   },
   {
-    "id": 168,
+    "id": 173,
     "gridSize": 6,
     "exitRow": 3,
     "exitCol": 6,
@@ -20772,7 +21245,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708470203
   },
   {
-    "id": 169,
+    "id": 174,
     "gridSize": 6,
     "exitRow": 1,
     "exitCol": 6,
@@ -20908,7 +21381,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708460997
   },
   {
-    "id": 170,
+    "id": 175,
     "gridSize": 7,
     "exitRow": 6,
     "exitCol": 7,
@@ -21044,7 +21517,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708563578
   },
   {
-    "id": 171,
+    "id": 176,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 4,
@@ -21171,7 +21644,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708501412
   },
   {
-    "id": 172,
+    "id": 177,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 0,
@@ -21298,7 +21771,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708481354
   },
   {
-    "id": 173,
+    "id": 178,
     "gridSize": 6,
     "exitRow": 0,
     "exitCol": 255,
@@ -21416,7 +21889,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708481471
   },
   {
-    "id": 174,
+    "id": 179,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 6,
@@ -21543,7 +22016,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708469929
   },
   {
-    "id": 175,
+    "id": 180,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 3,
@@ -21661,7 +22134,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708455667
   },
   {
-    "id": 176,
+    "id": 181,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 5,
@@ -21788,7 +22261,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790708456125
   },
   {
-    "id": 177,
+    "id": 182,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 1,
@@ -21924,7 +22397,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709479210
   },
   {
-    "id": 178,
+    "id": 183,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 5,
@@ -22024,7 +22497,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709438064
   },
   {
-    "id": 179,
+    "id": 184,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 255,
@@ -22160,7 +22633,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709495952
   },
   {
-    "id": 180,
+    "id": 185,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 6,
@@ -22296,7 +22769,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709495853
   },
   {
-    "id": 181,
+    "id": 186,
     "gridSize": 6,
     "exitRow": 4,
     "exitCol": 6,
@@ -22414,7 +22887,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709517070
   },
   {
-    "id": 182,
+    "id": 187,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 6,
@@ -22550,7 +23023,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709524707
   },
   {
-    "id": 183,
+    "id": 188,
     "gridSize": 6,
     "exitRow": 0,
     "exitCol": 255,
@@ -22659,7 +23132,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709478377
   },
   {
-    "id": 184,
+    "id": 189,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 255,
@@ -22795,7 +23268,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709496311
   },
   {
-    "id": 185,
+    "id": 190,
     "gridSize": 7,
     "exitRow": 1,
     "exitCol": 255,
@@ -22913,7 +23386,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709506623
   },
   {
-    "id": 186,
+    "id": 191,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 2,
@@ -23031,7 +23504,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709559973
   },
   {
-    "id": 187,
+    "id": 192,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 3,
@@ -23158,7 +23631,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709442030
   },
   {
-    "id": 188,
+    "id": 193,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 7,
@@ -23294,7 +23767,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709497717
   },
   {
-    "id": 189,
+    "id": 194,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 3,
@@ -23403,7 +23876,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709498564
   },
   {
-    "id": 190,
+    "id": 195,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 0,
@@ -23521,7 +23994,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709503458
   },
   {
-    "id": 191,
+    "id": 196,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 5,
@@ -23639,7 +24112,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709515330
   },
   {
-    "id": 192,
+    "id": 197,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 1,
@@ -23739,7 +24212,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709516138
   },
   {
-    "id": 193,
+    "id": 198,
     "gridSize": 7,
     "exitRow": 2,
     "exitCol": 255,
@@ -23857,7 +24330,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709557008
   },
   {
-    "id": 194,
+    "id": 199,
     "gridSize": 6,
     "exitRow": 3,
     "exitCol": 6,
@@ -23975,7 +24448,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709561570
   },
   {
-    "id": 195,
+    "id": 200,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 6,
@@ -24093,7 +24566,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709657188
   },
   {
-    "id": 196,
+    "id": 201,
     "gridSize": 7,
     "exitRow": 1,
     "exitCol": 255,
@@ -24229,7 +24702,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709699833
   },
   {
-    "id": 197,
+    "id": 202,
     "gridSize": 6,
     "exitRow": 0,
     "exitCol": 6,
@@ -24347,7 +24820,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709442426
   },
   {
-    "id": 198,
+    "id": 203,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 255,
@@ -24465,7 +24938,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709493367
   },
   {
-    "id": 199,
+    "id": 204,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 6,
@@ -24601,7 +25074,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709519560
   },
   {
-    "id": 200,
+    "id": 205,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 255,
@@ -24737,7 +25210,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709520328
   },
   {
-    "id": 201,
+    "id": 206,
     "gridSize": 6,
     "exitRow": 3,
     "exitCol": 255,
@@ -24855,7 +25328,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709526967
   },
   {
-    "id": 202,
+    "id": 207,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 4,
@@ -24991,7 +25464,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709607714
   },
   {
-    "id": 203,
+    "id": 208,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 5,
@@ -25109,7 +25582,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709610190
   },
   {
-    "id": 204,
+    "id": 209,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 1,
@@ -25227,7 +25700,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709617545
   },
   {
-    "id": 205,
+    "id": 210,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 0,
@@ -25345,7 +25818,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709626447
   },
   {
-    "id": 206,
+    "id": 211,
     "gridSize": 7,
     "exitRow": 2,
     "exitCol": 255,
@@ -25454,7 +25927,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709651893
   },
   {
-    "id": 207,
+    "id": 212,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 255,
@@ -25563,7 +26036,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709482675
   },
   {
-    "id": 208,
+    "id": 213,
     "gridSize": 7,
     "exitRow": 0,
     "exitCol": 7,
@@ -25699,7 +26172,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709538682
   },
   {
-    "id": 209,
+    "id": 214,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 3,
@@ -25808,7 +26281,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709540054
   },
   {
-    "id": 210,
+    "id": 215,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 4,
@@ -25926,7 +26399,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709565746
   },
   {
-    "id": 211,
+    "id": 216,
     "gridSize": 7,
     "exitRow": 1,
     "exitCol": 255,
@@ -26053,7 +26526,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709611893
   },
   {
-    "id": 212,
+    "id": 217,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 6,
@@ -26180,7 +26653,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709592591
   },
   {
-    "id": 213,
+    "id": 218,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 255,
@@ -26289,7 +26762,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709545588
   },
   {
-    "id": 214,
+    "id": 219,
     "gridSize": 7,
     "exitRow": 6,
     "exitCol": 7,
@@ -26425,7 +26898,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709574503
   },
   {
-    "id": 215,
+    "id": 220,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 3,
@@ -26543,7 +27016,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709582677
   },
   {
-    "id": 216,
+    "id": 221,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 2,
@@ -26652,7 +27125,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709599768
   },
   {
-    "id": 217,
+    "id": 222,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 255,
@@ -26770,7 +27243,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709474593
   },
   {
-    "id": 218,
+    "id": 223,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 2,
@@ -26897,7 +27370,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709449639
   },
   {
-    "id": 219,
+    "id": 224,
     "gridSize": 6,
     "exitRow": 1,
     "exitCol": 255,
@@ -27015,7 +27488,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709443738
   },
   {
-    "id": 220,
+    "id": 225,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 0,
@@ -27142,7 +27615,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709452758
   },
   {
-    "id": 221,
+    "id": 226,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 2,
@@ -27260,7 +27733,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709465486
   },
   {
-    "id": 222,
+    "id": 227,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 255,
@@ -27387,7 +27860,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709484278
   },
   {
-    "id": 223,
+    "id": 228,
     "gridSize": 7,
     "exitRow": 6,
     "exitCol": 255,
@@ -27523,7 +27996,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709567981
   },
   {
-    "id": 224,
+    "id": 229,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 5,
@@ -27641,7 +28114,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709593051
   },
   {
-    "id": 225,
+    "id": 230,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 7,
@@ -27777,7 +28250,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709602171
   },
   {
-    "id": 226,
+    "id": 231,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 2,
@@ -27886,7 +28359,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709604861
   },
   {
-    "id": 227,
+    "id": 232,
     "gridSize": 6,
     "exitRow": 1,
     "exitCol": 6,
@@ -27986,7 +28459,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709444849
   },
   {
-    "id": 228,
+    "id": 233,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 1,
@@ -28104,7 +28577,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709445933
   },
   {
-    "id": 229,
+    "id": 234,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 4,
@@ -28231,7 +28704,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709452922
   },
   {
-    "id": 230,
+    "id": 235,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 255,
@@ -28349,7 +28822,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709541655
   },
   {
-    "id": 231,
+    "id": 236,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 255,
@@ -28467,7 +28940,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709532753
   },
   {
-    "id": 232,
+    "id": 237,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 1,
@@ -28585,7 +29058,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709515413
   },
   {
-    "id": 233,
+    "id": 238,
     "gridSize": 7,
     "exitRow": 1,
     "exitCol": 255,
@@ -28703,7 +29176,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709584173
   },
   {
-    "id": 234,
+    "id": 239,
     "gridSize": 6,
     "exitRow": 3,
     "exitCol": 255,
@@ -28812,7 +29285,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709508582
   },
   {
-    "id": 235,
+    "id": 240,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 7,
@@ -28939,7 +29412,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709540326
   },
   {
-    "id": 236,
+    "id": 241,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 2,
@@ -29048,7 +29521,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709523645
   },
   {
-    "id": 237,
+    "id": 242,
     "gridSize": 7,
     "exitRow": 0,
     "exitCol": 7,
@@ -29184,7 +29657,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709598591
   },
   {
-    "id": 238,
+    "id": 243,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 1,
@@ -29311,7 +29784,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709629422
   },
   {
-    "id": 239,
+    "id": 244,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 6,
@@ -29447,7 +29920,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709657562
   },
   {
-    "id": 240,
+    "id": 245,
     "gridSize": 7,
     "exitRow": 6,
     "exitCol": 7,
@@ -29583,7 +30056,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709706723
   },
   {
-    "id": 241,
+    "id": 246,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 4,
@@ -29710,7 +30183,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709533983
   },
   {
-    "id": 242,
+    "id": 247,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 4,
@@ -29828,7 +30301,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709556363
   },
   {
-    "id": 243,
+    "id": 248,
     "gridSize": 7,
     "exitRow": 1,
     "exitCol": 255,
@@ -29946,7 +30419,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709676402
   },
   {
-    "id": 244,
+    "id": 249,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 0,
@@ -30082,7 +30555,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709659862
   },
   {
-    "id": 245,
+    "id": 250,
     "gridSize": 7,
     "exitRow": 6,
     "exitCol": 255,
@@ -30218,7 +30691,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709639642
   },
   {
-    "id": 246,
+    "id": 251,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 3,
@@ -30354,7 +30827,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709511732
   },
   {
-    "id": 247,
+    "id": 252,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 7,
@@ -30481,7 +30954,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709615784
   },
   {
-    "id": 248,
+    "id": 253,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 0,
@@ -30617,7 +31090,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709600905
   },
   {
-    "id": 249,
+    "id": 254,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 255,
@@ -30735,7 +31208,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709561818
   },
   {
-    "id": 250,
+    "id": 255,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 2,
@@ -30862,7 +31335,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709666173
   },
   {
-    "id": 251,
+    "id": 256,
     "gridSize": 7,
     "exitRow": 0,
     "exitCol": 7,
@@ -30998,7 +31471,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709587539
   },
   {
-    "id": 252,
+    "id": 257,
     "gridSize": 7,
     "exitRow": 1,
     "exitCol": 7,
@@ -31116,7 +31589,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709651951
   },
   {
-    "id": 253,
+    "id": 258,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 0,
@@ -31252,7 +31725,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709701716
   },
   {
-    "id": 254,
+    "id": 259,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 2,
@@ -31352,7 +31825,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709636828
   },
   {
-    "id": 255,
+    "id": 260,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 5,
@@ -31461,7 +31934,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1790709637294
   },
   {
-    "id": 256,
+    "id": 261,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 1,
@@ -31579,7 +32052,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792010983715
   },
   {
-    "id": 257,
+    "id": 262,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 0,
@@ -31706,7 +32179,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792010984573
   },
   {
-    "id": 258,
+    "id": 263,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 4,
@@ -31824,7 +32297,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792010991824
   },
   {
-    "id": 259,
+    "id": 264,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 3,
@@ -31933,7 +32406,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792010993554
   },
   {
-    "id": 260,
+    "id": 265,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 2,
@@ -32069,7 +32542,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792010995681
   },
   {
-    "id": 261,
+    "id": 266,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 255,
@@ -32169,7 +32642,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792010996245
   },
   {
-    "id": 262,
+    "id": 267,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 2,
@@ -32278,7 +32751,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792010996422
   },
   {
-    "id": 263,
+    "id": 268,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 4,
@@ -32387,7 +32860,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011001375
   },
   {
-    "id": 264,
+    "id": 269,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 255,
@@ -32505,7 +32978,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011011904
   },
   {
-    "id": 265,
+    "id": 270,
     "gridSize": 6,
     "exitRow": 6,
     "exitCol": 4,
@@ -32614,7 +33087,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011012427
   },
   {
-    "id": 266,
+    "id": 271,
     "gridSize": 6,
     "exitRow": 1,
     "exitCol": 6,
@@ -32714,7 +33187,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011012571
   },
   {
-    "id": 267,
+    "id": 272,
     "gridSize": 6,
     "exitRow": 4,
     "exitCol": 255,
@@ -32832,7 +33305,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011012633
   },
   {
-    "id": 268,
+    "id": 273,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 7,
@@ -32959,7 +33432,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011022692
   },
   {
-    "id": 269,
+    "id": 274,
     "gridSize": 7,
     "exitRow": 6,
     "exitCol": 255,
@@ -33095,7 +33568,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011026358
   },
   {
-    "id": 270,
+    "id": 275,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 7,
@@ -33222,7 +33695,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011032381
   },
   {
-    "id": 271,
+    "id": 276,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 7,
@@ -33340,7 +33813,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011047077
   },
   {
-    "id": 272,
+    "id": 277,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 1,
@@ -33467,7 +33940,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011047331
   },
   {
-    "id": 273,
+    "id": 278,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 5,
@@ -33603,7 +34076,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011049914
   },
   {
-    "id": 274,
+    "id": 279,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 7,
@@ -33739,7 +34212,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011050387
   },
   {
-    "id": 275,
+    "id": 280,
     "gridSize": 6,
     "exitRow": 2,
     "exitCol": 6,
@@ -33848,7 +34321,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011050697
   },
   {
-    "id": 276,
+    "id": 281,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 255,
@@ -33957,7 +34430,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011055079
   },
   {
-    "id": 277,
+    "id": 282,
     "gridSize": 7,
     "exitRow": 2,
     "exitCol": 255,
@@ -34084,7 +34557,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011062512
   },
   {
-    "id": 278,
+    "id": 283,
     "gridSize": 6,
     "exitRow": 4,
     "exitCol": 255,
@@ -34193,7 +34666,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011062709
   },
   {
-    "id": 279,
+    "id": 284,
     "gridSize": 6,
     "exitRow": 255,
     "exitCol": 5,
@@ -34293,7 +34766,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011062919
   },
   {
-    "id": 280,
+    "id": 285,
     "gridSize": 6,
     "exitRow": 3,
     "exitCol": 6,
@@ -34402,7 +34875,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011063389
   },
   {
-    "id": 281,
+    "id": 286,
     "gridSize": 8,
     "exitRow": 6,
     "exitCol": 8,
@@ -34556,7 +35029,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011069567
   },
   {
-    "id": 282,
+    "id": 287,
     "gridSize": 8,
     "exitRow": 7,
     "exitCol": 255,
@@ -34692,7 +35165,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011084948
   },
   {
-    "id": 283,
+    "id": 288,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 7,
@@ -34828,7 +35301,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011086048
   },
   {
-    "id": 284,
+    "id": 289,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 6,
@@ -34982,7 +35455,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011091706
   },
   {
-    "id": 285,
+    "id": 290,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 1,
@@ -35127,7 +35600,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011094657
   },
   {
-    "id": 286,
+    "id": 291,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 0,
@@ -35272,7 +35745,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011100829
   },
   {
-    "id": 287,
+    "id": 292,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 5,
@@ -35408,7 +35881,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011104873
   },
   {
-    "id": 288,
+    "id": 293,
     "gridSize": 7,
     "exitRow": 5,
     "exitCol": 7,
@@ -35544,7 +36017,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011108701
   },
   {
-    "id": 289,
+    "id": 294,
     "gridSize": 8,
     "exitRow": 6,
     "exitCol": 8,
@@ -35689,7 +36162,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011193034
   },
   {
-    "id": 290,
+    "id": 295,
     "gridSize": 7,
     "exitRow": 4,
     "exitCol": 255,
@@ -35834,7 +36307,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011628927
   },
   {
-    "id": 291,
+    "id": 296,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 5,
@@ -35961,7 +36434,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011332621
   },
   {
-    "id": 292,
+    "id": 297,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 4,
@@ -36115,7 +36588,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011338315
   },
   {
-    "id": 293,
+    "id": 298,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 5,
@@ -36260,7 +36733,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011349962
   },
   {
-    "id": 294,
+    "id": 299,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 4,
@@ -36405,7 +36878,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011369352
   },
   {
-    "id": 295,
+    "id": 300,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 2,
@@ -36559,7 +37032,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011374576
   },
   {
-    "id": 296,
+    "id": 301,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 5,
@@ -36704,7 +37177,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011420742
   },
   {
-    "id": 297,
+    "id": 302,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 7,
@@ -36849,7 +37322,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011427779
   },
   {
-    "id": 298,
+    "id": 303,
     "gridSize": 7,
     "exitRow": 255,
     "exitCol": 3,
@@ -36994,7 +37467,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011429114
   },
   {
-    "id": 299,
+    "id": 304,
     "gridSize": 8,
     "exitRow": 255,
     "exitCol": 0,
@@ -37130,7 +37603,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011479742
   },
   {
-    "id": 300,
+    "id": 305,
     "gridSize": 7,
     "exitRow": 6,
     "exitCol": 255,
@@ -37266,7 +37739,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792011481297
   },
   {
-    "id": 301,
+    "id": 306,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 255,
@@ -37411,7 +37884,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792013608153
   },
   {
-    "id": 302,
+    "id": 307,
     "gridSize": 8,
     "exitRow": 8,
     "exitCol": 1,
@@ -37583,7 +38056,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792012466821
   },
   {
-    "id": 303,
+    "id": 308,
     "gridSize": 7,
     "exitRow": 7,
     "exitCol": 5,
@@ -37737,7 +38210,7 @@ export const sampleLevels: Level[] = [
     "updatedAt": 1792012631823
   },
   {
-    "id": 304,
+    "id": 309,
     "gridSize": 7,
     "exitRow": 3,
     "exitCol": 7,

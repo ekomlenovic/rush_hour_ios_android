@@ -5,11 +5,16 @@ import { computeRetroactiveXp } from '../data/progression';
 import { getStars, starsFromScore } from '../utils/scoring';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 4;
+export const STORE_VERSION = 5;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
-  const state = (persistedState || {}) as Record<string, unknown>;
+  let state = (persistedState || {}) as Record<string, unknown>;
+  if (version < 5) {
+    // v5: 5 levels (7 to 11 moves) inserted after level 5 to smooth the ramp up to 12 moves.
+    // First, so that the steps below look the levels up by their new ids
+    state = shiftLevelsAfterRamp(state);
+  }
   if (version < 1) {
     // v1: hints are unlimited, the token economy is gone (see docs/GAME_DESIGN.md)
     delete state.hintTokens;
@@ -31,6 +36,37 @@ export function migrateState(persistedState: unknown, version: number): Record<s
     Object.assign(state, recountStars(state));
   }
   return state;
+}
+
+/** Last level before the levels inserted in v5, and how many were inserted */
+const RAMP_AFTER_LEVEL = 5;
+const RAMP_LEVEL_COUNT = 5;
+const MAP_ID_END = 900000;
+
+/** Moves the progress, saves and generated levels from level 6 on past the levels inserted in v5 */
+function shiftLevelsAfterRamp(state: Record<string, unknown>): Record<string, unknown> {
+  const isShifted = (id: number) => id > RAMP_AFTER_LEVEL && id < MAP_ID_END;
+  const shift = (id: number) => (isShifted(id) ? id + RAMP_LEVEL_COUNT : id);
+  const shifted: Record<string, unknown> = { ...state };
+
+  if (Array.isArray(state.progress)) {
+    shifted.progress = (state.progress as LevelProgress[]).map(p => ({ ...p, levelId: shift(p.levelId) }));
+  }
+  if (Array.isArray(state.generatedLevels)) {
+    shifted.generatedLevels = (state.generatedLevels as Level[]).map(l => ({ ...l, id: shift(l.id) }));
+  }
+  if (state.savedStates && typeof state.savedStates === 'object') {
+    shifted.savedStates = Object.fromEntries(Object.entries(state.savedStates as Record<string, LevelSaveState>).map(([key, value]) => {
+      const id = Number(key);
+      return [Number.isInteger(id) ? shift(id) : key, value];
+    }));
+  }
+  if (typeof state.lastPlayedLevelId === 'number') shifted.lastPlayedLevelId = shift(state.lastPlayedLevelId);
+  // A player stuck on the old level 6 starts the new levels; the others keep their next level
+  if (typeof state.maxUnlockedLevel === 'number' && state.maxUnlockedLevel > RAMP_AFTER_LEVEL + 1) {
+    shifted.maxUnlockedLevel = shift(state.maxUnlockedLevel);
+  }
+  return shifted;
 }
 
 /** Stars of the saved wins under the current getStars rule (XP already earned stays as is) */
