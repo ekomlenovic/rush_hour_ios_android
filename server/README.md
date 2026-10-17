@@ -5,6 +5,7 @@ Serveur **auto-hébergé** pour s'affronter entre amis sur un **défi multijoueu
 - Un puzzle par jour, **généré à l'avance** et **secret** jusqu'à ce qu'un joueur appuie sur « Commencer ».
 - **Un seul essai** par joueur et par jour. Le chrono est celui du serveur.
 - Chaque victoire est **vérifiée** : le serveur rejoue les coups avec les mêmes règles que l'app.
+- **Duels 1v1 en temps réel** : deux joueurs sur le même puzzle aléatoire, chacun voit le plateau de l'autre ; le serveur vérifie chaque coup. Rien n'est stocké.
 - Rien n'est envoyé ailleurs : les données restent sur ton serveur.
 
 ## Installation (Docker)
@@ -34,6 +35,10 @@ Il faut une machine avec Docker, un nom de domaine (par exemple duckdns) et un r
        location / {
            limit_req zone=rushhours burst=20 nodelay;
            proxy_pass http://127.0.0.1:3000;
+           # Duels 1v1 en temps réel (WebSocket)
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection "upgrade";
            proxy_set_header Host $host;
            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
            proxy_set_header X-Forwarded-Proto $scheme;
@@ -41,6 +46,8 @@ Il faut une machine avec Docker, un nom de domaine (par exemple duckdns) et un r
    }
    ```
    Le certificat : par exemple `sudo certbot certonly --nginx -d monserveur.duckdns.org`.
+
+   > Les **duels** passent par un WebSocket : les trois lignes `proxy_http_version`, `Upgrade` et `Connection` sont nécessaires (Caddy le fait tout seul). Un serveur installé avant les duels doit les ajouter à son site nginx puis `sudo nginx -s reload`.
 4. Vérifier : `https://monserveur.duckdns.org/api/v1/info` doit répondre (ou « Tester la connexion » dans l'app).
 5. Rejoindre son serveur depuis l'app avec le code d'invitation, puis **Mon compte → Devenir admin** avec `ADMIN_TOKEN`.
 
@@ -107,7 +114,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 
 | Route | Rôle |
 |---|---|
-| `GET /info` | nom, `apiVersion`, `minAppVersion` |
+| `GET /info` | nom, `apiVersion`, `minAppVersion`, `features` (`["duel"]`) |
 | `POST /join` `{ inviteCode, pseudo }` | crée un compte → `{ token, recoveryCode, player }` |
 | `POST /recover` `{ recoveryCode }` | nouveau jeton pour un compte (l'ancien téléphone est déconnecté) |
 | `GET /me`, `PATCH /me` `{ pseudo }`, `DELETE /me` | mon compte ; supprimer efface aussi mes parties |
@@ -127,6 +134,22 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 | `POST /admin/invite` | nouveau code d'invitation |
 | `GET /admin/settings`, `PATCH /admin/settings` | nom, heure de sortie (`release_too_soon` si le prochain défi sortirait dans moins d'une heure), délai de grâce, pré-génération, inscriptions, invitations, difficulté, conservation des replays, seuils. La réponse donne aussi `timeZone` et `nextReleaseAt` |
 | `POST /admin/settings/reset` | retour aux variables d'environnement (sauf le code d'invitation) |
+| `GET /duels` | les duels du serveur : ouverts (avec leur code, pour les rejoindre sans qu'on le donne) et en cours ; les duels privés n'y sont que pour leur joueur |
+| `GET /duel` (WebSocket) | duels 1v1, voir ci-dessous |
+
+### Duels (WebSocket `/api/v1/duel`)
+
+Messages JSON. Le premier est `{ "type": "auth", "token": "…" }` → `{ type: "ready", player, duel }` (`duel` : celui en cours, pour reprendre après une coupure, ou `null`).
+
+| Envoyé par l'app | Effet |
+|---|---|
+| `{ type: "create", difficulty?, private? }` | ouvre un duel → `{ type: "duel", duel }` avec son `code` ; privé : absent de `GET /duels` |
+| `{ type: "join", code }` | rejoint un duel (`duel_not_found`, `duel_full`) ; 10 mauvais codes ferment la connexion |
+| `{ type: "move", vehicleId, delta }` | un coup, vérifié puis envoyé aux deux : `{ type: "move", playerId, move }` (temps du serveur) |
+| `{ type: "leave" }` | quitte le duel (en pleine partie : défaite) |
+| `{ type: "rematch" }` | revanche, lancée quand les deux l'ont demandée |
+
+Le serveur envoie aussi `duel` (tout le duel : statut `waiting`, `preparing`, `playing`, `over`, puzzle, `startsAt`, coups des deux joueurs), `presence` (adversaire connecté ou non), `end` (`winnerId`, `reason` : `won`, `forfeit`, `disconnected`, `timeout` ; et l'optimum), `closed` et `error`.
 
 ## Développement
 

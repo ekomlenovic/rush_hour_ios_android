@@ -192,6 +192,21 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 | Temps officiel = temps du **serveur** ; le temps du téléphone et le temps hors de l'app sont envoyés comme signaux | `submission` (`utils/multi/game.ts`) |
 | **Délai de grâce** (`GRACE_PERIOD`) : une partie commencée avant la sortie suivante peut être finie après, sinon elle est « non terminée » | `Challenges.deadline` |
 
+### Duel 1v1 en temps réel
+
+| Règle | Implémentation |
+|---|---|
+| Deux joueurs du **même serveur**. Sous le défi du jour, la carte **Duels** liste en direct les duels ouverts (rejoints d'un toucher, **sans code**) et ceux en cours ; elle grandit avec les duels | `GET /duels`, `DuelsCard` (`components/multi/DuelsCard.tsx`) |
+| Créer un duel : difficulté au choix, **privé** en option (absent de la liste, rejoint avec son **code à 5 caractères**) | `NewDuelSheet`, `DuelCodeSheet` (`components/multi/DuelSheets.tsx`), `Duels` (`server/src/duel.ts`) |
+| Un **WebSocket** par joueur (`/api/v1/duel`), authentifié par le premier message ; le reverse proxy doit laisser passer les WebSockets | `useDuel` (`hooks/useDuel.ts`), `buildNginx` |
+| Puzzle **aléatoire** généré par le serveur, **le même pour les deux**, sans son optimum ; compte à rebours de 3 s | `Duels.prepare` |
+| Chaque joueur **voit le plateau de l'autre** en direct (en haut, petit), le sien en bas ; voir le puzzle de l'autre est assumé | `Arena` |
+| Chaque coup est **vérifié** par le serveur (mêmes règles que l'app) et relayé ; **la première victoire vue par le serveur gagne** ; temps = chrono du serveur | `applyMoves`, `duelReducer` (`utils/multi/duel.ts`) |
+| Quitter = perdre ; connexion perdue : **60 s** pour revenir (le duel reprend là où il était), sinon défaite ; personne n'a fini en 30 min : égalité | `RECONNECT_GRACE_MS`, `MAX_DUEL_MS` |
+| **Revanche** quand les deux la demandent : nouveau puzzle | `rematch` |
+| Rien n'est stocké : un duel vit en mémoire, n'entre dans aucun classement et n'a aucun effet sur le reste du jeu | |
+| Un serveur trop ancien (sans `features: ['duel']` dans `/info`) ou un WebSocket bloqué : message clair | `useDuel` |
+
 ### Classements
 
 | Règle | Implémentation |
