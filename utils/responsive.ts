@@ -1,6 +1,8 @@
 import { Dimensions, PixelRatio, Platform } from 'react-native';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+// The short side of the window: sizes stay the same whatever the orientation the app starts in
+const { width, height } = Dimensions.get('window');
+const SCREEN_WIDTH = Math.min(width, height);
 
 // Guideline sizes are based on standard ~5" screen mobile device
 const guidelineBaseWidth = 375;

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Dimensions } from 'react-native';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { Stack, useRouter } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AudioProvider } from '@/context/AudioProvider';
@@ -11,12 +12,23 @@ import { useGameStore } from '@/store/gameStore';
 import i18n from '@/utils/i18n';
 import { useTheme, useAppearanceSync } from '@/theme';
 
+// Below this short side (dp), a phone: the screens are laid out for portrait. Tablets, foldables
+// and desktop windows turn freely (Play large screen guidelines, Android 16 ignores the lock there).
+const LARGE_SCREEN_MIN_DP = 600;
+
 export default function RootLayout() {
   const { colors } = useTheme();
   useAppearanceSync();
   const router = useRouter();
   const { addImportedLevel } = useGameStore();
   useReminderSync();
+
+  useEffect(() => {
+    const { width, height } = Dimensions.get('screen');
+    if (Math.min(width, height) < LARGE_SCREEN_MIN_DP) {
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     const handleDeepLink = (event: { url: string }) => {

@@ -19,12 +19,14 @@ interface BoardProps {
   disabled?: boolean;
   /** No dragging, without the lock overlay (solution replay) */
   readOnly?: boolean;
-  /** Width of the board; the width of the screen by default */
+  /** Width of the board; by default the width of the screen, capped by its height (landscape, large screens) */
   size?: number;
 }
 
 
 const BOARD_PADDING = 24;
+// Share of the window height the board may take by default: the header, stats and buttons need the rest
+const BOARD_MAX_HEIGHT_RATIO = 0.55;
 // The frame border is drawn inside the board's width: cells only get what is left
 const BOARD_BORDER = 2;
 
@@ -32,8 +34,8 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
 
   const { colors, board, palette } = useTheme();
 
-  const { width: screenWidth } = useWindowDimensions();
-  const boardSize = size ?? screenWidth - BOARD_PADDING * 2;
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const boardSize = size ?? Math.min(screenWidth - BOARD_PADDING * 2, screenHeight * BOARD_MAX_HEIGHT_RATIO);
   const cellSize = (boardSize - BOARD_BORDER * 2) / gridSize;
 
   const gridColor = board.grid;
