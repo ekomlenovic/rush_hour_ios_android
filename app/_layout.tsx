@@ -1,13 +1,14 @@
 import React, { useEffect } from 'react';
+import { Alert } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AudioProvider } from '@/context/AudioProvider';
 import AchievementToast from '@/components/AchievementToast';
 import { useReminderSync } from '@/utils/notifications';
 import * as Linking from 'expo-linking';
-import { deserializeLevel } from '@/utils/sharing';
+import { parseSharedLevel } from '@/utils/sharing';
 import { useGameStore } from '@/store/gameStore';
-import '@/utils/i18n';
+import i18n from '@/utils/i18n';
 import { useTheme, useAppearanceSync } from '@/theme';
 
 export default function RootLayout() {
@@ -22,10 +23,14 @@ export default function RootLayout() {
       const parsed = Linking.parse(event.url);
       // We look for rush-hours://game?data=...
       if (parsed.queryParams?.data) {
-        const level = deserializeLevel(parsed.queryParams.data as string, Date.now());
+        // Checked and solved again: a broken or forged link imports nothing
+        const level = parseSharedLevel(parsed.queryParams.data as string);
         if (level) {
-          addImportedLevel(level);
-          router.push(`/game?levelId=${level.id}`);
+          // A link already imported opens the level that is there
+          const id = addImportedLevel(level);
+          router.push(`/game?levelId=${id}`);
+        } else {
+          Alert.alert(i18n.t('common.error'), i18n.t('custom_levels.import_error'));
         }
       }
     };
