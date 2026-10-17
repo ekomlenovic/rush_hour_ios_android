@@ -147,11 +147,12 @@ export class Challenges {
     }
   }
 
-  /** Forgets the moves of games older than REPLAY_RETENTION_DAYS; the scores stay */
+  /** Forgets the moves of games and duels older than REPLAY_RETENTION_DAYS; the scores stay */
   purgeReplays(): number {
     const before = this.now() - this.settings().replayRetentionDays * DAY_MS;
-    const result = this.db.prepare('UPDATE attempts SET moves_json = NULL WHERE moves_json IS NOT NULL AND finished_at < ?').run(before);
-    return Number(result.changes);
+    const games = this.db.prepare('UPDATE attempts SET moves_json = NULL WHERE moves_json IS NOT NULL AND finished_at < ?').run(before);
+    const duels = this.db.prepare('UPDATE duels SET moves1_json = NULL, moves2_json = NULL WHERE moves1_json IS NOT NULL AND ended_at < ?').run(before);
+    return Number(games.changes) + Number(duels.changes);
   }
 
   /** One pass of the background work */
