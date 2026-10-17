@@ -8,9 +8,8 @@ import { useGameStore } from '@/store/gameStore';
 import type { MissionReward } from '@/data/missions';
 import { checkWin } from '@/utils/collision';
 import { solvePuzzleAsync } from '@/utils/solver.background';
-import { getShareUrl } from '@/utils/sharing';
+import { customLevelKind, customLevelTitle } from '@/utils/customLevels';
 import { useTranslation } from 'react-i18next';
-import * as Clipboard from 'expo-clipboard';
 import { parseLocalDateString } from '@/utils/date';
 import { buildChallengeShareText } from '@/utils/shareResult';
 import { requestReminderPermission } from '@/utils/notifications';
@@ -23,7 +22,8 @@ import GameLoading from '@/components/game/GameLoading';
 import GameStatsBar from '@/components/game/GameStatsBar';
 import GameActions from '@/components/game/GameActions';
 import WinModal from '@/components/game/WinModal';
-import ShareLevelModal from '@/components/game/ShareLevelModal';
+import ShareLevelSheet from '@/components/share/ShareLevelSheet';
+import ShareIcon from '@/components/share/ShareIcon';
 import ChallengeDoneBanner from '@/components/game/ChallengeDoneBanner';
 import HintLoadingPill from '@/components/game/HintLoadingPill';
 import SolutionPlayer from '@/components/game/SolutionPlayer';
@@ -77,22 +77,6 @@ export default function GameScreen() {
   // A past daily replayed from the archives: training, played like a map level
   const isArchive = params.levelId === 'archive' && !!params.date;
 
-  const handleShare = async () => {
-    if (!currentLevel) return;
-    const url = getShareUrl(currentLevel);
-    try {
-      const result = await Share.share({
-        message: t('game.share_message', { moves: minMoves, url: url }),
-        url: url,
-      });
-      if (result.action === Share.sharedAction) {
-        useGameStore.getState().recordLevelShared();
-      }
-    } catch (error) {
-      console.error('Sharing failed', error);
-    }
-  };
-
   // Wordle-like result of the daily / weekly challenge (no spoiler)
   const handleShareResult = async () => {
     const state = useGameStore.getState();
@@ -138,15 +122,6 @@ export default function GameScreen() {
         },
       ]);
     }, 400);
-  };
-
-  const handleCopyLink = async () => {
-    if (!currentLevel) return;
-    const url = getShareUrl(currentLevel);
-    await Clipboard.setStringAsync(url);
-    useGameStore.getState().recordLevelShared();
-    haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert(t('common.copied'), t('common.link_copied'));
   };
 
   // Load the level and compute the real minMoves via BFS
@@ -314,6 +289,13 @@ export default function GameScreen() {
   const score = calculateScore(moveCount, minMoves);
   const stars = getStars(moveCount, minMoves);
 
+  // A custom level is called by its name (or "Level 3"), never by its id (a timestamp)
+  const customKind = currentLevel ? customLevelKind(currentLevel.id, createdLevels, importedLevels) : null;
+  const customLevels = customKind === 'created' ? createdLevels : importedLevels;
+  const levelTitle = !currentLevel ? ''
+    : customKind ? customLevelTitle(t, customLevels.find(l => l.id === currentLevel.id) ?? currentLevel, customKind, customLevels)
+    : t('game.level_count', { id: currentLevel.id });
+
   if (isLoading || !currentLevel) {
     const isMondayDaily = (params.levelId === 'daily' || isArchive) && !!params.date && parseLocalDateString(params.date).getDay() === 1;
     return <GameLoading colors={colors} isMondayDaily={isMondayDaily} />;
@@ -324,7 +306,7 @@ export default function GameScreen() {
       {/* Header */}
       <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
-          <Text style={[styles.backText, { color: colors.textMuted }]}>← {t('common.map')}</Text>
+          <Text style={[styles.backText, { color: colors.textMuted }]}>← {customKind ? t('a11y.back') : t('common.map')}</Text>
         </Pressable>
         <Text style={[styles.levelTitle, { color: colors.text }]} accessibilityRole="header">
           {challengeKind === 'daily' ? t('home.daily_challenge')
@@ -332,10 +314,10 @@ export default function GameScreen() {
             : isArchive ? t('game.archive_title', {
                 date: parseLocalDateString(params.date!).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' }),
               })
-            : t('game.level_count', { id: currentLevel.id })}
+            : levelTitle}
         </Text>
         <Pressable onPress={() => setShareVisible(true)} style={styles.shareHeaderBtn} accessibilityRole="button" accessibilityLabel={t('a11y.share_level')}>
-          <Text style={{ fontSize: 22 }}>📤</Text>
+          <ShareIcon size={24} color={colors.primaryText} />
         </Pressable>
       </Animated.View>
 
@@ -426,13 +408,11 @@ export default function GameScreen() {
         onClose={() => setSolutionVisible(false)}
       />
 
-      <ShareLevelModal
-        visible={isShareVisible}
+      <ShareLevelSheet
+        level={isShareVisible ? currentLevel : null}
+        title={levelTitle}
         colors={colors}
         isDark={isDark}
-        shareUrl={getShareUrl(currentLevel)}
-        onShare={handleShare}
-        onCopyLink={handleCopyLink}
         onClose={() => setShareVisible(false)}
       />
     </View>

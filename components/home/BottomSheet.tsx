@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal, KeyboardAvoidingView } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +23,8 @@ export default function BottomSheet({ visible, title, colors, isDark, onClose, o
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onRequestClose}>
-      <View style={styles.modalOverlay}>
+      {/* A sheet with a text field stays above the keyboard (see KeyboardScreen) */}
+      <KeyboardAvoidingView style={styles.modalOverlay} behavior="padding">
         <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
         <View style={[styles.modalContent, { backgroundColor: colors.surface, paddingBottom: Math.max(48, insets.bottom + 24) }]}>
           <View style={styles.modalHeader}>
@@ -34,7 +35,7 @@ export default function BottomSheet({ visible, title, colors, isDark, onClose, o
           </View>
           {children}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

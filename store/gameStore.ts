@@ -8,6 +8,7 @@ import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
 import { DailyMissionsState, MissionCounter, MissionReward, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
 import { getLocalDateString, daysBetween } from '../utils/date';
 import { diffMove, toMoveRecord } from '../utils/moveLog';
+import { cleanLevelName, isSameBoard } from '../utils/sharing';
 import type {
   AppOpenInfo, AttemptStats, ChallengeDetails, ChallengeResult, Level, LevelProgress, LevelSaveState, MoveRecord, PlayerStats, ThemeMode, Vehicle,
 } from './types';
@@ -156,8 +157,10 @@ interface GameState {
   recordLevelShared: () => void;
   recordResultShared: () => void;
   addGeneratedLevel: (level: Level) => void;
-  addImportedLevel: (level: Level) => void;
+  /** Adds a checked level (see parseSharedLevel); returns the id to open: the existing one for a board already imported */
+  addImportedLevel: (level: Level) => number;
   saveCreatedLevel: (level: Level) => void;
+  renameCustomLevel: (id: number, type: 'imported' | 'created', name: string | undefined) => void;
   deleteCustomLevel: (id: number, type: 'imported' | 'created') => void;
   toggleFavorite: (id: number, type: 'imported' | 'created') => void;
 
@@ -666,19 +669,21 @@ export const useGameStore = create<GameState>()(
 
       addImportedLevel: (level) => {
         const { importedLevels, stats } = get();
-        if (!importedLevels.find(l => l.id === level.id)) {
-          set({
-            importedLevels: [...importedLevels, { ...level, updatedAt: level.updatedAt || Date.now() }],
-            stats: { ...stats, levelsImported: stats.levelsImported + 1 },
-          });
-          get().checkAchievements();
-        }
+        // Only the imported ones: a level modified from an import (in the created ones) stays a separate level
+        const existing = importedLevels.find(l => l.id === level.id || isSameBoard(l, level));
+        if (existing) return existing.id;
+        set({
+          importedLevels: [...importedLevels, { ...level, name: cleanLevelName(level.name), updatedAt: level.updatedAt || Date.now() }],
+          stats: { ...stats, levelsImported: stats.levelsImported + 1 },
+        });
+        get().checkAchievements();
+        return level.id;
       },
 
       saveCreatedLevel: (level) => {
         const { createdLevels } = get();
         const index = createdLevels.findIndex(l => l.id === level.id);
-        const updatedLevel = { ...level, updatedAt: Date.now() };
+        const updatedLevel = { ...level, name: cleanLevelName(level.name), updatedAt: Date.now() };
         if (index !== -1) {
           const updated = [...createdLevels];
           updated[index] = updatedLevel;
@@ -703,11 +708,23 @@ export const useGameStore = create<GameState>()(
         }
       },
 
-      deleteCustomLevel: (id, type) => {
+      renameCustomLevel: (id, type, name) => {
+        const rename = (levels: Level[]) => levels.map(l => l.id === id ? { ...l, name: cleanLevelName(name) } : l);
         if (type === 'imported') {
-          set({ importedLevels: get().importedLevels.filter(l => l.id !== id) });
+          set({ importedLevels: rename(get().importedLevels) });
         } else {
-          set({ createdLevels: get().createdLevels.filter(l => l.id !== id) });
+          set({ createdLevels: rename(get().createdLevels) });
+        }
+      },
+
+      deleteCustomLevel: (id, type) => {
+        // The game in progress goes with the level (stars and wins stay in the stats)
+        const savedStates = { ...get().savedStates };
+        delete savedStates[id];
+        if (type === 'imported') {
+          set({ importedLevels: get().importedLevels.filter(l => l.id !== id), savedStates });
+        } else {
+          set({ createdLevels: get().createdLevels.filter(l => l.id !== id), savedStates });
         }
       },
 
