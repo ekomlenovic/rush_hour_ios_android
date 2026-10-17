@@ -7,12 +7,14 @@ import { ACHIEVEMENT_XP, MISSIONS_XP, dailyWinXp, levelWinXp, weeklyWinXp } from
 const options = useGameStore.persist.getOptions();
 const migrate = (state: Record<string, unknown>, version: number) =>
   options.migrate!(structuredClone(state), version) as unknown as Record<string, unknown>;
+/** Id a level of the pack had before the 5 levels inserted after level 5 in v5 */
+const idBeforeV5 = (id: number) => (id > 10 ? id - 5 : id);
 const merge = (persisted: Record<string, unknown>) =>
   options.merge!(persisted, useGameStore.getInitialState());
 
 describe('persisted state', () => {
-  it('is at version 4', () => {
-    expect(options.version).toBe(4);
+  it('is at version 5', () => {
+    expect(options.version).toBe(5);
   });
 
   it('keeps the player data and leaves the in-game state out', () => {
@@ -95,8 +97,8 @@ describe('migrate v3 → v4', () => {
     const easy = sampleLevels.find(l => l.minMoves === 12)!;
     const state = migrate({
       progress: [
-        { levelId: hard.id, completed: true, bestScore: calculateScore(58, 40), stars: 1 },
-        { levelId: easy.id, completed: true, bestScore: calculateScore(19, 12), stars: 1 },
+        { levelId: idBeforeV5(hard.id), completed: true, bestScore: calculateScore(58, 40), stars: 1 },
+        { levelId: idBeforeV5(easy.id), completed: true, bestScore: calculateScore(19, 12), stars: 1 },
         { levelId: 999999, completed: true, bestScore: 100, stars: 2 },
       ],
       dailyChallengeProgress: {
@@ -108,6 +110,42 @@ describe('migrate v3 → v4', () => {
     expect((state.progress as { stars: number }[]).map(p => p.stars)).toEqual([2, 1, 2]);
     expect(state.dailyChallengeProgress).toMatchObject({ '2026-10-13': { stars: 2 }, '2026-10-12': { stars: 1 } });
     expect(state.xp).toBe(1234);
+  });
+});
+
+describe('migrate v4 → v5', () => {
+  it('inserts levels of 7 to 11 moves between level 5 and the old level 6 (12 moves)', () => {
+    expect(sampleLevels.slice(4, 11).map(l => l.minMoves)).toEqual([6, 7, 8, 9, 10, 11, 12]);
+  });
+
+  it('moves the progress and saves of the levels from the old level 6 on', () => {
+    const lastOld = sampleLevels.length - 5;
+    const generated: Level = { ...sampleLevels[0], id: lastOld + 1 };
+    const state = migrate({
+      progress: [
+        { levelId: 5, completed: true, bestScore: 300, stars: 3 },
+        { levelId: 6, completed: true, bestScore: 1200, stars: 3 },
+        { levelId: lastOld + 1, completed: true, bestScore: 200, stars: 2 },
+        { levelId: 999999, completed: true, bestScore: 100, stars: 2 },
+      ],
+      generatedLevels: [generated],
+      savedStates: { 6: { vehicles: [], moveCount: 3, history: [] }, 'daily-2026-10-14': { vehicles: [], moveCount: 1, history: [] } },
+      lastPlayedLevelId: 6,
+      maxUnlockedLevel: 7,
+    }, 4);
+
+    expect((state.progress as { levelId: number }[]).map(p => p.levelId)).toEqual([5, 11, sampleLevels.length + 1, 999999]);
+    expect((state.generatedLevels as Level[]).map(l => l.id)).toEqual([sampleLevels.length + 1]);
+    expect(Object.keys(state.savedStates as object).sort()).toEqual(['11', 'daily-2026-10-14']);
+    expect(state.lastPlayedLevelId).toBe(11);
+    expect(state.maxUnlockedLevel).toBe(12);
+    // The merge then has nothing left to relocate
+    expect(merge(state).generatedLevels.map(l => l.id)).toEqual([sampleLevels.length + 1]);
+  });
+
+  it('sends a player stuck on the old level 6 to the new levels', () => {
+    expect(migrate({ maxUnlockedLevel: 6 }, 4).maxUnlockedLevel).toBe(6);
+    expect(migrate({ maxUnlockedLevel: 3 }, 4).maxUnlockedLevel).toBe(3);
   });
 });
 
