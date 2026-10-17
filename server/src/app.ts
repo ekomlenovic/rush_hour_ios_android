@@ -1,5 +1,6 @@
 import Fastify, { LogController, type FastifyInstance, type FastifyRequest } from 'fastify';
 import rateLimit from '@fastify/rate-limit';
+import websocket from '@fastify/websocket';
 import type { Config } from './config';
 import { getSetting, setSetting, type Database } from './db';
 import { Challenges, type ChallengeRow } from './challenges';
@@ -12,6 +13,9 @@ import { loadSettings, resetSettings, SettingsError, updateSettings } from './se
 import { deletePage } from './deletePage';
 import { newInviteCode, newRecoveryCode, newToken, normalizeRecoveryCode, secretEquals, sha256 } from './secrets';
 import { addDays, isValidDate, periodBounds } from './time';
+import { AUTH_TIMEOUT_MS, Duels, type ServerMessage } from './duel';
+import { DuelStore, rankDuels } from './duelStore';
+import { PuzzlePool } from './puzzlePool';
 
 /** Version of this API: the app refuses a server it does not know how to talk to */
 export const API_VERSION = 1;
@@ -19,13 +23,23 @@ export const API_VERSION = 1;
 export const MIN_APP_VERSION = '1.1.6';
 /** A game log longer than this is refused (the hardest puzzles take about 80 moves) */
 export const MAX_MOVES = 1000;
+/** What this server can do beyond the daily challenge: the app hides what an older server lacks */
+export const FEATURES = ['duel'];
+/** A WebSocket that does not answer a ping in this time is closed (phone gone, network lost) */
+const PING_INTERVAL_MS = 25_000;
+/** Open duel WebSockets from one address at most */
+export const MAX_SOCKETS_PER_IP = 10;
 
 export interface AppDeps {
   config: Config;
   db: Database;
   generator: PuzzleGenerator;
+  /** Fills the pool of duel puzzles (a worker of its own); the generator by default */
+  poolGenerator?: PuzzleGenerator;
   now?: () => number;
   logger?: boolean | object;
+  /** Limits of the duel WebSockets, smaller in tests */
+  duelLimits?: { authTimeoutMs?: number; socketsPerIp?: number };
 }
 
 interface Player { id: number; pseudo: string; created_at: number; is_admin: number; banned: number }
@@ -69,7 +83,8 @@ export function inviteCode(db: Database, config: Config): { code: string; genera
   return { code, generated: true };
 }
 
-export function buildApp({ config, db, generator, now = Date.now, logger = false }: AppDeps) {
+export function buildApp(deps: AppDeps) {
+  const { config, db, generator, now = Date.now, logger = false } = deps;
   const app: FastifyInstance = Fastify({
     logger: logger === true ? { redact: ['req.headers.authorization'] } : logger,
     trustProxy: config.trustProxy,
@@ -83,6 +98,7 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
   if (invite.generated) app.log.info({ inviteCode: invite.code }, 'invite code generated: share it with your friends');
 
   app.decorateRequest('player', null as unknown as Player);
+
 
   app.setErrorHandler((error: Error & { statusCode?: number; validation?: unknown }, request, reply) => {
     if (error instanceof ApiError) return reply.status(error.status).send({ error: error.code, ...error.extra });
@@ -125,6 +141,26 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
   const publicPlayer = (p: Player) => ({ id: p.id, pseudo: p.pseudo, createdAt: p.created_at, isAdmin: !!p.is_admin });
 
   const playerById = (id: number) => db.prepare(`SELECT ${PLAYER_FIELDS} FROM players WHERE id = ?`).get(id) as Player | undefined;
+
+  // ── Duels ──────────────────────────────────────────────────────────────────
+
+  const duelStore = new DuelStore(db, config.timeZone);
+  const puzzles = new PuzzlePool({ db, generator, fillGenerator: deps.poolGenerator, log: app.log, now });
+  const duels = new Duels({
+    puzzles, now, log: app.log,
+    save: (record) => duelStore.save(record),
+    authenticate: (token) => {
+      const player = token ? findByToken.get(sha256(token)) as Player | undefined : undefined;
+      if (!player) return null;
+      return player.banned ? 'banned' : { id: player.id, pseudo: player.pseudo };
+    },
+  });
+  const duelLimits = { authTimeoutMs: AUTH_TIMEOUT_MS, socketsPerIp: MAX_SOCKETS_PER_IP, ...deps.duelLimits };
+  /** Open WebSockets by address */
+  const socketsByIp = new Map<string, number>();
+  const duelSweep = setInterval(() => duels.sweep(), 5000);
+  duelSweep.unref();
+  app.register(websocket, { options: { maxPayload: 4096 } });
 
   // ── Games ──────────────────────────────────────────────────────────────────
 
@@ -193,7 +229,46 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
       name: settings().serverName,
       apiVersion: API_VERSION,
       minAppVersion: MIN_APP_VERSION,
+      features: FEATURES,
     }));
+
+    // Duels in real time: one WebSocket per player, who says who they are in the first message
+    api.get('/duel', { websocket: true }, (socket, request) => {
+      // A few phones behind one address (a home, a school) at most
+      const ip = request.ip;
+      const open = (socketsByIp.get(ip) ?? 0) + 1;
+      if (open > duelLimits.socketsPerIp) return socket.close(4029, 'rate_limited');
+      socketsByIp.set(ip, open);
+
+      let alive = true;
+      const connection = duels.connect({
+        send: (message: ServerMessage) => {
+          if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(message));
+        },
+        close: (code, reason) => socket.close(code, reason),
+      });
+      // A connection that never says who it is goes away
+      const authTimer = setTimeout(() => {
+        if (!connection.authenticated()) socket.close(4001, 'unauthorized');
+      }, duelLimits.authTimeoutMs);
+      const ping = setInterval(() => {
+        if (!alive) return socket.terminate();
+        alive = false;
+        socket.ping();
+      }, PING_INTERVAL_MS);
+      socket.on('pong', () => { alive = true; });
+      socket.on('message', (data, isBinary) => {
+        if (!isBinary) connection.onMessage(data.toString());
+      });
+      socket.on('close', () => {
+        clearTimeout(authTimer);
+        clearInterval(ping);
+        const left = (socketsByIp.get(ip) ?? 1) - 1;
+        if (left > 0) socketsByIp.set(ip, left);
+        else socketsByIp.delete(ip);
+        connection.onClose();
+      });
+    });
 
     api.post<{ Body: { inviteCode: string; pseudo: string } }>('/join', {
       ...strict,
@@ -226,9 +301,10 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
       const player = db.prepare(`SELECT ${PLAYER_FIELDS} FROM players WHERE recovery_hash = ?`).get(hash) as Player | undefined;
       if (!player) throw new ApiError(403, 'invalid_recovery_code');
       if (player.banned) throw new ApiError(403, 'banned');
-      // A new token: the previous phone is signed out
+      // A new token: the previous phone is signed out (its duel connection too)
       const token = newToken();
       db.prepare('UPDATE players SET token_hash = ? WHERE id = ?').run(sha256(token), player.id);
+      duels.kick(player.id, 'signed_out');
       return { token, player: publicPlayer(player), server: { name: settings().serverName } };
     });
 
@@ -260,9 +336,51 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
       });
 
       auth.delete('/me', async (request, reply) => {
-        // Games go with the player (ON DELETE CASCADE)
+        // Games and duels go with the player (ON DELETE CASCADE)
+        duels.kick(request.player.id, 'deleted');
         db.prepare('DELETE FROM players WHERE id = ?').run(request.player.id);
         return reply.status(204).send();
+      });
+
+      // The duels of the server: open ones to join, and the ones being played
+      auth.get('/duels', async (request) => ({
+        duels: duels.list(request.player.id),
+        // Puzzles ready by difficulty: a duel of a difficulty with none waits for its puzzle
+        ready: puzzles.counts(),
+      }));
+
+      // Duel rankings: wins, then fewer losses
+      auth.get<{ Querystring: { period?: 'day' | 'week' | 'month' | 'all'; date?: string } }>('/duels/leaderboard', {
+        schema: {
+          querystring: {
+            type: 'object',
+            properties: { period: { type: 'string', enum: ['day', 'week', 'month', 'all'] }, date: { type: 'string', maxLength: 10 } },
+          },
+        },
+      }, async (request) => {
+        const period = request.query.period ?? 'week';
+        const date = request.query.date ?? challenges.currentDate();
+        if (!isValidDate(date)) throw new ApiError(400, 'invalid_request');
+        const { from, to } = period === 'all' ? { from: '0000-01-01', to: '9999-12-31' } : periodBounds(period, date);
+        return { period, from, to, rows: rankDuels(duelStore.stats(from, to)) };
+      });
+
+      // My last duels, and my score against each opponent
+      auth.get('/duels/history', async (request) => ({
+        duels: duelStore.history(request.player.id),
+        records: duelStore.records(request.player.id),
+      }));
+
+      // A duel with the moves of both players: for its players (and the admin)
+      auth.get<{ Params: { id: string } }>('/duels/:id', {
+        schema: { params: { type: 'object', properties: { id: { type: 'integer', minimum: 1 } } } },
+      }, async (request) => {
+        const replay = duelStore.replay(Number(request.params.id));
+        if (!replay) throw new ApiError(404, 'replay_unavailable');
+        if (!request.player.is_admin && !replay.players.some(p => p.id === request.player.id)) throw new ApiError(403, 'forbidden');
+        if (!replay.hasReplay) throw new ApiError(410, 'replay_expired');
+        const { hasReplay: _, ...rest } = replay;
+        return rest;
       });
 
       auth.get('/challenge/today', async (request) => {
@@ -523,6 +641,7 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
             // An admin is never excluded (not even by mistake, by themselves)
             if (target.is_admin && request.body.banned) throw new ApiError(400, 'cannot_ban_admin');
             db.prepare('UPDATE players SET banned = ? WHERE id = ?').run(request.body.banned ? 1 : 0, target.id);
+            if (request.body.banned) duels.kick(target.id, 'banned');
           }
           return { ...publicPlayer(playerById(target.id)!), banned: !!playerById(target.id)!.banned };
         });
@@ -557,6 +676,50 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
         }, async (request, reply) => {
           db.prepare('DELETE FROM reports WHERE id = ?').run(Number(request.params.id));
           return reply.status(204).send();
+        });
+
+        // Back to zero: the games of the daily challenges and/or the duels between two days, of some players or all
+        admin.post<{ Body: { from?: string | null; to?: string | null; playerIds?: number[]; challenges?: boolean; duels?: boolean; dryRun?: boolean } }>('/admin/reset', {
+          schema: {
+            body: {
+              type: 'object',
+              properties: {
+                from: { type: ['string', 'null'], maxLength: 10 },
+                to: { type: ['string', 'null'], maxLength: 10 },
+                playerIds: { type: 'array', maxItems: 1000, items: { type: 'integer', minimum: 1 } },
+                challenges: { type: 'boolean' },
+                duels: { type: 'boolean' },
+                dryRun: { type: 'boolean' },
+              },
+            },
+          },
+        }, async (request) => {
+          const { from, to, playerIds = [], challenges: games = false, duels: withDuels = false, dryRun = false } = request.body;
+          if ((from && !isValidDate(from)) || (to && !isValidDate(to)) || (from && to && from > to)) throw new ApiError(400, 'invalid_request');
+          const range = [from || '0000-01-01', to || '9999-12-31'];
+          const some = playerIds.length > 0;
+          const marks = playerIds.map(() => '?').join(', ');
+          const count = { challenges: 0, duels: 0 };
+          const run = (table: string, where: string, args: (string | number)[]) => {
+            if (dryRun) return Number((db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ${where}`).get(...args) as { n: number }).n);
+            return Number(db.prepare(`DELETE FROM ${table} WHERE ${where}`).run(...args).changes);
+          };
+          db.exec('BEGIN');
+          try {
+            if (games) {
+              count.challenges = run('attempts', `date BETWEEN ? AND ?${some ? ` AND player_id IN (${marks})` : ''}`, [...range, ...playerIds]);
+            }
+            if (withDuels) {
+              count.duels = run('duels', `date BETWEEN ? AND ?${some ? ` AND (player1_id IN (${marks}) OR player2_id IN (${marks}))` : ''}`,
+                [...range, ...playerIds, ...playerIds]);
+            }
+            db.exec('COMMIT');
+          } catch (e) {
+            db.exec('ROLLBACK');
+            throw e;
+          }
+          if (!dryRun) request.log.info({ admin: request.player.id, from, to, players: some ? playerIds : 'all', ...count }, 'admin reset');
+          return { dryRun, ...count };
         });
 
         // A leaked invitation: a new code, the old links stop working
@@ -606,11 +769,17 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
   // Delete an account from the web (Google Play), with the recovery code
   app.register(deletePage, { db, serverName: () => settings().serverName });
 
+  app.addHook('preClose', async () => {
+    clearInterval(duelSweep);
+    duels.closeAll();
+    puzzles.stop();
+  });
+
   app.addHook('onClose', async () => {
     await challenges.stop();
   });
 
-  return { app, challenges };
+  return { app, challenges, duels, puzzles };
 }
 
 

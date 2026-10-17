@@ -20,14 +20,18 @@ interface Props {
   /** Players hidden on this phone */
   blocked: number[];
   onRowPress: (player: RowPlayer) => void;
+  /** The periods offered, the first one shown first */
+  periods?: readonly Period[];
+  /** Shown instead of the default title */
+  title?: string;
 }
 
 const PERIODS: Period[] = ['day', 'week', 'month'];
 
 /** Rankings of the day (moves then time), of the week and of the month (points) */
-export default function Leaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress }: Props) {
+export default function Leaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress, periods = PERIODS, title }: Props) {
   const { t } = useTranslation();
-  const [period, setPeriod] = useState<Period>('day');
+  const [period, setPeriod] = useState<Period>(periods[0]);
   const [board, setBoard] = useState<Board | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
@@ -71,9 +75,9 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('multi.leaderboard')}</Text>
-      <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
-        {PERIODS.map(p => (
+      <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{title ?? t('multi.leaderboard')}</Text>
+      {periods.length > 1 && <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
+        {periods.map(p => (
           <Pressable
             key={p}
             onPress={() => setPeriod(p)}
@@ -84,7 +88,7 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
             <Text style={[styles.tabText, { color: p === period ? colors.onPrimary : colors.text }]}>{t(`multi.period.${p}`)}</Text>
           </Pressable>
         ))}
-      </View>
+      </View>}
 
       {loading && <ActivityIndicator color={colors.primary} style={styles.state} />}
       {!loading && !!error && (

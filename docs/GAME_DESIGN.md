@@ -207,6 +207,26 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 | Temps officiel = temps du **serveur** ; le temps du téléphone et le temps hors de l'app sont envoyés comme signaux | `submission` (`utils/multi/game.ts`) |
 | **Délai de grâce** (`GRACE_PERIOD`) : une partie commencée avant la sortie suivante peut être finie après, sinon elle est « non terminée » | `Challenges.deadline` |
 
+### Duel 1v1 en temps réel
+
+| Règle | Implémentation |
+|---|---|
+| L'écran Multijoueur a trois onglets en bas : **Défi** (défi du jour, classement du jour), **Hebdo** (classements semaine / mois, des défis ou des duels), **Duels** | `app/multi/index.tsx`, `HomeTabBar` (`activeKey`) |
+| Deux joueurs du **même serveur**. L'onglet **Duels** liste en direct les duels ouverts (rejoints d'un toucher, **sans code**) et ceux en cours ; elle grandit avec les duels | `GET /duels`, `DuelsCard` (`components/multi/DuelsCard.tsx`) |
+| Créer un duel : difficulté au choix, **privé** en option (absent de la liste, rejoint avec son **code à 5 caractères**) | `NewDuelSheet`, `DuelCodeSheet` (`components/multi/DuelSheets.tsx`), `Duels` (`server/src/duel.ts`) |
+| Un **WebSocket** par joueur (`/api/v1/duel`), authentifié par le premier message ; le reverse proxy doit laisser passer les WebSockets | `useDuel` (`hooks/useDuel.ts`), `buildNginx` |
+| Puzzle **aléatoire**, **le même pour les deux**, sans son optimum ; compte à rebours de 3 s | `Duels.prepare` |
+| **Réserve de puzzles** prêts à l'avance, gardée en base : un duel en prend un et démarre aussitôt. Générés de zéro en tâche de fond (10 par niveau, 3 en Maître), dans **son propre worker** (jamais au détriment du défi du jour) : les rapides d'abord, puis le catalogue, puis Expert et Maître (jusqu'à 1 h par puzzle, puis laissé de côté une heure). La feuille « Nouveau duel » montre les niveaux prêts | `PuzzlePool` (`server/src/puzzlePool.ts`), `GET /duels` (`ready`) |
+| Duels **Expert et Maître** : en plus des puzzles générés de zéro (un Maître peut prendre des dizaines de minutes), un **catalogue de variantes des niveaux durs de la campagne**, préparé une fois (~3 min au premier démarrage) : toutes les positions atteignables de chaque niveau sont explorées avec leur distance exacte à la victoire, les dures (au plus 2 coups sous le niveau d'origine) sont autant de départs différents, chacun avec sa solution (9 204 en Maître, 379 402 en Expert). Le catalogue en garde 40 par niveau Maître (757 en tout) et 20 par niveau Expert (1 488). Une variante jouée est **marquée** ; le niveau d'origine le moins joué passe d'abord ; tournée (8 symétries) et recolorée à chaque sortie ; quand toutes ont été jouées, la plus ancienne revient. Les défis du jour restent générés de zéro | `hardStarts`, `levelVariants`, `dressVariant` (`utils/variants.ts`), table `duel_variants` |
+| Chaque joueur **voit le plateau de l'autre** en direct (en haut, petit), le sien en bas ; voir le puzzle de l'autre est assumé | `Arena` |
+| Chaque coup est **vérifié** par le serveur (mêmes règles que l'app) et relayé ; **la première victoire vue par le serveur gagne** ; temps = chrono du serveur | `applyMoves`, `duelReducer` (`utils/multi/duel.ts`) |
+| Quitter = perdre ; connexion perdue : **60 s** pour revenir (le duel reprend là où il était), sinon défaite ; personne n'a fini en 30 min : égalité | `RECONNECT_GRACE_MS`, `MAX_DUEL_MS` |
+| **Revanche** quand les deux la demandent : nouveau puzzle | `rematch` |
+| Un duel **terminé est gardé** : score entre les deux joueurs (affiché à la fin), historique « Mes duels », **replay** des deux plateaux au rythme réel (coups effacés après `REPLAY_RETENTION_DAYS`, résultats gardés) | `DuelStore` (`server/src/duelStore.ts`), `DuelHistoryCard`, `app/multi/duel-replay.tsx` |
+| **Classement des duels** (semaine, mois, tout) : victoires, puis moins de défaites | `rankDuels`, `GET /duels/leaderboard`, `DuelLeaderboard` |
+| Aucun effet sur le reste du jeu (streak, XP…) | |
+| Un serveur trop ancien (sans `features: ['duel']` dans `/info`) ou un WebSocket bloqué : message clair | `useDuel` |
+
 ### Classements
 
 | Règle | Implémentation |
@@ -242,6 +262,7 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 | **Code de récupération** pour changer de téléphone (l'ancien est déconnecté) ; l'admin peut en donner un nouveau | `POST /recover`, `POST /admin/players/:id/transfer` |
 | **Signaler** un pseudo (à l'admin) et **bloquer** un joueur (masqué sur ce téléphone seulement) | `POST /reports`, `blocked` (`store/multiStore.ts`) |
 | **Supprimer ses données** depuis l'app ou depuis le web avec le code de récupération (Google Play) | `DELETE /me`, `/delete-account` (`server/src/deletePage.ts`) |
+| Admin : **remise à zéro** des parties de défi et/ou des duels, pour une période (aujourd'hui, semaine, mois, dates, tout) et tous les joueurs ou certains ; le nombre effacé est montré avant de confirmer | `POST /admin/reset`, `AdminReset` (`components/multi/admin/AdminReset.tsx`) |
 | Admin : devenir admin avec `ADMIN_TOKEN` ; exclure, renommer, régénérer le code d'invitation, fermer les inscriptions, réserver les invitations, régler difficulté, conservation et seuils. Les réglages de l'app l'emportent sur l'environnement | `server/src/settings.ts`, `app/multi/admin.tsx` |
 | Pas de validation manuelle des inscriptions | |
 

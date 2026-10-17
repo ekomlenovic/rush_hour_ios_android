@@ -1,10 +1,13 @@
 import { parentPort } from 'node:worker_threads';
-import { generatePuzzle } from './generation';
+import { generatePuzzle, generateVariants, type WorkerJob } from './generation';
 
-parentPort!.on('message', ({ id, seed, difficulty }) => {
+parentPort!.on('message', (job: WorkerJob) => {
   try {
-    parentPort!.postMessage({ id, level: generatePuzzle(seed, difficulty) });
+    const result = job.op === 'variants'
+      ? generateVariants(job.sourceId, job.difficulty, job.count, job.seed)
+      : generatePuzzle(job.seed, job.difficulty);
+    parentPort!.postMessage({ id: job.id, result });
   } catch (e) {
-    parentPort!.postMessage({ id, level: null, error: String(e) });
+    parentPort!.postMessage({ id: job.id, result: null, error: String(e) });
   }
 });
