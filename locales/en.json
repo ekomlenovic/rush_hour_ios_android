@@ -1177,6 +1177,7 @@
       "not_started": "The duel has not started yet.",
       "opponent_left": "Your opponent left the duel.",
       "duel_unreachable": "Cannot open the duel: the reverse proxy of the server must let WebSockets through (see the server guide).",
+      "duel_replaced": "Your account now plays on another phone: the duel goes on there.",
       "unknown": "Something unexpected happened."
     }
   }

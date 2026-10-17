@@ -106,7 +106,19 @@ export type DuelAction =
   | { type: 'message'; message: DuelServerMessage; now: number }
   | { type: 'local_move'; move: MoveRecord }
   | { type: 'left' }
-  | { type: 'clear_error' };
+  | { type: 'clear_error' }
+  /** The server closed the connection on purpose (WebSocket code 4000-4999): not coming back */
+  | { type: 'refused'; reason: string };
+
+/** Why the server closed the connection, as an error code of the app */
+export function refusalError(reason: string): string {
+  switch (reason) {
+    case 'banned': case 'rate_limited': case 'unauthorized': return reason;
+    case 'deleted': return 'unauthorized';
+    // The same account on another phone, or signed in again elsewhere
+    default: return 'duel_replaced';
+  }
+}
 
 /** wss://… address of the duels of a server (https://…) */
 export const duelSocketUrl = (serverUrl: string) => `${serverUrl.replace(/^https:/, 'wss:')}/api/v1/duel`;
@@ -159,6 +171,15 @@ export function duelReducer(state: DuelState, action: DuelAction): DuelState {
 
     case 'clear_error':
       return { ...state, error: null };
+
+    case 'refused':
+      // A result on screen stays; a duel being played is lost
+      return {
+        ...state,
+        connection: 'offline',
+        duel: state.duel?.status === 'over' ? state.duel : null,
+        error: refusalError(action.reason),
+      };
 
     case 'local_move': {
       const duel = state.duel;

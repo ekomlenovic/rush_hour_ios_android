@@ -69,8 +69,11 @@ export function useDuel(account: ServerAccount | null): DuelControls {
         if (socketRef.current === socket) socketRef.current = null;
         if (stopped) return;
         dispatch({ type: 'connection', status: 'offline' });
-        // Refused by the server (unknown token, banned, another phone): no point trying again
-        if (event.code >= 4000 && event.code < 5000) return;
+        // Refused by the server (unknown token, banned, another phone, flooding): no point trying again
+        if (event.code >= 4000 && event.code < 5000) {
+          dispatch({ type: 'refused', reason: event.reason });
+          return;
+        }
         if (!everOpened && attempt === 0) {
           // Never reached: an old server, or a reverse proxy that does not let WebSockets through
           multiApi(account.url, account.token).info()

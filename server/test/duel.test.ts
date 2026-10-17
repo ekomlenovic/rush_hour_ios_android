@@ -1,7 +1,8 @@
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  COUNTDOWN_MS, Duels, MAX_DUEL_MS, MAX_WRONG_CODES, OVER_TTL_MS, RECONNECT_GRACE_MS, WAITING_TTL_MS,
+  COUNTDOWN_MS, CREATES_WINDOW_MS, Duels, MAX_CREATES, MAX_DUEL_MS, MAX_MESSAGES_PER_SECOND, MAX_WRONG_CODES, OVER_TTL_MS,
+  RECONNECT_GRACE_MS, WAITING_TTL_MS,
   normalizeDuelCode, type DuelConnection, type ServerMessage,
 } from '../src/duel';
 import type { PuzzleGenerator } from '../src/generation';
@@ -278,6 +279,57 @@ describe('duels', () => {
     expect(duels.list(1).find(d => d.status === 'playing')!.code).not.toBeNull();
   });
 
+  it('closes a connection that floods the server, even before saying who it is', () => {
+    const { connect, clock } = setup();
+    const leo = connect('token-leo');
+    clock.now += 1000;
+    for (let i = 0; i < MAX_MESSAGES_PER_SECOND; i++) leo.send({ type: 'leave' });
+    expect(leo.closed).toEqual([]);
+    leo.send({ type: 'leave' });
+    expect(leo.closed).toEqual([{ code: 4029, reason: 'rate_limited' }]);
+
+    const stranger = connect();
+    for (let i = 0; i <= MAX_MESSAGES_PER_SECOND; i++) stranger.send({ type: 'create' });
+    expect(stranger.closed).toEqual([{ code: 4029, reason: 'rate_limited' }]);
+  });
+
+  it('limits the duels a player creates: each one generates a puzzle', () => {
+    const fake = fakeGenerator();
+    const { connect, clock } = setup(fake.generator);
+    const leo = connect('token-leo');
+    for (let i = 0; i < MAX_CREATES; i++) {
+      leo.send({ type: 'create', difficulty: 'MASTER' });
+      clock.now += 1000;
+    }
+    expect(fake.calls).toHaveLength(MAX_CREATES);
+    leo.send({ type: 'create', difficulty: 'MASTER' });
+    expect(leo.last('error')).toEqual({ type: 'error', error: 'rate_limited' });
+    expect(fake.calls).toHaveLength(MAX_CREATES);
+    clock.now += CREATES_WINDOW_MS;
+    leo.send({ type: 'create' });
+    expect(fake.calls).toHaveLength(MAX_CREATES + 1);
+  });
+
+  it('counts the wrong codes by player: connecting again gives no more tries', () => {
+    const { connect, clock } = setup();
+    const first = connect('token-sam');
+    for (let i = 0; i < MAX_WRONG_CODES / 2; i++) first.send({ type: 'join', code: `GUES${i}` });
+    first.disconnect();
+    clock.now += 2000;
+    const second = connect('token-sam');
+    for (let i = 0; i < MAX_WRONG_CODES / 2; i++) second.send({ type: 'join', code: `GUSS${i}` });
+    expect(second.closed).toEqual([{ code: 4029, reason: 'rate_limited' }]);
+  });
+
+  it('a kicked player (excluded, deleted, signed in elsewhere) loses their game at once', async () => {
+    const { started, duels } = setup();
+    const { leo, emma } = await started();
+    duels.kick(1, 'banned');
+    expect(emma.last('end')!.result).toMatchObject({ winnerId: 2, reason: 'forfeit' });
+    expect(leo.closed).toEqual([{ code: 4003, reason: 'banned' }]);
+    expect(duels.duelOf(1)).toBeNull();
+  });
+
   it('normalizes the codes typed by the players', () => {
     expect(normalizeDuelCode(' ab-c d3 ')).toBe('ABCD3');
   });
@@ -292,6 +344,56 @@ describe('duels over a WebSocket', () => {
     const leo = await server.join('Léo');
     expect(await server.request('GET', '/duels', leo.token)).toEqual({ status: 200, body: { duels: [] } });
     expect((await server.request('GET', '/duels')).status).toBe(401);
+  });
+
+  /** A WebSocket to the server of the test, and how it ended */
+  const socketTo = async () => {
+    if (!server.app.server.listening) await server.app.listen({ port: 0, host: '127.0.0.1' });
+    const { port } = server.app.server.address() as AddressInfo;
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/api/v1/duel`);
+    const closed = new Promise<{ code: number; reason: string }>(resolve => { ws.onclose = (e) => resolve({ code: e.code, reason: e.reason }); });
+    await new Promise(resolve => { ws.onopen = resolve; ws.onerror = resolve; });
+    return { ws, closed };
+  };
+
+  it('closes a connection that never says who it is', async () => {
+    server = testServer({ duelLimits: { authTimeoutMs: 100 } });
+    const { closed } = await socketTo();
+    expect(await closed).toEqual({ code: 4001, reason: 'unauthorized' });
+  });
+
+  it('a few connections per address at most', async () => {
+    server = testServer({ duelLimits: { socketsPerIp: 2 } });
+    const a = await socketTo();
+    const b = await socketTo();
+    const c = await socketTo();
+    expect(await c.closed).toEqual({ code: 4029, reason: 'rate_limited' });
+    // A closed one frees its place
+    a.ws.close();
+    await a.closed;
+    const d = await socketTo();
+    expect(d.ws.readyState).toBe(WebSocket.OPEN);
+    b.ws.close();
+    d.ws.close();
+  });
+
+  it('a message too big closes the connection, the server goes on', async () => {
+    server = testServer();
+    const { ws, closed } = await socketTo();
+    ws.send('x'.repeat(10_000));
+    expect((await closed).code).toBe(1009);
+    expect((await server.request('GET', '/info')).status).toBe(200);
+  });
+
+  it('excluding a player closes their duel connection', async () => {
+    server = testServer();
+    const leo = await server.join('Léo');
+    const admin = await server.joinAdmin();
+    const { ws, closed } = await socketTo();
+    ws.send(JSON.stringify({ type: 'auth', token: leo.token }));
+    await new Promise(resolve => { ws.onmessage = resolve; });
+    await server.request('PATCH', `/admin/players/${leo.player.id}`, admin.token, { banned: true });
+    expect(await closed).toEqual({ code: 4003, reason: 'banned' });
   });
 
   it('/info tells the app the server has duels', async () => {

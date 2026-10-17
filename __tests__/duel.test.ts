@@ -115,6 +115,15 @@ describe('duel on the phone', () => {
     expect(run(initialDuelState, message({ type: 'error', error: 'duel_not_found' })).error).toBe('duel_not_found');
   });
 
+  it('closed by the server on purpose: the game is lost, the reason is told', () => {
+    const { refusalError } = require('../utils/multi/duel') as typeof import('../utils/multi/duel');
+    expect(run(playing(), { type: 'refused', reason: 'banned' })).toMatchObject({ connection: 'offline', duel: null, error: 'banned' });
+    const over = run(playing(), message({ type: 'end', result: { winnerId: 2, reason: 'won', timeMs: 1, minMoves: 2, duelId: null, score: null }, level: LEVEL }));
+    expect(run(over, { type: 'refused', reason: 'replaced' }).duel).toMatchObject({ status: 'over' });
+    expect(['replaced', 'signed_out', 'deleted', 'rate_limited', 'unauthorized'].map(refusalError))
+      .toEqual(['duel_replaced', 'duel_replaced', 'unauthorized', 'rate_limited', 'unauthorized']);
+  });
+
   it('connected again after the end of a duel: its result stays', () => {
     const over = run(playing(), message({ type: 'end', result: { winnerId: 2, reason: 'disconnected', timeMs: null, minMoves: 2, duelId: null, score: null }, level: LEVEL }));
     const back = run(over, { type: 'connection', status: 'offline' }, message({ type: 'ready', player: { id: 1, pseudo: 'Léo' }, duel: null }));
