@@ -1,10 +1,11 @@
-import type { Level, LevelProgress, LevelSaveState } from './types';
+import type { ChallengeResult, Level, LevelProgress, LevelSaveState } from './types';
 import { sampleLevels } from '../data/sampleLevels';
 import { recomputeStreak } from './streak';
 import { computeRetroactiveXp } from '../data/progression';
+import { getStars, starsFromScore } from '../utils/scoring';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 3;
+export const STORE_VERSION = 4;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
@@ -25,7 +26,36 @@ export function migrateState(persistedState: unknown, version: number): Record<s
       .flatMap(list => (Array.isArray(list) ? (list as Level[]) : []));
     state.xp = computeRetroactiveXp(state, levels);
   }
+  if (version < 4) {
+    // v4: 2 stars within a quarter of the optimum instead of 3 extra moves, past wins recounted
+    Object.assign(state, recountStars(state));
+  }
   return state;
+}
+
+/** Stars of the saved wins under the current getStars rule (XP already earned stays as is) */
+function recountStars(state: Record<string, unknown>): Record<string, unknown> {
+  const levels = [sampleLevels, state.generatedLevels, state.createdLevels, state.importedLevels]
+    .flatMap(list => (Array.isArray(list) ? (list as Level[]) : []));
+  const minMovesById = new Map(levels.map(l => [l.id, l.minMoves]));
+
+  const recounted: Record<string, unknown> = {};
+  if (Array.isArray(state.progress)) {
+    recounted.progress = (state.progress as LevelProgress[]).map(p => {
+      const minMoves = minMovesById.get(p.levelId);
+      return p.completed && minMoves ? { ...p, stars: starsFromScore(p.bestScore, minMoves) } : p;
+    });
+  }
+  // Challenges keep their moves since 1.1: older results keep their stars
+  for (const key of ['dailyChallengeProgress', 'weeklyChallengeProgress', 'archiveProgress']) {
+    const results = state[key];
+    if (!results || typeof results !== 'object') continue;
+    recounted[key] = Object.fromEntries(Object.entries(results as Record<string, ChallengeResult>).map(([k, r]) => [
+      k,
+      r?.completed && r.moves && r.minMoves ? { ...r, stars: getStars(r.moves, r.minMoves) } : r,
+    ]));
+  }
+  return recounted;
 }
 
 /** Persisted fields tied to level ids */
