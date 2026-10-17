@@ -313,6 +313,7 @@ Les icônes de l'interface sont des **Ionicons** (`@expo/vector-icons/Ionicons`)
 | Une icône devant un texte passe par `IconText` ; dans une ligne de texte, l'icône peut être imbriquée dans le `<Text>` | `components/IconText.tsx` |
 | Un bouton qui n'a qu'une icône (fermer, réglages…) suit la règle d'accessibilité : `accessibilityLabel` traduit | clés `a11y.*` |
 | Les paliers d'une même série de succès répètent leur icône (1, 2 puis 3 flammes) plutôt que de la dupliquer | `iconCount`, `AchievementIcon` |
+| Les textes traduits affichés dans l'app ne contiennent pas d'emoji : l'icône est posée par le composant, à côté du texte (« 3 étoiles », pas « 3 ⭐ ») | `locales/*.json`, `IconText` |
 | Les symboles typographiques dans un texte (`←`, `✓`, `★`, `↕`) restent permis | |
 
 Les emojis ne restent que là où une icône ne peut pas s'afficher ou n'a pas d'équivalent :
