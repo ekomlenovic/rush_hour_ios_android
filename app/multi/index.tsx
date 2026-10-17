@@ -346,6 +346,7 @@ export default function MultiplayerScreen() {
             onCreate={() => setNewDuelVisible(true)}
             onCode={() => setDuelCodeVisible(true)}
             onOpen={(code) => router.push(code ? `/multi/duel?join=${code}` : '/multi/duel')}
+            onWatch={(code) => router.push(`/multi/duel?watch=${code}`)}
           />
           <DuelHistoryCard
             api={api}

@@ -21,6 +21,8 @@ interface Props {
   onCode: () => void;
   /** Join an open duel, or go back to mine (null code: the one I am in) */
   onOpen: (code: string | null) => void;
+  /** Watch a duel being played by others */
+  onWatch: (code: string) => void;
 }
 
 /** A dot that beats: the list is live */
@@ -35,9 +37,9 @@ function LiveDot({ color }: { color: string }) {
 
 /**
  * The duels of the server, live: the open ones, joined in one tap (no code needed),
- * and the ones being played. The list grows with the duels.
+ * and the ones being played, watched in one tap. The list grows with the duels.
  */
-export default function DuelsCard({ duels, loadedAt, colors, myPlayerId, clockOffset, disabled, onCreate, onCode, onOpen }: Props) {
+export default function DuelsCard({ duels, loadedAt, colors, myPlayerId, clockOffset, disabled, onCreate, onCode, onOpen, onWatch }: Props) {
   const { t } = useTranslation();
   const open = duels?.filter(d => d.status === 'waiting') ?? [];
   const playing = duels?.filter(d => d.status !== 'waiting') ?? [];
@@ -84,7 +86,7 @@ export default function DuelsCard({ duels, loadedAt, colors, myPlayerId, clockOf
       {playing.length > 0 && <Text style={[styles.section, { color: colors.textMuted }]}>{t('multi.duel.section_playing')}</Text>}
       {playing.map(duel => (
         <Animated.View key={`${duel.createdAt}-${duel.players[0]?.id}`} entering={FadeInDown.springify()} exiting={FadeOut} layout={LinearTransition}>
-          <PlayingRow duel={duel} colors={colors} myPlayerId={myPlayerId} serverNow={loadedAt + clockOffset} disabled={disabled} onOpen={onOpen} />
+          <PlayingRow duel={duel} colors={colors} myPlayerId={myPlayerId} serverNow={loadedAt + clockOffset} disabled={disabled} onOpen={onOpen} onWatch={onWatch} />
         </Animated.View>
       ))}
 
@@ -147,22 +149,27 @@ interface PlayingRowProps {
   serverNow: number;
   disabled: boolean;
   onOpen: (code: string | null) => void;
+  onWatch: (code: string) => void;
 }
 
-function PlayingRow({ duel, colors, myPlayerId, serverNow, disabled, onOpen }: PlayingRowProps) {
+function PlayingRow({ duel, colors, myPlayerId, serverNow, disabled, onOpen, onWatch }: PlayingRowProps) {
   const { t } = useTranslation();
   const [first, second] = duel.players;
   const name = (p: { id: number; pseudo: string }) => (p.id === myPlayerId ? t('multi.duel.me') : p.pseudo);
   const versus = second ? t('multi.duel.vs', { a: name(first), b: name(second) }) : name(first);
   const time = duel.startsAt !== null && serverNow > duel.startsAt ? formatDuration(serverNow - duel.startsAt) : null;
   const difficulty = `${t(`difficulty.${duel.difficulty}`)} · ${t(`multi.duel.metric_${duel.metric ?? 'time'}`)}`;
+  // Someone else's duel: watched (a server older than the spectators gives no code)
+  const watchable = !duel.mine && duel.code !== null;
+  const spectators = duel.spectators ?? 0;
+  const action = duel.mine ? `, ${t('multi.duel.back_to_it')}` : watchable ? `, ${t('multi.duel.watch')}` : '';
   return (
     <Pressable
-      onPress={() => onOpen(null)}
-      disabled={!duel.mine || disabled}
+      onPress={() => (duel.mine ? onOpen(null) : duel.code && onWatch(duel.code))}
+      disabled={!(duel.mine || watchable) || disabled}
       style={[styles.row, { backgroundColor: duel.mine ? colors.warningSoft : 'transparent' }]}
-      accessibilityRole={duel.mine ? 'button' : 'text'}
-      accessibilityLabel={`${versus}, ${difficulty}, ${t('multi.duel.playing_short')}${duel.mine ? `, ${t('multi.duel.back_to_it')}` : ''}`}
+      accessibilityRole={duel.mine || watchable ? 'button' : 'text'}
+      accessibilityLabel={`${versus}, ${difficulty}, ${t('multi.duel.playing_short')}${spectators > 0 ? `, ${t('multi.duel.spectators', { count: spectators })}` : ''}${action}`}
     >
       <View style={styles.pair}>
         <Avatar pseudo={first.pseudo} colors={colors} mine={first.id === myPlayerId} />
@@ -170,11 +177,16 @@ function PlayingRow({ duel, colors, myPlayerId, serverNow, disabled, onOpen }: P
       </View>
       <View style={styles.rowMain}>
         <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{versus}</Text>
-        <Text style={[styles.detail, { color: colors.textMuted }]}>{difficulty}{time ? ` · ${time}` : ''}</Text>
+        <Text style={[styles.detail, { color: colors.textMuted }]}>{difficulty}{time ? ` · ${time}` : ''}{spectators > 0 && <> · <Ionicons name="eye-outline" size={13} color={colors.textMuted} /> {spectators}</>}</Text>
       </View>
       {duel.mine ? (
         <View style={[styles.action, { backgroundColor: colors.warning }]}>
           <Text style={[styles.actionText, { color: colors.onPrimary }]}>{t('multi.duel.back_to_it')}</Text>
+        </View>
+      ) : watchable ? (
+        <View style={[styles.action, styles.watch, { backgroundColor: colors.neutralSoft }]}>
+          <Ionicons name="eye" size={14} color={colors.text} />
+          <Text style={[styles.actionText, { color: colors.text }]}>{t('multi.duel.watch')}</Text>
         </View>
       ) : (
         <Ionicons name="flash" size={18} color={colors.warning} />
@@ -311,6 +323,11 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: RFValue(13),
     fontWeight: '800',
+  },
+  watch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   primaryButton: {
     flexDirection: 'row',

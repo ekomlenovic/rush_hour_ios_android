@@ -7,6 +7,7 @@ import { checkWin } from '../collision';
  * duel as the phone sees it. A move of mine shows at once on my board; the server
  * checks it and sends it to both phones. Who wins is chosen at the creation: the first
  * red car out (time), or the fewest moves (moves; the fastest on a tie).
+ * A spectator gets the same messages, and plays nothing.
  */
 
 export type DuelDifficulty = 'EASY' | 'NORMAL' | 'HARD' | 'EXPERT' | 'MASTER';
@@ -46,6 +47,9 @@ export interface DuelView {
   me: PlayerView;
   opponent: PlayerView | null;
   result: DuelResult | null;
+  /** Absent from a server older than the spectators */
+  spectating?: boolean;
+  spectators?: number;
 }
 
 export type DuelServerMessage =
@@ -54,6 +58,7 @@ export type DuelServerMessage =
   | { type: 'move'; playerId: number; move: MoveRecord }
   | { type: 'presence'; playerId: number; connected: boolean }
   | { type: 'rematch'; playerId: number }
+  | { type: 'spectators'; count: number }
   | { type: 'end'; result: DuelResult; level: Level }
   | { type: 'closed' }
   | { type: 'error'; error: string };
@@ -62,6 +67,7 @@ export type DuelClientMessage =
   | { type: 'auth'; token: string }
   | { type: 'create'; difficulty: DuelDifficulty; metric: DuelMetric; private: boolean }
   | { type: 'join'; code: string }
+  | { type: 'watch'; code: string }
   | { type: 'move'; vehicleId: string; delta: number }
   | { type: 'leave' }
   | { type: 'rematch' };
@@ -97,6 +103,10 @@ export interface Duel {
   result: DuelResult | null;
   /** The opponent left after the end: no rematch */
   opponentLeft: boolean;
+  /** Watched, not played: `me` is then the first player, `opponent` the second one */
+  spectating: boolean;
+  /** How many watch it */
+  spectators: number;
 }
 
 export interface DuelState {
@@ -161,6 +171,8 @@ function fromView(view: DuelView, now: number, previous: Duel | null): Duel {
     pending: [],
     result: view.result,
     opponentLeft: previous?.code === view.code && view.status === 'over' ? previous.opponentLeft : false,
+    spectating: view.spectating ?? false,
+    spectators: view.spectators ?? 0,
   };
 }
 
@@ -203,9 +215,11 @@ export function duelReducer(state: DuelState, action: DuelAction): DuelState {
       const duel = state.duel;
       switch (message.type) {
         case 'ready': {
-          // Connected again: the duel as the server has it. One that ended meanwhile keeps its result on screen
+          // Connected again: the duel as the server has it. One that ended meanwhile keeps its result on screen.
+          // A watched duel stays until the server sends it again (the app asks to watch it again)
           const next = message.duel ? fromView(message.duel, now, duel)
-            : duel?.status === 'over' ? { ...duel, opponentLeft: true } : null;
+            : duel?.status === 'over' ? { ...duel, opponentLeft: true }
+              : duel?.spectating ? duel : null;
           return { ...state, connection: 'online', player: message.player, duel: next };
         }
 
@@ -214,18 +228,24 @@ export function duelReducer(state: DuelState, action: DuelAction): DuelState {
 
         case 'move': {
           if (!duel?.level) return state;
-          if (message.playerId === duel.me.id) {
+          if (message.playerId === duel.me.id && !duel.spectating) {
             // My move, seen back: already on my board
             const [, ...pending] = duel.pending;
             return { ...state, duel: { ...duel, me: { ...duel.me, moves: [...duel.me.moves, message.move] }, pending } };
           }
+          if (message.playerId === duel.me.id) return { ...state, duel: { ...duel, me: withMove(duel.me, duel.level, message.move) } };
           if (duel.opponent?.id !== message.playerId) return state;
           return { ...state, duel: { ...duel, opponent: withMove(duel.opponent, duel.level, message.move) } };
         }
 
-        case 'presence':
-          if (!duel?.opponent || duel.opponent.id !== message.playerId) return state;
-          return { ...state, duel: { ...duel, opponent: { ...duel.opponent, connected: message.connected } } };
+        case 'presence': {
+          if (!duel) return state;
+          const mark = (player: DuelSide) => (player.id === message.playerId ? { ...player, connected: message.connected } : player);
+          return { ...state, duel: { ...duel, me: mark(duel.me), opponent: duel.opponent && mark(duel.opponent) } };
+        }
+
+        case 'spectators':
+          return duel ? { ...state, duel: { ...duel, spectators: message.count } } : state;
 
         case 'rematch': {
           if (!duel) return state;
@@ -247,6 +267,8 @@ export function duelReducer(state: DuelState, action: DuelAction): DuelState {
         case 'error':
           // A move out of step: the server sends the real position, nothing to tell the player
           if (message.error === 'invalid_moves' || message.error === 'not_started') return state;
+          // The watched duel is gone while the connection was lost
+          if (duel?.spectating && duel.status !== 'over' && message.error === 'duel_not_found') return { ...state, duel: null, error: message.error };
           return { ...state, error: message.error };
       }
     }
@@ -284,7 +306,13 @@ export const iHaveWon = (duel: Duel) =>
 export const opponentHasWon = (duel: Duel) =>
   !!duel.level && !!duel.opponent && checkWin(duel.opponent.vehicles, duel.level.exitRow, duel.level.exitCol, duel.level.gridSize);
 
-/** How the duel ended for me */
+/** The winner of a finished duel; null for a draw (or not over yet) */
+export function winnerOf(duel: Duel): DuelSide | null {
+  const id = duel.result?.winnerId;
+  return [duel.me, duel.opponent].find(p => p && p.id === id) ?? null;
+}
+
+/** How the duel ended for me (for a spectator: for the first player) */
 export function outcome(duel: Duel): 'win' | 'loss' | 'draw' | null {
   if (!duel.result) return null;
   if (duel.result.winnerId === null) return 'draw';
