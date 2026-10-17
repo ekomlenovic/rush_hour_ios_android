@@ -4,7 +4,7 @@ import type { ServerAccount } from '@/store/multiStore';
 import { multiApi } from '@/utils/multi/api';
 import {
   duelReducer, duelSocketUrl, initialDuelState, myMove,
-  type DuelClientMessage, type DuelDifficulty, type DuelServerMessage, type DuelState,
+  type DuelClientMessage, type DuelDifficulty, type DuelMetric, type DuelServerMessage, type DuelState,
 } from '@/utils/multi/duel';
 
 /** Waits between two tries to connect again: 1 s, 2 s, 4 s… up to 15 s */
@@ -14,7 +14,7 @@ export interface DuelControls {
   state: DuelState;
   /** Why the server cannot be reached for duels: too old, or WebSockets blocked on the way (reverse proxy) */
   unreachable: 'update_server' | 'duel_unreachable' | null;
-  create: (difficulty: DuelDifficulty, isPrivate: boolean) => void;
+  create: (difficulty: DuelDifficulty, metric: DuelMetric, isPrivate: boolean) => void;
   join: (code: string) => void;
   move: (vehicleId: string, row: number, col: number) => void;
   leave: () => void;
@@ -116,7 +116,10 @@ export function useDuel(account: ServerAccount | null): DuelControls {
   return {
     state,
     unreachable,
-    create: useCallback((difficulty: DuelDifficulty, isPrivate: boolean) => send({ type: 'create', difficulty, private: isPrivate }), [send]),
+    create: useCallback(
+      (difficulty: DuelDifficulty, metric: DuelMetric, isPrivate: boolean) => send({ type: 'create', difficulty, metric, private: isPrivate }),
+      [send],
+    ),
     join: useCallback((code: string) => send({ type: 'join', code }), [send]),
     move,
     leave: useCallback(() => {

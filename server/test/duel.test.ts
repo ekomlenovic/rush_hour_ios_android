@@ -8,7 +8,7 @@ import {
 import type { PuzzleGenerator } from '../src/generation';
 import { PuzzlePool } from '../src/puzzlePool';
 import { openDatabase } from '../src/db';
-import { LEVEL, fakeGenerator, testServer } from './helpers';
+import { LEVEL, LONG_SOLUTION, fakeGenerator, testServer } from './helpers';
 
 const PLAYERS: Record<string, { id: number; pseudo: string }> = {
   'token-leo': { id: 1, pseudo: 'Léo' },
@@ -45,10 +45,10 @@ function setup(generator: PuzzleGenerator = fakeGenerator().generator) {
   };
 
   /** Léo creates a duel, Emma joins it, the countdown is over */
-  const started = async () => {
+  const started = async (metric?: 'time' | 'moves') => {
     const leo = connect('token-leo');
     const emma = connect('token-emma');
-    leo.send({ type: 'create', difficulty: 'HARD' });
+    leo.send({ type: 'create', difficulty: 'HARD', metric });
     emma.send({ type: 'join', code: leo.last('duel')!.duel.code });
     await settle();
     clock.now += COUNTDOWN_MS;
@@ -165,6 +165,69 @@ describe('duels', () => {
     expect(leo.last('error')).toEqual({ type: 'error', error: 'no_duel' });
   });
 
+  it('a duel on moves: who got out first waits, the fewest moves wins', async () => {
+    const { started, clock } = setup();
+    const { leo, emma } = await started('moves');
+    expect(leo.last('duel')!.duel.metric).toBe('moves');
+    // Léo out first, in 4 moves: Emma may still do better
+    for (const move of LONG_SOLUTION) {
+      clock.now += 1000;
+      leo.send({ type: 'move', vehicleId: move.vehicleId, delta: move.delta });
+    }
+    expect(leo.last('end')).toBeUndefined();
+    // Nothing more to play for Léo
+    leo.send({ type: 'move', vehicleId: 'v2', delta: 1 });
+    expect(leo.last('error')).toEqual({ type: 'error', error: 'invalid_moves' });
+
+    // Emma, slower but in 2 moves, wins
+    clock.now += 5000;
+    emma.send({ type: 'move', vehicleId: 'v1', delta: 2 });
+    emma.send({ type: 'move', vehicleId: 'target', delta: 4 });
+    expect(leo.last('end')!.result).toMatchObject({ winnerId: 2, reason: 'won', timeMs: 9000, minMoves: 2 });
+  });
+
+  it('a duel on moves ends once the other can no longer do better', async () => {
+    const { started, clock } = setup();
+    // The optimum: nobody can beat it
+    const first = await started('moves');
+    first.leo.send({ type: 'move', vehicleId: 'v1', delta: 2 });
+    first.leo.send({ type: 'move', vehicleId: 'target', delta: 4 });
+    expect(first.emma.last('end')!.result).toMatchObject({ winnerId: 1, reason: 'won' });
+    first.leo.send({ type: 'leave' });
+
+    // Léo out in 4 moves, Emma at 3 already: the same count, slower, would lose
+    const second = await started('moves');
+    second.emma.send({ type: 'move', vehicleId: 'v2', delta: 1 });
+    second.emma.send({ type: 'move', vehicleId: 'v2', delta: -1 });
+    for (const move of LONG_SOLUTION) second.leo.send({ type: 'move', vehicleId: move.vehicleId, delta: move.delta });
+    expect(second.leo.last('end')).toBeUndefined();
+    clock.now += 1000;
+    second.emma.send({ type: 'move', vehicleId: 'v2', delta: 1 });
+    expect(second.emma.last('end')!.result).toMatchObject({ winnerId: 1, reason: 'won' });
+  });
+
+  it('a duel on moves: who got out may lose the connection, the time limit goes to them', async () => {
+    const { started, clock, duels } = setup();
+    const { leo, emma } = await started('moves');
+    for (const move of LONG_SOLUTION) leo.send({ type: 'move', vehicleId: move.vehicleId, delta: move.delta });
+    leo.disconnect();
+    clock.now += RECONNECT_GRACE_MS + 1;
+    duels.sweep();
+    expect(emma.last('end')).toBeUndefined();
+    clock.now = 1_000_000 + COUNTDOWN_MS + MAX_DUEL_MS + 1;
+    duels.sweep();
+    expect(emma.last('end')!.result).toMatchObject({ winnerId: 1, reason: 'won' });
+  });
+
+  it('refuses an unknown metric', () => {
+    const { connect } = setup();
+    const leo = connect('token-leo');
+    leo.send({ type: 'create', metric: 'luck' });
+    expect(leo.last('error')).toEqual({ type: 'error', error: 'invalid_request' });
+    leo.send({ type: 'create' });
+    expect(leo.last('duel')!.duel.metric).toBe('time');
+  });
+
   it('a rematch when both want it: a new puzzle', async () => {
     const fake = fakeGenerator();
     const { started, clock } = setup(fake.generator);
@@ -267,7 +330,7 @@ describe('duels', () => {
     // Sam sees Léo's duel only, with its code: no need to be given it
     const forSam = duels.list(3);
     expect(forSam).toEqual([{
-      code: leo.last('duel')!.duel.code, difficulty: 'HARD', status: 'waiting', private: false,
+      code: leo.last('duel')!.duel.code, difficulty: 'HARD', metric: 'time', status: 'waiting', private: false,
       players: [{ id: 1, pseudo: 'Léo' }], createdAt: 1_000_000, startsAt: null, mine: false,
     }]);
     // Emma sees her private duel too
@@ -342,7 +405,7 @@ describe('duels over a WebSocket', () => {
     server = testServer();
     const leo = await server.join('Léo');
     expect(await server.request('GET', '/duels', leo.token)).toEqual({
-      status: 200, body: { duels: [], ready: { EASY: 0, NORMAL: 0, HARD: 0, EXPERT: 0, MASTER: 0 } },
+      status: 200, body: { duels: [], ready: { EASY: 0, NORMAL: 0, HARD: 0, EXPERT: 0, MASTER: 0 }, metrics: ['time', 'moves'] },
     });
     expect((await server.request('GET', '/duels')).status).toBe(401);
   });

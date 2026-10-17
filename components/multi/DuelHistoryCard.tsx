@@ -83,6 +83,7 @@ export default function DuelHistoryCard({ api, colors, myPlayerId, refreshKey, o
         const detail = [
           when(d.endedAt),
           t(`difficulty.${d.difficulty}`),
+          t(`multi.duel.metric_${d.metric ?? 'time'}`),
           t('multi.duel.moves_pair', { me: d.myMoves, them: d.theirMoves }),
           d.timeMs !== null ? formatDuration(d.timeMs) : t(`multi.duel.reason_short_${d.reason}`),
         ].join(' · ');

@@ -142,7 +142,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 | `POST /admin/invite` | nouveau code d'invitation |
 | `GET /admin/settings`, `PATCH /admin/settings` | nom, heure de sortie (`release_too_soon` si le prochain défi sortirait dans moins d'une heure), délai de grâce, pré-génération, inscriptions, invitations, difficulté, conservation des replays, seuils. La réponse donne aussi `timeZone` et `nextReleaseAt` |
 | `POST /admin/settings/reset` | retour aux variables d'environnement (sauf le code d'invitation) |
-| `GET /duels` | les duels du serveur : ouverts (avec leur code, pour les rejoindre sans qu'on le donne) et en cours ; les duels privés n'y sont que pour leur joueur. `ready` : puzzles prêts par niveau |
+| `GET /duels` | les duels du serveur : ouverts (avec leur code, pour les rejoindre sans qu'on le donne) et en cours ; les duels privés n'y sont que pour leur joueur. `ready` : puzzles prêts par niveau ; `metrics` : les vainqueurs possibles d'un duel (`["time", "moves"]`) |
 | `GET /duels/leaderboard?period=day\|week\|month\|all&date=` | classement des duels : victoires, puis moins de défaites |
 | `GET /duels/history` | mes derniers duels, et mon score contre chaque adversaire |
 | `GET /duels/:id` | un duel avec les coups des deux joueurs (replay) : pour ses joueurs et l'admin |
@@ -155,7 +155,7 @@ Messages JSON. Le premier est `{ "type": "auth", "token": "…" }` → `{ type: 
 
 | Envoyé par l'app | Effet |
 |---|---|
-| `{ type: "create", difficulty?, private? }` | ouvre un duel → `{ type: "duel", duel }` avec son `code` ; privé : absent de `GET /duels` |
+| `{ type: "create", difficulty?, metric?, private? }` | ouvre un duel → `{ type: "duel", duel }` avec son `code` ; `metric` : `"time"` (le premier sorti gagne, par défaut) ou `"moves"` (le moins de coups, le plus rapide à égalité) ; privé : absent de `GET /duels` |
 | `{ type: "join", code }` | rejoint un duel (`duel_not_found`, `duel_full`) ; 10 mauvais codes ferment la connexion |
 | `{ type: "move", vehicleId, delta }` | un coup, vérifié puis envoyé aux deux : `{ type: "move", playerId, move }` (temps du serveur) |
 | `{ type: "leave" }` | quitte le duel (en pleine partie : défaite) |

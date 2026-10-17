@@ -5,11 +5,15 @@ import { checkWin } from '../collision';
 /**
  * Duel 1v1 in real time (server/src/duel.ts): the messages of the WebSocket, and the
  * duel as the phone sees it. A move of mine shows at once on my board; the server
- * checks it and sends it to both phones, the first win it sees is the one that counts.
+ * checks it and sends it to both phones. Who wins is chosen at the creation: the first
+ * red car out (time), or the fewest moves (moves; the fastest on a tie).
  */
 
 export type DuelDifficulty = 'EASY' | 'NORMAL' | 'HARD' | 'EXPERT' | 'MASTER';
 export const DUEL_DIFFICULTIES: readonly DuelDifficulty[] = ['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER'];
+
+export type DuelMetric = 'time' | 'moves';
+export const DUEL_METRICS: readonly DuelMetric[] = ['time', 'moves'];
 
 export type EndReason = 'won' | 'forfeit' | 'disconnected' | 'timeout';
 
@@ -32,6 +36,8 @@ interface PlayerView { id: number; pseudo: string; connected: boolean; moves: Mo
 export interface DuelView {
   code: string;
   difficulty: DuelDifficulty;
+  /** Absent on older servers: the time */
+  metric?: DuelMetric;
   private: boolean;
   status: 'waiting' | 'preparing' | 'playing' | 'over';
   level: Level | null;
@@ -54,7 +60,7 @@ export type DuelServerMessage =
 
 export type DuelClientMessage =
   | { type: 'auth'; token: string }
-  | { type: 'create'; difficulty: DuelDifficulty; private: boolean }
+  | { type: 'create'; difficulty: DuelDifficulty; metric: DuelMetric; private: boolean }
   | { type: 'join'; code: string }
   | { type: 'move'; vehicleId: string; delta: number }
   | { type: 'leave' }
@@ -74,6 +80,8 @@ export interface DuelSide {
 export interface Duel {
   code: string;
   difficulty: DuelDifficulty;
+  /** What decides the winner */
+  metric: DuelMetric;
   /** Only who has the code can join it (not in the list of the server) */
   private: boolean;
   status: DuelView['status'];
@@ -141,6 +149,7 @@ function fromView(view: DuelView, now: number, previous: Duel | null): Duel {
   return {
     code: view.code,
     difficulty: view.difficulty,
+    metric: view.metric ?? 'time',
     private: view.private,
     status: view.status,
     level: view.level,
@@ -270,6 +279,10 @@ export function duelElapsedMs(duel: Duel, now: number): number {
 /** Is my red car out? (the server has the last word) */
 export const iHaveWon = (duel: Duel) =>
   !!duel.level && checkWin(duel.me.vehicles, duel.level.exitRow, duel.level.exitCol, duel.level.gridSize);
+
+/** Is the red car of the opponent out? (a duel on moves goes on until both are out) */
+export const opponentHasWon = (duel: Duel) =>
+  !!duel.level && !!duel.opponent && checkWin(duel.opponent.vehicles, duel.level.exitRow, duel.level.exitCol, duel.level.gridSize);
 
 /** How the duel ended for me */
 export function outcome(duel: Duel): 'win' | 'loss' | 'draw' | null {

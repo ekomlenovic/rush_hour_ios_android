@@ -1098,7 +1098,7 @@
       "opponent_left": "{{pseudo}} left the duel.",
       "quit": "Leave",
       "me": "You",
-      "card_desc": "Play a member of the server live, on the same puzzle: the first to get the red car out wins.",
+      "card_desc": "Play a member of the server live, on the same puzzle: the fastest or the fewest moves wins, you choose.",
       "open_count_one": "{{count}} open",
       "open_count_other": "{{count}} open",
       "none_open": "No open duel for now. Start the first one!",
@@ -1152,7 +1152,17 @@
       "head_to_head": "Your duels",
       "head_to_head_a11y": "Your duels: you {{mine}}, {{pseudo}} {{theirs}}, {{draws}} draws",
       "ready": "Ready",
-      "not_ready": "To generate"
+      "not_ready": "To generate",
+      "metric": "Winner",
+      "metric_time": "Fastest",
+      "metric_moves": "Fewest moves",
+      "metric_time_help": "The first to get the red car out wins.",
+      "metric_moves_help": "The fewest moves to get the red car out wins; on a tie, the fastest. Who gets out first waits for the other.",
+      "me_out_one": "Out in {{count}} move, waiting…",
+      "me_out_other": "Out in {{count}} moves, waiting…",
+      "opponent_out_one": "{{pseudo}} out in {{count}} move",
+      "opponent_out_other": "{{pseudo}} out in {{count}} moves",
+      "won_on_moves": "Fewest moves wins, the fastest on a tie."
     },
     "errors": {
       "network": "The server does not answer. Check your connection and the server address.",

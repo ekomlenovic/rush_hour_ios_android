@@ -104,6 +104,10 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX duel_variants_difficulty ON duel_variants(difficulty, source_id);
   `,
+  // What decided the winner of a duel: the first out ('time') or the fewest moves ('moves')
+  `
+  ALTER TABLE duels ADD COLUMN metric TEXT NOT NULL DEFAULT 'time' CHECK (metric IN ('time', 'moves'));
+  `,
 ];
 
 export function openDatabase(path: string): Database {

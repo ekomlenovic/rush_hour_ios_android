@@ -1,6 +1,6 @@
 import type { Database } from './db';
 import type { Level, MoveRecord } from './core';
-import type { DuelRecord, EndReason, HeadToHead } from './duel';
+import type { DuelMetric, DuelRecord, EndReason, HeadToHead } from './duel';
 import { localDate } from './time';
 
 /**
@@ -12,6 +12,7 @@ interface DuelRow {
   id: number;
   date: string;
   difficulty: string;
+  metric: DuelMetric;
   level_json: string;
   min_moves: number;
   started_at: number;
@@ -45,6 +46,7 @@ export interface DuelHistoryItem {
   id: number;
   endedAt: number;
   difficulty: string;
+  metric: DuelMetric;
   reason: EndReason;
   winnerId: number | null;
   opponent: { id: number; pseudo: string };
@@ -60,6 +62,7 @@ export interface DuelReplay {
   id: number;
   date: string;
   difficulty: string;
+  metric: DuelMetric;
   level: Level;
   reason: EndReason;
   winnerId: number | null;
@@ -74,11 +77,11 @@ export class DuelStore {
   save(record: DuelRecord): { id: number; score: HeadToHead } {
     const [a, b] = record.players;
     const result = this.db.prepare(`
-      INSERT INTO duels (date, difficulty, level_json, min_moves, started_at, ended_at, reason, winner_id,
+      INSERT INTO duels (date, difficulty, metric, level_json, min_moves, started_at, ended_at, reason, winner_id,
         player1_id, player2_id, moves1, moves2, moves1_json, moves2_json)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      localDate(record.endedAt, this.timeZone), record.difficulty, JSON.stringify(record.level), record.level.minMoves,
+      localDate(record.endedAt, this.timeZone), record.difficulty, record.metric, JSON.stringify(record.level), record.level.minMoves,
       record.startedAt, record.endedAt, record.reason, record.winnerId,
       a.id, b.id, a.moves.length, b.moves.length, JSON.stringify(a.moves), JSON.stringify(b.moves),
     );
@@ -126,6 +129,7 @@ export class DuelStore {
         id: d.id,
         endedAt: d.ended_at,
         difficulty: d.difficulty,
+        metric: d.metric,
         reason: d.reason,
         winnerId: d.winner_id,
         opponent: { id: d.opponent_id, pseudo: d.opponent_pseudo },
@@ -163,6 +167,7 @@ export class DuelStore {
       id: d.id,
       date: d.date,
       difficulty: d.difficulty,
+      metric: d.metric,
       level: JSON.parse(d.level_json) as Level,
       reason: d.reason,
       winnerId: d.winner_id,

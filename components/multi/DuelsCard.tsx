@@ -116,7 +116,7 @@ function OpenRow({ duel, colors, disabled, onOpen }: { duel: DuelListing; colors
   const creator = duel.players[0];
   const label = duel.mine ? t('multi.duel.my_open') : creator.pseudo;
   const action = duel.mine ? t('multi.duel.back_to_it') : t('multi.duel.fight');
-  const difficulty = t(`difficulty.${duel.difficulty}`);
+  const difficulty = `${t(`difficulty.${duel.difficulty}`)} · ${t(`multi.duel.metric_${duel.metric ?? 'time'}`)}`;
   return (
     <Pressable
       onPress={() => onOpen(duel.mine ? null : duel.code)}
@@ -155,7 +155,7 @@ function PlayingRow({ duel, colors, myPlayerId, serverNow, disabled, onOpen }: P
   const name = (p: { id: number; pseudo: string }) => (p.id === myPlayerId ? t('multi.duel.me') : p.pseudo);
   const versus = second ? t('multi.duel.vs', { a: name(first), b: name(second) }) : name(first);
   const time = duel.startsAt !== null && serverNow > duel.startsAt ? formatDuration(serverNow - duel.startsAt) : null;
-  const difficulty = t(`difficulty.${duel.difficulty}`);
+  const difficulty = `${t(`difficulty.${duel.difficulty}`)} · ${t(`multi.duel.metric_${duel.metric ?? 'time'}`)}`;
   return (
     <Pressable
       onPress={() => onOpen(null)}
