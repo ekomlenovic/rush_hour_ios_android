@@ -1157,11 +1157,11 @@
       "metric_time": "Fastest",
       "metric_moves": "Fewest moves",
       "metric_time_help": "The first to get the red car out wins.",
-      "metric_moves_help": "The fewest moves to get the red car out wins; on a tie, the fastest. Who gets out first waits for the other.",
-      "me_out_one": "Out in {{count}} move, waiting…",
-      "me_out_other": "Out in {{count}} moves, waiting…",
-      "opponent_out_one": "{{pseudo}} out in {{count}} move",
-      "opponent_out_other": "{{pseudo}} out in {{count}} moves",
+      "metric_moves_help": "The fewest moves to get the red car out wins; on a tie, the fastest. Who finishes first waits for the other.",
+      "me_out_one": "Done in {{count}} move, waiting…",
+      "me_out_other": "Done in {{count}} moves, waiting…",
+      "opponent_out_one": "{{pseudo}} finished in {{count}} move",
+      "opponent_out_other": "{{pseudo}} finished in {{count}} moves",
       "won_on_moves": "Fewest moves wins, the fastest on a tie."
     },
     "errors": {

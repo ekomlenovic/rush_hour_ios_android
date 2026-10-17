@@ -84,8 +84,11 @@ export function NewDuelSheet({ visible, colors, isDark, onClose, onCreate, ready
       </>}
 
       <View style={styles.switchRow}>
+        <View style={[styles.iconWrap, { backgroundColor: colors.primarySoft }]}>
+          <Ionicons name="lock-closed" size={22} color={colors.primaryText} />
+        </View>
         <View style={styles.switchText}>
-          <Text style={[styles.optionText, { color: colors.text }]}>🔒 {t('multi.duel.private')}</Text>
+          <Text style={[styles.optionText, { color: colors.text }]}>{t('multi.duel.private')}</Text>
           <Text style={[styles.help, { color: colors.textMuted }]}>{isPrivate ? t('multi.duel.private_help') : t('multi.duel.public_help')}</Text>
         </View>
         <Switch value={isPrivate} onValueChange={setPrivate} accessibilityLabel={t('multi.duel.private')} />
@@ -200,6 +203,14 @@ const styles = StyleSheet.create({
   },
   switchText: {
     flex: 1,
+  },
+  // The icons of the home screen (ChallengeCard)
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   help: {
     fontSize: RFValue(13),

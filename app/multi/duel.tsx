@@ -202,8 +202,9 @@ function Waiting({ duel, colors, serverName, onCancel }: { duel: Duel; colors: U
       <Animated.View entering={FadeInDown.springify()} style={[styles.card, styles.waitingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Versus me={duel.me} opponent={null} colors={colors} />
         <View style={[styles.chip, { backgroundColor: colors.primarySoft }]}>
+          {duel.private && <Ionicons name="lock-closed" size={RFValue(13)} color={colors.primaryText} />}
           <Text style={[styles.chipText, { color: colors.primaryText }]}>
-            {duel.private ? '🔒 ' : ''}{t(`difficulty.${duel.difficulty}`)} · {t(`multi.duel.metric_${duel.metric}`)}
+            {t(`difficulty.${duel.difficulty}`)} · {t(`multi.duel.metric_${duel.metric}`)}
           </Text>
         </View>
 
@@ -369,7 +370,10 @@ function ResultModal({ duel, colors, onRematch, onQuit, onReplay }: ResultProps)
   const result = outcome(duel);
   if (!result || !duel.result) return null;
   const pseudo = duel.opponent?.pseudo ?? '';
-  const emoji = result === 'win' ? '🏆' : result === 'draw' ? '🤝' : '🏁';
+  // The icons of the history of the duels (DuelHistoryCard)
+  const badge = result === 'win' ? { icon: 'trophy' as const, tint: colors.success, background: colors.successSoft }
+    : result === 'loss' ? { icon: 'close-circle' as const, tint: colors.danger, background: colors.dangerSoft }
+      : { icon: 'remove-circle' as const, tint: colors.textMuted, background: colors.neutralSoft };
   const reason = duel.result.reason;
   const canRematch = !duel.opponentLeft && !!duel.opponent;
 
@@ -377,7 +381,9 @@ function ResultModal({ duel, colors, onRematch, onQuit, onReplay }: ResultProps)
     <Modal visible transparent animationType="fade" onRequestClose={onQuit}>
       <View style={styles.overlay}>
         <Animated.View entering={ZoomIn.springify()} style={[styles.resultCard, { backgroundColor: colors.surface }]} accessibilityViewIsModal>
-          <Text style={styles.bigEmoji}>{emoji}</Text>
+          <View style={[styles.resultIcon, { backgroundColor: badge.background }]}>
+            <Ionicons name={badge.icon} size={RFValue(34)} color={badge.tint} />
+          </View>
           <Text style={[styles.resultTitle, { color: colors.text }]} accessibilityRole="header">{t(`multi.duel.result_${result}`, { pseudo })}</Text>
           {reason !== 'won' && (
             <Text style={[styles.muted, { color: colors.textMuted }]}>{t(`multi.duel.reason_${reason}`, { pseudo })}</Text>
@@ -394,7 +400,10 @@ function ResultModal({ duel, colors, onRematch, onQuit, onReplay }: ResultProps)
             <Stat label={t('multi.duel.optimum')} value={duel.result.minMoves > 0 ? String(duel.result.minMoves) : '–'} colors={colors} />
           </View>
           {duel.result.timeMs !== null && (
-            <Text style={[styles.resultTime, { color: colors.text }]}>⏱ {formatDuration(duel.result.timeMs)}</Text>
+            <View style={styles.resultTimeRow}>
+              <Ionicons name="timer-outline" size={RFValue(18)} color={colors.text} />
+              <Text style={[styles.resultTime, { color: colors.text }]}>{formatDuration(duel.result.timeMs)}</Text>
+            </View>
           )}
           {duel.result.score && (() => {
             const score = scoreOf(duel.result.score, duel.me.id);
@@ -423,11 +432,12 @@ function ResultModal({ duel, colors, onRematch, onQuit, onReplay }: ResultProps)
             <Pressable
               onPress={onRematch}
               disabled={duel.me.wantsRematch}
-              style={[styles.primaryButton, styles.wide, { backgroundColor: colors.primary, opacity: duel.me.wantsRematch ? 0.6 : 1 }]}
+              style={[styles.primaryButton, styles.iconButton, styles.wide, { backgroundColor: colors.primary, opacity: duel.me.wantsRematch ? 0.6 : 1 }]}
               accessibilityRole="button"
             >
+              {!duel.me.wantsRematch && <Ionicons name="refresh" size={RFValue(20)} color={colors.onPrimary} />}
               <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>
-                {duel.me.wantsRematch ? t('multi.duel.rematch_waiting', { pseudo }) : `🔁 ${t('multi.duel.rematch')}`}
+                {duel.me.wantsRematch ? t('multi.duel.rematch_waiting', { pseudo }) : t('multi.duel.rematch')}
               </Text>
             </Pressable>
           )}
@@ -508,8 +518,24 @@ const styles = StyleSheet.create({
     lineHeight: RFValue(22),
     textAlign: 'center',
   },
-  bigEmoji: {
-    fontSize: RFValue(48),
+  resultIcon: {
+    width: RFValue(64),
+    height: RFValue(64),
+    borderRadius: RFValue(18),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: RFValue(10),
+  },
+  iconButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: RFValue(8),
+  },
+  resultTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: RFValue(12),
   },
   muted: {
     fontSize: RFValue(14),
@@ -577,6 +603,9 @@ const styles = StyleSheet.create({
     paddingVertical: RFValue(24),
   },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     borderRadius: 999,
     paddingVertical: RFValue(5),
     paddingHorizontal: RFValue(14),
@@ -716,7 +745,6 @@ const styles = StyleSheet.create({
   resultTime: {
     fontSize: RFValue(17),
     fontWeight: '800',
-    marginTop: RFValue(12),
     fontVariant: ['tabular-nums'],
   },
 });

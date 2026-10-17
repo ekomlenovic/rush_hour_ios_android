@@ -126,7 +126,12 @@ export default function DuelReplayScreen() {
 
             <View style={[styles.clock, { backgroundColor: colors.card }]} accessible accessibilityLabel={t('multi.time_a11y', { time: formatDuration(timeAt(timeline, step)) })}>
               <Text style={[styles.clockText, { color: colors.text }]}>{formatDuration(timeAt(timeline, step))}</Text>
-              {pauseShown && <Text style={[styles.pause, { color: colors.warning }]}>⏸ {formatDuration(nextGap)}</Text>}
+              {pauseShown && (
+                <View style={styles.pauseRow}>
+                  <Ionicons name="pause" size={RFValue(12)} color={colors.warning} />
+                  <Text style={[styles.pause, { color: colors.warning }]}>{formatDuration(nextGap)}</Text>
+                </View>
+              )}
             </View>
 
             <DuelPlayerBar name={name(bottom)} moves={counts[1]} colors={colors} width={bottomSize} isMe={bottom.id === account?.playerId} winner={finished && replay.winnerId === bottom.id} />
@@ -200,6 +205,11 @@ const styles = StyleSheet.create({
     fontSize: RFValue(17),
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
+  },
+  pauseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
   pause: {
     fontSize: RFValue(12),

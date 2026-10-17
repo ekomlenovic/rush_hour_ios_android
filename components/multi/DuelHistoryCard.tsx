@@ -102,7 +102,7 @@ export default function DuelHistoryCard({ api, colors, myPlayerId, refreshKey, o
                 accessibilityLabel={t('multi.duel.watch_replay')}
                 hitSlop={6}
               >
-                <Ionicons name="play" size={16} color={colors.primaryText} />
+                <Ionicons name="play" size={22} color={colors.primaryText} />
               </Pressable>
             )}
           </View>
@@ -187,10 +187,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 2,
   },
+  // The icons of the home screen (ChallengeCard)
   replay: {
-    width: RFValue(32),
-    height: RFValue(32),
-    borderRadius: RFValue(16),
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
