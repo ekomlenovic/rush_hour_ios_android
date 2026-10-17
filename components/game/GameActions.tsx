@@ -2,6 +2,7 @@ import React from 'react';
 import { Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import type { UiColors } from '@/theme';
 
 interface Props {
@@ -21,7 +22,8 @@ export default function GameActions({ colors, showUndoAndHint, isHintLoading, on
       {showUndoAndHint && (
         <>
           <Pressable onPress={onUndo} style={[styles.actionBtn, { backgroundColor: colors.card }]} accessibilityRole="button" accessibilityLabel={t('game.undo')}>
-            <Text style={[styles.actionText, { color: colors.text }]}>↩ {t('game.undo')}</Text>
+            <Ionicons name="arrow-undo" size={18} color={colors.text} />
+            <Text style={[styles.actionText, { color: colors.text }]}>{t('game.undo')}</Text>
           </Pressable>
           <Pressable
             onPress={onHint}
@@ -34,13 +36,17 @@ export default function GameActions({ colors, showUndoAndHint, isHintLoading, on
             {isHintLoading ? (
               <ActivityIndicator size="small" color={colors.warning} />
             ) : (
-              <Text style={[styles.actionText, { color: colors.warning }]}>💡 {t('game.hint')}</Text>
+              <>
+                <Ionicons name="bulb" size={18} color={colors.warning} />
+                <Text style={[styles.actionText, { color: colors.warning }]}>{t('game.hint')}</Text>
+              </>
             )}
           </Pressable>
         </>
       )}
-       <Pressable onPress={onReset} style={[styles.actionBtn, { backgroundColor: colors.card }]} accessibilityRole="button" accessibilityLabel={t('common.reset')}>
-        <Text style={[styles.actionText, { color: colors.text }]}>↻ {t('common.reset')}</Text>
+      <Pressable onPress={onReset} style={[styles.actionBtn, { backgroundColor: colors.card }]} accessibilityRole="button" accessibilityLabel={t('common.reset')}>
+        <Ionicons name="refresh" size={18} color={colors.text} />
+        <Text style={[styles.actionText, { color: colors.text }]}>{t('common.reset')}</Text>
       </Pressable>
     </Animated.View>
   );
@@ -57,6 +63,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 12,
     minWidth: 100,
+    flexDirection: 'row',
+    gap: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
