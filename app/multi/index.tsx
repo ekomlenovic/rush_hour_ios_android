@@ -17,6 +17,8 @@ import Leaderboard, { type RowPlayer } from '@/components/multi/Leaderboard';
 import PlayerActionsSheet from '@/components/multi/PlayerActionsSheet';
 import InviteSheet from '@/components/multi/InviteSheet';
 import ServerPickerSheet from '@/components/multi/ServerPickerSheet';
+import DuelsCard from '@/components/multi/DuelsCard';
+import { DuelCodeSheet, NewDuelSheet } from '@/components/multi/DuelSheets';
 import { errorCode, multiErrorMessage } from '@/components/multi/errors';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
@@ -81,6 +83,8 @@ export default function MultiplayerScreen() {
   const [now, setNow] = useState(Date.now());
   const [isPickerVisible, setPickerVisible] = useState(false);
   const [isInviteVisible, setInviteVisible] = useState(false);
+  const [isNewDuelVisible, setNewDuelVisible] = useState(false);
+  const [isDuelCodeVisible, setDuelCodeVisible] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<RowPlayer | null>(null);
 
   const load = useCallback(async () => {
@@ -255,6 +259,19 @@ export default function MultiplayerScreen() {
           )}
         </View>
 
+        {api && (
+          <DuelsCard
+            api={api}
+            colors={colors}
+            myPlayerId={account.playerId}
+            clockOffset={clockOffset}
+            disabled={compat !== 'ok'}
+            onCreate={() => setNewDuelVisible(true)}
+            onCode={() => setDuelCodeVisible(true)}
+            onOpen={(code) => router.push(code ? `/multi/duel?join=${code}` : '/multi/duel')}
+          />
+        )}
+
         <Pressable onPress={() => setInviteVisible(true)} style={[styles.secondaryButton, { borderColor: colors.primary }]} accessibilityRole="button">
           <Text style={[styles.secondaryButtonText, { color: colors.primaryText }]}>📨 {t('multi.invite')}</Text>
         </Pressable>
@@ -294,6 +311,26 @@ export default function MultiplayerScreen() {
           onClose={() => setSelectedPlayer(null)}
         />
       )}
+      <NewDuelSheet
+        visible={isNewDuelVisible}
+        colors={colors}
+        isDark={isDark}
+        onClose={() => setNewDuelVisible(false)}
+        onCreate={(difficulty, isPrivate) => {
+          setNewDuelVisible(false);
+          router.push(`/multi/duel?create=${difficulty}${isPrivate ? '&private=1' : ''}`);
+        }}
+      />
+      <DuelCodeSheet
+        visible={isDuelCodeVisible}
+        colors={colors}
+        isDark={isDark}
+        onClose={() => setDuelCodeVisible(false)}
+        onJoin={(code) => {
+          setDuelCodeVisible(false);
+          router.push(`/multi/duel?join=${code}`);
+        }}
+      />
       {api && (
         <InviteSheet visible={isInviteVisible} account={account} api={api} colors={colors} isDark={isDark} onClose={() => setInviteVisible(false)} />
       )}

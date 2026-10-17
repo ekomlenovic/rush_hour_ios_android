@@ -304,6 +304,13 @@ describe('translations of the multiplayer mode', () => {
     expect(codes.length).toBeGreaterThan(10);
     expect([...new Set(codes)].filter(code => !(MULTI_ERROR_CODES as readonly string[]).includes(code))).toEqual([]);
   });
+
+  it('every error of the duels has a message', () => {
+    const server = require('fs').readFileSync(require('path').join(__dirname, '../server/src/duel.ts'), 'utf8') as string;
+    const codes = [...server.matchAll(/(?:error: |return )'([a-z_]+)'/g)].map(m => m[1]);
+    expect(codes).toContain('duel_not_found');
+    expect([...new Set(codes)].filter(code => !(MULTI_ERROR_CODES as readonly string[]).includes(code))).toEqual([]);
+  });
 });
 
 describe('QR code drawn on the phone', () => {
@@ -399,6 +406,9 @@ describe('create my server', () => {
     expect(site).toContain('server_name ekrushhours.duckdns.org;');
     expect(site).toContain('/etc/letsencrypt/live/ekrushhours.duckdns.org/fullchain.pem');
     expect(site).toContain('proxy_pass http://127.0.0.1:3000;');
+    // The duels go through a WebSocket
+    expect(site).toContain('proxy_set_header Upgrade $http_upgrade;');
+    expect(site).toContain('proxy_set_header Connection "upgrade";');
   });
 
   const answer = (status: number, body?: unknown) => jest.fn().mockResolvedValue({
