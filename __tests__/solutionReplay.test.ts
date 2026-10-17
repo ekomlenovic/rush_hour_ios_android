@@ -1,4 +1,6 @@
-import { vehiclesAtStep } from '../utils/solutionReplay';
+import { movesFromLog, vehiclesAtStep } from '../utils/solutionReplay';
+import { diffMove } from '../utils/moveLog';
+import { mergeChallengeResult } from '../store/stats';
 import { getMoveDirection } from '../utils/accessibility';
 import { solvePuzzle } from '../utils/solver';
 import { checkWin } from '../utils/collision';
@@ -40,6 +42,24 @@ describe('solution replay (rules in docs/GAME_DESIGN.md)', () => {
   it('clamps out of range steps', () => {
     expect(vehiclesAtStep(level.vehicles, moves, -2)).toEqual(level.vehicles);
     expect(vehiclesAtStep(level.vehicles, moves, 999)).toEqual(vehiclesAtStep(level.vehicles, moves, moves.length));
+  });
+});
+
+describe("the player's own solution", () => {
+  // The optimal solution played by hand, as the move log of the store records it
+  const log = moves.map((move, i) => diffMove(
+    vehiclesAtStep(level.vehicles, moves, i), vehiclesAtStep(level.vehicles, moves, i + 1), i * 1000,
+  )!);
+
+  it('replays the move log as the same moves', () => {
+    expect(movesFromLog(level.vehicles, log)).toEqual(moves);
+  });
+
+  it('is kept with the best result of a challenge', () => {
+    const first = mergeChallengeResult(undefined, 80, 2, 5000, { moves: 12, minMoves: moves.length, moveLog: log.slice(0, 2) });
+    expect(first.moveLog).toEqual(log.slice(0, 2));
+    expect(mergeChallengeResult(first, 50, 1, 4000, { moves: 20, minMoves: moves.length, moveLog: log }).moveLog).toEqual(log.slice(0, 2));
+    expect(mergeChallengeResult(first, 100, 3, 4000, { moves: moves.length, minMoves: moves.length, moveLog: log }).moveLog).toEqual(log);
   });
 });
 

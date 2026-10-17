@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Modal, ActivityIndicator, AccessibilityInfo } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import Board from '@/components/Board';
 import { Level } from '@/store/gameStore';
+import type { MoveRecord } from '@/store/types';
 import { Move } from '@/utils/solver';
 import { solvePuzzleAsync } from '@/utils/solver.background';
-import { vehiclesAtStep } from '@/utils/solutionReplay';
+import { movesFromLog, vehiclesAtStep } from '@/utils/solutionReplay';
 import { REPLAY_SPEEDS, type ReplaySpeed } from '@/utils/multi/replay';
 import { describeVehicle, getMoveDirection, getVehicleLetters } from '@/utils/accessibility';
 import type { UiColors } from '@/theme';
@@ -16,33 +18,56 @@ const STEP_MS = 900;
 
 const noop = () => {};
 
+export type SolutionSource = 'mine' | 'optimal';
+type Source = SolutionSource;
+
 interface Props {
   visible: boolean;
   level: Level;
   colors: UiColors;
+  /** The player's own winning moves: both solutions can then be watched */
+  playerMoves?: MoveRecord[];
+  /** The solution shown first: the player's own when they have one */
+  startWith?: Source;
   onClose: () => void;
 }
 
 /**
  * Replays the optimal solution of a level from its starting position: it plays by itself,
  * and the player can go back and forth move by move (see docs/GAME_DESIGN.md).
+ * With the player's own moves, a switch shows either their solution or the optimal one.
  */
-export default function SolutionPlayer({ visible, level, colors, onClose }: Props) {
+export default function SolutionPlayer({ visible, level, colors, playerMoves, startWith, onClose }: Props) {
   const { t } = useTranslation();
-  const [moves, setMoves] = useState<Move[] | null>(null);
+  const [optimalMoves, setOptimalMoves] = useState<Move[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [source, setSource] = useState<Source>('optimal');
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<ReplaySpeed>(1);
+
+  const myMoves = useMemo(
+    () => (playerMoves && playerMoves.length > 0 ? movesFromLog(level.vehicles, playerMoves) : null),
+    [level.vehicles, playerMoves],
+  );
+
+  // Plays by itself, except with a screen reader: each move is announced, the player steps through them
+  const startPlayback = useCallback(async () => {
+    setStep(0);
+    setPlaying(!(await AccessibilityInfo.isScreenReaderEnabled()));
+  }, []);
 
   // Solve from the starting position each time the player opens it
   useEffect(() => {
     if (!visible) return;
     let cancelled = false;
-    setMoves(null);
+    setOptimalMoves(null);
     setFailed(false);
+    const first = myMoves && startWith !== 'optimal' ? 'mine' : 'optimal';
+    setSource(first);
     setStep(0);
     setPlaying(false);
+    if (first === 'mine') startPlayback();
     (async () => {
       const result = await solvePuzzleAsync(level.vehicles, level.gridSize, level.exitRow, level.exitCol);
       if (cancelled) return;
@@ -50,12 +75,21 @@ export default function SolutionPlayer({ visible, level, colors, onClose }: Prop
         setFailed(true);
         return;
       }
-      setMoves(result.moves);
-      // Plays by itself, except with a screen reader: each move is announced, the player steps through them
-      setPlaying(!(await AccessibilityInfo.isScreenReaderEnabled()));
+      setOptimalMoves(result.moves);
+      if (first === 'optimal') startPlayback();
     })();
     return () => { cancelled = true; };
-  }, [visible, level]);
+  }, [visible, level, myMoves, startWith]);
+
+  const moves = source === 'mine' ? myMoves : optimalMoves;
+
+  const switchSource = (next: Source) => {
+    if (next === source) return;
+    setSource(next);
+    setPlaying(false);
+    // The optimal solution may still be computing: it plays as soon as it is there
+    startPlayback();
+  };
 
   const total = moves?.length ?? 0;
 
@@ -111,12 +145,17 @@ export default function SolutionPlayer({ visible, level, colors, onClose }: Prop
     setPlaying(true);
   };
 
-  const controls: { icon: string; label: string; onPress: () => void; disabled: boolean; primary?: boolean }[] = [
-    { icon: '⏮', label: t('solution.first'), onPress: () => goTo(0), disabled: step === 0 },
-    { icon: '◀', label: t('solution.prev'), onPress: () => goTo(step - 1), disabled: step === 0 },
-    { icon: playing ? '⏸' : '▶', label: playing ? t('solution.pause') : t('solution.play'), onPress: togglePlay, disabled: false, primary: true },
-    { icon: '▶▶', label: t('solution.next'), onPress: () => goTo(step + 1), disabled: step >= total },
-    { icon: '⏭', label: t('solution.last'), onPress: () => goTo(total), disabled: step >= total },
+  const controls: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string; onPress: () => void; disabled: boolean; primary?: boolean }[] = [
+    { icon: 'play-skip-back', label: t('solution.first'), onPress: () => goTo(0), disabled: step === 0 },
+    { icon: 'chevron-back', label: t('solution.prev'), onPress: () => goTo(step - 1), disabled: step === 0 },
+    { icon: playing ? 'pause' : 'play', label: playing ? t('solution.pause') : t('solution.play'), onPress: togglePlay, disabled: false, primary: true },
+    { icon: 'chevron-forward', label: t('solution.next'), onPress: () => goTo(step + 1), disabled: step >= total },
+    { icon: 'play-skip-forward', label: t('solution.last'), onPress: () => goTo(total), disabled: step >= total },
+  ];
+
+  const sources: { id: Source; icon: React.ComponentProps<typeof Ionicons>['name']; label: string }[] = [
+    { id: 'mine', icon: 'person', label: t('solution.mine', { count: myMoves?.length ?? 0 }) },
+    { id: 'optimal', icon: 'trophy', label: t('solution.optimal', { count: optimalMoves?.length ?? level.minMoves }) },
   ];
 
   return (
@@ -125,11 +164,32 @@ export default function SolutionPlayer({ visible, level, colors, onClose }: Prop
       <GestureHandlerRootView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
           <View style={{ width: 44 }} />
-          <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('solution.title')}</Text>
+          <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t(source === 'mine' ? 'solution.title_mine' : 'solution.title')}</Text>
           <Pressable onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel={t('a11y.close')} hitSlop={8}>
-            <Text style={{ fontSize: 22, color: colors.textMuted }}>✕</Text>
+            <Ionicons name="close" size={26} color={colors.textMuted} />
           </Pressable>
         </View>
+
+        {myMoves && (
+          <View style={[styles.speeds, styles.sources, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
+            {sources.map(s => {
+              const selected = s.id === source;
+              const tint = selected ? colors.onPrimary : colors.text;
+              return (
+                <Pressable
+                  key={s.id}
+                  onPress={() => switchSource(s.id)}
+                  style={[styles.speed, styles.source, selected && { backgroundColor: colors.primary }]}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected }}
+                >
+                  <Ionicons name={s.icon} size={15} color={tint} />
+                  <Text style={[styles.speedText, { color: tint }]} numberOfLines={1}>{s.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
 
         <View style={styles.boardWrapper}>
           <Board
@@ -143,7 +203,7 @@ export default function SolutionPlayer({ visible, level, colors, onClose }: Prop
           />
         </View>
 
-        {failed ? (
+        {failed && source === 'optimal' ? (
           <Text style={[styles.status, { color: colors.textMuted }]}>{t('solution.unsolvable')}</Text>
         ) : !moves ? (
           <View style={styles.loading}>
@@ -169,7 +229,7 @@ export default function SolutionPlayer({ visible, level, colors, onClose }: Prop
                   accessibilityLabel={c.label}
                   accessibilityState={{ disabled: c.disabled }}
                 >
-                  <Text style={[styles.controlIcon, { color: c.primary ? colors.onPrimary : colors.text }]}>{c.icon}</Text>
+                  <Ionicons name={c.icon} size={22} color={c.primary ? colors.onPrimary : colors.text} />
                 </Pressable>
               ))}
             </View>
@@ -266,10 +326,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  controlIcon: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
   speeds: {
     flexDirection: 'row',
     alignSelf: 'center',
@@ -281,6 +337,16 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     paddingHorizontal: 18,
     borderRadius: 10,
+  },
+  sources: {
+    marginTop: 0,
+    marginBottom: 20,
+  },
+  source: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
   },
   speedText: {
     fontSize: 14,
