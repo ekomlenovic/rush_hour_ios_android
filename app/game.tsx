@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, Share, Alert, AccessibilityInfo } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Share, Alert, AccessibilityInfo, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { haptics, Haptics } from '@/utils/haptics';
@@ -108,7 +108,10 @@ export default function GameScreen() {
 
   // After the first daily won, offer the reminders once (see docs/GAME_DESIGN.md)
   const handleWinContinue = () => {
-    router.back();
+    // A challenge stays open on its result: going back under the closing modal
+    // only happened once it was gone, seconds later (see docs/GAME_DESIGN.md)
+    if (challengeKind) setWon(false);
+    else router.back();
     const state = useGameStore.getState();
     if (challengeKind !== 'daily' || state.notificationsPrompted || state.notificationsEnabled) return;
     state.markNotificationsPrompted();
@@ -395,17 +398,20 @@ export default function GameScreen() {
         />
       )}
 
+      {/* Scrolls when large text or a small screen leaves too little room under the board */}
       {isChallengeCompleted && (
-        <ChallengeDoneBanner
-          colors={colors}
-          kind={challengeKind}
-          stars={challengeResult?.stars ?? 3}
-          moves={challengeResult?.moves}
-          minMoves={challengeResult?.minMoves ?? minMoves}
-          onShareResult={handleShareResult}
-          onShowMine={playerMoves?.length ? () => showSolution('mine') : undefined}
-          onShowSolution={() => showSolution('optimal')}
-        />
+        <ScrollView style={styles.bannerScroll} contentContainerStyle={styles.bannerScrollContent} showsVerticalScrollIndicator={false}>
+          <ChallengeDoneBanner
+            colors={colors}
+            kind={challengeKind}
+            stars={challengeResult?.stars ?? 3}
+            moves={challengeResult?.moves}
+            minMoves={challengeResult?.minMoves ?? minMoves}
+            onShareResult={handleShareResult}
+            onShowMine={playerMoves?.length ? () => showSolution('mine') : undefined}
+            onShowSolution={() => showSolution('optimal')}
+          />
+        </ScrollView>
       )}
 
       {/* Goal text for Level 1 */}
@@ -467,6 +473,12 @@ const styles = StyleSheet.create({
   boardWrapper: {
     alignItems: 'center',
     marginBottom: 24,
+  },
+  bannerScroll: {
+    flex: 1,
+  },
+  bannerScrollContent: {
+    paddingBottom: 32,
   },
   shareHeaderBtn: {
     width: 76,
