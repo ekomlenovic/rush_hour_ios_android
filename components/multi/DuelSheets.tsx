@@ -54,7 +54,7 @@ export function NewDuelSheet({ visible, colors, isDark, onClose, onCreate, ready
                   <Text style={[styles.readyText, { color: isReady ? colors.success : colors.warning }]}>{status}</Text>
                 </View>
               )}
-              {selected && <Text style={[styles.optionText, { color: colors.primaryText }]}>✓</Text>}
+              {selected && <Ionicons name="checkmark" size={RFValue(18)} color={colors.primaryText} />}
             </View>
           </Pressable>
         );
@@ -75,7 +75,14 @@ export function NewDuelSheet({ visible, colors, isDark, onClose, onCreate, ready
                 accessibilityLabel={`${t(`multi.duel.metric_${m}`)}, ${t(`multi.duel.metric_${m}_help`)}`}
               >
                 <Ionicons name={METRIC_ICONS[m]} size={RFValue(18)} color={selected ? colors.primaryText : colors.text} />
-                <Text style={[styles.optionText, { color: selected ? colors.primaryText : colors.text }]}>{t(`multi.duel.metric_${m}`)}</Text>
+                <Text
+                  style={[styles.optionText, styles.metricText, { color: selected ? colors.primaryText : colors.text }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                >
+                  {t(`multi.duel.metric_${m}`)}
+                </Text>
               </Pressable>
             );
           })}
@@ -166,7 +173,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: RFValue(8),
+    gap: RFValue(6),
+    paddingHorizontal: RFValue(8),
+  },
+  metricText: {
+    flexShrink: 1,
+    fontSize: RFValue(15),
   },
   option: {
     borderWidth: 1.5,

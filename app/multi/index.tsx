@@ -26,6 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { joinableCount, useServerDuels } from '@/hooks/useServerDuels';
 import { DuelCodeSheet, NewDuelSheet } from '@/components/multi/DuelSheets';
 import { errorCode, multiErrorMessage } from '@/components/multi/errors';
+import IconText from '@/components/multi/IconText';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 
@@ -44,7 +45,9 @@ function Intro() {
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <Animated.Text entering={FadeInDown.springify()} style={[styles.introEmoji]}>🏁</Animated.Text>
+      <Animated.View entering={FadeInDown.springify()} style={[styles.introIcon, { backgroundColor: colors.primarySoft }]}>
+        <Ionicons name="flag" size={RFValue(38)} color={colors.primaryText} />
+      </Animated.View>
       <Text style={[styles.introTitle, { color: colors.text }]} accessibilityRole="header">{t('multi.intro_title')}</Text>
       <Text style={[styles.introText, { color: colors.textMuted }]}>{t('multi.intro_desc')}</Text>
       {steps.map((key, i) => (
@@ -191,7 +194,11 @@ export default function MultiplayerScreen() {
           accessibilityLabel={t('multi.server_a11y', { name: account.name, pseudo: account.pseudo })}
           accessibilityHint={t('multi.servers')}
         >
-          <Text style={[styles.serverName, { color: colors.text }]} numberOfLines={1}>🖥️ {account.name} ▾</Text>
+          <View style={styles.serverRow}>
+            <Ionicons name="server-outline" size={RFValue(16)} color={colors.primaryText} />
+            <Text style={[styles.serverName, { color: colors.text }]} numberOfLines={1}>{account.name}</Text>
+            <Ionicons name="chevron-down" size={RFValue(16)} color={colors.text} />
+          </View>
           <Text style={[styles.serverHost, { color: colors.textMuted }]} numberOfLines={1}>{serverHost(account.url)} · {account.pseudo}</Text>
         </Pressable>
 
@@ -232,14 +239,14 @@ export default function MultiplayerScreen() {
                   style={[styles.pending, { backgroundColor: colors.warningSoft }]}
                   accessibilityRole="button"
                 >
-                  <Text style={[styles.pendingText, { color: colors.text }]}>
-                    ⏳ {t('multi.pending', { time: formatRemaining(t, today.pending.deadline - serverNow) })}
-                  </Text>
+                  <IconText icon="hourglass-outline" color={colors.text} textStyle={styles.pendingText}>
+                    {t('multi.pending', { time: formatRemaining(t, today.pending.deadline - serverNow) })}
+                  </IconText>
                 </Pressable>
               )}
 
               {today.status === 'preparing' && (
-                <Text style={[styles.cardBody, { color: colors.textMuted }]}>⚙️ {t('multi.preparing')}</Text>
+                <IconText icon="settings-outline" color={colors.textMuted} style={styles.cardBodyRow} textStyle={[styles.cardBody, styles.noMarginTop]}>{t('multi.preparing')}</IconText>
               )}
 
               {today.status === 'ready' && !me && (
@@ -266,9 +273,9 @@ export default function MultiplayerScreen() {
               )}
 
               {me?.status === 'won' && (
-                <Text style={[styles.cardBody, { color: colors.success }]}>
-                  ✅ {t('multi.my_win', { moves: me.moves, time: formatDuration(me.timeMs ?? 0), min: me.minMoves })}
-                </Text>
+                <IconText icon="checkmark-circle" color={colors.success} style={styles.cardBodyRow} textStyle={[styles.cardBody, styles.noMarginTop]}>
+                  {t('multi.my_win', { moves: me.moves, time: formatDuration(me.timeMs ?? 0), min: me.minMoves })}
+                </IconText>
               )}
               {(me?.status === 'abandoned' || me?.status === 'unfinished') && (
                 <Text style={[styles.cardBody, { color: colors.textMuted }]}>{t(`multi.my_${me.status}`, { min: me.minMoves })}</Text>
@@ -428,9 +435,13 @@ const styles = StyleSheet.create({
     padding: RFValue(20),
     paddingBottom: RFValue(48),
   },
-  introEmoji: {
-    fontSize: RFValue(56),
-    textAlign: 'center',
+  introIcon: {
+    width: RFValue(76),
+    height: RFValue(76),
+    borderRadius: RFValue(22),
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
     marginTop: RFValue(8),
   },
   introTitle: {
@@ -522,7 +533,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: RFValue(14),
     marginBottom: RFValue(14),
   },
+  serverRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   serverName: {
+    flexShrink: 1,
     fontSize: RFValue(16),
     fontWeight: '800',
   },
@@ -564,6 +581,12 @@ const styles = StyleSheet.create({
     fontSize: RFValue(16),
     fontWeight: '700',
     marginTop: RFValue(14),
+  },
+  cardBodyRow: {
+    marginTop: RFValue(14),
+  },
+  noMarginTop: {
+    marginTop: 0,
   },
   pending: {
     borderRadius: 12,

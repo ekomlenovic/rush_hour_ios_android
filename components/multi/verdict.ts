@@ -1,9 +1,10 @@
 import type { TFunction } from 'i18next';
 import type { Flag, Verdict } from '@/utils/multi/api';
 import { formatDuration } from '@/utils/date';
+import type { IconName } from './IconText';
 
-/** ⚠️ suspect (automatic), 🤡 cheater (confirmed by the admin) */
-export const verdictBadge = (verdict: Verdict): string => (verdict === 'cheater' ? '🤡' : verdict === 'suspect' ? '⚠️' : '');
+/** Suspect (automatic) or cheater (confirmed by the admin) */
+export const verdictIcon = (verdict: NonNullable<Verdict>): IconName => (verdict === 'cheater' ? 'ban' : 'warning');
 
 /** Why a game is suspect, in words, with its numbers */
 export function flagText(t: TFunction, flag: Flag): string {
