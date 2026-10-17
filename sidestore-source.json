@@ -10,11 +10,11 @@
       "localizedDescription": "Rush Hour puzzle game.",
       "iconURL": "https://i.imgur.com/71j15Xh.png",
       "tintColor": "e5a019",
-      "version": "1.1.6",
-      "buildVersion": "47",
-      "versionDate": "2026-10-16",
-      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v1.1.6-b47/rush-hours-unsigned.ipa",
-      "size": 14534195
+      "version": "1.1.8",
+      "buildVersion": "49",
+      "versionDate": "2026-10-17",
+      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v1.1.8-b49/rush-hours-unsigned.ipa",
+      "size": 15168594
     }
   ]
 }
