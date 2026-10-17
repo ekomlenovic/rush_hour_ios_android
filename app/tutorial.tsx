@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeOut, Layout, ZoomIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import Board from '@/components/Board';
 import { Vehicle, useGameStore } from '@/store/gameStore';
 import { checkWin } from '@/utils/collision';
@@ -168,7 +169,7 @@ export default function TutorialScreen() {
         {dialogDismissed && !completed && (
           <View style={[styles.actionHint, { backgroundColor: colors.primarySoft }]}>
             <Text style={[styles.actionHintText, { color: colors.primaryText }]}>
-              👆 {step === 1 ? t('tutorial.step1_desc') : t('tutorial.step2_desc')}
+              <Ionicons name="hand-left" size={14} color={colors.primaryText} /> {step === 1 ? t('tutorial.step1_desc') : t('tutorial.step2_desc')}
             </Text>
           </View>
         )}
@@ -178,7 +179,7 @@ export default function TutorialScreen() {
       <Modal visible={completed} transparent animationType="fade" onRequestClose={() => router.replace('/map')}>
         <View style={styles.overlay}>
           <View style={[styles.winCard, { backgroundColor: colors.surface }]}>
-            <Text style={styles.emoji}>🎉</Text>
+            <Ionicons name="trophy" size={48} color={colors.warning} style={styles.winIcon} />
             <Text style={[styles.winTitle, { color: colors.primaryText }]}>{t('common.excellent')}</Text>
             <Text style={[styles.winDesc, { color: colors.text }]}>{t('tutorial.ready_desc')}</Text>
             <Pressable 
@@ -299,8 +300,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     alignItems: 'center',
   },
-  emoji: {
-    fontSize: 48,
+  winIcon: {
     marginBottom: 16,
   },
   winTitle: {

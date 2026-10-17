@@ -15,7 +15,7 @@ import { gameKey, selectActiveAccount, useMultiStore, type MultiGame } from '@/s
 import { useMultiApi } from '@/hooks/useMultiApi';
 import { elapsedMs, gameFromStart, playMove, submission } from '@/utils/multi/game';
 import type { SubmitResult } from '@/utils/multi/api';
-import IconText from '@/components/multi/IconText';
+import IconText from '@/components/IconText';
 
 type Phase = 'loading' | 'playing' | 'sending' | 'send_failed' | 'won' | 'error';
 

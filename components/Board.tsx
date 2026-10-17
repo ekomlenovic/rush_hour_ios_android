@@ -4,6 +4,7 @@ import { Vehicle, useGameStore } from '@/store/gameStore';
 import { getMoveBounds } from '@/utils/collision';
 import Block, { BlockA11yStrings } from './Block';
 import { useTranslation } from 'react-i18next';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { getVehicleLetters, describeVehicle, describePosition, describeExit } from '@/utils/accessibility';
 import { useTheme, applyPalette } from '@/theme';
 
@@ -220,7 +221,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
               elevation: 8,
             }}
           >
-            <Text style={{ fontSize: 24, textAlign: 'center' }}>🔒</Text>
+            <Ionicons name="lock-closed" size={24} color={colors.text} />
           </View>
         </View>
       )}

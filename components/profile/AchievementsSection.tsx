@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useGameStore } from '@/store/gameStore';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, AchievementCategory, AchievementContext, AchievementDef } from '@/data/achievements';
 import { RFValue } from '@/utils/responsive';
@@ -93,7 +94,7 @@ export default function AchievementsSection({ colors, context }: Props) {
                           : { backgroundColor: colors.card, borderColor: colors.border },
                         selected === ach.id && { borderColor: colors.primaryText },
                       ]}>
-                        <Text style={[styles.badgeIcon, !isUnlocked && styles.locked]}>{isSecret ? '🔒' : ach.icon}</Text>
+                        <Ionicons name={isSecret ? 'lock-closed' : ach.icon} size={RFValue(24)} color={isUnlocked ? colors.primaryText : colors.textMuted} style={!isUnlocked && styles.locked} />
                       </View>
                       <Text style={[styles.badgeName, { color: isUnlocked ? colors.text : colors.textMuted }]} numberOfLines={2}>{name}</Text>
                     </Pressable>
@@ -127,7 +128,7 @@ function ProgressRow({ colors, ach, current, unlocked = false }: {
   return (
     <View style={styles.row}>
       <View style={[styles.rowIcon, { backgroundColor: colors.card }]}>
-        <Text style={[styles.rowIconText, !unlocked && styles.locked]}>{ach.icon}</Text>
+        <Ionicons name={ach.icon} size={RFValue(20)} color={unlocked ? colors.primaryText : colors.textMuted} style={!unlocked && styles.locked} />
       </View>
       <View style={styles.rowText}>
         <View style={styles.rowTitleLine}>
@@ -205,9 +206,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeIcon: {
-    fontSize: RFValue(24),
-  },
   locked: {
     opacity: 0.35,
   },
@@ -232,9 +230,6 @@ const styles = StyleSheet.create({
     borderRadius: RFValue(20),
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  rowIconText: {
-    fontSize: RFValue(20),
   },
   rowText: {
     flex: 1,

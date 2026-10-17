@@ -7,6 +7,7 @@ import { DIFFICULTY_LEVELS } from '@/utils/generator';
 import { haptics, Haptics } from '@/utils/haptics';
 import { useLevelGenerator, GENERATION_TIME_MAP, DifficultyKey } from '@/hooks/useLevelGenerator';
 import type { UiColors } from '@/theme';
+import IconText from '../IconText';
 import { settingsStyles as styles } from './styles';
 
 const REQUEST_LEVELS_URL = 'https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?title=Request:%20New%20Complex%20Levels&body=I%20would%20like%20to%20see%20more%20high-difficulty%20levels%21';
@@ -141,7 +142,7 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
         accessibilityRole="button"
         accessibilityLabel={t('home.unlock_all')}
       >
-        <Text style={[styles.outlineBtnText, { color: colors.primaryText }]}>🔓 {t('home.unlock_all')}</Text>
+        <IconText icon="lock-open" color={colors.primaryText} textStyle={styles.outlineBtnText}>{t('home.unlock_all')}</IconText>
       </Pressable>
 
       <View style={[styles.divider, { backgroundColor: colors.textMuted }]} />

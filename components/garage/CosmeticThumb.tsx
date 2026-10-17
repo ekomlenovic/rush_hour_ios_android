@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { CAR_SKINS, CLASSIC_VEHICLE_COLORS, TARGET_CAR_COLOR, VEHICLE_PALETTES, type ColorScheme } from '@/theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { CAR_SKINS, CLASSIC_VEHICLE_COLORS, TARGET_CAR_COLOR, VEHICLE_PALETTES, getUiColors, type ColorScheme } from '@/theme';
 import { DEFAULT_COSMETICS, type CosmeticDef, type CosmeticSelection } from '@/data/cosmetics';
 import type { BoardThemeId, CarSkinId, VehiclePaletteId } from '@/theme/board';
 import BoardPreview from './BoardPreview';
@@ -40,6 +41,7 @@ export default function CosmeticThumb({ def, scheme, size, locked }: Props) {
     content = <Text style={{ fontSize: size * 0.55 }}>{def.icon}</Text>;
   }
 
+  const lockColor = getUiColors(scheme).text;
   return (
     <View
       style={[styles.wrap, { width: size, height: size }]}
@@ -47,7 +49,7 @@ export default function CosmeticThumb({ def, scheme, size, locked }: Props) {
       accessibilityElementsHidden
     >
       <View style={locked ? styles.locked : undefined}>{content}</View>
-      {locked && <Text style={[styles.lock, { fontSize: Math.max(12, size * 0.22) }]}>🔒</Text>}
+      {locked && <Ionicons name="lock-closed" size={Math.max(12, size * 0.22)} color={lockColor} style={styles.lock} />}
     </View>
   );
 }

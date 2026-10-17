@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useGameStore } from '@/store/gameStore';
 import { useAudio } from '@/context/AudioProvider';
 import { haptics, Haptics } from '@/utils/haptics';
@@ -155,7 +156,7 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('home.options')}</Text>
             <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('a11y.close')} hitSlop={8}>
-              <Text style={{ fontSize: RFValue(20), color: colors.textMuted, padding: 8 }}>✕</Text>
+              <Ionicons name="close" size={RFValue(22)} color={colors.textMuted} style={{ padding: 8 }} />
             </Pressable>
           </View>
 

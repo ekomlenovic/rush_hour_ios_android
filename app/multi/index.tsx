@@ -26,7 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { joinableCount, useServerDuels } from '@/hooks/useServerDuels';
 import { DuelCodeSheet, NewDuelSheet } from '@/components/multi/DuelSheets';
 import { errorCode, multiErrorMessage } from '@/components/multi/errors';
-import IconText from '@/components/multi/IconText';
+import IconText from '@/components/IconText';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 

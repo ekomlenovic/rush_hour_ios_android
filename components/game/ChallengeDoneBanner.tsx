@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { UiColors } from '@/theme';
 import ShareIcon from '@/components/share/ShareIcon';
-import IconText from '@/components/multi/IconText';
+import IconText from '@/components/IconText';
 
 interface Props {
   colors: UiColors;
