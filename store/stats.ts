@@ -74,6 +74,7 @@ export function mergeChallengeResult(existing: ChallengeResult | undefined, scor
   const isBest = !existing || score >= existing.score;
   const moves = isBest ? details?.moves ?? existing?.moves : existing?.moves;
   const minMoves = details?.minMoves ?? existing?.minMoves;
+  const moveLog = isBest ? details?.moveLog ?? existing?.moveLog : existing?.moveLog;
   return {
     completed: true,
     score: Math.max(existing?.score || 0, score),
@@ -81,5 +82,6 @@ export function mergeChallengeResult(existing: ChallengeResult | undefined, scor
     timeMs: times.length > 0 ? Math.min(...times) : undefined,
     ...(moves !== undefined && { moves }),
     ...(minMoves !== undefined && { minMoves }),
+    ...(moveLog !== undefined && { moveLog: moveLog.map(m => ({ ...m })) }),
   };
 }

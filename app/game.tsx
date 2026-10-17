@@ -25,9 +25,10 @@ import WinModal from '@/components/game/WinModal';
 import ShareLevelSheet from '@/components/share/ShareLevelSheet';
 import ShareIcon from '@/components/share/ShareIcon';
 import ChallengeDoneBanner from '@/components/game/ChallengeDoneBanner';
+import type { SolutionSource } from '@/components/game/SolutionPlayer';
+import IconText from '@/components/multi/IconText';
 import HintLoadingPill from '@/components/game/HintLoadingPill';
 import SolutionPlayer from '@/components/game/SolutionPlayer';
-import IconText from '@/components/multi/IconText';
 
 export default function GameScreen() {
   const { t, i18n } = useTranslation();
@@ -66,6 +67,7 @@ export default function GameScreen() {
 
   const [isShareVisible, setShareVisible] = useState(false);
   const [isSolutionVisible, setSolutionVisible] = useState(false);
+  const [solutionStart, setSolutionStart] = useState<SolutionSource>('optimal');
 
   // Daily and weekly challenges are one-shot: no hint, undo or reset (see docs/GAME_DESIGN.md)
   const challengeKind = params.levelId === 'daily' && params.date ? 'daily'
@@ -177,7 +179,7 @@ export default function GameScreen() {
       const score = calculateScore(updatedMoveCount, minMoves);
       const stars = getStars(updatedMoveCount, minMoves);
 
-      const details = { moves: updatedMoveCount, minMoves };
+      const details = { moves: updatedMoveCount, minMoves, moveLog: useGameStore.getState().moveLog };
       if (challengeKind === 'daily') {
         useGameStore.getState().completeDailyChallenge(params.date!, score, stars, timeMs, details);
       } else if (challengeKind === 'weekly') {
@@ -289,6 +291,15 @@ export default function GameScreen() {
   const minMoves = computedMinMoves ?? currentLevel?.minMoves ?? 0;
   const score = calculateScore(moveCount, minMoves);
   const stars = getStars(moveCount, minMoves);
+  // A challenge already won shows its result, not the untouched board's 0 moves
+  const shownMoves = isChallengeCompleted ? challengeResult?.moves ?? moveCount : moveCount;
+  const shownScore = isChallengeCompleted ? challengeResult?.score ?? score : score;
+  const playerMoves = challengeKind ? challengeResult?.moveLog : undefined;
+
+  const showSolution = (source: SolutionSource) => {
+    setSolutionStart(source);
+    setSolutionVisible(true);
+  };
 
   // A custom level is called by its name (or "Level 3"), never by its id (a timestamp)
   const customKind = currentLevel ? customLevelKind(currentLevel.id, createdLevels, importedLevels) : null;
@@ -324,9 +335,9 @@ export default function GameScreen() {
 
       <GameStatsBar
         colors={colors}
-        moveCount={moveCount}
+        moveCount={shownMoves}
         minMoves={minMoves}
-        score={score}
+        score={shownScore}
         hintRemainingMoves={hintRemainingMoves}
       />
 
@@ -364,7 +375,7 @@ export default function GameScreen() {
         effectColors={winEffectColors}
         canShareResult={!!challengeKind}
         onShareResult={handleShareResult}
-        onShowSolution={() => setSolutionVisible(true)}
+        onShowSolution={() => showSolution(playerMoves ? 'mine' : 'optimal')}
         onRetry={challengeKind ? undefined : handleRetry}
         onContinue={handleWinContinue}
         onRequestClose={() => router.back()}
@@ -389,15 +400,18 @@ export default function GameScreen() {
           colors={colors}
           kind={challengeKind}
           stars={challengeResult?.stars ?? 3}
+          moves={challengeResult?.moves}
+          minMoves={challengeResult?.minMoves ?? minMoves}
           onShareResult={handleShareResult}
-          onShowSolution={() => setSolutionVisible(true)}
+          onShowMine={playerMoves?.length ? () => showSolution('mine') : undefined}
+          onShowSolution={() => showSolution('optimal')}
         />
       )}
 
       {/* Goal text for Level 1 */}
       {currentLevel.id === 1 && !challengeKind && !won && (
         <Animated.View entering={FadeInDown.delay(500).springify()} style={styles.goalContainer}>
-          <IconText icon="flag" color={colors.primaryText} style={styles.goalTitleRow} textStyle={styles.goalHeader}>{t('game.goal_title')}</IconText>
+          <IconText icon="flag" color={colors.primaryText} textStyle={styles.goalHeader}>{t('game.goal_title')}</IconText>
           <Text style={[styles.goalText, { color: colors.textMuted }]}>{t('game.goal_desc')}</Text>
         </Animated.View>
       )}
@@ -406,6 +420,8 @@ export default function GameScreen() {
         visible={isSolutionVisible}
         level={currentLevel}
         colors={colors}
+        playerMoves={playerMoves}
+        startWith={solutionStart}
         onClose={() => setSolutionVisible(false)}
       />
 
@@ -468,8 +484,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 1,
-  },
-  goalTitleRow: {
     marginBottom: 4,
   },
   goalText: {
