@@ -5,7 +5,8 @@ import {
   type ColorScheme,
 } from '@/theme';
 import type { CosmeticSelection } from '@/data/cosmetics';
-import type { Vehicle } from '@/store/types';
+import type { Level, Vehicle } from '@/store/types';
+import { getExitSide } from '@/utils/creatorGeometry';
 
 const GRID = 6;
 /** Width of the frame: the cells fit inside it */
@@ -26,14 +27,18 @@ interface Props {
   selection: CosmeticSelection;
   scheme: ColorScheme;
   size: number;
+  /** Board to draw (custom levels list); the sample puzzle when not set */
+  level?: Pick<Level, 'vehicles' | 'gridSize' | 'exitRow' | 'exitCol'>;
 }
 
-/** Static board drawn with a cosmetic selection (garage preview) */
-export default function BoardPreview({ selection, scheme, size }: Props) {
+/** Static board drawn with a cosmetic selection (garage preview, thumbnail of a level) */
+export default function BoardPreview({ selection, scheme, size, level }: Props) {
   const board = getSkinnedBoard(selection.board, selection.skin, scheme);
-  const colors = useMemo(() => applyPalette(SAMPLE, selection.palette), [selection.palette]);
+  const vehicles = level?.vehicles ?? SAMPLE;
+  const grid = level?.gridSize ?? GRID;
+  const colors = useMemo(() => applyPalette(vehicles, selection.palette), [vehicles, selection.palette]);
   // Absolute children are laid out inside the frame: the grid must fit in what is left
-  const cell = (size - FRAME * 2) / GRID;
+  const cell = (size - FRAME * 2) / grid;
   // Space around each vehicle, scaled so the small thumbnails don't get stuck together
   const inset = Math.min(2, Math.max(0.75, cell * 0.08));
   const radius = cell * board.vehicleRadius;
@@ -44,13 +49,13 @@ export default function BoardPreview({ selection, scheme, size }: Props) {
       importantForAccessibility="no-hide-descendants"
       accessibilityElementsHidden
     >
-      {Array.from({ length: GRID + 1 }, (_, i) => (
+      {Array.from({ length: grid + 1 }, (_, i) => (
         <React.Fragment key={i}>
           <View style={[styles.lineH, { top: i * cell, backgroundColor: board.grid }]} />
           <View style={[styles.lineV, { left: i * cell, backgroundColor: board.grid }]} />
         </React.Fragment>
       ))}
-      {SAMPLE.map(v => {
+      {vehicles.map(v => {
         const w = (v.orientation === 'horizontal' ? v.length : 1) * cell - inset * 2;
         const h = (v.orientation === 'vertical' ? v.length : 1) * cell - inset * 2;
         return (
@@ -67,9 +72,21 @@ export default function BoardPreview({ selection, scheme, size }: Props) {
           </View>
         );
       })}
-      <View style={[styles.exit, { top: 2 * cell + cell * 0.2, height: cell * 0.6, width: Math.max(3, cell * 0.12), backgroundColor: board.exit, borderColor: board.exitOutline }]} />
+      <View style={[styles.exit, exitPosition(level?.exitRow ?? 2, level?.exitCol ?? GRID, grid, cell), { backgroundColor: board.exit, borderColor: board.exitOutline }]} />
     </View>
   );
+}
+
+/** Exit mark on the edge of the board, on the side of the level exit */
+function exitPosition(exitRow: number, exitCol: number, grid: number, cell: number) {
+  const thickness = Math.max(3, cell * 0.12);
+  const along = { offset: cell * 0.2, span: cell * 0.6 };
+  switch (getExitSide(exitRow, exitCol, grid)) {
+    case 'Left': return { left: 0, top: exitRow * cell + along.offset, height: along.span, width: thickness };
+    case 'Top': return { top: 0, left: exitCol * cell + along.offset, width: along.span, height: thickness };
+    case 'Bottom': return { bottom: 0, left: exitCol * cell + along.offset, width: along.span, height: thickness };
+    default: return { right: 0, top: exitRow * cell + along.offset, height: along.span, width: thickness };
+  }
 }
 
 const styles = StyleSheet.create({
@@ -78,5 +95,5 @@ const styles = StyleSheet.create({
   lineV: { position: 'absolute', top: 0, bottom: 0, width: 1 },
   vehicle: { position: 'absolute', borderWidth: 1, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   shine: { position: 'absolute', top: 2, left: 2, right: 2, height: '45%' },
-  exit: { position: 'absolute', right: 0, borderRadius: 3, borderWidth: 1 },
+  exit: { position: 'absolute', borderRadius: 3, borderWidth: 1 },
 });

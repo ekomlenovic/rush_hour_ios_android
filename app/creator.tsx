@@ -22,16 +22,18 @@ import BoardVehicle from '@/components/creator/BoardVehicle';
 import ToolboxItem from '@/components/creator/ToolboxItem';
 import ExitMarker from '@/components/creator/ExitMarker';
 import PillSelector from '@/components/creator/PillSelector';
+import LevelNameSheet from '@/components/share/LevelNameSheet';
 import { vehicleStyles } from '@/components/creator/vehicleStyles';
 import { useTheme, fixedColors, TARGET_CAR_COLOR } from '@/theme';
 
+const BOARD_BORDER = 1.5;
 const EXIT_SIDES = ['Right', 'Left', 'Top', 'Bottom'] as const;
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function LevelCreatorScreen() {
   const { t } = useTranslation();
-  const { colors: C, board } = useTheme();
+  const { colors: C, board, isDark } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ levelId: string }>();
   const saveCreatedLevel = useGameStore(s => s.saveCreatedLevel);
@@ -44,6 +46,9 @@ export default function LevelCreatorScreen() {
   const [exitCol, setExitCol] = useState(6);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
   const [floatingTemplate, setFloatingTemplate] = useState<VehicleTemplate | null>(null);
+  /** Optional name, asked when saving */
+  const [levelName, setLevelName] = useState<string | undefined>(undefined);
+  const [isNaming, setNaming] = useState(false);
   const lastTarget = useRef<{ id: string; row: number; col: number; isValid: boolean } | null>(null);
 
   // Shared values Reanimated pour le curseur flottant 100% sur le thread UI (120 FPS)
@@ -58,13 +63,15 @@ export default function LevelCreatorScreen() {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const boardSize = Math.min(screenWidth - BOARD_PADDING * 2, screenHeight * 0.48);
-  const cellSize = boardSize / gridSize;
+  // The frame border is drawn inside the board's width: cells only get what is left
+  const cellSize = (boardSize - BOARD_BORDER * 2) / gridSize;
 
   useEffect(() => { vehiclesRef.current = vehicles; }, [vehicles]);
 
   const measureBoard = useCallback(() => {
     boardRef.current?.measureInWindow((x, y) => {
-      boardPos.current = { x, y };
+      // Origin of the cells, inside the frame border
+      boardPos.current = { x: x + BOARD_BORDER, y: y + BOARD_BORDER };
     });
   }, []);
 
@@ -78,6 +85,7 @@ export default function LevelCreatorScreen() {
         setVehicles(level.vehicles.map(v => ({ ...v })));
         setExitRow(level.exitRow ?? 2);
         setExitCol(level.exitCol ?? (level.gridSize || 6));
+        setLevelName(level.name);
         return;
       }
     }
@@ -304,20 +312,32 @@ export default function LevelCreatorScreen() {
     }
   };
 
+  // Checked first, then named: the name sheet only opens for a level that can be saved
   const handleSave = () => {
-    const minMoves = validateLevel(vehicles, gridSize, exitRow, exitCol);
-    if (minMoves === -1) {
+    if (validateLevel(vehicles, gridSize, exitRow, exitCol) === -1) {
       Alert.alert(t('creator.unsolvable_title'), t('creator.fix_before_save'));
       return;
     }
+    setNaming(true);
+  };
+
+  // Modifying an imported level creates a level of one's own (in "Created"), the imported one stays as is
+  const saveLevel = (name: string) => {
+    setNaming(false);
+    const minMoves = validateLevel(vehicles, gridSize, exitRow, exitCol);
     const isImported = params.levelId && importedLevels.some(l => l.id === parseInt(params.levelId));
     const newId = isImported ? Date.now() : (params.levelId ? parseInt(params.levelId) : Date.now());
-    const newLevel: Level = { id: newId, gridSize, vehicles, exitRow, exitCol, minMoves, updatedAt: Date.now() };
+    const existing = createdLevels.find(l => l.id === newId);
+    const newLevel: Level = {
+      id: newId, gridSize, vehicles, exitRow, exitCol, minMoves, updatedAt: Date.now(), name,
+      ...(existing?.isFavorite ? { isFavorite: true } : {}),
+    };
     saveCreatedLevel(newLevel);
     haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert(t('common.saved'), isImported ? t('creator.saved_new') : t('creator.level_updated'), [
+    // After the name sheet has slid away: iOS drops an alert shown during it
+    setTimeout(() => Alert.alert(t('common.saved'), isImported ? t('creator.saved_new') : t('creator.level_updated'), [
       { text: t('common.ok'), onPress: () => router.back() },
-    ]);
+    ]), 350);
   };
 
   // ── Couleurs Dynamiques ──
@@ -508,6 +528,17 @@ export default function LevelCreatorScreen() {
         </View>
 
       </View>
+
+      <LevelNameSheet
+        visible={isNaming}
+        title={t('creator.name_title')}
+        initialName={levelName}
+        confirmLabel={t('custom_levels.save_name')}
+        colors={C}
+        isDark={isDark}
+        onConfirm={saveLevel}
+        onClose={() => setNaming(false)}
+      />
     </GestureHandlerRootView>
   );
 }
@@ -526,7 +557,7 @@ const styles = StyleSheet.create({
   pillText: { fontSize: 12, fontWeight: '700' },
 
   boardWrapper: { alignItems: 'center', paddingHorizontal: BOARD_PADDING, marginTop: 8 },
-  board: { position: 'relative', borderWidth: 1.5, borderRadius: 14, overflow: 'hidden' },
+  board: { position: 'relative', borderWidth: BOARD_BORDER, borderRadius: 14, overflow: 'hidden' },
   gridH: { position: 'absolute', left: 0, right: 0, height: StyleSheet.hairlineWidth },
   gridV: { position: 'absolute', top: 0, bottom: 0, width: StyleSheet.hairlineWidth },
 

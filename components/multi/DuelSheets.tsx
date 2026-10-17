@@ -85,7 +85,7 @@ export function DuelCodeSheet({ visible, colors, isDark, onClose, onJoin }: Code
   const join = () => valid && onJoin(normalizeDuelCode(code));
 
   return (
-    <BottomSheet visible={visible} title={t('multi.duel.code_title')} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose} avoidKeyboard>
+    <BottomSheet visible={visible} title={t('multi.duel.code_title')} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose}>
       <Text style={[styles.help, styles.center, { color: colors.textMuted }]}>{t('multi.duel.code_help')}</Text>
       <TextInput
         value={code}
