@@ -167,7 +167,10 @@
     "weekly_already_completed": "Weekly challenge already completed! See you Monday.",
     "archive_title": "Archive · {{date}}",
     "qr_a11y": "QR code of the level {{name}}",
-    "share_message_named": "Challenge me on Rush Hours! Can you beat \"{{name}}\" in {{moves}} moves?\n{{url}}"
+    "share_message_named": "Challenge me on Rush Hours! Can you beat \"{{name}}\" in {{moves}} moves?\n{{url}}",
+    "daily_done": "Daily challenge done!",
+    "weekly_done": "Weekly challenge done!",
+    "challenge_moves": "Your moves: {{moves}} · Optimal solution: {{best}}"
   },
   "tutorial": {
     "title": "Tutorial",
@@ -615,7 +618,7 @@
     "move": "{{vehicle}}, {{direction}}",
     "step_announce": "Move {{step}} of {{total}}: {{move}}",
     "not_optimal": "Optimal solution in {{best}} moves, you made {{moves}}",
-    "retry": "Retry for 3 ⭐",
+    "retry": "Retry for 3 stars",
     "first": "Back to the start",
     "prev": "Previous move",
     "play": "Play",
@@ -623,7 +626,11 @@
     "next": "Next move",
     "last": "Go to the end",
     "speed": "Speed",
-    "speed_a11y": "Speed times {{speed}}"
+    "speed_a11y": "Speed times {{speed}}",
+    "title_mine": "Your solution",
+    "show_mine": "See my solution",
+    "mine": "Me · {{count}}",
+    "optimal": "Optimal · {{count}}"
   },
   "progression": {
     "level": "Level {{level}}",

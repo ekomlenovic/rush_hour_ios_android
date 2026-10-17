@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Modal, AccessibilityInfo, ScrollView, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
 import { formatDuration } from '@/utils/date';
 import { fixedColors, type UiColors } from '@/theme';
@@ -11,6 +12,7 @@ import XpBar from '@/components/progression/XpBar';
 import { getLevelRewardLines, missionRewardText } from '@/components/progression/rewards';
 import WinEffect from '@/components/effects/WinEffect';
 import ShareIcon from '@/components/share/ShareIcon';
+import IconText from '@/components/multi/IconText';
 
 interface Props {
   visible: boolean;
@@ -69,9 +71,11 @@ export default function WinModal({
           style={[styles.winCard, { backgroundColor: colors.surface }]}
         >
           <ScrollView style={styles.winScroll} contentContainerStyle={styles.winContent} showsVerticalScrollIndicator={false} bounces={false}>
-          <Text style={styles.winStars} accessibilityLabel={t('a11y.level_stars', { count: stars })}>
-            {'⭐'.repeat(stars)}{'☆'.repeat(3 - stars)}
-          </Text>
+          <View style={styles.winStars} accessible accessibilityLabel={t('a11y.level_stars', { count: stars })}>
+            {[1, 2, 3].map(i => (
+              <Ionicons key={i} name={i <= stars ? 'star' : 'star-outline'} size={36} color={i <= stars ? colors.star : colors.textMuted} />
+            ))}
+          </View>
           <Text style={[styles.winTitle, { color: colors.primaryText }]} accessibilityRole="header">{t('game.level_complete')}</Text>
           <Text style={[styles.winScore, { color: colors.text }]}>
             {t('game.win_stats', { moves: moveCount, best: minMoves, score: score })}
@@ -82,9 +86,9 @@ export default function WinModal({
             </Text>
           )}
           {timeMs !== null && timeMs > 0 && (
-            <Text style={[styles.winTime, { color: colors.textMuted }]}>
-              ⏱️ {formatDuration(timeMs)}
-            </Text>
+            <IconText icon="time-outline" color={colors.textMuted} style={styles.winTime} textStyle={styles.winTimeText}>
+              {formatDuration(timeMs)}
+            </IconText>
           )}
           {unlocks.length > 0 && (
             <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
@@ -111,7 +115,7 @@ export default function WinModal({
           )}
           {levelUps.map(level => (
             <View key={level} style={[styles.winUnlocks, { backgroundColor: colors.primarySoft }]}>
-              <Text style={[styles.winUnlocksTitle, { color: colors.primaryText }]}>🎉 {t('progression.level_up', { level })}</Text>
+              <IconText icon="arrow-up-circle" color={colors.primaryText} textStyle={styles.winUnlocksTitle}>{t('progression.level_up', { level })}</IconText>
               {getLevelRewardLines(t, level).map(line => (
                 <Text key={line} style={[styles.winRewardItem, { color: colors.text }]}>{line}</Text>
               ))}
@@ -119,7 +123,7 @@ export default function WinModal({
           ))}
           {missionReward && (
             <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
-              <Text style={[styles.winUnlocksTitle, { color: colors.warning }]}>🎯 {t('missions.completed')}</Text>
+              <IconText icon="flag" color={colors.warning} textStyle={styles.winUnlocksTitle}>{t('missions.completed')}</IconText>
               <Text style={[styles.winUnlockItem, { color: colors.text }]}>
                 {missionRewardText(t, missionReward)}
               </Text>
@@ -131,7 +135,7 @@ export default function WinModal({
               onPress={onShowSolution}
               accessibilityRole="button"
             >
-              <Text style={[styles.smallButtonText, { color: colors.primaryText }]}>🎬 {t('solution.show')}</Text>
+              <IconText icon="play-circle-outline" color={colors.primaryText} textStyle={styles.smallButtonText}>{t('solution.show')}</IconText>
             </Pressable>
             {onRetry && !isOptimal && (
               <Pressable
@@ -139,7 +143,7 @@ export default function WinModal({
                 onPress={onRetry}
                 accessibilityRole="button"
               >
-                <Text style={[styles.smallButtonText, { color: colors.primaryText }]}>↻ {t('solution.retry')}</Text>
+                <IconText icon="refresh" color={colors.primaryText} textStyle={styles.smallButtonText}>{t('solution.retry')}</IconText>
               </Pressable>
             )}
           </View>
@@ -220,7 +224,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   winStars: {
-    fontSize: 36,
+    flexDirection: 'row',
+    gap: 6,
     marginBottom: 8,
   },
   winTitle: {
@@ -263,11 +268,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   winTime: {
-    fontSize: 14,
-    fontWeight: '600',
     marginTop: -16,
     marginBottom: 20,
-    textAlign: 'center',
+  },
+  winTimeText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   winUnlocks: {
     alignSelf: 'stretch',
