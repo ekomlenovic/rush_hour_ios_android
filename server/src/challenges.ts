@@ -116,6 +116,9 @@ export class Challenges {
     for (let attempt = 0; attempt < GENERATION_TRIES; attempt++) {
       const seed = puzzleSeed(this.config.serverSecret, date, difficulty) + (attempt ? `:${attempt}` : '');
       const level = await this.generator.generate(seed, difficulty);
+      // Released while generating: the puzzle already out is being played, it never changes
+      const released = this.get(date);
+      if (released && this.now() >= this.releaseAt(date)) return released;
       if (!level) continue;
       const row: ChallengeRow = {
         date, difficulty, level_json: JSON.stringify(level), min_moves: level.minMoves, generated_at: this.now(),
