@@ -27,7 +27,7 @@ export function migrateState(persistedState: unknown, version: number): Record<s
     state.xp = computeRetroactiveXp(state, levels);
   }
   if (version < 4) {
-    // v4: 2 stars within a quarter of the optimum instead of 3 extra moves, past wins recounted
+    // v4: 2 stars within half of the optimum instead of 3 extra moves, past wins recounted
     Object.assign(state, recountStars(state));
   }
   return state;

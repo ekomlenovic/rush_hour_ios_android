@@ -95,12 +95,12 @@ describe('migrate v3 → v4', () => {
     const easy = sampleLevels.find(l => l.minMoves === 12)!;
     const state = migrate({
       progress: [
-        { levelId: hard.id, completed: true, bestScore: calculateScore(48, 40), stars: 1 },
-        { levelId: easy.id, completed: true, bestScore: calculateScore(16, 12), stars: 1 },
+        { levelId: hard.id, completed: true, bestScore: calculateScore(58, 40), stars: 1 },
+        { levelId: easy.id, completed: true, bestScore: calculateScore(19, 12), stars: 1 },
         { levelId: 999999, completed: true, bestScore: 100, stars: 2 },
       ],
       dailyChallengeProgress: {
-        '2026-10-13': { completed: true, score: calculateScore(25, 20), stars: 1, moves: 25, minMoves: 20 },
+        '2026-10-13': { completed: true, score: calculateScore(29, 20), stars: 1, moves: 29, minMoves: 20 },
         '2026-10-12': { completed: true, score: 1000, stars: 1 },
       },
       xp: 1234,
