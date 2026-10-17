@@ -281,7 +281,11 @@ describe('translations of the multiplayer mode', () => {
     expect(Object.keys(multi.period).sort()).toEqual(['day', 'month', 'week']);
     expect(typeof multi.my_abandoned).toBe('string');
     expect(typeof multi.my_unfinished).toBe('string');
-    expect(Object.keys(multi.admin_tab).sort()).toEqual(['games', 'players', 'reports', 'settings']);
+    expect(Object.keys(multi.admin_tab).sort()).toEqual(['games', 'players', 'reports', 'reset', 'settings']);
+    expect(Object.keys(multi.admin_reset_preset).sort()).toEqual(['all', 'dates', 'month', 'today', 'week']);
+    expect(Object.keys(multi.duel).filter(k => /^(outcome|reason_short)_/.test(k)).sort()).toEqual([
+      'outcome_draw', 'outcome_loss', 'outcome_win', 'reason_short_disconnected', 'reason_short_forfeit', 'reason_short_timeout', 'reason_short_won',
+    ]);
     expect(Object.keys(multi.threshold).sort()).toEqual(Object.keys(require('../server/src/cheat').DEFAULT_THRESHOLDS).sort());
     expect(Object.keys(multi.report_reason).sort()).toEqual(['cheating', 'other', 'pseudo']);
     expect(Object.keys(multi.flag).sort()).toEqual(['clock_mismatch', 'copied', 'too_fast', 'unknown']);
@@ -431,5 +435,26 @@ describe('create my server', () => {
     ['ekrushhours.duckdns.org', answer(200, { name: 'EK', apiVersion: 2, minAppVersion: '1.1.6' }), { step: 'version', error: 'update_app' }],
   ])('%s: says which step fails', async (input, fetchMock, expected) => {
     expect(await testConnection(input, '1.1.6', fetchMock as never)).toMatchObject({ ok: false, ...expected });
+  });
+});
+
+describe('admin reset', () => {
+  const { resetRange } = require('../utils/multi/reset') as typeof import('../utils/multi/reset');
+  const dates = { from: '2026-10-01', to: '2026-10-05' };
+
+  it('covers the days of a preset', () => {
+    // A Saturday
+    expect(resetRange('today', '2026-10-17', dates)).toEqual({ from: '2026-10-17', to: '2026-10-17' });
+    expect(resetRange('week', '2026-10-17', dates)).toEqual({ from: '2026-10-12', to: '2026-10-18' });
+    expect(resetRange('week', '2026-10-12', dates)).toEqual({ from: '2026-10-12', to: '2026-10-18' });
+    expect(resetRange('week', '2026-10-18', dates)).toEqual({ from: '2026-10-12', to: '2026-10-18' });
+    expect(resetRange('month', '2026-02-10', dates)).toEqual({ from: '2026-02-01', to: '2026-02-28' });
+    expect(resetRange('month', '2026-12-31', dates)).toEqual({ from: '2026-12-01', to: '2026-12-31' });
+    expect(resetRange('all', '2026-10-17', dates)).toEqual({ from: null, to: null });
+  });
+
+  it('chosen days in any order', () => {
+    expect(resetRange('dates', '2026-10-17', dates)).toEqual(dates);
+    expect(resetRange('dates', '2026-10-17', { from: '2026-10-05', to: '2026-10-01' })).toEqual(dates);
   });
 });

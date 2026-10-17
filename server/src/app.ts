@@ -14,6 +14,7 @@ import { deletePage } from './deletePage';
 import { newInviteCode, newRecoveryCode, newToken, normalizeRecoveryCode, secretEquals, sha256 } from './secrets';
 import { addDays, isValidDate, periodBounds } from './time';
 import { Duels, type ServerMessage } from './duel';
+import { DuelStore, rankDuels } from './duelStore';
 
 /** Version of this API: the app refuses a server it does not know how to talk to */
 export const API_VERSION = 1;
@@ -135,8 +136,10 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
 
   // ── Duels ──────────────────────────────────────────────────────────────────
 
+  const duelStore = new DuelStore(db, config.timeZone);
   const duels = new Duels({
     generator, now, log: app.log,
+    save: (record) => duelStore.save(record),
     authenticate: (token) => {
       const player = token ? findByToken.get(sha256(token)) as Player | undefined : undefined;
       if (!player) return null;
@@ -313,6 +316,40 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
 
       // The duels of the server: open ones to join, and the ones being played
       auth.get('/duels', async (request) => ({ duels: duels.list(request.player.id) }));
+
+      // Duel rankings: wins, then fewer losses
+      auth.get<{ Querystring: { period?: 'day' | 'week' | 'month' | 'all'; date?: string } }>('/duels/leaderboard', {
+        schema: {
+          querystring: {
+            type: 'object',
+            properties: { period: { type: 'string', enum: ['day', 'week', 'month', 'all'] }, date: { type: 'string', maxLength: 10 } },
+          },
+        },
+      }, async (request) => {
+        const period = request.query.period ?? 'week';
+        const date = request.query.date ?? challenges.currentDate();
+        if (!isValidDate(date)) throw new ApiError(400, 'invalid_request');
+        const { from, to } = period === 'all' ? { from: '0000-01-01', to: '9999-12-31' } : periodBounds(period, date);
+        return { period, from, to, rows: rankDuels(duelStore.stats(from, to)) };
+      });
+
+      // My last duels, and my score against each opponent
+      auth.get('/duels/history', async (request) => ({
+        duels: duelStore.history(request.player.id),
+        records: duelStore.records(request.player.id),
+      }));
+
+      // A duel with the moves of both players: for its players (and the admin)
+      auth.get<{ Params: { id: string } }>('/duels/:id', {
+        schema: { params: { type: 'object', properties: { id: { type: 'integer', minimum: 1 } } } },
+      }, async (request) => {
+        const replay = duelStore.replay(Number(request.params.id));
+        if (!replay) throw new ApiError(404, 'replay_unavailable');
+        if (!request.player.is_admin && !replay.players.some(p => p.id === request.player.id)) throw new ApiError(403, 'forbidden');
+        if (!replay.hasReplay) throw new ApiError(410, 'replay_expired');
+        const { hasReplay: _, ...rest } = replay;
+        return rest;
+      });
 
       auth.get('/challenge/today', async (request) => {
         const date = challenges.currentDate();
@@ -606,6 +643,50 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
         }, async (request, reply) => {
           db.prepare('DELETE FROM reports WHERE id = ?').run(Number(request.params.id));
           return reply.status(204).send();
+        });
+
+        // Back to zero: the games of the daily challenges and/or the duels between two days, of some players or all
+        admin.post<{ Body: { from?: string | null; to?: string | null; playerIds?: number[]; challenges?: boolean; duels?: boolean; dryRun?: boolean } }>('/admin/reset', {
+          schema: {
+            body: {
+              type: 'object',
+              properties: {
+                from: { type: ['string', 'null'], maxLength: 10 },
+                to: { type: ['string', 'null'], maxLength: 10 },
+                playerIds: { type: 'array', maxItems: 1000, items: { type: 'integer', minimum: 1 } },
+                challenges: { type: 'boolean' },
+                duels: { type: 'boolean' },
+                dryRun: { type: 'boolean' },
+              },
+            },
+          },
+        }, async (request) => {
+          const { from, to, playerIds = [], challenges: games = false, duels: withDuels = false, dryRun = false } = request.body;
+          if ((from && !isValidDate(from)) || (to && !isValidDate(to)) || (from && to && from > to)) throw new ApiError(400, 'invalid_request');
+          const range = [from || '0000-01-01', to || '9999-12-31'];
+          const some = playerIds.length > 0;
+          const marks = playerIds.map(() => '?').join(', ');
+          const count = { challenges: 0, duels: 0 };
+          const run = (table: string, where: string, args: (string | number)[]) => {
+            if (dryRun) return Number((db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ${where}`).get(...args) as { n: number }).n);
+            return Number(db.prepare(`DELETE FROM ${table} WHERE ${where}`).run(...args).changes);
+          };
+          db.exec('BEGIN');
+          try {
+            if (games) {
+              count.challenges = run('attempts', `date BETWEEN ? AND ?${some ? ` AND player_id IN (${marks})` : ''}`, [...range, ...playerIds]);
+            }
+            if (withDuels) {
+              count.duels = run('duels', `date BETWEEN ? AND ?${some ? ` AND (player1_id IN (${marks}) OR player2_id IN (${marks}))` : ''}`,
+                [...range, ...playerIds, ...playerIds]);
+            }
+            db.exec('COMMIT');
+          } catch (e) {
+            db.exec('ROLLBACK');
+            throw e;
+          }
+          if (!dryRun) request.log.info({ from, to, players: some ? playerIds.length : 'all', ...count }, 'admin reset');
+          return { dryRun, ...count };
         });
 
         // A leaked invitation: a new code, the old links stop working

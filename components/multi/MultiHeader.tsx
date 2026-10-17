@@ -37,7 +37,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   side: {
-    width: RFValue(56),
+    // Room for two actions on the right (multiplayer: invite, account)
+    width: RFValue(68),
     minHeight: 44,
     justifyContent: 'center',
   },

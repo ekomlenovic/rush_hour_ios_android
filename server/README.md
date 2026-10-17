@@ -5,7 +5,7 @@ Serveur **auto-hébergé** pour s'affronter entre amis sur un **défi multijoueu
 - Un puzzle par jour, **généré à l'avance** et **secret** jusqu'à ce qu'un joueur appuie sur « Commencer ».
 - **Un seul essai** par joueur et par jour. Le chrono est celui du serveur.
 - Chaque victoire est **vérifiée** : le serveur rejoue les coups avec les mêmes règles que l'app.
-- **Duels 1v1 en temps réel** : deux joueurs sur le même puzzle aléatoire, chacun voit le plateau de l'autre ; le serveur vérifie chaque coup. Rien n'est stocké.
+- **Duels 1v1 en temps réel** : deux joueurs sur le même puzzle aléatoire, chacun voit le plateau de l'autre ; le serveur vérifie chaque coup. Historique, scores entre joueurs, replays et classement des duels.
 - Rien n'est envoyé ailleurs : les données restent sur ton serveur.
 
 ## Installation (Docker)
@@ -77,6 +77,7 @@ Dans l'app : Multijoueur → Mon compte → **Devenir admin**, avec `ADMIN_TOKEN
 - gérer les **joueurs** : renommer, exclure, donner un nouveau code de récupération à qui l'a perdu ;
 - traiter les **signalements** de pseudos ;
 - **régénérer le code d'invitation**, fermer les inscriptions, réserver les invitations à l'admin ;
+- **remettre à zéro** les parties des défis et/ou les duels, sur une période et pour tous les joueurs ou certains (nouvelle saison) ;
 - renommer le serveur, régler l'**heure de sortie**, le **délai de grâce** et la **pré-génération** ;
 - régler la **difficulté** par jour, la **conservation des replays** et les **seuils de soupçon**.
 
@@ -135,6 +136,10 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 | `GET /admin/settings`, `PATCH /admin/settings` | nom, heure de sortie (`release_too_soon` si le prochain défi sortirait dans moins d'une heure), délai de grâce, pré-génération, inscriptions, invitations, difficulté, conservation des replays, seuils. La réponse donne aussi `timeZone` et `nextReleaseAt` |
 | `POST /admin/settings/reset` | retour aux variables d'environnement (sauf le code d'invitation) |
 | `GET /duels` | les duels du serveur : ouverts (avec leur code, pour les rejoindre sans qu'on le donne) et en cours ; les duels privés n'y sont que pour leur joueur |
+| `GET /duels/leaderboard?period=day\|week\|month\|all&date=` | classement des duels : victoires, puis moins de défaites |
+| `GET /duels/history` | mes derniers duels, et mon score contre chaque adversaire |
+| `GET /duels/:id` | un duel avec les coups des deux joueurs (replay) : pour ses joueurs et l'admin |
+| `POST /admin/reset` `{ from?, to?, playerIds?, challenges, duels, dryRun? }` | efface les parties des défis et/ou les duels entre deux jours (sinon tout), de certains joueurs (sinon tous) ; `dryRun` compte sans effacer |
 | `GET /duel` (WebSocket) | duels 1v1, voir ci-dessous |
 
 ### Duels (WebSocket `/api/v1/duel`)
@@ -149,7 +154,7 @@ Messages JSON. Le premier est `{ "type": "auth", "token": "…" }` → `{ type: 
 | `{ type: "leave" }` | quitte le duel (en pleine partie : défaite) |
 | `{ type: "rematch" }` | revanche, lancée quand les deux l'ont demandée |
 
-Le serveur envoie aussi `duel` (tout le duel : statut `waiting`, `preparing`, `playing`, `over`, puzzle, `startsAt`, coups des deux joueurs), `presence` (adversaire connecté ou non), `end` (`winnerId`, `reason` : `won`, `forfeit`, `disconnected`, `timeout` ; et l'optimum), `closed` et `error`.
+Le serveur envoie aussi `duel` (tout le duel : statut `waiting`, `preparing`, `playing`, `over`, puzzle, `startsAt`, coups des deux joueurs), `presence` (adversaire connecté ou non), `end` (`winnerId`, `reason` : `won`, `forfeit`, `disconnected`, `timeout` ; l'optimum, `duelId` pour le replay et `score` des deux joueurs l'un contre l'autre), `closed` et `error`.
 
 ## Développement
 

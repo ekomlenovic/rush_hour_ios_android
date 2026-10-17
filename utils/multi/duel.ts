@@ -13,7 +13,19 @@ export const DUEL_DIFFICULTIES: readonly DuelDifficulty[] = ['EASY', 'NORMAL', '
 
 export type EndReason = 'won' | 'forfeit' | 'disconnected' | 'timeout';
 
-export interface DuelResult { winnerId: number | null; reason: EndReason; timeMs: number | null; minMoves: number }
+/** Wins of each of the two players against the other, and their draws */
+export interface HeadToHead { wins: { playerId: number; count: number }[]; draws: number }
+
+export interface DuelResult {
+  winnerId: number | null;
+  reason: EndReason;
+  timeMs: number | null;
+  minMoves: number;
+  /** The duel kept on the server, for its replay */
+  duelId: number | null;
+  /** All the duels of the two players, this one included */
+  score: HeadToHead | null;
+}
 
 interface PlayerView { id: number; pseudo: string; connected: boolean; moves: MoveRecord[]; wantsRematch: boolean }
 

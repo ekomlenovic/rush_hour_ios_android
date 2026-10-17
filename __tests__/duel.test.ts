@@ -85,7 +85,7 @@ describe('duel on the phone', () => {
       { type: 'local_move', move: { vehicleId: 'v1', delta: 2, t: 100 } },
       { type: 'local_move', move: { vehicleId: 'target', delta: 4, t: 200 } });
     expect(iHaveWon(state.duel!)).toBe(true);
-    const end = (winnerId: number | null) => message({ type: 'end', result: { winnerId, reason: 'won', timeMs: 5000, minMoves: 2 }, level: { ...LEVEL, minMoves: 2 } });
+    const end = (winnerId: number | null) => message({ type: 'end', result: { winnerId, reason: 'won', timeMs: 5000, minMoves: 2, duelId: null, score: null }, level: { ...LEVEL, minMoves: 2 } });
     state = run(state, end(1));
     expect(outcome(state.duel!)).toBe('win');
     expect(state.duel!.status).toBe('over');
@@ -97,7 +97,7 @@ describe('duel on the phone', () => {
 
   it('the opponent leaves: during the game the room is gone, after the end the result stays', () => {
     expect(run(playing(), message({ type: 'closed' }))).toMatchObject({ duel: null, error: 'opponent_left' });
-    const over = run(playing(), message({ type: 'end', result: { winnerId: 1, reason: 'forfeit', timeMs: null, minMoves: 2 }, level: LEVEL }), message({ type: 'closed' }));
+    const over = run(playing(), message({ type: 'end', result: { winnerId: 1, reason: 'forfeit', timeMs: null, minMoves: 2, duelId: null, score: null }, level: LEVEL }), message({ type: 'closed' }));
     expect(over.duel).toMatchObject({ status: 'over', opponentLeft: true });
   });
 
@@ -116,9 +116,25 @@ describe('duel on the phone', () => {
   });
 
   it('connected again after the end of a duel: its result stays', () => {
-    const over = run(playing(), message({ type: 'end', result: { winnerId: 2, reason: 'disconnected', timeMs: null, minMoves: 2 }, level: LEVEL }));
+    const over = run(playing(), message({ type: 'end', result: { winnerId: 2, reason: 'disconnected', timeMs: null, minMoves: 2, duelId: null, score: null }, level: LEVEL }));
     const back = run(over, { type: 'connection', status: 'offline' }, message({ type: 'ready', player: { id: 1, pseudo: 'Léo' }, duel: null }));
     expect(back.duel).toMatchObject({ status: 'over', opponentLeft: true });
     expect(run(playing(), message({ type: 'ready', player: { id: 1, pseudo: 'Léo' }, duel: null })).duel).toBeNull();
+  });
+});
+
+describe('replay of a duel', () => {
+  const { mergeDuelMoves, movesPlayedAt } = require('../utils/multi/duelReplay') as typeof import('../utils/multi/duelReplay');
+  const move = (vehicleId: string, t: number) => ({ vehicleId, delta: 1, t });
+
+  it('puts the moves of both players on one timeline', () => {
+    const steps = mergeDuelMoves([
+      { moves: [move('a', 1000), move('b', 3000), move('c', 3000)] },
+      { moves: [move('x', 500), move('y', 3000)] },
+    ]);
+    expect(steps.map(s => `${s.player}${s.move.vehicleId}`)).toEqual(['1x', '0a', '0b', '0c', '1y']);
+    expect(movesPlayedAt(steps, 0, 2)).toEqual([0, 0]);
+    expect(movesPlayedAt(steps, 3, 2)).toEqual([2, 1]);
+    expect(movesPlayedAt(steps, 99, 2)).toEqual([3, 2]);
   });
 });

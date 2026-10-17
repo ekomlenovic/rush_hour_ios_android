@@ -17,10 +17,12 @@ interface Props {
   colors: UiColors;
   tabs: HomeTab[];
   bottomInset: number;
+  /** Tabs of a screen (multiplayer): the current one stands out; none on the home screen, where tabs open places */
+  activeKey?: string;
 }
 
 /** Bar at the bottom of the home screen: the secondary places, same width each whatever the language */
-export default function HomeTabBar({ colors, tabs, bottomInset }: Props) {
+export default function HomeTabBar({ colors, tabs, bottomInset, activeKey }: Props) {
   return (
     <View
       style={[
@@ -28,16 +30,20 @@ export default function HomeTabBar({ colors, tabs, bottomInset }: Props) {
         { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(10, bottomInset) },
       ]}
     >
-      {tabs.map(tab => (
+      {tabs.map(tab => {
+        const active = tab.key === activeKey;
+        const dimmed = activeKey !== undefined && !active;
+        return (
         <Pressable
           key={tab.key}
           onPress={tab.onPress}
           style={styles.tab}
-          accessibilityRole="button"
+          accessibilityRole={activeKey !== undefined ? 'tab' : 'button'}
+          accessibilityState={activeKey !== undefined ? { selected: active } : undefined}
           accessibilityLabel={tab.accessibilityLabel ?? tab.label}
         >
-          <View>
-            <Ionicons name={tab.icon} size={22} color={colors.primaryText} />
+          <View style={active ? [styles.activePill, { backgroundColor: colors.primarySoft }] : null}>
+            <Ionicons name={tab.icon} size={22} color={dimmed ? colors.textMuted : colors.primaryText} />
             {tab.badge ? (
               <View style={[styles.badge, { backgroundColor: colors.danger, borderColor: colors.surface }]}>
                 <Text style={[styles.badgeText, { color: colors.onPrimary }]}>{tab.badge}</Text>
@@ -45,7 +51,7 @@ export default function HomeTabBar({ colors, tabs, bottomInset }: Props) {
             ) : null}
           </View>
           <Text
-            style={[styles.label, { color: colors.textMuted }]}
+            style={[styles.label, { color: active ? colors.primaryText : colors.textMuted }, active && styles.activeLabel]}
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.8}
@@ -53,7 +59,8 @@ export default function HomeTabBar({ colors, tabs, bottomInset }: Props) {
             {tab.label}
           </Text>
         </Pressable>
-      ))}
+        );
+      })}
     </View>
   );
 }
@@ -90,5 +97,13 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  activeLabel: {
+    fontWeight: '800',
+  },
+  activePill: {
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 2,
   },
 });

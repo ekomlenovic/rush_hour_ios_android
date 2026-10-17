@@ -148,6 +148,41 @@ export interface DuelListing {
   mine: boolean;
 }
 
+export interface DuelRankRow { playerId: number; pseudo: string; rank: number; wins: number; losses: number; draws: number; played: number }
+export interface DuelLeaderboard { period: Period | 'all'; from: string; to: string; rows: DuelRankRow[] }
+
+export type DuelEndReason = 'won' | 'forfeit' | 'disconnected' | 'timeout';
+
+export interface DuelHistoryItem {
+  id: number;
+  endedAt: number;
+  difficulty: Difficulty;
+  reason: DuelEndReason;
+  winnerId: number | null;
+  opponent: { id: number; pseudo: string };
+  myMoves: number;
+  theirMoves: number;
+  timeMs: number | null;
+  hasReplay: boolean;
+}
+
+/** My score against one opponent */
+export interface DuelRecordLine { opponent: { id: number; pseudo: string }; wins: number; losses: number; draws: number }
+
+export interface DuelReplay {
+  id: number;
+  date: string;
+  difficulty: Difficulty;
+  level: Level;
+  reason: DuelEndReason;
+  winnerId: number | null;
+  players: { id: number; pseudo: string; moves: MoveRecord[] }[];
+}
+
+/** Back to zero (admin): games of the daily challenges and/or duels, between two days (none: all), of some players (none: all) */
+export interface ResetRequest { from?: string | null; to?: string | null; playerIds?: number[]; challenges: boolean; duels: boolean; dryRun?: boolean }
+export interface ResetResult { dryRun: boolean; challenges: number; duels: number }
+
 export type Period = 'day' | 'week' | 'month';
 export type Leaderboard =
   | { period: 'day'; from: string; to: string; rows: DayRow[] }
@@ -203,6 +238,10 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
     invite: () => call<{ inviteCode: string }>('GET', '/invite'),
     today: () => call<Today>('GET', '/challenge/today'),
     duels: () => call<{ duels: DuelListing[] }>('GET', '/duels'),
+    duelLeaderboard: (period: Period | 'all', date?: string) =>
+      call<DuelLeaderboard>('GET', `/duels/leaderboard?period=${period}${date ? `&date=${date}` : ''}`),
+    duelHistory: () => call<{ duels: DuelHistoryItem[]; records: DuelRecordLine[] }>('GET', '/duels/history'),
+    duelReplay: (duelId: number) => call<DuelReplay>('GET', `/duels/${duelId}`),
     start: (date?: string) => call<StartResult>('POST', '/challenge/start', date ? { date } : {}),
     submit: (date: string, moves: MoveRecord[], clientMs: number, backgroundMs: number) =>
       call<SubmitResult>('POST', '/challenge/submit', { date, moves, clientMs: Math.round(clientMs), backgroundMs: Math.round(backgroundMs) }),
@@ -227,6 +266,7 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
       updateSettings: (patch: AdminSettingsPatch) =>
         call<AdminSettings>('PATCH', '/admin/settings', patch),
       resetSettings: () => call<AdminSettings>('POST', '/admin/settings/reset'),
+      reset: (request: ResetRequest) => call<ResetResult>('POST', '/admin/reset', request),
     },
   };
 }
