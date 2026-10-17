@@ -1098,7 +1098,7 @@
       "opponent_left": "{{pseudo}} a quitté le duel.",
       "quit": "Quitter",
       "me": "Toi",
-      "card_desc": "Affronte un joueur du serveur en direct, sur le même puzzle : le premier qui sort la voiture rouge gagne.",
+      "card_desc": "Affronte un joueur du serveur en direct, sur le même puzzle : le plus rapide ou le moins de coups gagne, au choix.",
       "open_count_one": "{{count}} ouvert",
       "open_count_other": "{{count}} ouverts",
       "none_open": "Aucun duel ouvert pour l'instant. Lance le premier !",
@@ -1152,7 +1152,17 @@
       "head_to_head": "Vos duels",
       "head_to_head_a11y": "Vos duels : toi {{mine}}, {{pseudo}} {{theirs}}, {{draws}} nuls",
       "ready": "Prêt",
-      "not_ready": "À générer"
+      "not_ready": "À générer",
+      "metric": "Vainqueur",
+      "metric_time": "Le plus rapide",
+      "metric_moves": "Le moins de coups",
+      "metric_time_help": "Le premier à sortir la voiture rouge gagne.",
+      "metric_moves_help": "Le moins de coups pour sortir la voiture rouge gagne ; à égalité, le plus rapide. Le premier sorti attend l’autre.",
+      "me_out_one": "Sorti en {{count}} coup, en attente…",
+      "me_out_other": "Sorti en {{count}} coups, en attente…",
+      "opponent_out_one": "{{pseudo}} sorti en {{count}} coup",
+      "opponent_out_other": "{{pseudo}} sorti en {{count}} coups",
+      "won_on_moves": "Le moins de coups gagne, le plus rapide à égalité."
     },
     "errors": {
       "network": "Le serveur ne répond pas. Vérifie ta connexion et l'adresse du serveur.",

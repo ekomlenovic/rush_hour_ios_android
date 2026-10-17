@@ -19,8 +19,8 @@ import { multiErrorMessage } from '@/components/multi/errors';
 import { selectActiveAccount, useMultiStore } from '@/store/multiStore';
 import { useDuel } from '@/hooks/useDuel';
 import {
-  DUEL_DIFFICULTIES, countdownMs, duelElapsedMs, iHaveWon, normalizeDuelCode, outcome,
-  type Duel, type DuelDifficulty, type DuelSide, type HeadToHead,
+  DUEL_DIFFICULTIES, DUEL_METRICS, countdownMs, duelElapsedMs, iHaveWon, normalizeDuelCode, opponentHasWon, outcome,
+  type Duel, type DuelDifficulty, type DuelMetric, type DuelSide, type HeadToHead,
 } from '@/utils/multi/duel';
 
 /** Room for the two player bars and the clock around the boards */
@@ -28,8 +28,9 @@ const BARS_HEIGHT = RFValue(150);
 
 /**
  * Duel 1v1 in real time: two players of the server on the same puzzle, the board of
- * the opponent at the top, mine at the bottom. The first red car out wins.
- * Opened from the multiplayer screen to create a duel (?create=HARD&private=1), to
+ * the opponent at the top, mine at the bottom. The first red car out wins, or, in a duel
+ * on moves, the fewest moves.
+ * Opened from the multiplayer screen to create a duel (?create=HARD&metric=moves&private=1), to
  * join one (?join=CODE), or to go back to mine.
  */
 export default function DuelScreen() {
@@ -37,7 +38,7 @@ export default function DuelScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation();
   const router = useRouter();
-  const params = useLocalSearchParams<{ create?: string; private?: string; join?: string }>();
+  const params = useLocalSearchParams<{ create?: string; metric?: string; private?: string; join?: string }>();
   const account = useMultiStore(selectActiveAccount);
   const { state, unreachable, create, join, move, leave, rematch } = useDuel(account);
   const duel = state.duel;
@@ -52,9 +53,10 @@ export default function DuelScreen() {
     if (params.join) join(normalizeDuelCode(params.join));
     else if (params.create) {
       const difficulty = DUEL_DIFFICULTIES.includes(params.create as DuelDifficulty) ? params.create as DuelDifficulty : 'NORMAL';
-      create(difficulty, params.private === '1');
+      const metric = DUEL_METRICS.includes(params.metric as DuelMetric) ? params.metric as DuelMetric : 'time';
+      create(difficulty, metric, params.private === '1');
     }
-  }, [asked, state.connection, duel, params.join, params.create, params.private, join, create]);
+  }, [asked, state.connection, duel, params.join, params.create, params.metric, params.private, join, create]);
 
   // The clock and the countdown
   const running = duel?.status === 'playing';
@@ -201,7 +203,7 @@ function Waiting({ duel, colors, serverName, onCancel }: { duel: Duel; colors: U
         <Versus me={duel.me} opponent={null} colors={colors} />
         <View style={[styles.chip, { backgroundColor: colors.primarySoft }]}>
           <Text style={[styles.chipText, { color: colors.primaryText }]}>
-            {duel.private ? '🔒 ' : ''}{t(`difficulty.${duel.difficulty}`)}
+            {duel.private ? '🔒 ' : ''}{t(`difficulty.${duel.difficulty}`)} · {t(`multi.duel.metric_${duel.metric}`)}
           </Text>
         </View>
 
@@ -267,6 +269,12 @@ function Arena({ duel, now, colors, offline, onMove }: ArenaProps) {
   const mySize = Math.min(width - RFValue(32), space * 0.62);
   const opponentSize = Math.min(width * 0.62, space - mySize);
   const time = formatDuration(duelElapsedMs(duel, now));
+  // A duel on moves goes on after the first one out: who is out, and with how many moves
+  const waiting = duel.metric === 'moves' && duel.status === 'playing'
+    ? won ? t('multi.duel.me_out', { count: duel.me.moves.length + duel.pending.length })
+      : opponentHasWon(duel) ? t('multi.duel.opponent_out', { pseudo: duel.opponent?.pseudo ?? '', count: duel.opponent?.moves.length ?? 0 })
+        : null
+    : null;
 
   return (
     <View style={styles.arena} onLayout={onLayout}>
@@ -286,14 +294,18 @@ function Arena({ duel, now, colors, offline, onMove }: ArenaProps) {
           </View>
 
           <View
-            style={[styles.clock, { backgroundColor: offline ? colors.dangerSoft : colors.card }]}
+            style={[styles.clock, { backgroundColor: offline ? colors.dangerSoft : colors.card, maxWidth: mySize }]}
             accessible
-            accessibilityLabel={offline ? t('multi.duel.reconnecting') : t('multi.time_a11y', { time })}
+            accessibilityLabel={offline ? t('multi.duel.reconnecting') : [t('multi.time_a11y', { time }), waiting].filter(Boolean).join(', ')}
+            accessibilityLiveRegion="polite"
           >
-            <Ionicons name={offline ? 'cloud-offline' : 'timer-outline'} size={RFValue(17)} color={offline ? colors.danger : colors.text} />
+            <Ionicons name={offline ? 'cloud-offline' : duel.metric === 'moves' ? 'footsteps-outline' : 'timer-outline'} size={RFValue(17)} color={offline ? colors.danger : colors.text} />
             <Text style={[styles.clockText, { color: offline ? colors.danger : colors.text }]}>
               {offline ? t('multi.duel.reconnecting') : time}
             </Text>
+            {!offline && waiting && (
+              <Text style={[styles.clockStatus, { color: colors.textMuted }]} numberOfLines={1}>{waiting}</Text>
+            )}
           </View>
 
           <DuelPlayerBar name={t('multi.duel.me')} moves={duel.me.moves.length + duel.pending.length} colors={colors} isMe width={mySize} />
@@ -369,6 +381,9 @@ function ResultModal({ duel, colors, onRematch, onQuit, onReplay }: ResultProps)
           <Text style={[styles.resultTitle, { color: colors.text }]} accessibilityRole="header">{t(`multi.duel.result_${result}`, { pseudo })}</Text>
           {reason !== 'won' && (
             <Text style={[styles.muted, { color: colors.textMuted }]}>{t(`multi.duel.reason_${reason}`, { pseudo })}</Text>
+          )}
+          {reason === 'won' && duel.metric === 'moves' && (
+            <Text style={[styles.muted, { color: colors.textMuted }]}>{t('multi.duel.won_on_moves')}</Text>
           )}
 
           <View style={[styles.stats, { backgroundColor: colors.card }]}>
@@ -634,6 +649,11 @@ const styles = StyleSheet.create({
     fontSize: RFValue(17),
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
+  },
+  clockStatus: {
+    flexShrink: 1,
+    fontSize: RFValue(13),
+    fontWeight: '700',
   },
   countdown: {
     justifyContent: 'center',

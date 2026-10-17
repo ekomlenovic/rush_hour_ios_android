@@ -394,12 +394,13 @@ export default function MultiplayerScreen() {
       <NewDuelSheet
         visible={isNewDuelVisible}
         ready={serverDuels.ready}
+        metrics={serverDuels.metrics}
         colors={colors}
         isDark={isDark}
         onClose={() => setNewDuelVisible(false)}
-        onCreate={(difficulty, isPrivate) => {
+        onCreate={(difficulty, metric, isPrivate) => {
           setNewDuelVisible(false);
-          router.push(`/multi/duel?create=${difficulty}${isPrivate ? '&private=1' : ''}`);
+          router.push(`/multi/duel?create=${difficulty}&metric=${metric}${isPrivate ? '&private=1' : ''}`);
         }}
       />
       <DuelCodeSheet
