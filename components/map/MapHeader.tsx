@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import type { UiColors } from '@/theme';
 import { MapZone, ZONE_ICONS } from './zones';
@@ -55,7 +56,7 @@ export default function MapHeader({ colors, isDark, zone, stars, maxStars, onBac
           accessibilityLabel={t('a11y.settings')}
           hitSlop={8}
         >
-          <Text style={styles.gear}>⚙️</Text>
+          <Ionicons name="settings-sharp" size={20} color={colors.primaryText} />
         </Pressable>
       </View>
 
@@ -106,9 +107,6 @@ const styles = StyleSheet.create({
     lineHeight: 36,
     marginTop: -3,
     marginLeft: -2,
-  },
-  gear: {
-    fontSize: 20,
   },
   titleBlock: {
     flex: 1,
