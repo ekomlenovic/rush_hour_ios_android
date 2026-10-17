@@ -11,6 +11,10 @@ Tous les chiffres viennent du code (version 1.1.8) : 309 niveaux (`data/sampleLe
 | Icône de l'app | `icon-512.png` | 512 × 512, PNG 32 bits, ≤ 1 Mo |
 | Image de présentation (feature graphic) | `en/feature-graphic.png`, `fr/feature-graphic.png` | 1024 × 500, PNG/JPEG |
 | Captures d'écran téléphone (2 à 8) | `en/phone/01…08.png`, `fr/phone/01…08.png` | 1080 × 1920 (9:16) |
+| Captures tablette 7 pouces (jusqu'à 8) | `en/tablet-7/01…08.png`, `fr/tablet-7/01…08.png` | 1080 × 1920 (9:16) |
+| Captures tablette 10 pouces (jusqu'à 8) | `en/tablet-10/01…08.png`, `fr/tablet-10/01…08.png` | 1440 × 2560 (9:16) |
+
+Les captures tablette sont prises sur un écran de tablette (600 × 960 et 800 × 1280 points) : c'est le vrai rendu de l'app sur tablette.
 
 Ordre conseillé : celui des numéros. Les 3 premières sont les plus vues (dans les résultats de recherche) : gameplay, nombre de niveaux, défi du jour.
 
@@ -27,6 +31,8 @@ Ordre conseillé : celui des numéros. Les 3 premières sont les plus vues (dans
 
 Les captures sont de **vrais écrans de l'app** (version web, même code), avec une progression de démo réaliste : ~2 mois de jeu, niveau joueur 7, 72 niveaux réussis, streak de 23 jours. La victoire du niveau 73 a vraiment été jouée (solution optimale en 20 coups).
 
+Pour les refaire après une mise à jour : [`tools/README.md`](tools/README.md).
+
 ---
 
 ## English (default language)
@@ -34,9 +40,8 @@ Les captures sont de **vrais écrans de l'app** (version web, même code), avec 
 ### App name (30 max)
 
 ```
-Rush Hours: Traffic Puzzle
+Rush Hours
 ```
-(26 characters)
 
 ### Short description (80 max)
 
@@ -110,9 +115,8 @@ FAIR AND RESPECTFUL
 ### Nom de l'application (30 max)
 
 ```
-Rush Hours : Puzzle Voitures
+Rush Hours
 ```
-(28 caractères)
 
 ### Description courte (80 max)
 
@@ -199,6 +203,7 @@ UN JEU HONNÊTE
 
 ## Pourquoi ces textes
 
+- **Nom** : « Rush Hours » seul, comme dans l'app. Les mots-clés (« traffic puzzle », « casse-tête ») sont dans les descriptions.
 - **Mots-clés** : Google indexe le titre, la description courte et la description longue. « Traffic puzzle », « sliding block », « puzzle », « daily challenge », « levels », « offline » y sont, sans bourrage (Google pénalise la répétition).
 - **Arguments vérifiables** : « no ads / no in-app purchases » (aucun SDK de pub ni de paiement dans `package.json`), « works offline » et « no data collected » (politique de confidentialité), cosmétiques jamais vendus (`docs/GAME_DESIGN.md`).
 - **Multijoueur présenté tel qu'il est** : optionnel, il faut qu'un des joueurs héberge un serveur. Il n'est pas mis en avant comme un mode en ligne « ouvert », pour éviter les avis déçus.
