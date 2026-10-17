@@ -8,6 +8,7 @@ import type { UiColors } from '@/theme';
 import type { RowPlayer } from './Leaderboard';
 import { multiErrorMessage } from './errors';
 import { REPORT_REASONS, type ReportReason } from './verdict';
+import IconText, { type IconName } from './IconText';
 
 interface Props {
   player: RowPlayer | null;
@@ -42,9 +43,10 @@ export default function PlayerActionsSheet({ player, isMe, isBlocked, api, color
     }
   };
 
-  const action = (label: string, onPress: () => void, tint = colors.text) => (
+  const action = (label: string, onPress: () => void, tint = colors.text, icon?: IconName) => (
     <Pressable key={label} onPress={onPress} style={[styles.action, { borderColor: colors.border }]} accessibilityRole="button">
-      <Text style={[styles.actionText, { color: tint }]}>{label}</Text>
+      {icon ? <IconText icon={icon} color={tint} textStyle={styles.actionText}>{label}</IconText>
+        : <Text style={[styles.actionText, { color: tint }]}>{label}</Text>}
     </Pressable>
   );
 
@@ -52,12 +54,13 @@ export default function PlayerActionsSheet({ player, isMe, isBlocked, api, color
     <BottomSheet visible={!!player} title={player?.pseudo ?? ''} colors={colors} isDark={isDark} onClose={close} onRequestClose={close}>
       {player && !reporting && (
         <View>
-          {player.won && player.attemptId !== undefined && action(`▶ ${t('multi.watch_game')}`, () => { const id = player.attemptId!; close(); onReplay(id); })}
-          {!isMe && action(`🚩 ${t('multi.report')}`, () => setReporting(true), colors.warning)}
+          {player.won && player.attemptId !== undefined && action(t('multi.watch_game'), () => { const id = player.attemptId!; close(); onReplay(id); }, colors.text, 'play')}
+          {!isMe && action(t('multi.report'), () => setReporting(true), colors.warning, 'flag')}
           {!isMe && action(
-            isBlocked ? t('multi.unblock') : `🚫 ${t('multi.block')}`,
+            isBlocked ? t('multi.unblock') : t('multi.block'),
             () => { onToggleBlock({ playerId: player.playerId, pseudo: player.pseudo }, !isBlocked); close(); },
             colors.danger,
+            isBlocked ? undefined : 'ban',
           )}
           {!isMe && <Text style={[styles.help, { color: colors.textMuted }]}>{t('multi.block_help')}</Text>}
         </View>
