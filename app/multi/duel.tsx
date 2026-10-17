@@ -19,7 +19,7 @@ import { multiErrorMessage } from '@/components/multi/errors';
 import { selectActiveAccount, useMultiStore } from '@/store/multiStore';
 import { useDuel } from '@/hooks/useDuel';
 import {
-  DUEL_DIFFICULTIES, countdownMs, duelElapsedMs, iHaveWon, normalizeDuelCode, outcome,
+  DUEL_DIFFICULTIES, countdownMs, duelElapsedMs, iHaveWon, normalizeDuelCode, outcome, winnerOf,
   type Duel, type DuelDifficulty, type DuelSide, type HeadToHead,
 } from '@/utils/multi/duel';
 
@@ -30,16 +30,17 @@ const BARS_HEIGHT = RFValue(150);
  * Duel 1v1 in real time: two players of the server on the same puzzle, the board of
  * the opponent at the top, mine at the bottom. The first red car out wins.
  * Opened from the multiplayer screen to create a duel (?create=HARD&private=1), to
- * join one (?join=CODE), or to go back to mine.
+ * join one (?join=CODE), to watch one (?watch=CODE: both boards, nothing to play), or
+ * to go back to mine. A duel already started, joined with its code, is watched.
  */
 export default function DuelScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const navigation = useNavigation();
   const router = useRouter();
-  const params = useLocalSearchParams<{ create?: string; private?: string; join?: string }>();
+  const params = useLocalSearchParams<{ create?: string; private?: string; join?: string; watch?: string }>();
   const account = useMultiStore(selectActiveAccount);
-  const { state, unreachable, create, join, move, leave, rematch } = useDuel(account);
+  const { state, unreachable, create, join, watch, move, leave, rematch, clearError } = useDuel(account);
   const duel = state.duel;
   const [now, setNow] = useState(Date.now());
 
@@ -50,11 +51,21 @@ export default function DuelScreen() {
     setAsked(true);
     if (duel) return;
     if (params.join) join(normalizeDuelCode(params.join));
+    else if (params.watch) watch(normalizeDuelCode(params.watch));
     else if (params.create) {
       const difficulty = DUEL_DIFFICULTIES.includes(params.create as DuelDifficulty) ? params.create as DuelDifficulty : 'NORMAL';
       create(difficulty, params.private === '1');
     }
-  }, [asked, state.connection, duel, params.join, params.create, params.private, join, create]);
+  }, [asked, state.connection, duel, params.join, params.watch, params.create, params.private, join, watch, create]);
+
+  // The duel of the code has started without me: watched instead
+  const [watchedInstead, setWatchedInstead] = useState(false);
+  useEffect(() => {
+    if (state.error !== 'duel_full' || !params.join || watchedInstead) return;
+    setWatchedInstead(true);
+    clearError();
+    watch(normalizeDuelCode(params.join));
+  }, [state.error, params.join, watchedInstead, clearError, watch]);
 
   // The clock and the countdown
   const running = duel?.status === 'playing';
@@ -70,7 +81,8 @@ export default function DuelScreen() {
   useEffect(() => navigation.addListener('beforeRemove', (event) => {
     const current = duelRef.current;
     if (!current || current.status === 'over') return;
-    if (current.status === 'waiting') {
+    // Nothing to lose for a spectator, nor in a room not started yet
+    if (current.spectating || current.status === 'waiting') {
       leave();
       return;
     }
@@ -87,7 +99,7 @@ export default function DuelScreen() {
   }), [navigation, leave, t]);
 
   // A move of the opponent is felt: no need to look at their board all the time
-  const opponentMoves = duel?.status === 'playing' ? duel.opponent?.moves.length ?? 0 : 0;
+  const opponentMoves = duel?.status === 'playing' && !duel.spectating ? duel.opponent?.moves.length ?? 0 : 0;
   useEffect(() => {
     if (opponentMoves > 0) haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [opponentMoves]);
@@ -95,16 +107,25 @@ export default function DuelScreen() {
   // The end, felt and said
   const result = duel ? outcome(duel) : null;
   const opponentPseudo = duel?.opponent?.pseudo ?? '';
+  const spectating = duel?.spectating ?? false;
+  const winnerPseudo = duel ? winnerOf(duel)?.pseudo ?? '' : '';
   useEffect(() => {
     if (!result) return;
+    if (spectating) {
+      haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      AccessibilityInfo.announceForAccessibility(result === 'draw' ? t('multi.duel.result_draw') : t('multi.duel.result_winner', { pseudo: winnerPseudo }));
+      return;
+    }
     haptics.notificationAsync(result === 'win' ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Warning);
     AccessibilityInfo.announceForAccessibility(t(`multi.duel.result_${result}`, { pseudo: opponentPseudo }));
-  }, [result, opponentPseudo, t]);
+  }, [result, opponentPseudo, spectating, winnerPseudo, t]);
 
   const goBack = () => navigation.goBack();
-  const title = duel?.opponent && duel.status !== 'waiting'
-    ? t('multi.duel.versus', { pseudo: duel.opponent.pseudo })
-    : t('multi.duel.title');
+  const title = duel?.spectating && duel.opponent
+    ? t('multi.duel.vs', { a: duel.me.pseudo, b: duel.opponent.pseudo })
+    : duel?.opponent && duel.status !== 'waiting'
+      ? t('multi.duel.versus', { pseudo: duel.opponent.pseudo })
+      : t('multi.duel.title');
 
   let body: React.ReactNode;
   if (!account) {
@@ -113,19 +134,19 @@ export default function DuelScreen() {
     body = <Notice icon="cloud-offline" text={multiErrorMessage(t, unreachable)} colors={colors} onBack={goBack} />;
   } else if (!duel && state.error) {
     body = <Notice icon="alert-circle" text={multiErrorMessage(t, state.error)} colors={colors} onBack={goBack} />;
-  } else if (!duel && asked && state.connection === 'online' && !params.join && !params.create) {
+  } else if (!duel && asked && state.connection === 'online' && !params.join && !params.watch && !params.create) {
     // Opened to go back to my duel, which ended meanwhile
     body = <Notice icon="flag" text={multiErrorMessage(t, 'no_duel')} colors={colors} onBack={goBack} />;
   } else if (!duel) {
     body = <ActivityIndicator color={colors.primary} style={styles.center} />;
-  } else if (duel.status === 'waiting') {
+  } else if (duel.status === 'waiting' && !duel.spectating) {
     body = <Waiting duel={duel} colors={colors} serverName={account.name} onCancel={goBack} />;
-  } else if (duel.status === 'preparing') {
+  } else if (duel.status === 'waiting' || duel.status === 'preparing') {
     body = (
       <View style={styles.center}>
-        <Versus me={duel.me} opponent={duel.opponent} colors={colors} />
+        <Versus me={duel.me} opponent={duel.opponent} colors={colors} spectating={duel.spectating} />
         <ActivityIndicator color={colors.primary} style={{ marginTop: RFValue(28) }} />
-        <Text style={[styles.muted, { color: colors.textMuted }]}>{t('multi.duel.preparing')}</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>{t(duel.status === 'waiting' ? 'multi.duel.waiting' : 'multi.duel.preparing')}</Text>
       </View>
     );
   } else {
@@ -169,8 +190,8 @@ function Notice({ icon, text, colors, onBack }: { icon: React.ComponentProps<typ
   );
 }
 
-/** Me against the opponent (or an empty seat) */
-function Versus({ me, opponent, colors }: { me: DuelSide; opponent: DuelSide | null; colors: UiColors }) {
+/** Me against the opponent (or an empty seat); for a spectator, the two players */
+function Versus({ me, opponent, colors, spectating = false }: { me: DuelSide; opponent: DuelSide | null; colors: UiColors; spectating?: boolean }) {
   const { t } = useTranslation();
   const seat = (player: DuelSide | null, mine: boolean) => (
     <View style={styles.seat}>
@@ -183,8 +204,8 @@ function Versus({ me, opponent, colors }: { me: DuelSide; opponent: DuelSide | n
     </View>
   );
   return (
-    <View style={styles.versus} accessible accessibilityLabel={opponent ? t('multi.duel.vs', { a: t('multi.duel.me'), b: opponent.pseudo }) : t('multi.duel.waiting')}>
-      {seat(me, true)}
+    <View style={styles.versus} accessible accessibilityLabel={opponent ? t('multi.duel.vs', { a: spectating ? me.pseudo : t('multi.duel.me'), b: opponent.pseudo }) : t('multi.duel.waiting')}>
+      {seat(me, !spectating)}
       <Animated.Text entering={ZoomIn.springify()} style={[styles.vs, { color: colors.primaryText }]}>VS</Animated.Text>
       {seat(opponent, false)}
     </View>
@@ -252,7 +273,7 @@ interface ArenaProps {
   onMove: (vehicleId: string, row: number, col: number) => void;
 }
 
-/** The game: the opponent at the top (small, read only), me at the bottom */
+/** The game: the opponent at the top (small, read only), me at the bottom; for a spectator, both the same size */
 function Arena({ duel, now, colors, offline, onMove }: ArenaProps) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
@@ -264,9 +285,10 @@ function Arena({ duel, now, colors, offline, onMove }: ArenaProps) {
   const countdown = countdownMs(duel, now);
   const won = iHaveWon(duel);
   const space = Math.max(0, height - BARS_HEIGHT - insets.bottom);
-  const mySize = Math.min(width - RFValue(32), space * 0.62);
-  const opponentSize = Math.min(width * 0.62, space - mySize);
+  const mySize = Math.min(width - RFValue(32), space * (duel.spectating ? 0.5 : 0.62));
+  const opponentSize = Math.min(duel.spectating ? mySize : width * 0.62, space - mySize);
   const time = formatDuration(duelElapsedMs(duel, now));
+  const firstAway = duel.spectating && !duel.me.connected;
 
   return (
     <View style={styles.arena} onLayout={onLayout}>
@@ -294,17 +316,32 @@ function Arena({ duel, now, colors, offline, onMove }: ArenaProps) {
             <Text style={[styles.clockText, { color: offline ? colors.danger : colors.text }]}>
               {offline ? t('multi.duel.reconnecting') : time}
             </Text>
+            {duel.spectators > 0 && (
+              <Text
+                style={[styles.clockText, styles.spectators, { color: colors.textMuted }]}
+                accessibilityLabel={t('multi.duel.spectators', { count: duel.spectators })}
+              >
+                👁 {duel.spectators}
+              </Text>
+            )}
           </View>
 
-          <DuelPlayerBar name={t('multi.duel.me')} moves={duel.me.moves.length + duel.pending.length} colors={colors} isMe width={mySize} />
-          <View>
+          <DuelPlayerBar
+            name={duel.spectating ? duel.me.pseudo : t('multi.duel.me')}
+            moves={duel.me.moves.length + duel.pending.length}
+            colors={colors}
+            isMe={!duel.spectating}
+            width={mySize}
+            away={firstAway}
+          />
+          <View style={{ opacity: firstAway ? 0.5 : 1 }}>
             <Board
               gridSize={level.gridSize}
               vehicles={duel.me.vehicles}
               exitRow={level.exitRow}
               exitCol={level.exitCol}
-              onMoveEnd={onMove}
-              readOnly={countdown > 0 || won || duel.status !== 'playing'}
+              onMoveEnd={duel.spectating ? noop : onMove}
+              readOnly={duel.spectating || countdown > 0 || won || duel.status !== 'playing'}
               size={mySize}
             />
             {countdown > 0 && (
@@ -356,6 +393,7 @@ function ResultModal({ duel, colors, onRematch, onQuit, onReplay }: ResultProps)
   const { t } = useTranslation();
   const result = outcome(duel);
   if (!result || !duel.result) return null;
+  if (duel.spectating) return <SpectatorResult duel={duel} colors={colors} onQuit={onQuit} />;
   const pseudo = duel.opponent?.pseudo ?? '';
   const emoji = result === 'win' ? '🏆' : result === 'draw' ? '🤝' : '🏁';
   const reason = duel.result.reason;
@@ -426,6 +464,64 @@ function ResultModal({ duel, colors, onRematch, onQuit, onReplay }: ResultProps)
               <Text style={[styles.linkText, { color: colors.primaryText }]}>{t('multi.duel.quit')}</Text>
             </Pressable>
           </View>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+
+/** The end of a watched duel: who won, nothing to play again */
+function SpectatorResult({ duel, colors, onQuit }: { duel: Duel; colors: UiColors; onQuit: () => void }) {
+  const { t } = useTranslation();
+  const result = duel.result!;
+  const winner = winnerOf(duel);
+  const loser = winner && (winner === duel.me ? duel.opponent : duel.me);
+  const second = duel.opponent;
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onQuit}>
+      <View style={styles.overlay}>
+        <Animated.View entering={ZoomIn.springify()} style={[styles.resultCard, { backgroundColor: colors.surface }]} accessibilityViewIsModal>
+          <Text style={styles.bigEmoji}>{winner ? '🏆' : '🤝'}</Text>
+          <Text style={[styles.resultTitle, { color: colors.text }]} accessibilityRole="header">
+            {winner ? t('multi.duel.result_winner', { pseudo: winner.pseudo }) : t('multi.duel.result_draw')}
+          </Text>
+          {result.reason !== 'won' && (
+            <Text style={[styles.muted, { color: colors.textMuted }]}>{t(`multi.duel.reason_${result.reason}`, { pseudo: loser?.pseudo ?? '' })}</Text>
+          )}
+
+          <View style={[styles.stats, { backgroundColor: colors.card }]}>
+            <Stat label={duel.me.pseudo} value={String(duel.me.moves.length)} colors={colors} />
+            <View style={[styles.divider, { backgroundColor: colors.textMuted }]} />
+            <Stat label={second?.pseudo ?? ''} value={String(second?.moves.length ?? 0)} colors={colors} />
+            <View style={[styles.divider, { backgroundColor: colors.textMuted }]} />
+            <Stat label={t('multi.duel.optimum')} value={result.minMoves > 0 ? String(result.minMoves) : '–'} colors={colors} />
+          </View>
+          {result.timeMs !== null && (
+            <Text style={[styles.resultTime, { color: colors.text }]}>⏱ {formatDuration(result.timeMs)}</Text>
+          )}
+          {result.score && second && (() => {
+            const score = scoreOf(result.score, duel.me.id);
+            return (
+              <View
+                style={[styles.headToHead, { borderColor: colors.border }]}
+                accessible
+                accessibilityLabel={`${t('multi.duel.head_to_head')} : ${duel.me.pseudo} ${score.mine}, ${second.pseudo} ${score.theirs}${score.draws > 0 ? `, ${t('multi.duel.draws', { count: score.draws })}` : ''}`}
+              >
+                <Text style={[styles.headToHeadLabel, { color: colors.textMuted }]}>{t('multi.duel.head_to_head')}</Text>
+                <Text style={[styles.headToHeadScore, { color: colors.text }]}>
+                  {duel.me.pseudo} <Text style={{ color: colors.primaryText }}>{score.mine} – {score.theirs}</Text> {second.pseudo}
+                </Text>
+                {score.draws > 0 && <Text style={[styles.headToHeadLabel, { color: colors.textMuted }]}>{t('multi.duel.draws', { count: score.draws })}</Text>}
+              </View>
+            );
+          })()}
+
+          {!duel.opponentLeft && (
+            <Text style={[styles.muted, { color: colors.textMuted }]}>{t('multi.duel.spectator_rematch')}</Text>
+          )}
+          <Pressable onPress={onQuit} style={[styles.primaryButton, styles.wide, { backgroundColor: colors.primary }]} accessibilityRole="button">
+            <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>{t('multi.duel.quit')}</Text>
+          </Pressable>
         </Animated.View>
       </View>
     </Modal>
@@ -634,6 +730,9 @@ const styles = StyleSheet.create({
     fontSize: RFValue(17),
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
+  },
+  spectators: {
+    marginLeft: RFValue(8),
   },
   countdown: {
     justifyContent: 'center',

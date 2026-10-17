@@ -16,6 +16,8 @@ export interface DuelControls {
   unreachable: 'update_server' | 'duel_unreachable' | null;
   create: (difficulty: DuelDifficulty, isPrivate: boolean) => void;
   join: (code: string) => void;
+  /** Watch a duel without playing it */
+  watch: (code: string) => void;
   move: (vehicleId: string, row: number, col: number) => void;
   leave: () => void;
   rematch: () => void;
@@ -63,6 +65,11 @@ export function useDuel(account: ServerAccount | null): DuelControls {
         } catch {
           return;
         }
+        // Connected again while watching a duel: watched again
+        const watched = stateRef.current.duel;
+        if (message.type === 'ready' && !message.duel && watched?.spectating && watched.status !== 'over') {
+          socket.send(JSON.stringify({ type: 'watch', code: watched.code } satisfies DuelClientMessage));
+        }
         dispatch({ type: 'message', message, now: Date.now() });
       };
       socket.onclose = (event) => {
@@ -106,7 +113,7 @@ export function useDuel(account: ServerAccount | null): DuelControls {
 
   const move = useCallback((vehicleId: string, row: number, col: number) => {
     const duel = stateRef.current.duel;
-    if (!duel || duel.status !== 'playing') return;
+    if (!duel || duel.status !== 'playing' || duel.spectating) return;
     const record = myMove(duel, vehicleId, row, col, Date.now());
     if (!record) return;
     dispatch({ type: 'local_move', move: record });
@@ -118,6 +125,7 @@ export function useDuel(account: ServerAccount | null): DuelControls {
     unreachable,
     create: useCallback((difficulty: DuelDifficulty, isPrivate: boolean) => send({ type: 'create', difficulty, private: isPrivate }), [send]),
     join: useCallback((code: string) => send({ type: 'join', code }), [send]),
+    watch: useCallback((code: string) => send({ type: 'watch', code }), [send]),
     move,
     leave: useCallback(() => {
       send({ type: 'leave' });
