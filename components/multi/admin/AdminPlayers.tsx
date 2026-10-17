@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, Alert, TextInput } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
@@ -77,9 +78,12 @@ export default function AdminPlayers({ api, colors, myPlayerId }: Props) {
               accessibilityLabel={t('multi.pseudo')}
             />
           ) : (
-            <Text style={[styles.title, { color: colors.text }]}>
-              {player.isAdmin ? '🛠️ ' : ''}{player.pseudo}{player.id === myPlayerId ? ` (${t('multi.you')})` : ''}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              {player.isAdmin && <Ionicons name="construct-outline" size={RFValue(15)} color={colors.primaryText} />}
+              <Text style={[styles.title, { color: colors.text }]}>
+                {player.pseudo}{player.id === myPlayerId ? ` (${t('multi.you')})` : ''}
+              </Text>
+            </View>
           )}
           <Text style={[styles.muted, { color: colors.textMuted }]}>
             {t('multi.admin_player_games', { count: player.games })}

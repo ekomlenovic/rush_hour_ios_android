@@ -97,7 +97,7 @@ describe('finished duels', () => {
     const { duelId } = await duel('leo', 'emma');
     const replay = await request('GET', `/duels/${duelId}`, emma.token);
     expect(replay.status).toBe(200);
-    expect(replay.body).toMatchObject({ winnerId: leo.player.id, reason: 'won', level: { minMoves: 2 } });
+    expect(replay.body).toMatchObject({ winnerId: leo.player.id, reason: 'won', metric: 'time', level: { minMoves: 2 } });
     expect(replay.body.players).toEqual([
       { id: leo.player.id, pseudo: 'Léo', moves: [{ vehicleId: 'v1', delta: 2, t: 4000 }, { vehicleId: 'target', delta: 4, t: 4000 }] },
       { id: emma.player.id, pseudo: 'Emma', moves: [] },

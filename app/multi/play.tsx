@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, ActivityIndicator, AppState, Modal, AccessibilityInfo } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +15,7 @@ import { gameKey, selectActiveAccount, useMultiStore, type MultiGame } from '@/s
 import { useMultiApi } from '@/hooks/useMultiApi';
 import { elapsedMs, gameFromStart, playMove, submission } from '@/utils/multi/game';
 import type { SubmitResult } from '@/utils/multi/api';
+import IconText from '@/components/multi/IconText';
 
 type Phase = 'loading' | 'playing' | 'sending' | 'send_failed' | 'won' | 'error';
 
@@ -161,7 +163,7 @@ export default function MultiPlayScreen() {
               <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('multi.moves_label')}</Text>
             </View>
             <View style={styles.stat} accessible accessibilityLabel={t('multi.time_a11y', { time: formatDuration(elapsedMs(game, now)) })}>
-              <Text style={[styles.statValue, { color: colors.text }]}>⏱ {formatDuration(elapsedMs(game, now))}</Text>
+              <IconText icon="timer-outline" color={colors.text} textStyle={styles.statValue}>{formatDuration(elapsedMs(game, now))}</IconText>
               <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('multi.server_clock')}</Text>
             </View>
           </View>
@@ -209,13 +211,15 @@ export default function MultiPlayScreen() {
       <Modal visible={phase === 'won' && !!result} transparent animationType="fade" onRequestClose={() => router.back()}>
         <View style={styles.overlay}>
           <View style={[styles.winCard, { backgroundColor: colors.surface }]} accessibilityViewIsModal>
-            <Text style={styles.winEmoji}>{result?.rank === 1 ? '🏆' : '🏁'}</Text>
+            <View style={[styles.winIcon, { backgroundColor: result?.rank === 1 ? colors.successSoft : colors.primarySoft }]}>
+              <Ionicons name={result?.rank === 1 ? 'trophy' : 'flag'} size={RFValue(34)} color={result?.rank === 1 ? colors.success : colors.primaryText} />
+            </View>
             <Text style={[styles.winTitle, { color: colors.text }]} accessibilityRole="header">{t('multi.win_title')}</Text>
             {result && (
               <>
-                <Text style={[styles.winLine, { color: colors.text }]}>
-                  {t('multi.moves', { count: result.moves })} · ⏱ {formatDuration(result.timeMs)}
-                </Text>
+                <IconText icon="timer-outline" color={colors.text} style={styles.winLineRow} textStyle={[styles.winLine, styles.noMargin]}>
+                  {t('multi.moves', { count: result.moves })} · {formatDuration(result.timeMs)}
+                </IconText>
                 <Text style={[styles.winMuted, { color: colors.textMuted }]}>
                   {result.moves === result.minMoves ? t('multi.optimal') : t('multi.optimum', { count: result.minMoves })}
                 </Text>
@@ -223,7 +227,7 @@ export default function MultiPlayScreen() {
                   {t('multi.provisional_rank', { rank: result.rank })} · {t('multi.points', { count: result.points })}
                 </Text>
                 {result.verdict === 'suspect' && (
-                  <Text style={[styles.winMuted, { color: colors.warning, textAlign: 'center' }]}>⚠️ {t('multi.win_suspect')}</Text>
+                  <IconText icon="warning" color={colors.warning} style={styles.winSuspect} textStyle={[styles.winMuted, styles.noMargin, { textAlign: 'center' }]}>{t('multi.win_suspect')}</IconText>
                 )}
               </>
             )}
@@ -316,8 +320,23 @@ const styles = StyleSheet.create({
     padding: RFValue(28),
     alignItems: 'center',
   },
-  winEmoji: {
-    fontSize: RFValue(48),
+  winIcon: {
+    width: RFValue(64),
+    height: RFValue(64),
+    borderRadius: RFValue(18),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: RFValue(10),
+  },
+  winLineRow: {
+    marginTop: RFValue(12),
+  },
+  winSuspect: {
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  noMargin: {
+    marginTop: 0,
   },
   winTitle: {
     fontSize: RFValue(24),

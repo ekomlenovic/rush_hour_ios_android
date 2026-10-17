@@ -1,11 +1,13 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import type { Difficulty, DuelListing, MultiApi } from '@/utils/multi/api';
+import type { Difficulty, DuelListing, DuelMetric, MultiApi } from '@/utils/multi/api';
 
 interface ServerDuels {
   duels: DuelListing[] | null;
   /** Puzzles ready by difficulty: a duel of a difficulty with none waits for its puzzle */
   ready: Partial<Record<Difficulty, number>> | null;
+  /** What can decide the winner of a new duel; only the time on an older server */
+  metrics: DuelMetric[];
   loadedAt: number;
 }
 
@@ -17,13 +19,13 @@ const REFRESH_MS = 4000;
  * screen is shown. null until loaded; an older server without duels gives an empty list.
  */
 export function useServerDuels(api: MultiApi | null): ServerDuels {
-  const [state, setState] = useState<ServerDuels>({ duels: null, ready: null, loadedAt: 0 });
+  const [state, setState] = useState<ServerDuels>({ duels: null, ready: null, metrics: ['time'], loadedAt: 0 });
 
   useFocusEffect(useCallback(() => {
     if (!api) return;
     let active = true;
     const load = () => api.duels()
-      .then(r => { if (active) setState({ duels: r.duels, ready: r.ready ?? null, loadedAt: Date.now() }); })
+      .then(r => { if (active) setState({ duels: r.duels, ready: r.ready ?? null, metrics: r.metrics ?? ['time'], loadedAt: Date.now() }); })
       .catch(() => { if (active) setState(s => ({ ...s, duels: s.duels ?? [], loadedAt: Date.now() })); });
     void load();
     const timer = setInterval(load, REFRESH_MS);

@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { formatDuration } from '@/utils/date';
 import type { DayRow, Leaderboard as Board, MultiApi, Period, PeriodRow } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
 import { multiErrorMessage } from './errors';
-import { reasonsText, verdictBadge } from './verdict';
+import { reasonsText, verdictIcon } from './verdict';
 
 /** The player of a row, for the actions on them (watch the game, report, block) */
 export interface RowPlayer { playerId: number; pseudo: string; attemptId?: number; won: boolean }
@@ -114,7 +115,8 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
           >
             <View style={styles.row}>
               <Text style={[styles.rank, { color: colors.textMuted }]}>{row.rank ?? '–'}</Text>
-              <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{verdictBadge(row.verdict)} {row.pseudo}</Text>
+              {row.verdict && <Ionicons name={verdictIcon(row.verdict)} size={RFValue(15)} color={cheater ? colors.danger : colors.warning} />}
+              <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{row.pseudo}</Text>
               <Text style={[styles.detail, { color: row.status === 'won' ? colors.text : colors.textMuted }, cheater && styles.struck]}>{statusText(row)}</Text>
               <Text style={[styles.score, { color: cheater ? colors.danger : colors.primaryText }]}>{row.status === 'won' ? `+${row.points}` : ''}</Text>
             </View>

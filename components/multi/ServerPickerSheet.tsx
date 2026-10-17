@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text, StyleSheet, Pressable, View } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import BottomSheet from '@/components/home/BottomSheet';
 import { RFValue } from '@/utils/responsive';
@@ -38,7 +39,7 @@ export default function ServerPickerSheet({ visible, accounts, activeUrl, colors
               <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>{account.name}</Text>
               <Text style={[styles.host, { color: colors.textMuted }]} numberOfLines={1}>{serverHost(account.url)} · {account.pseudo}</Text>
             </View>
-            {active && <Text style={{ color: colors.primaryText, fontSize: RFValue(18) }}>✓</Text>}
+            {active && <Ionicons name="checkmark" size={RFValue(20)} color={colors.primaryText} />}
           </Pressable>
         );
       })}

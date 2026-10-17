@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, Text } from 'react-native';
+import IconText, { type IconName } from '../IconText';
 import { adminStyles } from './styles';
 
 interface Props {
@@ -9,9 +10,10 @@ interface Props {
   color: string;
   disabled?: boolean;
   accessibilityLabel?: string;
+  icon?: IconName;
 }
 
-export default function AdminButton({ label, onPress, background, color, disabled, accessibilityLabel }: Props) {
+export default function AdminButton({ label, onPress, background, color, disabled, accessibilityLabel, icon }: Props) {
   return (
     <Pressable
       onPress={onPress}
@@ -21,7 +23,8 @@ export default function AdminButton({ label, onPress, background, color, disable
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled: !!disabled }}
     >
-      <Text style={[adminStyles.buttonText, { color }]}>{label}</Text>
+      {icon ? <IconText icon={icon} color={color} textStyle={adminStyles.buttonText}>{label}</IconText>
+        : <Text style={[adminStyles.buttonText, { color }]}>{label}</Text>}
     </Pressable>
   );
 }

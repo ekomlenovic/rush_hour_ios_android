@@ -13,7 +13,7 @@ import { loadSettings, resetSettings, SettingsError, updateSettings } from './se
 import { deletePage } from './deletePage';
 import { newInviteCode, newRecoveryCode, newToken, normalizeRecoveryCode, secretEquals, sha256 } from './secrets';
 import { addDays, isValidDate, periodBounds } from './time';
-import { AUTH_TIMEOUT_MS, Duels, type ServerMessage } from './duel';
+import { AUTH_TIMEOUT_MS, DUEL_METRICS, Duels, type ServerMessage } from './duel';
 import { DuelStore, rankDuels } from './duelStore';
 import { PuzzlePool } from './puzzlePool';
 
@@ -347,6 +347,8 @@ export function buildApp(deps: AppDeps) {
         duels: duels.list(request.player.id),
         // Puzzles ready by difficulty: a duel of a difficulty with none waits for its puzzle
         ready: puzzles.counts(),
+        // What can decide the winner of a new duel (absent on older servers: the time)
+        metrics: DUEL_METRICS,
       }));
 
       // Duel rankings: wins, then fewer losses

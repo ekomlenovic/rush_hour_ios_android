@@ -12,6 +12,7 @@ import MultiHeader from '@/components/multi/MultiHeader';
 import KeyboardScreen from '@/components/KeyboardScreen';
 import QrCode from '@/components/multi/QrCode';
 import { multiErrorMessage } from '@/components/multi/errors';
+import IconText from '@/components/multi/IconText';
 
 /** My account on the active server: nickname, recovery code, leave, delete my data */
 export default function MultiAccountScreen() {
@@ -163,7 +164,7 @@ export default function MultiAccountScreen() {
           <Text style={[styles.cardTitle, { color: colors.text }]} accessibilityRole="header">{t('multi.admin')}</Text>
           {account.isAdmin ? (
             <Pressable onPress={() => router.push('/multi/admin')} style={[styles.reveal, { borderColor: colors.primary }]} accessibilityRole="button">
-              <Text style={[styles.smallButtonText, { color: colors.primaryText }]}>🛠️ {t('multi.admin_panel')}</Text>
+              <IconText icon="construct-outline" color={colors.primaryText} textStyle={styles.smallButtonText}>{t('multi.admin_panel')}</IconText>
             </Pressable>
           ) : claiming ? (
             <>

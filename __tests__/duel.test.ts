@@ -1,6 +1,7 @@
 import type { Level } from '../store/types';
 import {
-  countdownMs, duelElapsedMs, duelReducer, duelSocketUrl, iHaveWon, initialDuelState, myMove, normalizeDuelCode, outcome, winnerOf,
+  countdownMs, duelElapsedMs, duelReducer, duelSocketUrl, iHaveWon, initialDuelState, myMove, normalizeDuelCode, opponentHasWon, outcome,
+  winnerOf,
   type DuelAction, type DuelServerMessage, type DuelState, type DuelView,
 } from '../utils/multi/duel';
 
@@ -78,6 +79,22 @@ describe('duel on the phone', () => {
     expect(state.connection).toBe('online');
     expect(state.duel!.me.vehicles.find(v => v.id === 'v1')).toMatchObject({ row: 3 });
     expect(state.duel!.opponent!.vehicles).toEqual(LEVEL.vehicles);
+  });
+
+  it('the metric of the duel: the time on an older server', () => {
+    expect(playing().duel!.metric).toBe('time');
+    const state = run(initialDuelState, message({ type: 'duel', duel: view({ metric: 'moves' }) }));
+    expect(state.duel!.metric).toBe('moves');
+  });
+
+  it('a duel on moves goes on once the opponent is out: their board tells it', () => {
+    let state = run(initialDuelState, message({ type: 'duel', duel: view({ metric: 'moves' }) }));
+    state = run(state, message({ type: 'move', playerId: 2, move: { vehicleId: 'v1', delta: 2, t: 900 } }));
+    expect(opponentHasWon(state.duel!)).toBe(false);
+    state = run(state, message({ type: 'move', playerId: 2, move: { vehicleId: 'target', delta: 4, t: 1900 } }));
+    expect(opponentHasWon(state.duel!)).toBe(true);
+    expect(iHaveWon(state.duel!)).toBe(false);
+    expect(state.duel!.status).toBe('playing');
   });
 
   it('wins, loses, draws', () => {

@@ -12,6 +12,7 @@ import { multiErrorMessage } from '@/components/multi/errors';
 import { buildCompose, buildNginx, deviceTimeZone, domainOf, SECRET_PLACEHOLDER, SETUP_COMMANDS } from '@/utils/multi/serverSetup';
 import { testConnection, type ConnectionResult } from '@/utils/multi/connectionTest';
 import type { Difficulty } from '@/utils/multi/api';
+import IconText from '@/components/multi/IconText';
 
 /** Full documentation of the server: every setting, updates, backups */
 export const SERVER_DOCS_URL = 'https://github.com/ekomlenovic/rush_hour_ios_android/blob/main/server/README.md';
@@ -131,10 +132,10 @@ export default function CreateServerScreen() {
           {result && (
             <View style={[styles.result, { backgroundColor: result.ok ? colors.successSoft : colors.dangerSoft }]} accessibilityLiveRegion="polite">
               {result.ok ? (
-                <Text style={[styles.resultText, { color: colors.text }]}>✅ {t('multi.setup_test_ok', { name: result.info.name })}</Text>
+                <IconText icon="checkmark-circle" color={colors.success} textStyle={styles.resultText}>{t('multi.setup_test_ok', { name: result.info.name })}</IconText>
               ) : (
                 <>
-                  <Text style={[styles.resultText, { color: colors.text }]}>❌ {t(`multi.setup_test_fail.${result.step}`)}</Text>
+                  <IconText icon="close-circle" color={colors.danger} textStyle={styles.resultText}>{t(`multi.setup_test_fail.${result.step}`)}</IconText>
                   <Text style={[styles.text, { color: colors.text }]}>{multiErrorMessage(t, result.error)}</Text>
                 </>
               )}
