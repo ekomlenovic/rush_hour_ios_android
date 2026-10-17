@@ -13,7 +13,7 @@ import { loadSettings, resetSettings, SettingsError, updateSettings } from './se
 import { deletePage } from './deletePage';
 import { newInviteCode, newRecoveryCode, newToken, normalizeRecoveryCode, secretEquals, sha256 } from './secrets';
 import { addDays, isValidDate, periodBounds } from './time';
-import { Duels, type ServerMessage } from './duel';
+import { AUTH_TIMEOUT_MS, Duels, type ServerMessage } from './duel';
 import { DuelStore, rankDuels } from './duelStore';
 
 /** Version of this API: the app refuses a server it does not know how to talk to */
@@ -26,6 +26,8 @@ export const MAX_MOVES = 1000;
 export const FEATURES = ['duel'];
 /** A WebSocket that does not answer a ping in this time is closed (phone gone, network lost) */
 const PING_INTERVAL_MS = 25_000;
+/** Open duel WebSockets from one address at most */
+export const MAX_SOCKETS_PER_IP = 10;
 
 export interface AppDeps {
   config: Config;
@@ -33,6 +35,8 @@ export interface AppDeps {
   generator: PuzzleGenerator;
   now?: () => number;
   logger?: boolean | object;
+  /** Limits of the duel WebSockets, smaller in tests */
+  duelLimits?: { authTimeoutMs?: number; socketsPerIp?: number };
 }
 
 interface Player { id: number; pseudo: string; created_at: number; is_admin: number; banned: number }
@@ -76,7 +80,8 @@ export function inviteCode(db: Database, config: Config): { code: string; genera
   return { code, generated: true };
 }
 
-export function buildApp({ config, db, generator, now = Date.now, logger = false }: AppDeps) {
+export function buildApp(deps: AppDeps) {
+  const { config, db, generator, now = Date.now, logger = false } = deps;
   const app: FastifyInstance = Fastify({
     logger: logger === true ? { redact: ['req.headers.authorization'] } : logger,
     trustProxy: config.trustProxy,
@@ -146,6 +151,9 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
       return player.banned ? 'banned' : { id: player.id, pseudo: player.pseudo };
     },
   });
+  const duelLimits = { authTimeoutMs: AUTH_TIMEOUT_MS, socketsPerIp: MAX_SOCKETS_PER_IP, ...deps.duelLimits };
+  /** Open WebSockets by address */
+  const socketsByIp = new Map<string, number>();
   const duelSweep = setInterval(() => duels.sweep(), 5000);
   duelSweep.unref();
   app.register(websocket, { options: { maxPayload: 4096 } });
@@ -221,7 +229,13 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
     }));
 
     // Duels in real time: one WebSocket per player, who says who they are in the first message
-    api.get('/duel', { websocket: true }, (socket) => {
+    api.get('/duel', { websocket: true }, (socket, request) => {
+      // A few phones behind one address (a home, a school) at most
+      const ip = request.ip;
+      const open = (socketsByIp.get(ip) ?? 0) + 1;
+      if (open > duelLimits.socketsPerIp) return socket.close(4029, 'rate_limited');
+      socketsByIp.set(ip, open);
+
       let alive = true;
       const connection = duels.connect({
         send: (message: ServerMessage) => {
@@ -229,8 +243,12 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
         },
         close: (code, reason) => socket.close(code, reason),
       });
+      // A connection that never says who it is goes away
+      const authTimer = setTimeout(() => {
+        if (!connection.authenticated()) socket.close(4001, 'unauthorized');
+      }, duelLimits.authTimeoutMs);
       const ping = setInterval(() => {
-        if (!alive || connection.expired()) return socket.terminate();
+        if (!alive) return socket.terminate();
         alive = false;
         socket.ping();
       }, PING_INTERVAL_MS);
@@ -239,7 +257,11 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
         if (!isBinary) connection.onMessage(data.toString());
       });
       socket.on('close', () => {
+        clearTimeout(authTimer);
         clearInterval(ping);
+        const left = (socketsByIp.get(ip) ?? 1) - 1;
+        if (left > 0) socketsByIp.set(ip, left);
+        else socketsByIp.delete(ip);
         connection.onClose();
       });
     });
@@ -275,9 +297,10 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
       const player = db.prepare(`SELECT ${PLAYER_FIELDS} FROM players WHERE recovery_hash = ?`).get(hash) as Player | undefined;
       if (!player) throw new ApiError(403, 'invalid_recovery_code');
       if (player.banned) throw new ApiError(403, 'banned');
-      // A new token: the previous phone is signed out
+      // A new token: the previous phone is signed out (its duel connection too)
       const token = newToken();
       db.prepare('UPDATE players SET token_hash = ? WHERE id = ?').run(sha256(token), player.id);
+      duels.kick(player.id, 'signed_out');
       return { token, player: publicPlayer(player), server: { name: settings().serverName } };
     });
 
@@ -309,7 +332,8 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
       });
 
       auth.delete('/me', async (request, reply) => {
-        // Games go with the player (ON DELETE CASCADE)
+        // Games and duels go with the player (ON DELETE CASCADE)
+        duels.kick(request.player.id, 'deleted');
         db.prepare('DELETE FROM players WHERE id = ?').run(request.player.id);
         return reply.status(204).send();
       });
@@ -609,6 +633,7 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
             // An admin is never excluded (not even by mistake, by themselves)
             if (target.is_admin && request.body.banned) throw new ApiError(400, 'cannot_ban_admin');
             db.prepare('UPDATE players SET banned = ? WHERE id = ?').run(request.body.banned ? 1 : 0, target.id);
+            if (request.body.banned) duels.kick(target.id, 'banned');
           }
           return { ...publicPlayer(playerById(target.id)!), banned: !!playerById(target.id)!.banned };
         });
@@ -685,7 +710,7 @@ export function buildApp({ config, db, generator, now = Date.now, logger = false
             db.exec('ROLLBACK');
             throw e;
           }
-          if (!dryRun) request.log.info({ from, to, players: some ? playerIds.length : 'all', ...count }, 'admin reset');
+          if (!dryRun) request.log.info({ admin: request.player.id, from, to, players: some ? playerIds : 'all', ...count }, 'admin reset');
           return { dryRun, ...count };
         });
 

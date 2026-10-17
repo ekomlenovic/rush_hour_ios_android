@@ -25,8 +25,14 @@ export const MAX_DUEL_MS = 30 * 60_000;
 export const OVER_TTL_MS = 5 * 60_000;
 /** Time to say who you are after connecting */
 export const AUTH_TIMEOUT_MS = 10_000;
-/** Wrong codes before the connection is closed (guessing) */
+/** Wrong codes of a player in WRONG_CODES_WINDOW_MS before their connection is closed (guessing a private code) */
 export const MAX_WRONG_CODES = 10;
+export const WRONG_CODES_WINDOW_MS = 15 * 60_000;
+/** Messages of a connection in one second before it is closed (flooding) */
+export const MAX_MESSAGES_PER_SECOND = 20;
+/** Duels a player can create in CREATES_WINDOW_MS: each one generates a puzzle, which takes seconds */
+export const MAX_CREATES = 5;
+export const CREATES_WINDOW_MS = 60_000;
 export const MAX_DUEL_MOVES = 1000;
 
 export interface DuelIdentity { id: number; pseudo: string }
@@ -153,6 +159,25 @@ interface Duel {
   next: Promise<Level | null> | null;
 }
 
+/** Counts events by key in a sliding window: too many, and the next one is refused */
+class WindowLimiter {
+  private readonly hits = new Map<number, number[]>();
+  constructor(private readonly max: number, private readonly windowMs: number) {}
+
+  /** Records an event; false once there were `max` of them in the window */
+  hit(key: number, now: number): boolean {
+    const recent = (this.hits.get(key) ?? []).filter(at => now - at < this.windowMs);
+    recent.push(now);
+    this.hits.set(key, recent);
+    return recent.length <= this.max;
+  }
+
+  /** Forgets the keys with nothing recent (memory) */
+  prune(now: number) {
+    for (const [key, times] of this.hits) if (times.every(at => now - at >= this.windowMs)) this.hits.delete(key);
+  }
+}
+
 export function newDuelCode(): string {
   let code = '';
   for (let i = 0; i < CODE_LENGTH; i++) code += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)];
@@ -191,29 +216,40 @@ export class Duels {
   private readonly duels = new Map<string, Duel>();
   private readonly byPlayer = new Map<number, Duel>();
   private readonly connections = new Map<number, DuelConnection>();
+  private readonly wrongCodes = new WindowLimiter(MAX_WRONG_CODES - 1, WRONG_CODES_WINDOW_MS);
+  private readonly creates = new WindowLimiter(MAX_CREATES, CREATES_WINDOW_MS);
 
   constructor(private readonly deps: DuelDeps) {}
 
   /** A new connection: it must say who it is first ({ type: 'auth' }) */
   connect(connection: DuelConnection) {
     let player: DuelIdentity | null = null;
-    let wrongCodes = 0;
     let closed = false;
-    const openedAt = this.deps.now();
+    let second = 0;
+    let messages = 0;
+
+    const refuse = (code: number, reason: string) => {
+      connection.send({ type: 'error', error: reason });
+      closed = true;
+      connection.close(code, reason);
+    };
 
     const onMessage = (raw: string) => {
       if (closed) return;
+      // Flooding, whoever it comes from
+      const now = this.deps.now();
+      if (Math.floor(now / 1000) !== second) {
+        second = Math.floor(now / 1000);
+        messages = 0;
+      }
+      if (++messages > MAX_MESSAGES_PER_SECOND) return refuse(4029, 'rate_limited');
       const message = parseMessage(raw);
       if (!message) return connection.send({ type: 'error', error: 'invalid_request' });
 
       if (!player) {
         if (message.type !== 'auth') return connection.send({ type: 'error', error: 'unauthorized' });
         const found = this.deps.authenticate(message.token);
-        if (!found || found === 'banned') {
-          connection.send({ type: 'error', error: found === 'banned' ? 'banned' : 'unauthorized' });
-          closed = true;
-          return connection.close(4001, found === 'banned' ? 'banned' : 'unauthorized');
-        }
+        if (!found || found === 'banned') return refuse(4001, found === 'banned' ? 'banned' : 'unauthorized');
         player = found;
         this.attach(player, connection);
         return;
@@ -222,14 +258,12 @@ export class Duels {
       if (message.type === 'auth') return;
       if (message.type === 'join') {
         const error = this.join(player, message.code);
-        if (error === 'duel_not_found' && ++wrongCodes >= MAX_WRONG_CODES) {
-          connection.send({ type: 'error', error: 'rate_limited' });
-          closed = true;
-          return connection.close(4029, 'rate_limited');
-        }
+        // Counted by player, not by connection: connecting again does not give more tries
+        if (error === 'duel_not_found' && !this.wrongCodes.hit(player.id, now)) return refuse(4029, 'rate_limited');
         if (error) connection.send({ type: 'error', error });
         return;
       }
+      if (message.type === 'create' && !this.creates.hit(player.id, now)) return connection.send({ type: 'error', error: 'rate_limited' });
       const error = this.handle(player, message);
       if (error) connection.send({ type: 'error', error });
     };
@@ -239,10 +273,22 @@ export class Duels {
       if (player) this.detach(player.id, connection);
     };
 
-    /** Called now and then: a connection that never said who it is goes away */
-    const expired = () => !player && !closed && this.deps.now() - openedAt > AUTH_TIMEOUT_MS;
+    /** Has it said who it is? Otherwise it goes away after AUTH_TIMEOUT_MS */
+    const authenticated = () => player !== null;
 
-    return { onMessage, onClose, expired };
+    return { onMessage, onClose, authenticated };
+  }
+
+  /**
+   * A player who must not play any more (excluded by the admin, account deleted, signed
+   * in on another phone): out of their duel at once, and their connection closed.
+   */
+  kick(playerId: number, reason: string) {
+    const duel = this.byPlayer.get(playerId);
+    if (duel) this.leave(duel, playerId);
+    const connection = this.connections.get(playerId);
+    this.connections.delete(playerId);
+    connection?.close(4003, reason);
   }
 
   /** The duel of a player, for tests and logs */
@@ -279,6 +325,8 @@ export class Duels {
   /** Deadlines: a player who did not come back, a room nobody joined, a game too long */
   sweep() {
     const now = this.deps.now();
+    this.wrongCodes.prune(now);
+    this.creates.prune(now);
     for (const duel of [...this.duels.values()]) {
       if (duel.status === 'waiting' && now - duel.createdAt > WAITING_TTL_MS) {
         this.close(duel);

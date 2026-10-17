@@ -57,14 +57,17 @@ export function testConfig(env: Record<string, string> = {}): Config {
 export const paris = (date: string, time: string) => zonedTimeToInstant(date, time, 'Europe/Paris');
 
 /** A server on an in-memory database with a clock under control */
-export function testServer(options: { env?: Record<string, string>; level?: Level | null; at?: number; generator?: PuzzleGenerator } = {}) {
+export function testServer(options: {
+  env?: Record<string, string>; level?: Level | null; at?: number; generator?: PuzzleGenerator;
+  duelLimits?: { authTimeoutMs?: number; socketsPerIp?: number };
+} = {}) {
   const clock = { now: options.at ?? paris('2026-10-16', '15:00') };
   const db = openDatabase(':memory:');
   const fake = fakeGenerator(options.level === undefined ? LEVEL : options.level);
   const { calls } = fake;
   const generator = options.generator ?? fake.generator;
   const config = testConfig(options.env);
-  const { app, challenges, duels } = buildApp({ config, db, generator, now: () => clock.now });
+  const { app, challenges, duels } = buildApp({ config, db, generator, now: () => clock.now, duelLimits: options.duelLimits });
 
   const request = async (method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, token?: string, body?: object) => {
     const res = await app.inject({
