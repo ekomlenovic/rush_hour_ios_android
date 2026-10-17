@@ -156,16 +156,18 @@
     "win_stats": "{{moves}} coups · Meilleur : {{best}} · Score : {{score}}",
     "analyzing": "Analyse du puzzle...",
     "share_level": "Partager le niveau",
-    "qr_hint": "Scanne pour défier un ami !",
-    "share_link": "Partager le lien",
-    "copy_url": "Copier l'URL",
+    "qr_hint": "Ton ami le scanne avec l'appareil photo : le niveau s'ouvre dans Rush Hours.",
+    "share_link": "Envoyer…",
+    "copy_url": "Copier le lien",
     "load_error": "Impossible de charger ce niveau.",
     "share_message": "Défie-moi sur Rush Hours ! Peux-tu battre ce niveau en {{moves}} coups ?\n{{url}}",
     "goal_title": "Objectif",
     "goal_desc": "Faites glisser la voiture rouge vers la sortie en haut !",
     "daily_already_completed": "Défi du jour déjà réussi ! Rendez-vous demain.",
     "weekly_already_completed": "Défi de la semaine déjà réussi ! Rendez-vous lundi.",
-    "archive_title": "Archive · {{date}}"
+    "archive_title": "Archive · {{date}}",
+    "qr_a11y": "QR code du niveau {{name}}",
+    "share_message_named": "Défie-moi sur Rush Hours ! Peux-tu battre « {{name}} » en {{moves}} coups ?\n{{url}}"
   },
   "tutorial": {
     "title": "Tutoriel",
@@ -212,12 +214,12 @@
     "top": "Haut",
     "bottom": "Bas",
     "collision_title": "Action bloquée",
-    "collision_desc": "Le véhicule entrerait en collision avec un autre. Dégage d'abord le passage."
+    "collision_desc": "Le véhicule entrerait en collision avec un autre. Dégage d'abord le passage.",
+    "name_title": "Nommer ton niveau"
   },
   "custom_levels": {
     "delete_title": "Supprimer le niveau",
-    "delete_confirm": "Tu es sûr de vouloir supprimer ce niveau ?",
-    "level_stats": "{{count}} véhicules • {{moves}} coups min",
+    "delete_confirm": "Supprimer « {{name}} » ? Ta partie en cours sur ce niveau sera perdue.",
     "tabs": {
       "created": "Créés",
       "imported": "Importés",
@@ -225,11 +227,26 @@
     },
     "import_placeholder": "Lien ou code du niveau...",
     "empty_created": "Tu n'as pas encore créé de niveaux.",
-    "empty_imported": "Aucun niveau importé trouvé.",
+    "empty_imported": "Aucun niveau importé. Demande un lien à un ami ou scanne son QR code avec l'appareil photo.",
     "empty_favorites": "Aucun niveau favori pour le moment.",
     "create_new": "Créer un nouveau niveau",
-    "import_success": "Niveau importé avec succès !",
-    "import_error": "Lien ou code de niveau invalide."
+    "import_error": "Lien ou code invalide, ou niveau impossible à résoudre.",
+    "stats_line": "{{size}}×{{size}} · {{count}} véhicules · {{moves}} coups",
+    "untitled": "Niveau {{n}}",
+    "untitled_imported": "Niveau importé {{n}}",
+    "stars_one": "{{count}} étoile",
+    "stars_other": "{{count}} étoiles",
+    "not_won": "Pas encore réussi",
+    "import_title": "Importer un niveau",
+    "import_hint": "Colle le lien ou le code reçu d'un ami.",
+    "import_existing_title": "Déjà importé",
+    "import_existing": "Tu as déjà ce niveau dans Importés.",
+    "name_label": "Nom (facultatif)",
+    "name_placeholder": "Ex. : Embouteillage du lundi",
+    "save_name": "Enregistrer",
+    "rename": "Renommer",
+    "more": "Plus d'actions, {{name}}",
+    "edit_imported": "Modifier {{name}} : crée ton propre niveau dans Créés"
   },
   "difficulty": {
     "EASY": "Facile",

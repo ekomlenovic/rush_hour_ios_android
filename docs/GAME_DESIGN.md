@@ -54,6 +54,21 @@ Les défis du jour **passés** se rejouent depuis les archives : toucher un jour
 | Après une victoire, on peut **revoir la solution optimale** : elle se joue toute seule depuis la position de départ, et on avance ou recule coup par coup | `SolutionPlayer`, `vehiclesAtStep` (`utils/solutionReplay.ts`) |
 | Si la victoire n'est pas optimale, l'écran de victoire affiche l'écart et propose **« Réessayer pour 3 ⭐ »** : une nouvelle tentative depuis le départ (compteurs remis à zéro, ce n'est pas un recommencer) | `handleRetry` (`app/game.tsx`) |
 
+## Niveaux personnalisés — créer, importer, partager
+
+Accueil → **Mes niveaux** : onglets Créés, Importés, Favoris.
+
+| Règle | Implémentation |
+|---|---|
+| **Modifier, c'est créer** : un niveau importé modifié est enregistré comme **nouveau niveau dans « Créés »** (il compte pour les succès du créateur), l'importé reste intact | `saveLevel` (`app/creator.tsx`) |
+| **Nom facultatif**, demandé à l'enregistrement dans le créateur et à l'import (prérempli avec celui du lien), modifiable ensuite (« ⋯ » → Renommer). Sans nom : « Niveau 3 » / « Niveau importé 3 » (rang dans la liste), **jamais l'id** (un horodatage) | `LevelNameSheet`, `customLevelTitle` (`utils/customLevels.ts`) |
+| Le nom voyage dans le lien (section en plus, ignorée par les anciennes versions de l'app) | `serializeLevel` (`utils/sharing.ts`) |
+| Un lien reçu est **vérifié et résolu à nouveau** : grille, véhicules dans la grille sans chevauchement, une seule voiture cible, une sortie, une solution. Le minimum de coups du lien **n'est jamais repris** (il donne les étoiles et l'XP) | `parseSharedLevel` |
+| Un même plateau n'est importé **qu'une fois** (nom et favori mis à part) : le lien déjà importé ouvre le niveau existant. La comparaison ne porte que sur les **importés** : un niveau modifié depuis un import (dans Créés) et l'original réimporté font bien deux niveaux | `addImportedLevel`, `isSameBoard` |
+| **Un seul partage** de niveau, depuis le jeu ou Mes niveaux : QR code **dessiné sur le téléphone** (jamais de service en ligne), feuille de partage du système (lien dans le message, lu aussi sur Android), copier le lien. Chaque partage compte pour le succès « Partageur » | `ShareLevelSheet`, `shareLevel` (`utils/shareLevel.ts`) |
+| **Une seule icône de partage** dans toute l'app (niveau, résultat, invitation) : celle du système | `ShareIcon` |
+| Supprimer un niveau supprime sa partie en cours ; ses victoires restent dans les statistiques | `deleteCustomLevel` |
+
 ## Streak et gels
 
 Le streak compte les jours consécutifs avec le défi du jour réussi.

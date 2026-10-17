@@ -1,4 +1,7 @@
-import { Level, Vehicle } from '@/store/gameStore';
+import type { Level, Vehicle } from '@/store/types';
+import { validateLevel } from './solver';
+import { getExitSide, vehicleCells } from './creatorGeometry';
+import { CLASSIC_VEHICLE_COLORS } from '../theme/board';
 
 // Simple Base64 implementation for cross-platform compatibility
 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
@@ -46,8 +49,11 @@ export function serializeLevel(level: Level): string {
     return `${v.row},${v.col},${v.length},${orientation},${isTarget},${color},${v.id}`;
   });
 
-  const fullString = `${parts.join('|')}|${vehicleStrings.join(';')}`;
-  return customBtoa(fullString);
+  // The name is an extra section: older versions of the app ignore it
+  const name = cleanLevelName(level.name);
+  const sections = [...parts, vehicleStrings.join(';')];
+  if (name) sections.push(encodeURIComponent(name));
+  return customBtoa(sections.join('|'));
 }
 
 /**
@@ -90,6 +96,8 @@ export function deserializeLevel(data: string, id: number = 999998): Level | nul
       };
     });
 
+    const name = sections[5] ? cleanLevelName(decodeURIComponent(sections[5])) : undefined;
+
     return {
       id,
       gridSize,
@@ -97,7 +105,8 @@ export function deserializeLevel(data: string, id: number = 999998): Level | nul
       exitCol,
       minMoves,
       vehicles,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
+      ...(name ? { name } : {}),
     };
   } catch (err) {
     console.error('Failed to deserialize level:', err);
@@ -113,10 +122,53 @@ export function getShareUrl(level: Level): string {
   return `rush-hours://game?data=${encodeURIComponent(data)}`;
 }
 
+export const LEVEL_NAME_MAX_LENGTH = 40;
+
+/** Name of a level as stored: trimmed, without control characters, empty → undefined */
+export function cleanLevelName(name: string | undefined): string | undefined {
+  const clean = (name ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, LEVEL_NAME_MAX_LENGTH);
+  return clean || undefined;
+}
+
+const MIN_GRID = 4;
+const MAX_GRID = 10;
+const HEX_COLOR = /^#[0-9a-fA-F]{3,8}$/;
+
+/** Whether a decoded level is a real board: vehicles inside the grid, no overlap, one target, an exit */
+function isWellFormed(level: Level): boolean {
+  const { gridSize, vehicles } = level;
+  if (!Number.isInteger(gridSize) || gridSize < MIN_GRID || gridSize > MAX_GRID) return false;
+  if (!getExitSide(level.exitRow, level.exitCol, gridSize)) return false;
+  if (vehicles.filter(v => v.isTarget).length !== 1) return false;
+  if (new Set(vehicles.map(v => v.id)).size !== vehicles.length) return false;
+  const taken = new Set<string>();
+  for (const v of vehicles) {
+    if (![v.row, v.col, v.length].every(Number.isInteger) || v.length < 1 || v.length >= gridSize) return false;
+    for (const [r, c] of vehicleCells(v.row, v.col, v.orientation, v.length)) {
+      if (r < 0 || c < 0 || r >= gridSize || c >= gridSize || taken.has(`${r},${c}`)) return false;
+      taken.add(`${r},${c}`);
+    }
+  }
+  return true;
+}
 
 /**
- * Generates a QR Code URL using the QRServer API
+ * A level received from someone else (link, code, QR): decoded, checked and solved again.
+ * The minimum of moves of the link is never trusted, it gives the stars and the XP.
+ * Returns null for a broken or unsolvable level.
  */
-export function getQRCodeUrl(shareUrl: string): string {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(shareUrl)}`;
+export function parseSharedLevel(data: string, id: number = Date.now()): Level | null {
+  const level = deserializeLevel(data, id);
+  if (!level || !isWellFormed(level)) return null;
+  const vehicles = level.vehicles.map((v, i) =>
+    HEX_COLOR.test(v.color) ? v : { ...v, color: CLASSIC_VEHICLE_COLORS[i % CLASSIC_VEHICLE_COLORS.length] });
+  const minMoves = validateLevel(vehicles, level.gridSize, level.exitRow, level.exitCol);
+  if (minMoves < 1) return null;
+  return { ...level, vehicles, minMoves };
+}
+
+/** Same board (name and favorite aside): a link imported twice gives one level */
+export function isSameBoard(a: Level, b: Level): boolean {
+  const board = (l: Level) => serializeLevel({ ...l, name: undefined, minMoves: 0 });
+  return board(a) === board(b);
 }
