@@ -22,6 +22,8 @@ interface BoardProps {
 
 
 const BOARD_PADDING = 24;
+// The frame border is drawn inside the board's width: cells only get what is left
+const BOARD_BORDER = 2;
 
 const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hintVehicleId, disabled = false, readOnly = false }: BoardProps) => {
 
@@ -29,7 +31,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
 
   const { width: screenWidth } = useWindowDimensions();
   const boardSize = screenWidth - BOARD_PADDING * 2;
-  const cellSize = boardSize / gridSize;
+  const cellSize = (boardSize - BOARD_BORDER * 2) / gridSize;
 
   const gridColor = board.grid;
   const boardBg = board.background;
@@ -227,7 +229,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
 
 const styles = StyleSheet.create({
   boardContainer: {
-    borderWidth: 2,
+    borderWidth: BOARD_BORDER,
     overflow: 'hidden',
     position: 'relative',
   },
