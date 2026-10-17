@@ -306,9 +306,9 @@ export default function GameScreen() {
       {/* Header */}
       <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
-          <Text style={[styles.backText, { color: colors.textMuted }]}>← {customKind ? t('a11y.back') : t('common.map')}</Text>
+          <Text style={[styles.backText, { color: colors.textMuted }]} numberOfLines={1}>← {customKind ? t('a11y.back') : t('common.map')}</Text>
         </Pressable>
-        <Text style={[styles.levelTitle, { color: colors.text }]} accessibilityRole="header">
+        <Text style={[styles.levelTitle, { color: colors.text }]} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
           {challengeKind === 'daily' ? t('home.daily_challenge')
             : challengeKind === 'weekly' ? t('home.weekly_challenge')
             : isArchive ? t('game.archive_title', {
@@ -432,14 +432,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  // Same width as the share button: the title stays centered
   backButton: {
-    width: 60,
+    width: 76,
   },
   backText: {
     fontSize: 16,
     fontWeight: '600',
   },
   levelTitle: {
+    flex: 1,
+    textAlign: 'center',
     fontSize: 22,
     fontWeight: '800',
     letterSpacing: -0.5,
@@ -449,10 +452,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   shareHeaderBtn: {
-    width: 60,
+    width: 76,
     height: 44,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
   goalContainer: {
     marginTop: 20,
