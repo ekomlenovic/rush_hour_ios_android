@@ -10,6 +10,9 @@ import { puzzleSeed } from '../src/secrets';
 
 const silent = { info: () => {}, error: () => {} };
 
+const challengesRow = (db: ReturnType<typeof openDatabase>, date: string) =>
+  ({ ...(db.prepare('SELECT * FROM challenges WHERE date = ?').get(date) as object) });
+
 function challengesAt(at: number, env: Record<string, string> = {}, level?: Parameters<typeof fakeGenerator>[0]) {
   const clock = { now: at };
   const db = openDatabase(':memory:');
@@ -65,6 +68,29 @@ describe('pregeneration', () => {
     expect(second.calls.map(c => c.difficulty)).toEqual(['EXPERT']);
     expect(challenges.get('2026-10-16')!.difficulty).toBe('NORMAL');
     expect(challenges.get('2026-10-17')!.difficulty).toBe('EXPERT');
+  });
+
+  it('a puzzle released while its regeneration runs is kept: the games started on it stay valid', async () => {
+    const db = openDatabase(':memory:');
+    const clock = { now: paris('2026-10-17', '11:50') };
+    await new Challenges(db, testConfig(), fakeGenerator().generator, () => clock.now, silent).ensure('2026-10-17');
+    const before = challengesRow(db, '2026-10-17');
+
+    // A slow generation for the new difficulty, that ends after the release at 12:00
+    let finish: () => void = () => {};
+    const slow = fakeGenerator();
+    const generator = {
+      ...slow.generator,
+      generate: (seed: string, difficulty: Parameters<typeof slow.generator.generate>[1]) =>
+        new Promise<void>(resolve => { finish = resolve; }).then(() => slow.generator.generate(seed, difficulty)),
+    };
+    const challenges = new Challenges(db, testConfig({ DIFFICULTY: 'HARD' }), generator, () => clock.now, silent);
+    const job = challenges.ensure('2026-10-17');
+    clock.now = paris('2026-10-17', '12:01');
+    finish();
+
+    expect(await job).toEqual(before);
+    expect(challengesRow(db, '2026-10-17')).toEqual(before);
   });
 
   it('tries other seeds when a generation fails, and gives up after a few', async () => {
