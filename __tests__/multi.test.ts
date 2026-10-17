@@ -321,6 +321,11 @@ describe('QR code drawn on the phone', () => {
       for (let c = 0; c < size; c++) expect(dark.has(c)).toBe(qr.isDark(r, c));
     }
   });
+
+  it('its SVG path draws each run inside the quiet zone', () => {
+    const { qrPath } = require('../components/multi/QrCode') as typeof import('../components/multi/QrCode');
+    expect(qrPath([[[0, 2]], [], [[1, 1], [5, 3]]])).toBe('M4 4h2v1h-2zM5 6h1v1h-1zM9 6h3v1h-3z');
+  });
 });
 
 describe('replay of a multiplayer game', () => {
