@@ -27,6 +27,7 @@ import ShareIcon from '@/components/share/ShareIcon';
 import ChallengeDoneBanner from '@/components/game/ChallengeDoneBanner';
 import HintLoadingPill from '@/components/game/HintLoadingPill';
 import SolutionPlayer from '@/components/game/SolutionPlayer';
+import IconText from '@/components/multi/IconText';
 
 export default function GameScreen() {
   const { t, i18n } = useTranslation();
@@ -396,7 +397,7 @@ export default function GameScreen() {
       {/* Goal text for Level 1 */}
       {currentLevel.id === 1 && !challengeKind && !won && (
         <Animated.View entering={FadeInDown.delay(500).springify()} style={styles.goalContainer}>
-          <Text style={[styles.goalHeader, { color: colors.primaryText }]}>🎯 {t('game.goal_title')}</Text>
+          <IconText icon="flag" color={colors.primaryText} style={styles.goalTitleRow} textStyle={styles.goalHeader}>{t('game.goal_title')}</IconText>
           <Text style={[styles.goalText, { color: colors.textMuted }]}>{t('game.goal_desc')}</Text>
         </Animated.View>
       )}
@@ -467,6 +468,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 1,
+  },
+  goalTitleRow: {
     marginBottom: 4,
   },
   goalText: {

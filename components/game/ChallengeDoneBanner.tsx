@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import type { UiColors } from '@/theme';
 import ShareIcon from '@/components/share/ShareIcon';
 
@@ -29,16 +30,22 @@ export default function ChallengeDoneBanner({ colors, kind, stars, onShareResult
         }
       ]}
     >
-      <Text style={{ fontSize: 24, marginBottom: 4 }}>✅</Text>
+      <Ionicons name="checkmark-circle" size={28} color={green} style={{ marginBottom: 4 }} />
       <Text style={{ color: green, fontWeight: '800', fontSize: 16, textAlign: 'center' }}>
-        {t(kind === 'weekly' ? 'home.weekly_done' : 'home.daily_done', { stars })}
+        {t(kind === 'weekly' ? 'home.weekly_done' : 'home.daily_done')}
       </Text>
+      <View style={styles.stars} accessible accessibilityLabel={t('a11y.level_stars', { count: stars })}>
+        {[1, 2, 3].map(i => (
+          <Ionicons key={i} name={i <= stars ? 'star' : 'star-outline'} size={18} color={i <= stars ? colors.star : colors.border} />
+        ))}
+      </View>
       <Text style={{ color: colors.textMuted, fontSize: 13, textAlign: 'center', marginTop: 4 }}>
         {t(kind === 'weekly' ? 'game.weekly_already_completed' : 'game.daily_already_completed')}
       </Text>
       <View style={styles.bannerButtons}>
         <Pressable onPress={onShowSolution} style={[styles.bannerShareButton, { borderColor: green }]} accessibilityRole="button">
-          <Text style={{ color: green, fontWeight: '700', fontSize: 14 }}>🎬 {t('solution.show')}</Text>
+          <Ionicons name="play-circle-outline" size={16} color={green} />
+          <Text style={{ color: green, fontWeight: '700', fontSize: 14 }}>{t('solution.show')}</Text>
         </Pressable>
         <Pressable onPress={onShareResult} style={[styles.bannerShareButton, { borderColor: green }]} accessibilityRole="button">
           <ShareIcon size={16} color={green} />
@@ -57,6 +64,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginTop: 16,
+  },
+  stars: {
+    flexDirection: 'row',
+    gap: 2,
+    marginTop: 4,
   },
   bannerButtons: {
     flexDirection: 'row',
