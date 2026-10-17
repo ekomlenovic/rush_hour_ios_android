@@ -20,6 +20,8 @@ export interface AchievementDef {
   /** Also the i18n key: achievements.<id> and achievements.<id>_desc */
   id: string;
   icon: IoniconName;
+  /** The icon repeated, for the steps of one series (1, 2 then 3 flames) */
+  iconCount?: 2 | 3;
   category: AchievementCategory;
   /** Shown as "???" until unlocked */
   hidden?: boolean;
@@ -166,7 +168,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'weekly_warrior', icon: 'shield-half', category: 'daily', target: 1, value: c => c.weeklies },
   { id: 'weekly_4', icon: 'shield', category: 'daily', target: 4, value: c => c.weeklies },
   { id: 'weekly_12', icon: 'shield-checkmark', category: 'daily', target: 12, value: c => c.weeklies },
-  { id: 'weekly_perfect', icon: 'medal', category: 'daily', target: 1, value: c => c.perfectWeeklies },
+  { id: 'weekly_perfect', icon: 'star', category: 'daily', target: 1, value: c => c.perfectWeeklies },
   { id: 'daily_365', icon: 'infinite', category: 'daily', target: 365, value: c => c.dailies },
   { id: 'missions_1', icon: 'flag', category: 'daily', target: 1, value: c => c.stats.missionDaysCompleted },
   { id: 'missions_7', icon: 'clipboard', category: 'daily', target: 7, value: c => c.stats.missionDaysCompleted },
@@ -177,8 +179,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 
   // Streak
   { id: 'streak_3', icon: 'flame', category: 'streak', target: 3, value: c => c.bestStreak },
-  { id: 'streak_7', icon: 'flame', category: 'streak', target: 7, value: c => c.bestStreak },
-  { id: 'streak_30', icon: 'flame', category: 'streak', target: 30, value: c => c.bestStreak },
+  { id: 'streak_7', icon: 'flame', iconCount: 2, category: 'streak', target: 7, value: c => c.bestStreak },
+  { id: 'streak_30', icon: 'flame', iconCount: 3, category: 'streak', target: 30, value: c => c.bestStreak },
   { id: 'streak_100', icon: 'bonfire', category: 'streak', target: 100, value: c => c.bestStreak },
   { id: 'streak_365', icon: 'sunny', category: 'streak', target: 365, value: c => c.bestStreak },
   { id: 'frozen_save', icon: 'snow', category: 'streak', target: 1, value: c => c.stats.freezesUsed },
