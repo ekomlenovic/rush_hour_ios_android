@@ -9,6 +9,7 @@ import type { MultiApi } from '@/utils/multi/api';
 import type { ServerAccount } from '@/store/multiStore';
 import type { UiColors } from '@/theme';
 import QrCode from './QrCode';
+import ShareIcon from '@/components/share/ShareIcon';
 import { multiErrorMessage } from './errors';
 
 interface Props {
@@ -56,6 +57,7 @@ export default function InviteSheet({ visible, account, api, colors, isDark, onC
       </View>
       <View style={styles.actions}>
         <Pressable onPress={share} disabled={!link} style={[styles.button, { backgroundColor: colors.primary, opacity: link ? 1 : 0.5 }]} accessibilityRole="button">
+          <ShareIcon size={RFValue(18)} color={colors.onPrimary} />
           <Text style={[styles.buttonText, { color: colors.onPrimary }]}>{t('multi.invite_share')}</Text>
         </Pressable>
         <Pressable onPress={copy} disabled={!link} style={[styles.button, { backgroundColor: colors.neutralSoft, opacity: link ? 1 : 0.5 }]} accessibilityRole="button">
@@ -84,6 +86,9 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
     paddingVertical: RFValue(13),
     borderRadius: 14,
     alignItems: 'center',
