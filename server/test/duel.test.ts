@@ -92,7 +92,7 @@ describe('duels', () => {
     expect(leo.last('duel')!.duel.status).toBe('preparing');
 
     await settle();
-    expect(calls).toEqual([{ seed: expect.stringMatching(/^duel:[0-9a-f]{32}$/), difficulty: 'HARD', kind: 'duel' }]);
+    expect(calls).toEqual([{ seed: expect.stringMatching(/^duel:[0-9a-f]{32}$/), difficulty: 'HARD' }]);
     const forLeo = leo.last('duel')!.duel;
     const forEmma = emma.last('duel')!.duel;
     expect(forLeo).toMatchObject({ status: 'playing', startsAt: clock.now + COUNTDOWN_MS, serverNow: clock.now, opponent: { pseudo: 'Emma', connected: true } });
@@ -342,7 +342,7 @@ describe('duels over a WebSocket', () => {
     server = testServer();
     const leo = await server.join('Léo');
     expect(await server.request('GET', '/duels', leo.token)).toEqual({
-      status: 200, body: { duels: [], ready: { EASY: 0, NORMAL: 0, HARD: 0, EXPERT: 0, MASTER: 0 }, unavailable: [] },
+      status: 200, body: { duels: [], ready: { EASY: 0, NORMAL: 0, HARD: 0, EXPERT: 0, MASTER: 0 } },
     });
     expect((await server.request('GET', '/duels')).status).toBe(401);
   });

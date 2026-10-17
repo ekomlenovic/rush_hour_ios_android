@@ -481,7 +481,7 @@ export class Duels {
       // Left, or a newer game, while the puzzle was generated
       if (duel.round !== round || duel.status !== 'preparing' || !this.duels.has(duel.code)) return;
       if (!level) {
-        // None ready, and too long to generate now (master)
+        // None ready, and none could be made
         this.broadcast(duel, { type: 'error', error: 'puzzle_unavailable' });
         return this.close(duel);
       }

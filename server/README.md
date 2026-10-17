@@ -72,7 +72,10 @@ Il faut une machine avec Docker, un nom de domaine (par exemple duckdns) et un r
 
 ### Puzzles des duels
 
-Le serveur garde une **réserve de puzzles générés à l'avance** pour les duels (10 par niveau, 3 en Maître), dans la base : un duel démarre aussitôt, et la réserve se remplit en arrière-plan dans un worker à part, une fois les défis du jour prêts. Les duels Expert et Maître sont des **variantes des niveaux durs de l'app** (symétrie, autre position de départ vérifiée par le solveur, couleurs mélangées) : toute la réserve est prête en une quarantaine de secondes au premier démarrage. Une génération de plus de 3 minutes est abandonnée, et ce niveau laissé de côté une heure.
+Le serveur garde des **puzzles prêts à l'avance** pour les duels, dans la base : un duel démarre aussitôt.
+
+- **Générés de zéro** en arrière-plan, dans un worker à part, une fois les défis du jour prêts : 10 par niveau, 3 en Maître. Un puzzle Maître peut prendre très longtemps : au-delà d'une heure, il est abandonné et ce niveau laissé de côté une heure.
+- **Catalogue de variantes** des niveaux durs de la campagne pour Expert et Maître, préparé une fois (environ 3 minutes et 350 Mo au premier démarrage) : 757 variantes Maître et 1 488 Expert, chacune une autre position de départ d'un niveau, avec son optimum exact. Une variante jouée est marquée et ne revient qu'une fois toutes jouées ; le niveau d'origine le moins joué passe d'abord.
 
 ## Administration
 

@@ -394,7 +394,6 @@ export default function MultiplayerScreen() {
       <NewDuelSheet
         visible={isNewDuelVisible}
         ready={serverDuels.ready}
-        unavailable={serverDuels.unavailable}
         colors={colors}
         isDark={isDark}
         onClose={() => setNewDuelVisible(false)}

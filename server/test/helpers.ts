@@ -35,9 +35,13 @@ export const LONG_SOLUTION: MoveRecord[] = [
 export function fakeGenerator(level: Level | null = LEVEL) {
   const calls: { seed: string; difficulty: string; kind?: string }[] = [];
   const generator: PuzzleGenerator = {
-    generate: async (seed, difficulty, kind) => {
-      calls.push({ seed, difficulty, ...(kind ? { kind } : {}) });
+    generate: async (seed, difficulty) => {
+      calls.push({ seed, difficulty });
       return level && { ...level };
+    },
+    variants: async (sourceId, difficulty, count) => {
+      calls.push({ seed: `variants:${sourceId}`, difficulty, kind: 'variants' });
+      return level ? Array.from({ length: count }, () => ({ ...level })) : [];
     },
     close: async () => {},
   };

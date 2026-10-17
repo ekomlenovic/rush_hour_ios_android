@@ -6,8 +6,6 @@ interface ServerDuels {
   duels: DuelListing[] | null;
   /** Puzzles ready by difficulty: a duel of a difficulty with none waits for its puzzle */
   ready: Partial<Record<Difficulty, number>> | null;
-  /** None ready and too long to generate for now: a duel of those cannot start */
-  unavailable: Difficulty[];
   loadedAt: number;
 }
 
@@ -19,13 +17,13 @@ const REFRESH_MS = 4000;
  * screen is shown. null until loaded; an older server without duels gives an empty list.
  */
 export function useServerDuels(api: MultiApi | null): ServerDuels {
-  const [state, setState] = useState<ServerDuels>({ duels: null, ready: null, unavailable: [], loadedAt: 0 });
+  const [state, setState] = useState<ServerDuels>({ duels: null, ready: null, loadedAt: 0 });
 
   useFocusEffect(useCallback(() => {
     if (!api) return;
     let active = true;
     const load = () => api.duels()
-      .then(r => { if (active) setState({ duels: r.duels, ready: r.ready ?? null, unavailable: r.unavailable ?? [], loadedAt: Date.now() }); })
+      .then(r => { if (active) setState({ duels: r.duels, ready: r.ready ?? null, loadedAt: Date.now() }); })
       .catch(() => { if (active) setState(s => ({ ...s, duels: s.duels ?? [], loadedAt: Date.now() })); });
     void load();
     const timer = setInterval(load, REFRESH_MS);

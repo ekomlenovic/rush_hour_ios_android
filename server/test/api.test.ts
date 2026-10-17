@@ -282,7 +282,11 @@ describe('errors', () => {
 
 describe('robustness', () => {
   it('a failed generation does not bring the server down', async () => {
-    const crashing = { generate: async () => { throw new Error('worker crashed'); }, close: async () => {} };
+    const crashing = {
+      generate: async () => { throw new Error('worker crashed'); },
+      variants: async () => { throw new Error('worker crashed'); },
+      close: async () => {},
+    };
     const { join, request } = open({ generator: crashing });
     const { token } = await join('Léo');
     expect((await request('GET', '/challenge/today', token)).body.status).toBe('preparing');

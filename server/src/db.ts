@@ -92,6 +92,18 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX puzzle_pool_difficulty ON puzzle_pool(difficulty, id);
   `,
+  // Variants of the hard levels of the app for the hardest duels, prepared once; a variant played is marked
+  `
+  CREATE TABLE duel_variants (
+    id INTEGER PRIMARY KEY,
+    difficulty TEXT NOT NULL,
+    -- The level of the app it comes from
+    source_id INTEGER NOT NULL,
+    level_json TEXT NOT NULL,
+    used_at INTEGER
+  );
+  CREATE INDEX duel_variants_difficulty ON duel_variants(difficulty, source_id);
+  `,
 ];
 
 export function openDatabase(path: string): Database {
