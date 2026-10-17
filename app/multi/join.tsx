@@ -11,7 +11,7 @@ import { normalizeServerUrl, parseInviteLink, parseRecoveryLink } from '@/utils/
 import MultiHeader from '@/components/multi/MultiHeader';
 import KeyboardScreen from '@/components/KeyboardScreen';
 import { multiErrorMessage } from '@/components/multi/errors';
-import IconText from '@/components/multi/IconText';
+import IconText from '@/components/IconText';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 

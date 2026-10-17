@@ -1,5 +1,4 @@
 import type { TFunction } from 'i18next';
-import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
 import type { CosmeticContext, CosmeticDef } from '@/data/cosmetics';
 
 /** How to unlock a cosmetic, with the current progress */
@@ -10,10 +9,7 @@ export function describeUnlock(t: TFunction, def: CosmeticDef, c: CosmeticContex
     case 'level': return t('cosmetics.unlock.level', { level: rule.level });
     case 'stars': return t('cosmetics.unlock.stars', { count: rule.count, current: c.totalStars });
     case 'weeklies': return t('cosmetics.unlock.weeklies', { count: rule.count, current: c.weeklies });
-    case 'achievement': {
-      const achievement = ACHIEVEMENTS_BY_ID[rule.id];
-      return t('cosmetics.unlock.achievement', { name: `${achievement?.icon ?? ''} ${t(`achievements.${rule.id}`)}` });
-    }
+    case 'achievement': return t('cosmetics.unlock.achievement', { name: t(`achievements.${rule.id}`) });
     case 'winter': return t('cosmetics.unlock.winter');
   }
 }

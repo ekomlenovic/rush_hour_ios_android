@@ -14,7 +14,7 @@ import { selectActiveAccount, useMultiStore } from '@/store/multiStore';
 import { useMultiApi } from '@/hooks/useMultiApi';
 import type { Replay } from '@/utils/multi/api';
 import { REPLAY_SPEEDS, gapBefore, isLongPause, playbackDelay, timeAt, vehiclesAfter, type ReplaySpeed } from '@/utils/multi/replay';
-import IconText from '@/components/multi/IconText';
+import IconText from '@/components/IconText';
 
 const noop = () => {};
 

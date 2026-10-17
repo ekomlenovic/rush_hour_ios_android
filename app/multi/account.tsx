@@ -12,7 +12,7 @@ import MultiHeader from '@/components/multi/MultiHeader';
 import KeyboardScreen from '@/components/KeyboardScreen';
 import QrCode from '@/components/multi/QrCode';
 import { multiErrorMessage } from '@/components/multi/errors';
-import IconText from '@/components/multi/IconText';
+import IconText from '@/components/IconText';
 
 /** My account on the active server: nickname, recovery code, leave, delete my data */
 export default function MultiAccountScreen() {

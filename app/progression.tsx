@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useGameStore } from '@/store/gameStore';
 import {
   PLAYER_TITLES, getFreezeCapacity, getLevelInfo, getLevelUpReward, totalXpForLevel,
@@ -131,7 +132,7 @@ export default function ProgressionScreen() {
                   </View>
                   {title && (
                     <Text style={[styles.titleBadge, { color: colors.primaryText, backgroundColor: colors.primarySoft }]}>
-                      🏷️ {t('progression.new_title', { title: t(`progression.titles.${title.id}`) })}
+                      <Ionicons name="pricetag" size={RFValue(12)} color={colors.primaryText} /> {t('progression.new_title', { title: t(`progression.titles.${title.id}`) })}
                     </Text>
                   )}
                   <Text style={[styles.reward, { color: colors.text }]}>{t('progression.reward_freeze')}</Text>
