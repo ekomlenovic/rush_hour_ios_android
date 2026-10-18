@@ -215,6 +215,28 @@ describe('moderation', () => {
     expect((await request('POST', '/recover', undefined, { recoveryCode: leo.recoveryCode })).status).toBe(403);
     expect((await request('POST', '/recover', undefined, { recoveryCode })).body.player.pseudo).toBe('Léo');
   });
+
+  it('the admin deletes the account of a player, with their games and reports', async () => {
+    const { join, joinAdmin, play, request, db } = open();
+    const admin = await joinAdmin();
+    const troll = await join('Troll');
+    await play(troll.token);
+    await request('POST', '/reports', troll.token, { playerId: admin.player.id, reason: 'pseudo' });
+    expect((await request('DELETE', `/admin/players/${troll.player.id}`, admin.token)).status).toBe(204);
+    expect((await request('GET', '/me', troll.token)).status).toBe(401);
+    expect((await request('POST', '/recover', undefined, { recoveryCode: troll.recoveryCode })).status).toBe(403);
+    expect(db.prepare('SELECT COUNT(*) AS n FROM attempts').get()).toEqual({ n: 0 });
+    expect(db.prepare('SELECT COUNT(*) AS n FROM reports').get()).toEqual({ n: 0 });
+    expect((await request('DELETE', `/admin/players/${troll.player.id}`, admin.token)).body).toEqual({ error: 'not_found' });
+  });
+
+  it('an admin cannot be deleted by an admin, and a player cannot delete anyone', async () => {
+    const { join, joinAdmin, request } = open();
+    const admin = await joinAdmin();
+    const leo = await join('Léo');
+    expect((await request('DELETE', `/admin/players/${admin.player.id}`, admin.token)).body).toEqual({ error: 'cannot_delete_admin' });
+    expect((await request('DELETE', `/admin/players/${admin.player.id}`, leo.token)).status).toBe(403);
+  });
 });
 
 describe('invitations', () => {
