@@ -2,7 +2,7 @@
   "expo": {
     "name": "Rush Hours",
     "slug": "rush-hours",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.rushhours.app",
-      "versionCode": 12,
+      "versionCode": 13,
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "backgroundColor": "#1A2B4C",
