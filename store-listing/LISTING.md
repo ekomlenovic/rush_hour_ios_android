@@ -2,7 +2,7 @@
 
 Tout ce qu'il faut pour remplir **Play Console → Présence sur le Store → Fiche principale**, en anglais (langue par défaut) et en français (traduction ajoutée à la main, pas la traduction automatique).
 
-Tous les chiffres viennent du code (version 1.1.8) : 309 niveaux (`data/sampleLevels.ts`), 6 à 63 coups minimum, grilles 6×6 à 8×8, 77 succès (`data/achievements.ts`), 24 cosmétiques (`data/cosmetics.ts`). **À mettre à jour si la campagne ou les succès changent.**
+Tous les chiffres viennent du code (version 2.0.0) : 309 niveaux (`data/sampleLevels.ts`), 6 à 63 coups minimum, grilles 6×6 à 8×8, 77 succès (`data/achievements.ts`), 24 cosmétiques (`data/cosmetics.ts`). **À mettre à jour si la campagne ou les succès changent.**
 
 ## Fichiers
 
@@ -100,13 +100,9 @@ FAIR AND RESPECTFUL
 • English and French
 ```
 
-### Release notes (500 max) — exemple pour la prochaine mise à jour
+### Release notes
 
-```
-• Levels 5 to 6: smoother difficulty ramp
-• Cleaner icons everywhere in the app
-• Achievement tiers now show 1, 2 or 3 flames
-```
+See [`docs/RELEASE_NOTES_2.0.0.md`](../docs/RELEASE_NOTES_2.0.0.md).
 
 ---
 
@@ -175,13 +171,9 @@ UN JEU HONNÊTE
 • Français et anglais
 ```
 
-### Notes de version (500 max) — exemple
+### Notes de version
 
-```
-• Niveaux 5 à 6 : montée de difficulté plus douce
-• Icônes plus nettes dans toute l'app
-• Les paliers de succès affichent 1, 2 ou 3 flammes
-```
+Voir [`docs/RELEASE_NOTES_2.0.0.md`](../docs/RELEASE_NOTES_2.0.0.md).
 
 ---
 
