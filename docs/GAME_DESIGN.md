@@ -360,7 +360,7 @@ Les règles ci-dessus sont vérifiées par les tests de `__tests__/` (Jest). Tou
 | `npm run typecheck` | vérification TypeScript |
 | `cd server && npm test` | tests du serveur multijoueur (Vitest) |
 
-La CI (`.github/workflows/tests.yml`) lance le typecheck et les tests dans les trois fuseaux sur chaque pull request. `.github/workflows/server.yml` teste le serveur et publie son image Docker sur GHCR (`:multi` depuis la branche `multi`, `:latest` depuis `main`).
+La CI (`.github/workflows/tests.yml`) lance le typecheck et les tests dans les trois fuseaux sur chaque pull request. `.github/workflows/server.yml` teste le serveur et publie son image Docker sur GHCR (`:multi` depuis la branche `multi`, `:preprod` depuis les branches de version `X.Y.Z`, `:latest` depuis `main`).
 
 Le build de l'app (`.github/workflows/build.yml`) ne se lance **qu'à la main** (Actions → Run workflow). Lancé sur `main`, il publie une release et met à jour les sources SideStore / Android ; lancé sur une autre branche, il ne fait que builder.
 
