@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, RefreshControl, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, RefreshControl, Alert, ActivityIndicator, AppState } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Constants from 'expo-constants';
@@ -34,6 +34,10 @@ const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 type MultiTab = 'challenge' | 'weekly' | 'duels';
 const DAY: Period[] = ['day'];
 const WEEK_MONTH: Period[] = ['week', 'month'];
+/** Margin after the release of the next challenge before asking the server for it */
+const NEXT_CHALLENGE_MARGIN_MS = 1000;
+/** Never ask again sooner than this, even with a clock that disagrees with the server */
+const MIN_RELOAD_MS = 5000;
 
 /** First visit: what the multiplayer mode is, then join or create a server */
 function Intro() {
@@ -141,6 +145,20 @@ export default function MultiplayerScreen() {
     const timer = setInterval(() => setNow(Date.now()), gameRunning ? 1000 : 30_000);
     return () => clearInterval(timer);
   }, [gameRunning]));
+  // The next challenge, as soon as it is released; asked again while the server still gives the old one
+  useFocusEffect(useCallback(() => {
+    if (!today) return;
+    const delay = today.closesAt - (Date.now() + clockOffset) + NEXT_CHALLENGE_MARGIN_MS;
+    const timer = setTimeout(load, Math.max(MIN_RELOAD_MS, delay));
+    return () => clearTimeout(timer);
+  }, [today, clockOffset, load]));
+  // Back from the background: timers were paused, the challenge may have changed
+  useFocusEffect(useCallback(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void load();
+    });
+    return () => subscription.remove();
+  }, [load]));
   // The puzzle of a server that was just started
   useEffect(() => {
     if (today?.status !== 'preparing') return;
