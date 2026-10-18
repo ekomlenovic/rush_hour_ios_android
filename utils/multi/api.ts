@@ -268,6 +268,7 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
       players: () => call<{ players: AdminPlayer[] }>('GET', '/admin/players'),
       updatePlayer: (playerId: number, patch: { pseudo?: string; banned?: boolean }) =>
         call<AdminPlayer>('PATCH', `/admin/players/${playerId}`, patch),
+      deletePlayer: (playerId: number) => call<void>('DELETE', `/admin/players/${playerId}`),
       transferCode: (playerId: number) => call<{ recoveryCode: string }>('POST', `/admin/players/${playerId}/transfer`),
       reports: () => call<{ reports: AdminReport[] }>('GET', '/admin/reports'),
       deleteReport: (reportId: number) => call<void>('DELETE', `/admin/reports/${reportId}`),

@@ -137,7 +137,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 | `POST /reports` `{ playerId, reason? }` | signaler un pseudo à l'admin |
 | `POST /admin/claim` `{ adminToken }` | devenir admin |
 | `GET /admin/games?filter=suspects\|all`, `POST /admin/games/:id/verdict` `{ verdict }` | parties à revoir ; `cheater`, `cleared` ou `null` |
-| `GET /admin/players`, `PATCH /admin/players/:id` `{ pseudo?, banned? }`, `POST /admin/players/:id/transfer` | joueurs, renommer, exclure, nouveau code de récupération |
+| `GET /admin/players`, `PATCH /admin/players/:id` `{ pseudo?, banned? }`, `POST /admin/players/:id/transfer`, `DELETE /admin/players/:id` | joueurs, renommer, exclure, nouveau code de récupération, supprimer le compte |
 | `GET /admin/reports`, `DELETE /admin/reports/:id` | signalements |
 | `POST /admin/invite` | nouveau code d'invitation |
 | `GET /admin/settings`, `PATCH /admin/settings` | nom, heure de sortie (`release_too_soon` si le prochain défi sortirait dans moins d'une heure), délai de grâce, pré-génération, inscriptions, invitations, difficulté, conservation des replays, seuils. La réponse donne aussi `timeZone` et `nextReleaseAt` |

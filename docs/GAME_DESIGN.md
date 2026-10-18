@@ -284,7 +284,7 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 | Rejoindre : adresse + **code d'invitation** + pseudo (2 à 20 caractères, unique sans tenir compte de la casse ni des accents) | `POST /join`, `pseudoKey` |
 | **Code de récupération** pour changer de téléphone (l'ancien est déconnecté) ; l'admin peut en donner un nouveau | `POST /recover`, `POST /admin/players/:id/transfer` |
 | **Signaler** un pseudo (à l'admin) et **bloquer** un joueur (masqué sur ce téléphone seulement) | `POST /reports`, `blocked` (`store/multiStore.ts`) |
-| **Supprimer ses données** depuis l'app ou depuis le web avec le code de récupération (Google Play) | `DELETE /me`, `/delete-account` (`server/src/deletePage.ts`) |
+| **Supprimer ses données** depuis l'app ou depuis le web avec le code de récupération (Google Play) ; l'admin peut aussi supprimer le compte d'un joueur (pas d'un admin) | `DELETE /me`, `/delete-account` (`server/src/deletePage.ts`), `DELETE /admin/players/:id` |
 | Admin : **remise à zéro** des parties de défi et/ou des duels, pour une période (aujourd'hui, semaine, mois, dates, tout) et tous les joueurs ou certains ; le nombre effacé est montré avant de confirmer | `POST /admin/reset`, `AdminReset` (`components/multi/admin/AdminReset.tsx`) |
 | Admin : devenir admin avec `ADMIN_TOKEN` ; exclure, renommer, régénérer le code d'invitation, fermer les inscriptions, réserver les invitations, régler difficulté, conservation et seuils. Les réglages de l'app l'emportent sur l'environnement | `server/src/settings.ts`, `app/multi/admin.tsx` |
 | Pas de validation manuelle des inscriptions | |
