@@ -6,7 +6,7 @@ export const MULTI_ERROR_CODES = [
   'network', 'timeout', 'bad_response', 'internal', 'rate_limited', 'unauthorized', 'invalid_request',
   'invalid_invite', 'invalid_pseudo', 'pseudo_taken', 'invalid_recovery_code',
   'preparing', 'already_finished', 'challenge_closed', 'too_late', 'no_game', 'invalid_moves', 'not_won',
-  'banned', 'forbidden', 'not_found', 'join_closed', 'invites_admin_only', 'invalid_admin_token', 'cannot_ban_admin', 'invalid_settings',
+  'banned', 'forbidden', 'not_found', 'join_closed', 'invites_admin_only', 'invalid_admin_token', 'cannot_ban_admin', 'cannot_delete_admin', 'invalid_settings',
   'release_too_soon',
   'replay_locked', 'replay_expired', 'replay_unavailable',
   'duel_not_found', 'duel_full', 'already_in_duel', 'no_duel', 'not_started', 'opponent_left', 'duel_unreachable', 'duel_replaced', 'puzzle_unavailable', 'too_many_spectators',

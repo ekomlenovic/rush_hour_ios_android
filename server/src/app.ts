@@ -659,6 +659,18 @@ export function buildApp(deps: AppDeps) {
           return { recoveryCode };
         });
 
+        // Delete a player and all their games, as they could themselves (DELETE /me): an admin is never deleted from here
+        admin.delete<{ Params: { id: string } }>('/admin/players/:id', {
+          schema: { params: { type: 'object', properties: { id: { type: 'integer', minimum: 1 } } } },
+        }, async (request, reply) => {
+          const target = playerById(Number(request.params.id));
+          if (!target) throw new ApiError(404, 'not_found');
+          if (target.is_admin) throw new ApiError(400, 'cannot_delete_admin');
+          duels.kick(target.id, 'deleted');
+          db.prepare('DELETE FROM players WHERE id = ?').run(target.id);
+          return reply.status(204).send();
+        });
+
         admin.get('/admin/reports', async () => {
           const rows = db.prepare(`
             SELECT r.id, r.reason, r.created_at, r.player_id, p.pseudo, r.reporter_id, q.pseudo AS reporter

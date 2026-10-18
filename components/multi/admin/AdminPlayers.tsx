@@ -12,7 +12,7 @@ import { adminStyles as styles } from './styles';
 
 interface Props { api: MultiApi; colors: UiColors; myPlayerId: number }
 
-/** The players: rename, exclude or bring back, give a new recovery code */
+/** The players: rename, exclude or bring back, give a new recovery code, delete their account */
 export default function AdminPlayers({ api, colors, myPlayerId }: Props) {
   const { t } = useTranslation();
   const [players, setPlayers] = useState<AdminPlayer[] | null>(null);
@@ -62,6 +62,11 @@ export default function AdminPlayers({ api, colors, myPlayerId }: Props) {
     },
   ]);
 
+  const remove = (player: AdminPlayer) => Alert.alert(t('multi.admin_delete_player_title'), t('multi.admin_delete_player_body', { pseudo: player.pseudo }), [
+    { text: t('common.cancel'), style: 'cancel' },
+    { text: t('common.delete'), style: 'destructive', onPress: () => guard(async () => { await api.admin.deletePlayer(player.id); }) },
+  ]);
+
   if (!players) return <ActivityIndicator color={colors.primary} />;
 
   return (
@@ -107,6 +112,9 @@ export default function AdminPlayers({ api, colors, myPlayerId }: Props) {
                 background={player.banned ? colors.successSoft : colors.dangerSoft}
                 color={player.banned ? colors.success : colors.danger}
               />
+            )}
+            {!player.isAdmin && (
+              <AdminButton label={t('multi.admin_delete_player')} onPress={() => remove(player)} background={colors.dangerSoft} color={colors.danger} />
             )}
           </View>
         </View>

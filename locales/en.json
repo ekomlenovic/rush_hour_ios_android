@@ -745,6 +745,8 @@
     "next_month": "Next month"
   },
   "save": {
+    "load_error_title": "Save could not be read",
+    "load_error_body": "Your progress could not be loaded. It has not been erased: nothing will be saved over it. Close the game completely and open it again to retry.",
     "title": "Save",
     "desc": "Switch phones without losing your progress: export it to a file (or a code), then import it on the other phone. Nothing is sent over the internet.",
     "export_btn": "Export my progress",
@@ -922,6 +924,9 @@
     "admin_transfer_body": "For {{pseudo}}, who lost their code: the old one will stop working.",
     "admin_transfer_done_title": "Code copied",
     "admin_transfer_done_body": "Give this code to {{pseudo}}: {{code}}",
+    "admin_delete_player": "Delete account",
+    "admin_delete_player_title": "Delete this account?",
+    "admin_delete_player_body": "The account of {{pseudo}}, their games, duels and reports will be erased from this server. This cannot be undone. Change the invite code if they must not come back.",
     "admin_no_reports": "No reports.",
     "admin_reported_by": "Reported by {{pseudo}} on {{date}}",
     "admin_report_done": "Handled",
@@ -1206,6 +1211,7 @@
       "invites_admin_only": "Only the admin of this server can invite.",
       "invalid_admin_token": "Wrong admin token.",
       "cannot_ban_admin": "An admin cannot be excluded.",
+      "cannot_delete_admin": "An admin cannot be deleted here: they delete their account from My account.",
       "invalid_settings": "Setting refused by the server.",
       "release_too_soon": "The next challenge would come out in less than an hour: choose a later time.",
       "replay_locked": "Finish your own game of the day first to watch the others'.",

@@ -44,3 +44,6 @@ yarn-error.*
 target/
 # tests
 coverage/
+
+# store listing screenshots (raw captures)
+store-listing/tools/.raw/
