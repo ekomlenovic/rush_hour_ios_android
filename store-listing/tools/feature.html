@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{margin:0;box-sizing:border-box}
+html,body{width:1024px;height:500px;overflow:hidden}
+body{font-family:Inter,sans-serif;color:#fff;position:relative;background:radial-gradient(90% 120% at 15% 10%,#5B50E0 0%,#3A2FB8 45%,#1A2B4C 100%)}
+.grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.05) 2px,transparent 2px),linear-gradient(90deg,rgba(255,255,255,.05) 2px,transparent 2px);background-size:60px 60px}
+.left{position:absolute;left:64px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;width:470px}
+.icon{width:132px;height:132px;border-radius:30px;box-shadow:0 14px 34px rgba(0,0,0,.4)}
+h1{margin-top:26px;font-weight:900;font-size:68px;letter-spacing:-2px;line-height:1}
+p{margin-top:14px;font-size:30px;font-weight:600;color:#FFC93C}
+.b{position:absolute;border-radius:28px;box-shadow:0 30px 60px rgba(0,0,0,.45)}
+.b1{width:330px;right:50px;top:85px;transform:rotate(6deg);z-index:2}
+.b2{width:230px;right:290px;top:185px;transform:rotate(-8deg);opacity:.95}
+</style></head><body><div class="grid"></div>
+<div class="left"><img class="icon" src=".raw/icon.png"><h1>Rush Hours</h1><p id="t"></p></div>
+<img class="b b2" src=".raw/board2.png"><img class="b b1" src=".raw/board.png">
+<script>document.getElementById('t').textContent=new URLSearchParams(location.search).get('t')</script>
+</body></html>
