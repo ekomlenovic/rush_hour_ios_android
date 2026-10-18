@@ -98,3 +98,8 @@ export function getMonthGrid(month: string): (string | null)[] {
 export function getDaysLeftInWeek(d: Date = new Date()): number {
   return 7 - ((d.getDay() + 6) % 7);
 }
+
+/** Milliseconds until the next whole minute: the clock of the screens ticks on it. */
+export function msUntilNextMinute(now: Date = new Date()): number {
+  return 60_000 - (now.getTime() % 60_000);
+}

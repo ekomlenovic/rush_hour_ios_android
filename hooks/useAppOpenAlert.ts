@@ -6,8 +6,9 @@ import { useGameStore, whenSaveLoaded } from '@/store/gameStore';
 /**
  * Records the app open (settles the streak) and tells the player what happened
  * while away: comeback after 3+ days, freezes used, streak lost.
+ * Done again when `today` changes, for an app left open past midnight.
  */
-export function useAppOpenAlert() {
+export function useAppOpenAlert(today: string) {
   const { t } = useTranslation();
   useEffect(() => {
     let cancelled = false;
@@ -16,7 +17,7 @@ export function useAppOpenAlert() {
       if (!cancelled) alertAppOpen();
     });
     return () => { cancelled = true; };
-  }, []);
+  }, [today]);
 
   function alertAppOpen() {
     const info = useGameStore.getState().recordAppOpen();
