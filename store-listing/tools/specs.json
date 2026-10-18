@@ -1,0 +1,22 @@
+{
+ "en": [
+  ["01-gameplay","Slide the cars.<br><em>Free the red one.</em>","The classic sliding-block puzzle,<br>on 6×6, 7×7 and 8×8 grids","en-light/midgame"],
+  ["02-map","<em>309 levels</em><br>on a world map","From 6-move warm-ups<br>to 63-move brain-burners","en-light/map"],
+  ["03-daily","A new <em>Daily Challenge</em><br>every day","Same puzzle for everyone.<br>One try, no hints.","en-dark/daily"],
+  ["04-stars","Find the<br><em>optimal solution</em>","3 stars for the fewest moves,<br>then replay the best solution","en-light/win"],
+  ["05-streak","Keep your<br><em>streak</em> alive","Streak freezes, XP, player levels<br>and 77 achievements","en-light/profile"],
+  ["06-garage","Unlock styles<br><em>by playing</em>","Board themes, car skins, colors<br>and win effects. Never for sale.","en-light/garage"],
+  ["07-creator","Create &amp; share<br><em>your own levels</em>","Checked for a solution,<br>shared by QR code or link","en-light/creator|en-light/share"],
+  ["08-friends","Play with <em>friends</em>,<br>on your own server","Optional: daily rankings and live 1v1 duels<br>on a server one of you hosts","en-dark/multi"]
+ ],
+ "fr": [
+  ["01-gameplay","Glisse les voitures.<br><em>Libère la rouge.</em>","Le casse-tête de blocs coulissants,<br>en 6×6, 7×7 et 8×8","fr-light/midgame"],
+  ["02-map","<em>309 niveaux</em><br>sur une carte du monde","De l'échauffement en 6 coups<br>au casse-tête de 63 coups","fr-light/map"],
+  ["03-daily","Un nouveau<br><em>défi chaque jour</em>","Le même puzzle pour tout le monde.<br>Un seul essai, sans indice.","fr-dark/daily"],
+  ["04-stars","Trouve la<br><em>solution optimale</em>","3 étoiles au minimum de coups,<br>puis revois la meilleure solution","fr-light/win"],
+  ["05-streak","Ne casse pas<br>ton <em>streak</em>","Gels de streak, XP, niveaux joueur<br>et 77 succès","fr-light/profile"],
+  ["06-garage","Débloque des styles<br><em>en jouant</em>","Plateaux, voitures, couleurs, effets<br>de victoire. Jamais à vendre.","fr-light/garage"],
+  ["07-creator","Crée et partage<br><em>tes niveaux</em>","Solution vérifiée par le jeu,<br>partage par QR code ou lien","fr-light/creator|fr-light/share"],
+  ["08-friends","Joue entre <em>amis</em>,<br>sur votre serveur","Optionnel : classements et duels 1v1 en direct,<br>sur un serveur hébergé par l'un de vous","fr-dark/multi"]
+ ]
+}
