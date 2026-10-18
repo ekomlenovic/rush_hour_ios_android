@@ -22,15 +22,25 @@ export interface SolverResult {
 }
 
 /**
+ * Most states the generator lets the solver go through for one board (a couple of
+ * hundred MB): a board over it is dropped as if unsolvable. Some 7x7 boards have a
+ * huge number of states, and their search used to take all the memory of the server.
+ * The old solver ran out of memory well before this, so it changes no puzzle it made.
+ */
+export const GENERATOR_MAX_STATES = 8_000_000;
+
+/**
  * High-performance BFS Solver.
  * Finds the shortest sequence of moves to solve the puzzle.
+ * Past `maxStates` states seen, it gives up: not solvable.
  */
 export function solvePuzzle(
   vehicles: Vehicle[],
   gridSize: number,
   exitRow: number,
   exitCol: number,
-  depthLimit: number = 200
+  depthLimit: number = 200,
+  maxStates: number = Infinity
 ): SolverResult {
   'worklet';
   const n = vehicles.length;
@@ -53,26 +63,6 @@ export function solvePuzzle(
   for (let i = 0; i < n; i++) {
     initialPos[i] = isHoriz[i] ? vehicles[i].col : vehicles[i].row;
   }
-
-  const encodeState = (pos: Uint8Array): bigint => {
-    let key = 0n;
-    // Each position is at most 6, which fits in 3 bits. 4 bits for safety/simplicity.
-    for (let i = 0; i < n; i++) key = (key << 4n) | BigInt(pos[i]);
-    return key;
-  };
-
-  const cellOccupied = (pos: Uint8Array, r: number, c: number, skipIdx: number): boolean => {
-    for (let i = 0; i < n; i++) {
-      if (i === skipIdx) continue;
-      const p = pos[i];
-      if (isHoriz[i]) {
-        if (fixed[i] === r && c >= p && c < p + len[i]) return true;
-      } else {
-        if (fixed[i] === c && r >= p && r < p + len[i]) return true;
-      }
-    }
-    return false;
-  };
 
   // Normalize 255 to -1
   const exR = exitRow === 255 ? -1 : exitRow;
@@ -98,86 +88,146 @@ export function solvePuzzle(
     return { solvable: true, minMoves: 0, moves: [] };
   }
 
-  const visited = new Map<bigint, { parentKey: bigint; move: Move } | null>();
-  const queue: bigint[] = [];
-  const posQueue: Uint8Array[] = [];
+  // The states seen, in the order of the BFS (the queue is this order): a hard puzzle
+  // goes through millions of them, so they are kept in typed arrays, a few dozen bytes
+  // each, and not as objects (a big puzzle used to take gigabytes)
+  let capacity = 1 << 12;
+  let states = new Uint8Array(capacity * n);
+  let parent = new Int32Array(capacity);
+  let movedVehicle = new Uint8Array(capacity);
+  let movedTo = new Uint8Array(capacity);
+  let depths = new Uint16Array(capacity);
+  let count = 0;
 
-  const startKey = encodeState(initialPos);
-  visited.set(startKey, null);
-  queue.push(startKey);
-  posQueue.push(initialPos);
+  // Open addressing: the index of a state + 1, 0 for an empty slot
+  let tableMask = (1 << 13) - 1;
+  let table = new Int32Array(tableMask + 1);
 
-  let head = 0;
-  let finalKey: bigint | null = null;
-  let depthAtKey = new Map<bigint, number>();
-  depthAtKey.set(startKey, 0);
+  const hashOf = (pos: Uint8Array, offset: number): number => {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < n; i++) h = Math.imul(h ^ pos[offset + i], 0x01000193);
+    h ^= h >>> 16;
+    h = Math.imul(h, 0x85ebca6b);
+    h ^= h >>> 13;
+    return h >>> 0;
+  };
 
-  while (head < queue.length) {
-    const curKey = queue[head];
-    const pos = posQueue[head];
-    const depth = depthAtKey.get(curKey)!;
-    head++;
+  /** The slot of `pos` in the table: the slot holding it, or the empty one where it goes */
+  const slotOf = (pos: Uint8Array): number => {
+    let slot = hashOf(pos, 0) & tableMask;
+    for (;;) {
+      const entry = table[slot];
+      if (entry === 0) return slot;
+      const offset = (entry - 1) * n;
+      let same = true;
+      for (let i = 0; i < n; i++) {
+        if (states[offset + i] !== pos[i]) { same = false; break; }
+      }
+      if (same) return slot;
+      slot = (slot + 1) & tableMask;
+    }
+  };
 
+  const add = (pos: Uint8Array, slot: number, from: number, vi: number, to: number, depth: number): number => {
+    if (count === capacity) {
+      capacity *= 2;
+      const grownStates = new Uint8Array(capacity * n);
+      grownStates.set(states);
+      states = grownStates;
+      const grownParent = new Int32Array(capacity);
+      grownParent.set(parent);
+      parent = grownParent;
+      const grownVehicle = new Uint8Array(capacity);
+      grownVehicle.set(movedVehicle);
+      movedVehicle = grownVehicle;
+      const grownTo = new Uint8Array(capacity);
+      grownTo.set(movedTo);
+      movedTo = grownTo;
+      const grownDepths = new Uint16Array(capacity);
+      grownDepths.set(depths);
+      depths = grownDepths;
+    }
+    const index = count++;
+    states.set(pos, index * n);
+    parent[index] = from;
+    movedVehicle[index] = vi;
+    movedTo[index] = to;
+    depths[index] = depth;
+    table[slot] = index + 1;
+    // At most half full
+    if (count * 2 > tableMask) {
+      tableMask = tableMask * 2 + 1;
+      table = new Int32Array(tableMask + 1);
+      for (let s = 0; s < count; s++) {
+        let free = hashOf(states, s * n) & tableMask;
+        while (table[free] !== 0) free = (free + 1) & tableMask;
+        table[free] = s + 1;
+      }
+    }
+    return index;
+  };
+
+  add(initialPos, slotOf(initialPos), -1, 0, 0, 0);
+
+  const pos = new Uint8Array(n);
+  const next = new Uint8Array(n);
+  // The cells taken in the state being expanded
+  const grid = new Uint8Array(gridSize * gridSize);
+  let finalIndex = -1;
+
+  for (let head = 0; head < count && finalIndex === -1 && count < maxStates; head++) {
+    const depth = depths[head];
     if (depth >= depthLimit) continue;
+    for (let i = 0; i < n; i++) pos[i] = states[head * n + i];
+    grid.fill(0);
+    for (let i = 0; i < n; i++) {
+      for (let k = 0; k < len[i]; k++) {
+        if (isHoriz[i]) grid[fixed[i] * gridSize + pos[i] + k] = 1;
+        else grid[(pos[i] + k) * gridSize + fixed[i]] = 1;
+      }
+    }
 
-    for (let vi = 0; vi < n; vi++) {
+    for (let vi = 0; vi < n && finalIndex === -1; vi++) {
       const curP = pos[vi];
 
       // Try sliding in both directions
-      const directions = [-1, 1];
-      for (const dir of directions) {
+      for (let dir = -1; dir <= 1 && finalIndex === -1; dir += 2) {
         for (let step = 1; ; step++) {
           const np = curP + dir * step;
           if (np < 0 || np + len[vi] > gridSize) break;
 
-          // Check collision
-          let obstructed = false;
-          if (dir === -1) {
-            if (cellOccupied(pos, isHoriz[vi] ? fixed[vi] : np, isHoriz[vi] ? np : fixed[vi], vi)) obstructed = true;
-          } else {
-            const checkP = np + len[vi] - 1;
-            if (cellOccupied(pos, isHoriz[vi] ? fixed[vi] : checkP, isHoriz[vi] ? checkP : fixed[vi], vi)) obstructed = true;
-          }
-          if (obstructed) break;
+          // The cell the vehicle moves into (never one of its own)
+          const lead = dir === -1 ? np : np + len[vi] - 1;
+          if (grid[isHoriz[vi] ? fixed[vi] * gridSize + lead : lead * gridSize + fixed[vi]]) break;
 
           // Valid move! Create next state
-          const nextPos = new Uint8Array(pos);
-          nextPos[vi] = np;
-          const nextKey = encodeState(nextPos);
-
-          if (!visited.has(nextKey)) {
-            const move: Move = {
-              vehicleId: ids[vi],
-              toRow: isHoriz[vi] ? fixed[vi] : np,
-              toCol: isHoriz[vi] ? np : fixed[vi],
-            };
-            visited.set(nextKey, { parentKey: curKey, move });
-            depthAtKey.set(nextKey, depth + 1);
-
-            if (isWinState(nextPos)) {
-              finalKey = nextKey;
+          next.set(pos);
+          next[vi] = np;
+          const slot = slotOf(next);
+          if (table[slot] === 0) {
+            const index = add(next, slot, head, vi, np, depth + 1);
+            if (isWinState(next)) {
+              finalIndex = index;
               break;
             }
-
-            queue.push(nextKey);
-            posQueue.push(nextPos);
           }
         }
-        if (finalKey !== null) break;
       }
-      if (finalKey !== null) break;
     }
-    if (finalKey !== null) break;
   }
 
-  if (finalKey !== null) {
+  if (finalIndex !== -1) {
     const path: Move[] = [];
-    let curr = finalKey;
-    while (curr !== startKey) {
-      const entry = visited.get(curr)!;
-      path.unshift(entry.move);
-      curr = entry.parentKey;
+    for (let curr = finalIndex; curr !== 0; curr = parent[curr]) {
+      const vi = movedVehicle[curr];
+      const np = movedTo[curr];
+      path.push({
+        vehicleId: ids[vi],
+        toRow: isHoriz[vi] ? fixed[vi] : np,
+        toCol: isHoriz[vi] ? np : fixed[vi],
+      });
     }
+    path.reverse();
     return { solvable: true, minMoves: path.length, moves: path };
   }
 

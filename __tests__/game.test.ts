@@ -33,6 +33,22 @@ describe('solver', () => {
     const result = solvePuzzle(level.vehicles, level.gridSize, level.exitRow, level.exitCol);
     expect(getHint(level.vehicles, level.gridSize, level.exitRow, level.exitCol)).toEqual(result.moves[0]);
   });
+
+  it('a board that cannot be won is not solvable', () => {
+    // The red car on row 2, two trucks filling the column in front of it
+    const blocked = [
+      { ...level.vehicles.find(v => v.isTarget)!, row: 2, col: 0, length: 2, orientation: 'horizontal' as const },
+      { id: 'a', row: 0, col: 4, length: 3, orientation: 'vertical' as const, isTarget: false, color: '#000' },
+      { id: 'b', row: 3, col: 4, length: 3, orientation: 'vertical' as const, isTarget: false, color: '#000' },
+    ];
+    expect(solvePuzzle(blocked, 6, 2, 6)).toEqual({ solvable: false, minMoves: -1, moves: [] });
+  });
+
+  it('gives up past the states it may go through', () => {
+    const l = sampleLevels[300];
+    expect(solvePuzzle(l.vehicles, l.gridSize, l.exitRow, l.exitCol, 200, 100).solvable).toBe(false);
+    expect(solvePuzzle(l.vehicles, l.gridSize, l.exitRow, l.exitCol, 200, 10_000_000).minMoves).toBe(l.minMoves);
+  });
 });
 
 describe('map levels: training mode (rules in docs/GAME_DESIGN.md)', () => {
