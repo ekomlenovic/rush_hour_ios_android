@@ -187,18 +187,11 @@ jobs:
       - name: Update Update Sources & Push Changes
         run: |
           IPA_SIZE=$(stat -c%s rush-hours-unsigned.ipa)
-          
-          if [ "${{ env.HAS_APK }}" = "true" ]; then
-            APK_SIZE=$(stat -c%s rush-hours.apk)
-          else
-            APK_SIZE=0
-          fi
 
           VERSION="${{ needs.prepare.outputs.version }}"
           TAG_NAME="v${VERSION}-b${{ github.run_number }}"
           BASE_URL="https://github.com/${{ github.repository }}/releases/download/${TAG_NAME}"
           IPA_URL="${BASE_URL}/rush-hours-unsigned.ipa"
-          APK_URL="${BASE_URL}/rush-hours.apk"
           DATE=$(date +'%Y-%m-%d')
           
           node -e "
@@ -214,22 +207,14 @@ jobs:
             iosApp.size = parseInt('${IPA_SIZE}');
             fs.writeFileSync('sidestore-source.json', JSON.stringify(iosSource, null, 2));
             
-            // Update android-source.json (Android)
-            const androidSource = JSON.parse(fs.readFileSync('android-source.json', 'utf8'));
-            const androidApp = androidSource.apps[0];
-            androidApp.version = '${VERSION}';
-            androidApp.buildVersion = '${{ github.run_number }}';
-            androidApp.versionDate = '${DATE}';
-            const newApkSize = parseInt('${APK_SIZE}');
-            if (newApkSize > 0) {
-              androidApp.size = newApkSize;
-            }
-            fs.writeFileSync('android-source.json', JSON.stringify(androidSource, null, 2));
+            // android-source.json is NOT updated here: Android users update through
+            // Google Play, so it must only announce the version live on the Play Store
+            // (edited by hand when Google accepts a release, see docs/PLAY_STORE.md).
           "
           
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add sidestore-source.json android-source.json
+          git add sidestore-source.json
           git commit -m "chore: update update sources for ${VERSION} [skip ci]"
           git push
         env:
