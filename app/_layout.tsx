@@ -8,6 +8,7 @@ import { useReminderSync } from '@/utils/notifications';
 import * as Linking from 'expo-linking';
 import { parseSharedLevel } from '@/utils/sharing';
 import { useGameStore } from '@/store/gameStore';
+import { useMultiStore } from '@/store/multiStore';
 import i18n from '@/utils/i18n';
 import { useTheme, useAppearanceSync } from '@/theme';
 
@@ -43,6 +44,14 @@ export default function RootLayout() {
 
     return () => subscription.remove();
   }, []);
+
+  // The save could not be read: the player must know their progress is not gone
+  const gameLoadFailed = useGameStore(state => state.saveLoadFailed);
+  const multiLoadFailed = useMultiStore(state => state.loadFailed);
+  const saveLoadFailed = gameLoadFailed || multiLoadFailed;
+  useEffect(() => {
+    if (saveLoadFailed) Alert.alert(i18n.t('save.load_error_title'), i18n.t('save.load_error_body'));
+  }, [saveLoadFailed]);
 
   return (
     <AudioProvider>

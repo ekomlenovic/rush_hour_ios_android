@@ -1,7 +1,8 @@
 import { useGameStore, Level } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
-import { resetStore } from './helpers';
+import { resetStore, setToday } from './helpers';
 import { calculateScore } from '../utils/scoring';
+import { MAX_SAVED_UNDOS } from '../store/savedStates';
 import { ACHIEVEMENT_XP, MISSIONS_XP, dailyWinXp, levelWinXp, weeklyWinXp } from '../data/progression';
 
 const options = useGameStore.persist.getOptions();
@@ -13,8 +14,8 @@ const merge = (persisted: Record<string, unknown>) =>
   options.merge!(persisted, useGameStore.getInitialState());
 
 describe('persisted state', () => {
-  it('is at version 5', () => {
-    expect(options.version).toBe(5);
+  it('is at version 6', () => {
+    expect(options.version).toBe(6);
   });
 
   it('keeps the player data and leaves the in-game state out', () => {
@@ -119,6 +120,9 @@ describe('migrate v4 → v5', () => {
   });
 
   it('moves the progress and saves of the levels from the old level 6 on', () => {
+    // The daily in progress is today's: v6 leaves it where it is
+    jest.useFakeTimers();
+    setToday('2026-10-14');
     const lastOld = sampleLevels.length - 5;
     const generated: Level = { ...sampleLevels[0], id: lastOld + 1 };
     const state = migrate({
@@ -141,11 +145,66 @@ describe('migrate v4 → v5', () => {
     expect(state.maxUnlockedLevel).toBe(12);
     // The merge then has nothing left to relocate
     expect(merge(state).generatedLevels.map(l => l.id)).toEqual([sampleLevels.length + 1]);
+    jest.useRealTimers();
   });
 
   it('sends a player stuck on the old level 6 to the new levels', () => {
     expect(migrate({ maxUnlockedLevel: 6 }, 4).maxUnlockedLevel).toBe(6);
     expect(migrate({ maxUnlockedLevel: 3 }, 4).maxUnlockedLevel).toBe(3);
+  });
+});
+
+describe('migrate v5 → v6', () => {
+  const board = (col: number) => [{ id: 'X', row: 2, col, length: 2, orientation: 'horizontal' as const, isTarget: true, color: '#f00' }];
+  const save = (moves: number) => ({ vehicles: board(moves % 4), moveCount: moves, history: Array.from({ length: moves }, (_, i) => board(i % 4)), attempt: { hints: 1, undos: 0, resets: 0, timeMs: 5000 } });
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    setToday('2026-11-20');
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('caps the undo stacks of the levels in progress, keeping the latest steps', () => {
+    const v5 = { progress: [{ levelId: 3, completed: true, bestScore: 300, stars: 3 }], xp: 1200, savedStates: { 12: save(300), 40: save(10) } };
+    const state = migrate(v5, 5);
+    const saved = state.savedStates as Record<string, ReturnType<typeof save>>;
+    expect(saved[12].history).toHaveLength(MAX_SAVED_UNDOS);
+    expect(saved[12].history).toEqual(save(300).history.slice(-MAX_SAVED_UNDOS));
+    // The game itself carries on where it was
+    expect(saved[12]).toMatchObject({ vehicles: save(300).vehicles, moveCount: 300, attempt: save(300).attempt });
+    expect(saved[40]).toEqual(save(10));
+    expect(state.progress).toEqual(v5.progress);
+    expect(state.xp).toBe(1200);
+  });
+
+  it('keeps the challenges of today and this week, without undo stack', () => {
+    const state = migrate({ savedStates: { 'daily-2026-11-20': save(30), 'weekly-2026-W47': save(80) } }, 5);
+    const saved = state.savedStates as Record<string, ReturnType<typeof save>>;
+    expect(saved['daily-2026-11-20']).toEqual({ ...save(30), history: [] });
+    expect(saved['weekly-2026-W47']).toEqual({ ...save(80), history: [] });
+  });
+
+  it('moves a past daily in progress to the archive of that day', () => {
+    const state = migrate({ savedStates: { 'daily-2026-11-15': save(20), 'daily-2026-11-10': save(5), 'archive-2026-11-10': save(7) } }, 5);
+    const saved = state.savedStates as Record<string, ReturnType<typeof save>>;
+    expect(Object.keys(saved).sort()).toEqual(['archive-2026-11-10', 'archive-2026-11-15']);
+    expect(saved['archive-2026-11-15']).toEqual(save(20));
+    // An archive already started keeps its own game
+    expect(saved['archive-2026-11-10']).toEqual(save(7));
+  });
+
+  it('drops the saves that can never be opened again', () => {
+    const state = migrate({ savedStates: { 'weekly-2026-W40': save(10), 'daily-2026-10-01': save(3), 'archive-2026-10-02': save(3), 5: save(2) } }, 5);
+    expect(Object.keys(state.savedStates as object)).toEqual(['5']);
+  });
+
+  it('a save of the previous version still loads in the store', () => {
+    const merged = merge(migrate({ maxUnlockedLevel: 14, savedStates: { 12: save(120) } }, 5));
+    expect(merged.maxUnlockedLevel).toBe(14);
+    expect(merged.savedStates[12].history).toHaveLength(MAX_SAVED_UNDOS);
   });
 });
 
