@@ -171,6 +171,8 @@ Pour changer de téléphone sans perdre sa progression, **sans serveur ni compte
 | Importer **remplace** la progression, après une confirmation qui résume la sauvegarde (date, niveau joueur, niveaux réussis, étoiles, streak) | `parseSave`, `importProgress` |
 | Une sauvegarde d'une ancienne version passe par les **migrations** ; une sauvegarde d'une version **plus récente** que l'app est refusée | `migrateState`, `relocateGeneratedLevels` |
 | Les jours manqués depuis l'export sont appliqués à l'import (gels, streak perdu) | `recordAppOpen` |
+| **Rien n'est écrit avant que la sauvegarde soit relue** : une mise à jour faite avant (ouverture de l'app, lien) ou après une lecture ratée écraserait la progression par un état vide. Si la lecture échoue, le jeu le dit et n'écrit plus rien jusqu'au prochain lancement ; l'ouverture de l'app (streak, missions) attend le chargement | `guardedStorage`, `saveLoadFailed`, `whenSaveLoaded` (`store/gameStore.ts`), `useAppOpenAlert` |
+| La sauvegarde reste **petite** : Android ne relit pas une entrée de plus de 2 Mo. Une partie en cours ne garde que les **50 derniers coups** d'annulation (tout l'historique reste disponible tant que le niveau est ouvert), aucun sur les défis (pas d'annuler). Le défi d'un jour passé en cours continue dans l'**archive** de ce jour ; les semaines passées et les archives hors de portée sont oubliées (v6) | `MAX_SAVED_UNDOS`, `compactSavedStates` (`store/savedStates.ts`), à chaque ouverture (`recordAppOpen`) |
 
 **Triche** : sans serveur, on ne peut pas l'empêcher (tout ce que l'app vérifie, quelqu'un qui lit son code peut le refaire). L'enjeu est faible : pas de classement, pas de monnaie, un tricheur ne lèse que lui-même. On bloque la triche facile et les fichiers abîmés, sans jamais refuser la sauvegarde d'un vrai joueur :
 - format non lisible (`RHSAVE1.<somme de contrôle>.<base64>`) et **somme de contrôle** : un code modifié à la main ou tronqué est refusé ;
@@ -178,6 +180,24 @@ Pour changer de téléphone sans perdre sa progression, **sans serveur ni compte
 - **recalcul plutôt que confiance** : XP plafonnée à ce que les victoires ont pu rapporter (`maxPlausibleXp`), gels plafonnés au stock du niveau joueur, succès inconnus retirés, cosmétiques non débloqués remis par défaut.
 
 > ⚠️ Un nouveau champ sauvegardé est exporté automatiquement. S'il est propre au téléphone, l'ajouter à `DEVICE_FIELDS`.
+
+## Progression des joueurs — règle absolue
+
+> 🚨 **Une mise à jour ne doit jamais faire perdre ni fausser la progression d'un joueur.** Cette règle passe avant toutes les autres : une évolution qui ne la respecte pas n'est pas prête, même si elle marche sur une installation neuve.
+
+Sont des **données sensibles** tout ce qui est persisté chez le joueur ou sur le serveur : l'état sauvegardé de `store/gameStore.ts` (`partialize` : progression, étoiles, scores, XP, streak, gels, défis réussis, succès, cosmétiques, niveaux générés / créés / importés, parties en cours), celui de `store/multiStore.ts` (comptes, parties), les **identifiants** (de niveau, de succès, de cosmétique, de mission, clés de dates) et la base du serveur.
+
+| Règle | Implémentation |
+|---|---|
+| Toute modification de la **forme** de l'état sauvegardé (champ renommé, déplacé, supprimé, type ou sens changé) ou de ce qui sert à le relire (identifiants, ordre ou numérotation des niveaux, calcul des étoiles / du score / de l'XP) est livrée **avec son patch** : `STORE_VERSION` augmentée et une étape ajoutée dans `migrateState`, commentée (`// vN: pourquoi`) | `STORE_VERSION`, `migrateState` (`store/migrations.ts`) |
+| Un patch **convertit** les données, il ne les jette pas : déplacer, renuméroter, recompter. Supprimer un champ n'est permis que s'il ne sert plus à rien (ex. v1, jetons d'indice). En cas de doute, garder la valeur la plus favorable au joueur (l'XP déjà gagnée ne baisse pas, une étoile gagnée n'est pas reprise sans règle écrite ici) | migrations v1 à v5 |
+| Les étapes existantes ne sont **jamais modifiées ni retirées** : un joueur peut sauter plusieurs versions, et une vieille sauvegarde (export / import) passe par toutes les étapes. L'ordre des étapes est réfléchi (ex. v5 passe en premier pour que les suivantes lisent les nouveaux identifiants) | `migrateState`, `parseSave` |
+| Les identifiants persistés ne sont **jamais renommés ni réutilisés** : on en ajoute. Insérer ou réordonner des niveaux de la campagne oblige à décaler la progression, les parties en cours et les niveaux générés (comme v5) | `store/levelIds.ts`, `data/achievements.ts`, `data/cosmetics.ts`, `shiftLevelsAfterRamp` |
+| Un nouveau champ a une **valeur par défaut** pour les sauvegardes qui ne l'ont pas (fusion avec l'état initial au chargement ; un objet imbriqué doit y être fusionné lui aussi, comme `stats`) ; une sauvegarde ancienne ne doit jamais planter l'app | `merge` (`store/gameStore.ts`) |
+| Le store multijoueur suit la même règle : changer la forme de `partialize` oblige à monter sa `version` et à ajouter un `migrate` | `store/multiStore.ts` |
+| Serveur : un changement de schéma est une **nouvelle étape ajoutée à la fin** de la liste, jamais une modification d'une étape existante ; pas de `DROP` de données de joueurs sans décision écrite ici | `server/src/db.ts` (`PRAGMA user_version`) |
+| Chaque patch a son **test** : un état sauvegardé par l'ancienne version (écrit en dur dans le test) migré donne le résultat attendu, et une sauvegarde de la version précédente s'importe toujours | `__tests__/migrations.test.ts`, `__tests__/saveTransfer.test.ts` |
+| La pull request **dit explicitement** si elle touche aux données persistées et quel patch l'accompagne ; sinon, qu'elle n'y touche pas | description de la PR |
 
 ## Multijoueur — entre amis, sur un serveur auto-hébergé
 
