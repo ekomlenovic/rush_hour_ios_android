@@ -43,3 +43,11 @@ Le seul contenu des joueurs est leur **pseudo**, et le signalement. Ce que Googl
 ## Politique de confidentialité
 
 [`Privacy_Policy.md`](../Privacy_Policy.md), section 4 « Multiplayer Mode ».
+
+## Message « Mise à jour disponible » (Android)
+
+L'app compare sa version à `android-source.json` **sur `main`** (`utils/updateChecker.ts`) et renvoie vers la fiche Google Play. Ce fichier doit donc annoncer **uniquement la version en ligne sur le Play Store**, sinon les joueurs voient une mise à jour qu'ils ne peuvent pas installer.
+
+- Le développement se fait sur une branche de version (ex. `2.0.0`) ; on ne la merge dans `main` qu'une fois la version **acceptée par Google Play**.
+- À ce moment-là, mettre à jour à la main `android-source.json` : `version` (= `version` de `app.json`) et `buildVersion` (= code de build Play Console).
+- Le workflow `build.yml` ne touche plus à `android-source.json` (il ne met à jour que `sidestore-source.json` pour iOS).
