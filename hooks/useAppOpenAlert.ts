@@ -1,15 +1,25 @@
 import { useEffect } from 'react';
 import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useGameStore } from '@/store/gameStore';
+import { useGameStore, whenSaveLoaded } from '@/store/gameStore';
 
 /**
  * Records the app open (settles the streak) and tells the player what happened
  * while away: comeback after 3+ days, freezes used, streak lost.
+ * Done again when `today` changes, for an app left open past midnight.
  */
-export function useAppOpenAlert() {
+export function useAppOpenAlert(today: string) {
   const { t } = useTranslation();
   useEffect(() => {
+    let cancelled = false;
+    // Settled on the loaded save, not on the empty state of the first frames
+    whenSaveLoaded().then(() => {
+      if (!cancelled) alertAppOpen();
+    });
+    return () => { cancelled = true; };
+  }, [today]);
+
+  function alertAppOpen() {
     const info = useGameStore.getState().recordAppOpen();
     const lines = [
       info.isComeback ? t('home.welcome_back_desc', { days: info.missedDays }) : null,
@@ -24,5 +34,5 @@ export function useAppOpenAlert() {
         );
       }, 500);
     }
-  }, []);
+  }
 }

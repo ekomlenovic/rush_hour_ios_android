@@ -11,6 +11,7 @@ import { getMissionsForDay, countMissionsDone } from '@/data/missions';
 import { getFreezeCapacity, getPlayerLevel, dailyWinXp, weeklyWinXp } from '@/data/progression';
 import { sampleLevels } from '@/data/sampleLevels';
 import { useAppOpenAlert } from '@/hooks/useAppOpenAlert';
+import { useNow } from '@/hooks/useNow';
 import { useTheme, fixedColors } from '@/theme';
 import ChallengeCard from '@/components/home/ChallengeCard';
 import HomeHeader from '@/components/home/HomeHeader';
@@ -57,11 +58,12 @@ export default function HomeScreen() {
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const [isMissionsVisible, setMissionsVisible] = useState(false);
 
-  useAppOpenAlert();
+  // The screen stays mounted under the others: it follows the clock to show the new day
+  const now = useNow();
+  const dateStr = getLocalDateString(now);
+  useAppOpenAlert(dateStr);
   const { unseen: newCosmetics } = useCosmetics();
 
-  const now = new Date();
-  const dateStr = getLocalDateString(now);
   const dailyStatus = dailyChallengeProgress[dateStr];
 
   const todayMissions = getMissionsForDay(dailyMissions, dateStr);

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createGuardedStorage } from './guardedStorage';
 import type { Level, MoveRecord, Vehicle } from './types';
 
 /**
@@ -54,6 +54,8 @@ interface MultiState {
   games: Record<string, MultiGame>;
   /** Players hidden on this phone, by server (#50) */
   blocked: Record<string, BlockedPlayer[]>;
+  /** The accounts could not be read back: nothing is written until the next launch (not persisted) */
+  loadFailed: boolean;
 
   /** Adds an account or replaces the one on the same server, and makes it the active one */
   addAccount: (account: ServerAccount) => void;
@@ -69,6 +71,8 @@ interface MultiState {
 
 export const gameKey = (serverUrl: string, date: string) => `${serverUrl}|${date}`;
 
+const multiStorage = createGuardedStorage();
+
 export const useMultiStore = create<MultiState>()(
   persist(
     (set) => ({
@@ -77,6 +81,7 @@ export const useMultiStore = create<MultiState>()(
       introSeen: false,
       games: {},
       blocked: {},
+      loadFailed: false,
 
       addAccount: (account) => set(state => ({
         accounts: [...state.accounts.filter(a => a.url !== account.url), account],
@@ -118,7 +123,17 @@ export const useMultiStore = create<MultiState>()(
     {
       name: 'rush-hours-multi',
       version: 1,
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => multiStorage.storage),
+      // Accounts (token, recovery code) are only written once read back: never overwritten by an empty list
+      onRehydrateStorage: () => (state, error) => {
+        if (error || !state) {
+          console.warn('[multiStore] accounts not loaded, writes held until the next launch', error);
+          useMultiStore.setState({ loadFailed: true });
+          return;
+        }
+        multiStorage.allowWrites();
+        useMultiStore.setState({});
+      },
       partialize: ({ accounts, activeUrl, introSeen, games, blocked }) => ({ accounts, activeUrl, introSeen, games, blocked }),
     },
   ),
