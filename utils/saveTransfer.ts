@@ -252,7 +252,7 @@ export function isConsistent(state: Record<string, any>, now: Date = new Date())
   for (const field of ['xp', 'streakFreezes', 'totalHintsUsed', 'maxUnlockedLevel']) {
     if (state[field] !== undefined && !isCount(state[field])) return false;
   }
-  for (const field of ['achievements', 'generatedLevels', 'createdLevels', 'importedLevels', 'frozenDates', 'seenCosmetics']) {
+  for (const field of ['achievements', 'generatedLevels', 'createdLevels', 'importedLevels', 'frozenDates', 'seenCosmetics', 'seenAchievements']) {
     if (state[field] !== undefined && !Array.isArray(state[field])) return false;
   }
   for (const field of ['stats', 'savedStates', 'cosmetics']) {

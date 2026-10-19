@@ -184,7 +184,7 @@ Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dan
 | La palette recolore les véhicules dans l'ordre du niveau ; la voiture cible garde sa skin. Le lecteur d'écran annonce la couleur affichée | `applyPalette`, `components/Board.tsx` |
 | Les effets de victoire ne se jouent pas avec « Réduire les animations » | `WinEffect` (`components/effects/WinEffect.tsx`) |
 | Les identifiants des cosmétiques sont sauvegardés : ne jamais en renommer, seulement en ajouter | |
-| Les nouveautés sont signalées sur le lien Garage jusqu'à la prochaine visite | `seenCosmetics` |
+| Chaque nouveauté garde sa pastille bleue **« Nouveau »** dans le Garage jusqu'à ce qu'on la **touche** (ce qui la sélectionne) ; chaque onglet compte les siennes, le lien Garage de l'accueil compte le total. Quitter le Garage n'acquitte rien | `seenCosmetics`, `markCosmeticsSeen` (`app/garage.tsx`) |
 
 ## Sauvegarde (export / import)
 
@@ -333,6 +333,7 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 
 - Définis à un seul endroit : `data/achievements.ts`. Les **identifiants sont persistés** : ne jamais renommer un succès, seulement en ajouter.
 - Un succès ne doit jamais contredire les règles ci-dessus : aucun succès « sans indice » ou « sans annuler » sur les défis, puisqu'ils n'en ont jamais.
+- Un succès débloqué est **nouveau** jusqu'à ce qu'on le **touche** dans le profil : pastille bleue sur sa médaille, nombre de nouveautés sur sa catégorie (ouverte d'office) et sur le bouton profil de l'accueil (`seenAchievements`, `useNewAchievements`). Ceux débloqués avant cette règle comptent comme vus (migration v10).
 
 ## Dates
 

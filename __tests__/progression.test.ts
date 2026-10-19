@@ -74,6 +74,29 @@ describe('freeze slots', () => {
   });
 });
 
+describe('store: new achievements', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    setToday('2026-10-14');
+    resetStore();
+  });
+  afterEach(() => jest.useRealTimers());
+
+  it('an achievement unlocked stays new until it is touched in the profile', () => {
+    winMapLevel(sampleLevels[0], { stars: 3 });
+    expect(state().achievements).toContain('first_win');
+    expect(state().seenAchievements).not.toContain('first_win');
+    state().markAchievementSeen('first_win');
+    state().markAchievementSeen('first_win');
+    expect(state().seenAchievements).toEqual(['first_win']);
+  });
+
+  it('a cosmetic touched in the garage is no longer new, the others stay new', () => {
+    state().markCosmeticsSeen(['effect:greenlight']);
+    expect(state().seenCosmetics).toEqual(['effect:greenlight']);
+  });
+});
+
 describe('store: XP', () => {
   beforeEach(() => {
     jest.useFakeTimers();

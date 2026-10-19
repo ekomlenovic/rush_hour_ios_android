@@ -8,7 +8,7 @@ import { compactSavedStates } from './savedStates';
 import { latestSavedDate, latestSavedWeek } from '../utils/challengeDates';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 9;
+export const STORE_VERSION = 10;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
@@ -62,6 +62,11 @@ export function migrateState(persistedState: unknown, version: number): Record<s
       ? (state.progress as LevelProgress[]).filter(p => p?.completed && isBossLevel(p.levelId)).length
       : 0;
     if (bossWins > 0) state.xp = (typeof state.xp === 'number' ? state.xp : 0) + bossWins * BOSS_WIN_XP;
+  }
+  if (version < 10) {
+    // v10: a "new" badge on each achievement until it is touched in the profile. Those unlocked
+    // before were already shown by their toast: they start seen
+    if (Array.isArray(state.achievements)) state.seenAchievements = [...state.achievements];
   }
   return state;
 }

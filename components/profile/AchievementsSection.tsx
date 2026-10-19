@@ -5,6 +5,7 @@ import AchievementIcon from './AchievementIcon';
 import { useGameStore } from '@/store/gameStore';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, AchievementCategory, AchievementContext, AchievementDef } from '@/data/achievements';
 import { RFValue } from '@/utils/responsive';
+import { useNewAchievements } from '@/hooks/useNewAchievements';
 import type { UiColors } from '@/theme';
 
 /** Locked achievements shown first, by share of their target already done */
@@ -20,7 +21,14 @@ export default function AchievementsSection({ colors, context }: Props) {
   const { t } = useTranslation();
   const unlocked = useGameStore((state) => state.achievements || []);
   const unlockedSet = useMemo(() => new Set(unlocked), [unlocked]);
-  const [openCategories, setOpenCategories] = useState<Set<AchievementCategory>>(() => new Set([ACHIEVEMENT_CATEGORIES[0]]));
+  const newAchievements = useNewAchievements();
+  const newSet = useMemo(() => new Set(newAchievements), [newAchievements]);
+  const markAchievementSeen = useGameStore((state) => state.markAchievementSeen);
+  // The first category, and those with something new to see
+  const [openCategories, setOpenCategories] = useState<Set<AchievementCategory>>(() => new Set([
+    ACHIEVEMENT_CATEGORIES[0],
+    ...ACHIEVEMENTS.filter(a => newSet.has(a.id)).map(a => a.category),
+  ]));
   const [selected, setSelected] = useState<string | null>(null);
 
   const progressOf = (ach: AchievementDef) => Math.min(ach.value(context), ach.target);
@@ -57,6 +65,7 @@ export default function AchievementsSection({ colors, context }: Props) {
       {ACHIEVEMENT_CATEGORIES.map(category => {
         const list = ACHIEVEMENTS.filter(a => a.category === category);
         const done = list.filter(a => unlockedSet.has(a.id)).length;
+        const newCount = list.filter(a => newSet.has(a.id)).length;
         const open = openCategories.has(category);
         const detail = open ? list.find(a => a.id === selected) : undefined;
         return (
@@ -66,8 +75,18 @@ export default function AchievementsSection({ colors, context }: Props) {
               style={styles.categoryHeader}
               accessibilityRole="button"
               accessibilityState={{ expanded: open }}
+              accessibilityLabel={newCount > 0
+                ? `${t(`achievements.categories.${category}`)}, ${t('profile.new_achievements', { count: newCount })}`
+                : undefined}
             >
-              <Text style={[styles.categoryTitle, { color: colors.text }]}>{t(`achievements.categories.${category}`)}</Text>
+              <View style={styles.categoryTitleLine}>
+                <Text style={[styles.categoryTitle, { color: colors.text }]}>{t(`achievements.categories.${category}`)}</Text>
+                {newCount > 0 && (
+                  <View style={[styles.countPill, { backgroundColor: colors.primary }]}>
+                    <Text style={[styles.countPillText, { color: colors.onPrimary }]}>{newCount}</Text>
+                  </View>
+                )}
+              </View>
               <Text style={[styles.categoryCount, { color: colors.textMuted }]}>{done}/{list.length}  {open ? '⌃' : '⌄'}</Text>
             </Pressable>
 
@@ -78,14 +97,18 @@ export default function AchievementsSection({ colors, context }: Props) {
                   const isSecret = !!ach.hidden && !isUnlocked;
                   const name = isSecret ? '???' : t(`achievements.${ach.id}`);
                   const desc = isSecret ? t('achievements.secret_desc') : t(`achievements.${ach.id}_desc`);
+                  const isNew = newSet.has(ach.id);
                   return (
                     <Pressable
                       key={ach.id}
-                      onPress={() => setSelected(id => id === ach.id ? null : ach.id)}
+                      onPress={() => {
+                        if (isNew) markAchievementSeen(ach.id);
+                        setSelected(id => id === ach.id ? null : ach.id);
+                      }}
                       style={styles.badge}
                       accessibilityRole="button"
                       accessibilityState={{ selected: selected === ach.id }}
-                      accessibilityLabel={t(isUnlocked ? 'profile.achievement_a11y_unlocked' : 'profile.achievement_a11y_locked', { name, desc })}
+                      accessibilityLabel={`${isNew ? `${t('cosmetics.new')}, ` : ''}${t(isUnlocked ? 'profile.achievement_a11y_unlocked' : 'profile.achievement_a11y_locked', { name, desc })}`}
                     >
                       <View style={[
                         styles.badgeCircle,
@@ -95,6 +118,7 @@ export default function AchievementsSection({ colors, context }: Props) {
                         selected === ach.id && { borderColor: colors.primaryText },
                       ]}>
                         <AchievementIcon icon={isSecret ? 'lock-closed' : ach.icon} count={isSecret ? 1 : ach.iconCount} size={RFValue(24)} color={isUnlocked ? colors.primaryText : colors.textMuted} style={!isUnlocked && styles.locked} />
+                        {isNew && <View style={[styles.newDot, { backgroundColor: colors.primary, borderColor: colors.surface }]} />}
                       </View>
                       <Text style={[styles.badgeName, { color: isUnlocked ? colors.text : colors.textMuted }]} numberOfLines={2}>{name}</Text>
                     </Pressable>
@@ -180,6 +204,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     minHeight: 44,
     marginVertical: RFValue(-8),
+  },
+  categoryTitleLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(8),
+  },
+  countPill: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  newDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: RFValue(14),
+    height: RFValue(14),
+    borderRadius: RFValue(7),
+    borderWidth: 2,
   },
   categoryTitle: {
     fontSize: RFValue(16),

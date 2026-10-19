@@ -13,6 +13,8 @@ interface Props {
   missionsDone: number;
   missionsTotal: number;
   missionsRewarded: boolean;
+  /** New achievements, counted on the profile button */
+  newAchievements: number;
   onProfile: () => void;
   onMissions: () => void;
   onSettings: () => void;
@@ -51,12 +53,12 @@ function Counter({ colors, icon, tint, value, accessibilityLabel, onPress }: Cou
  * Profile and settings share the same round button so the bar stays balanced.
  */
 export default function HomeHeader({
-  colors, streak, freezes, freezeCapacity, missionsDone, missionsTotal, missionsRewarded,
+  colors, streak, freezes, freezeCapacity, missionsDone, missionsTotal, missionsRewarded, newAchievements,
   onProfile, onMissions, onSettings,
 }: Props) {
   const { t } = useTranslation();
 
-  const roundButton = (icon: keyof typeof Ionicons.glyphMap, label: string, onPress: () => void) => (
+  const roundButton = (icon: keyof typeof Ionicons.glyphMap, label: string, onPress: () => void, badge = 0) => (
     <Pressable
       onPress={() => {
         haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -68,12 +70,22 @@ export default function HomeHeader({
       hitSlop={8}
     >
       <Ionicons name={icon} size={20} color={colors.primaryText} />
+      {badge > 0 && (
+        <View style={[styles.badge, { backgroundColor: colors.danger, borderColor: colors.background }]}>
+          <Text style={[styles.badgeText, { color: colors.onPrimary }]}>{badge}</Text>
+        </View>
+      )}
     </Pressable>
   );
 
   return (
     <View style={styles.bar}>
-      {roundButton('person', t('home.profile'), onProfile)}
+      {roundButton(
+        'person',
+        newAchievements > 0 ? `${t('home.profile')}, ${t('profile.new_achievements', { count: newAchievements })}` : t('home.profile'),
+        onProfile,
+        newAchievements,
+      )}
 
       <View style={styles.counters}>
         <Counter
@@ -122,6 +134,22 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '800',
   },
   counters: {
     flex: 1,
