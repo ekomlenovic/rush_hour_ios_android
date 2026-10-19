@@ -20,6 +20,21 @@ export const VARIANTS_PER_LEVEL: Partial<Record<Difficulty, number>> = { EXPERT:
 /** Bumped when the variants change: the catalog is prepared again */
 const CATALOG_VERSION = 1;
 
+/** Size of the campaign when the catalog was keyed by a hash of all its levels */
+const LEGACY_CAMPAIGN_SIZE = 309;
+
+/** What the catalog of a difficulty was prepared from (setting duel_variants_<difficulty>) */
+interface CatalogState {
+  settings: string;
+  /** catalogLevelKey of each level */
+  levels: string[];
+}
+
+/** What the variants of a level depend on */
+function catalogLevelKey(level: Level): string {
+  return `${level.id}:${level.minMoves}:${level.vehicles.length}`;
+}
+
 /** Where a duel gets its puzzle */
 export interface PuzzleSource {
   take(difficulty: Difficulty): Promise<Level | null>;
@@ -315,23 +330,52 @@ export class PuzzlePool implements PuzzleSource {
   }
 
   /**
+   * Removes the variants that no longer match: all of them when the way of making variants
+   * changes, those of a level that changed or left otherwise. Levels added at the end of the
+   * campaign keep the catalog (and its marks), only their variants are prepared.
+   */
+  private dropStaleVariants(difficulty: Difficulty, perLevel: number, sources: Level[]): void {
+    const key = `duel_variants_${difficulty}`;
+    const settings = JSON.stringify([CATALOG_VERSION, perLevel]);
+    const levels = sources.map(catalogLevelKey);
+    const stored = getSetting(this.db, key);
+
+    let previous: CatalogState | undefined;
+    if (stored?.startsWith('{')) {
+      previous = JSON.parse(stored) as CatalogState;
+    } else if (stored) {
+      // Before, the setting was a hash of the whole list of levels: it matches the levels of the
+      // campaign of that time when nothing else changed
+      const legacy = sources.filter(l => l.id <= LEGACY_CAMPAIGN_SIZE);
+      const hash = createHash('sha256')
+        .update(JSON.stringify([CATALOG_VERSION, perLevel, legacy.map(l => [l.id, l.minMoves, l.vehicles.length])]))
+        .digest('hex');
+      if (hash === stored) previous = { settings, levels: legacy.map(catalogLevelKey) };
+    }
+
+    if (!previous || previous.settings !== settings) {
+      this.db.prepare('DELETE FROM duel_variants WHERE difficulty = ?').run(difficulty);
+    } else {
+      const current = new Set(levels);
+      const remove = this.db.prepare('DELETE FROM duel_variants WHERE difficulty = ? AND source_id = ?');
+      for (const level of previous.levels) {
+        if (!current.has(level)) remove.run(difficulty, Number(level.split(':')[0]));
+      }
+    }
+    setSetting(this.db, key, JSON.stringify({ settings, levels } satisfies CatalogState));
+  }
+
+  /**
    * The variants of every hard level of the app, prepared once and kept: a level at a
-   * time, so that a restart goes on where it stopped. Prepared again when the levels or
-   * the way of making variants change.
+   * time, so that a restart goes on where it stopped. Prepared again when the way of
+   * making variants changes; a level that changes has its variants made again.
    */
   private async prepareCatalog(): Promise<void> {
     // The hardest first: a master puzzle is the longest to generate from scratch
     for (const difficulty of DIFFICULTIES.filter(d => this.hasCatalog(d)).reverse()) {
       const perLevel = this.variantsPerLevel[difficulty]!;
       const sources = variantSources(this.levels, DIFFICULTY_LEVELS[difficulty]);
-      const version = createHash('sha256')
-        .update(JSON.stringify([CATALOG_VERSION, perLevel, sources.map(l => [l.id, l.minMoves, l.vehicles.length])]))
-        .digest('hex');
-      const key = `duel_variants_${difficulty}`;
-      if (getSetting(this.db, key) !== version) {
-        this.db.prepare('DELETE FROM duel_variants WHERE difficulty = ?').run(difficulty);
-        setSetting(this.db, key, version);
-      }
+      this.dropStaleVariants(difficulty, perLevel, sources);
       const done = new Set((this.db.prepare('SELECT DISTINCT source_id AS id FROM duel_variants WHERE difficulty = ?').all(difficulty) as { id: number }[])
         .map(r => Number(r.id)));
       let added = 0;

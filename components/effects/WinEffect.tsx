@@ -26,6 +26,8 @@ interface Particle {
   duration: number;
   rotate: number;
   long?: boolean;
+  /** Drawn as a ring (bubbles) */
+  ring?: boolean;
 }
 
 /** Deterministic pseudo-random numbers, so a replay looks the same */
@@ -82,6 +84,20 @@ function buildParticles(effect: WinEffectId, width: number, height: number, colo
       long: true,
     }));
   }
+  if (effect === 'bubbles') {
+    return Array.from({ length: 24 }, () => ({
+      x: rand() * width,
+      y: height + 20,
+      dx: (rand() - 0.5) * 40,
+      dy: -(height * 0.6 + rand() * height * 0.4),
+      size: 8 + rand() * 14,
+      color: pick(),
+      delay: rand() * 700,
+      duration: 1800 + rand() * 900,
+      rotate: 0,
+      ring: true,
+    }));
+  }
   return [];
 }
 
@@ -103,6 +119,8 @@ function ParticleView({ p, progress }: { p: Particle; progress: SharedValue<numb
         styles.particle,
         p.long
           ? { width: 120, height: p.size, borderRadius: p.size / 2, backgroundColor: p.color }
+          : p.ring
+          ? { width: p.size, height: p.size, borderRadius: p.size / 2, borderWidth: 2, borderColor: p.color }
           : { width: p.size, height: p.size * (p.rotate ? 0.6 : 1), borderRadius: p.rotate ? 1 : p.size / 2, backgroundColor: p.color },
         style,
       ]}
