@@ -44,14 +44,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
-
-      - name: Install Expo CLI + EAS CLI
-        run: npm install -g expo-cli eas-cli
 
       - name: Generate native iOS project (expo prebuild)
         run: npx expo prebuild --platform ios --clean
@@ -103,7 +100,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Setup Java
@@ -114,9 +111,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
-
-      - name: Install Expo CLI + EAS CLI
-        run: npm install -g expo-cli eas-cli
 
       - name: Generate native Android project (expo prebuild)
         run: npx expo prebuild --platform android --clean
