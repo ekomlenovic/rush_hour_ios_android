@@ -262,10 +262,11 @@ describe('garage: short unlock conditions', () => {
     dailyChallengeProgress: {}, weeklyChallengeProgress: {}, achievements: [],
   });
 
-  it('fit one line, the progress capped at the target', () => {
+  it('stay short, the progress capped at the target', () => {
     expect(describeUnlockShort(t, COSMETICS.find(c => c.id === 'confetti')!, context)).toBe('★ 3/100');
     expect(describeUnlockShort(t, COSMETICS.find(c => c.id === 'greenlight')!, context))
       .toBe('cosmetics.unlock_short.levels{"count":3,"current":1}');
-    expect(describeUnlockShort(t, COSMETICS.find(c => c.id === 'tractor')!, context)).toBe('achievements.zone_perfect_1');
+    // An achievement comes with what it asks
+    expect(describeUnlockShort(t, COSMETICS.find(c => c.id === 'tractor')!, context)).toBe('achievements.zone_perfect_1 : achievements.zone_perfect_1_desc');
   });
 });
