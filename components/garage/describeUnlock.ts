@@ -8,6 +8,7 @@ export function describeUnlock(t: TFunction, def: CosmeticDef, c: CosmeticContex
     case 'default': return t('cosmetics.unlock.default');
     case 'level': return t('cosmetics.unlock.level', { level: rule.level });
     case 'stars': return t('cosmetics.unlock.stars', { count: rule.count, current: c.totalStars });
+    case 'levels': return t('cosmetics.unlock.levels', { count: rule.count, current: c.levelsWon });
     case 'weeklies': return t('cosmetics.unlock.weeklies', { count: rule.count, current: c.weeklies });
     case 'achievement': return t('cosmetics.unlock.achievement', { name: t(`achievements.${rule.id}`) });
     case 'winter': return t('cosmetics.unlock.winter');

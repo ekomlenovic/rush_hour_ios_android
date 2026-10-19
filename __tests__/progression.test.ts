@@ -189,6 +189,13 @@ describe('cosmetics', () => {
     }
   });
 
+  it('the green light effect unlocks after 3 map levels won, custom levels and challenges aside', () => {
+    const won = (levelId: number) => ({ levelId, completed: true, bestScore: 100, stars: 1 });
+    const greenlight = byKey('effect:greenlight');
+    expect(isCosmeticUnlocked(greenlight, buildCosmeticContext(source({ progress: [won(1), won(2), won(1760000000000), won(999999)] })))).toBe(false);
+    expect(isCosmeticUnlocked(greenlight, buildCosmeticContext(source({ progress: [won(1), won(2), won(3)] })))).toBe(true);
+  });
+
   it('a summer daily does not unlock the snow board', () => {
     const c = buildCosmeticContext(source({ dailyChallengeProgress: { '2026-07-15': { completed: true, score: 300, stars: 3 } } }));
     expect(isCosmeticUnlocked(byKey('board:snow'), c)).toBe(false);

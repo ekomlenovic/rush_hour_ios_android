@@ -4,6 +4,7 @@ import Animated, {
   Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming, type SharedValue,
 } from 'react-native-reanimated';
 import type { WinEffectId } from '@/data/cosmetics';
+import { TRAFFIC_LIGHT } from '@/theme';
 
 interface Props {
   effect: WinEffectId;
@@ -29,6 +30,31 @@ interface Particle {
   /** Drawn as a ring (bubbles) */
   ring?: boolean;
 }
+
+/** A traffic light of the green light effect: red, then amber, then green */
+interface Light {
+  x: number;
+  y: number;
+  /** Width of the housing; the lamps are 0.7 of it */
+  size: number;
+  delay: number;
+}
+
+/** Duration of a light, from red to its fade out */
+const LIGHT_MS = 1900;
+/** Share of LIGHT_MS when the light turns amber, then green, then fades out */
+const AMBER_AT = 0.3;
+const GREEN_AT = 0.55;
+const FADE_AT = 0.85;
+
+/** Three traffic lights across the top of the board, turning one after the other */
+function buildLights(width: number, height: number): Light[] {
+  const size = Math.min(30, Math.max(16, width * 0.09));
+  return [0.25, 0.5, 0.75].map((fx, i) => ({ x: fx * width, y: height * 0.22, size, delay: i * 120 }));
+}
+
+/** Center of the green lamp, at the bottom of the housing */
+const greenLampY = (light: Light) => light.y + light.size * 0.8;
 
 /** Deterministic pseudo-random numbers, so a replay looks the same */
 function rng(seed: number) {
@@ -98,7 +124,69 @@ function buildParticles(effect: WinEffectId, width: number, height: number, colo
       ring: true,
     }));
   }
+  if (effect === 'greenlight') {
+    // Sparks out of each green lamp when it turns green
+    return buildLights(width, height).flatMap(light => Array.from({ length: 12 }, (_, i) => {
+      const angle = (i / 12) * Math.PI * 2;
+      const distance = light.size * 2 + rand() * light.size;
+      return {
+        x: light.x, y: greenLampY(light),
+        dx: Math.cos(angle) * distance, dy: Math.sin(angle) * distance + light.size,
+        size: 4 + rand() * 3, color: i % 2 ? TRAFFIC_LIGHT.green : pick(),
+        delay: light.delay + LIGHT_MS * GREEN_AT, duration: 900, rotate: 0,
+      };
+    }));
+  }
   return [];
+}
+
+/** A lamp lit while the light's progress is in [from, to) */
+function Lamp({ progress, from, to, color, size }: { progress: SharedValue<number>; from: number; to: number; color: string; size: number }) {
+  const lit = useAnimatedStyle(() => ({ opacity: progress.value >= from && progress.value < to ? 1 : 0 }));
+  const lamp = { width: size, height: size, borderRadius: size / 2 };
+  return (
+    <View style={[lamp, { backgroundColor: TRAFFIC_LIGHT.off }]}>
+      <Animated.View style={[StyleSheet.absoluteFill, lamp, { backgroundColor: color }, lit]} />
+    </View>
+  );
+}
+
+function TrafficLight({ light, playKey }: { light: Light; playKey: number }) {
+  const progress = useSharedValue(0);
+  useEffect(() => {
+    progress.value = 0;
+    progress.value = withDelay(light.delay, withTiming(1, { duration: LIGHT_MS, easing: Easing.linear }));
+  }, [playKey]);
+  const { size } = light;
+  const style = useAnimatedStyle(() => {
+    const t = progress.value;
+    return {
+      opacity: t < FADE_AT ? 1 : (1 - t) / (1 - FADE_AT),
+      // A small jump when it turns green
+      transform: [{ scale: t >= GREEN_AT && t < GREEN_AT + 0.08 ? 1.12 : 1 }],
+    };
+  });
+  return (
+    <Animated.View
+      style={[
+        styles.particle,
+        styles.housing,
+        {
+          left: light.x - size / 2,
+          top: light.y - size * 1.3,
+          width: size,
+          height: size * 2.6,
+          borderRadius: size * 0.3,
+          backgroundColor: TRAFFIC_LIGHT.housing,
+        },
+        style,
+      ]}
+    >
+      <Lamp progress={progress} from={0} to={AMBER_AT} color={TRAFFIC_LIGHT.red} size={size * 0.7} />
+      <Lamp progress={progress} from={AMBER_AT} to={GREEN_AT} color={TRAFFIC_LIGHT.amber} size={size * 0.7} />
+      <Lamp progress={progress} from={GREEN_AT} to={2} color={TRAFFIC_LIGHT.green} size={size * 0.7} />
+    </Animated.View>
+  );
 }
 
 function ParticleView({ p, progress }: { p: Particle; progress: SharedValue<number> }) {
@@ -141,10 +229,12 @@ function AnimatedParticle({ p, playKey }: { p: Particle; playKey: number }) {
 export default function WinEffect({ effect, width, height, colors, playKey = 0 }: Props) {
   const reduceMotion = useReducedMotion();
   const particles = useMemo(() => buildParticles(effect, width, height, colors), [effect, width, height, colors]);
+  const lights = useMemo(() => (effect === 'greenlight' ? buildLights(width, height) : []), [effect, width, height]);
   if (reduceMotion || particles.length === 0) return null;
 
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.container]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+      {lights.map((light, i) => <TrafficLight key={`light-${i}`} light={light} playKey={playKey} />)}
       {particles.map((p, i) => <AnimatedParticle key={`${effect}-${i}`} p={p} playKey={playKey} />)}
     </View>
   );
@@ -153,4 +243,5 @@ export default function WinEffect({ effect, width, height, colors, playKey = 0 }
 const styles = StyleSheet.create({
   container: { overflow: 'hidden', zIndex: 200 },
   particle: { position: 'absolute', left: 0, top: 0 },
+  housing: { alignItems: 'center', justifyContent: 'space-evenly' },
 });

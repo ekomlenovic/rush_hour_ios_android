@@ -64,6 +64,15 @@ export const CLASSIC_VEHICLE_COLORS = [
 /** Color saved in the levels for the target car */
 export const TARGET_CAR_COLOR = '#EF4444';
 
+/** The "green light" win effect: a real traffic light, the same on every board and theme */
+export const TRAFFIC_LIGHT = {
+  housing: '#1F2937',
+  off: '#4B5563',
+  red: '#EF4444',
+  amber: '#F59E0B',
+  green: '#22C55E',
+};
+
 /** Colors given by the level generator (saved in the generated levels) */
 export const GENERATOR_VEHICLE_COLORS = [
   '#F59E0B', '#10B981', '#3B82F6', '#EC4899',
