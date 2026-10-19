@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, runOnJS } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { Vehicle } from '@/store/gameStore';
 import { SNAP } from './snap';
@@ -36,7 +37,7 @@ const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, cellSize, is
 
   const tap = Gesture.Tap()
     .onStart(() => {
-      runOnJS(onPress)();
+      scheduleOnRN(onPress);
     });
 
   const pan = Gesture.Pan()
@@ -44,25 +45,25 @@ const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, cellSize, is
     .onStart(() => {
       'use worklet';
       sc.value = SNAP(1.05);
-      runOnJS(onDragStart)();
+      scheduleOnRN(onDragStart);
     })
     .onUpdate(e => {
       'use worklet';
       tx.value = e.translationX;
       ty.value = e.translationY;
-      runOnJS(onDragMove)(e.translationX, e.translationY);
+      scheduleOnRN(onDragMove, e.translationX, e.translationY);
     })
     .onEnd(e => {
       'use worklet';
       sc.value = SNAP(1);
       tx.value = SNAP(0);
       ty.value = SNAP(0);
-      runOnJS(onDragEnd)(e.translationX, e.translationY);
+      scheduleOnRN(onDragEnd, e.translationX, e.translationY);
     });
 
   const longPress = Gesture.LongPress()
     .minDuration(600)
-    .onStart(() => runOnJS(onRemove)());
+    .onStart(() => scheduleOnRN(onRemove));
 
   const gesture = Gesture.Exclusive(pan, tap, longPress);
 

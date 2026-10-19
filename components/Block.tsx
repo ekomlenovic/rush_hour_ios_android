@@ -8,8 +8,8 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
-  runOnJS,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { haptics, Haptics } from '@/utils/haptics';
 import { Vehicle } from '@/store/gameStore';
 import { stepVehicle } from '@/utils/accessibility';
@@ -134,7 +134,7 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
       startX.value = translateX.value;
       startY.value = translateY.value;
       scale.value = withSpring(1.05, SPRING_CONFIG);
-      runOnJS(triggerMoveHaptic)();
+      scheduleOnRN(triggerMoveHaptic);
     })
     .onUpdate((event) => {
       'use worklet';
@@ -145,10 +145,10 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
         
         // Dynamic collision haptic
         if (raw < boundsMinPx.value && !hasHitMin.value) {
-          runOnJS(triggerCollisionHaptic)();
+          scheduleOnRN(triggerCollisionHaptic);
           hasHitMin.value = true;
         } else if (raw > boundsMaxPx.value && !hasHitMax.value) {
-          runOnJS(triggerCollisionHaptic)();
+          scheduleOnRN(triggerCollisionHaptic);
           hasHitMax.value = true;
         } else if (raw >= boundsMinPx.value && raw <= boundsMaxPx.value) {
           hasHitMin.value = false;
@@ -161,10 +161,10 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
         const clamped = Math.max(boundsMinPx.value, Math.min(boundsMaxPx.value, raw));
         
         if (raw < boundsMinPx.value && !hasHitMin.value) {
-          runOnJS(triggerCollisionHaptic)();
+          scheduleOnRN(triggerCollisionHaptic);
           hasHitMin.value = true;
         } else if (raw > boundsMaxPx.value && !hasHitMax.value) {
-          runOnJS(triggerCollisionHaptic)();
+          scheduleOnRN(triggerCollisionHaptic);
           hasHitMax.value = true;
         } else if (raw >= boundsMinPx.value && raw <= boundsMaxPx.value) {
           hasHitMin.value = false;
@@ -190,14 +190,14 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
       if (isHorizontal) {
         translateX.value = withSpring(finalCell * cellSize, finalCell !== snappedValue ? BOUNCE_SPRING : SPRING_CONFIG);
         if (finalCell !== vehicle.col) {
-          runOnJS(handleMoveEndSync)(vehicle.row, finalCell);
-          runOnJS(triggerMoveHaptic)();
+          scheduleOnRN(handleMoveEndSync, vehicle.row, finalCell);
+          scheduleOnRN(triggerMoveHaptic);
         }
       } else {
         translateY.value = withSpring(finalCell * cellSize, finalCell !== snappedValue ? BOUNCE_SPRING : SPRING_CONFIG);
         if (finalCell !== vehicle.row) {
-          runOnJS(handleMoveEndSync)(finalCell, vehicle.col);
-          runOnJS(triggerMoveHaptic)();
+          scheduleOnRN(handleMoveEndSync, finalCell, vehicle.col);
+          scheduleOnRN(triggerMoveHaptic);
         }
       }
     }), [isHorizontal, vehicle.id, vehicle.row, vehicle.col, vehicle.length, cellSize, triggerMoveHaptic, triggerCollisionHaptic, handleMoveEndSync]);
