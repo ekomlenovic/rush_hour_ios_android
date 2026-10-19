@@ -188,7 +188,7 @@ Voir [`docs/RELEASE_NOTES_2.0.0.md`](../docs/RELEASE_NOTES_2.0.0.md).
 | Contient des annonces | **Non** |
 | Achats intégrés | **Non** |
 | Classification du contenu | Questionnaire IARC : aucune violence, pas d'achat ; **« Les utilisateurs peuvent interagir » : Oui** (pseudos en multijoueur) |
-| Public cible | 13 ans et plus (la politique de confidentialité dit « pas destiné aux moins de 13 ans ») |
+| Public cible | **Tous âges, enfants compris** (tranches choisies dans la Play Console, voir ci-dessous) : l'app entre alors dans le **programme Familles** de Google Play. La politique de confidentialité a une section enfants (section 7) |
 | Sécurité des données | voir [`docs/PLAY_STORE.md`](../docs/PLAY_STORE.md) |
 | Politique de confidentialité | lien vers [`Privacy_Policy.md`](../Privacy_Policy.md) sur GitHub |
 | Site web | `https://github.com/ekomlenovic/rush_hour_ios_android` |
