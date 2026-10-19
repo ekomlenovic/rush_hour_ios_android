@@ -11,6 +11,7 @@ import { canonicalKey } from '../scripts/campaign/canonical';
 const SHIPPED: [number, string][] = [
   [309, 'c557ee8186583d5fe62346647c6c61a56c6c26e07f354a2f1b358d764f851ece'],
   [500, '03794255d06981eec712343e59eb10253da26e8f71ba0a9db40db151e162de14'],
+  [734, '69efcabba9134104dd7da8e1de7a64e3ea49615800d980025f86598b092bffaa'],
 ];
 
 const OUTSIDE = 255;
