@@ -262,3 +262,49 @@ describe('import recomputes rather than trusts', () => {
     expect(store().cosmetics.board).not.toBe('neon');
   });
 });
+
+describe('import drops what it cannot read', () => {
+  beforeEach(playSomeDays);
+
+  it.each([
+    ['no vehicles', { moveCount: 2, history: [] }],
+    ['a broken vehicle', { vehicles: [{ id: 'v1', row: 'top' }], moveCount: 2, history: [] }],
+    ['a negative move count', { vehicles: [], moveCount: -1, history: [] }],
+    ['a broken undo history', { vehicles: [], moveCount: 2, history: 'none' }],
+    ['a broken move log', { vehicles: [], moveCount: 2, history: [], moveLog: 'none' }],
+    ['not a save at all', 'level'],
+  ])('a level in progress with %s, keeping the rest of the save', (_, broken) => {
+    const key = String(sampleLevels[4].id);
+    const result = parseSave(forge(s => { s.savedStates[key] = broken; }));
+    if (!result.ok) throw new Error(result.error);
+    const savedStates = result.state.savedStates as Record<string, unknown>;
+    expect(savedStates).not.toHaveProperty(key);
+    expect(savedStates).toHaveProperty(String(sampleLevels[2].id));
+
+    store().importProgress(result.state);
+    expect(() => store().loadLevel(sampleLevels[4])).not.toThrow();
+    expect(store().moveCount).toBe(0);
+  });
+
+  it('statistics that are not numbers, which take their default', () => {
+    const result = parseSave(forge(s => {
+      s.stats = { ...s.stats, totalMoves: 'many', totalUndos: null, totalResets: -3, nightWins: 2, winsByGridSize: { 6: 'x', 7: 4 }, fastestWinMs: null, cheat: 1 };
+    }));
+    if (!result.ok) throw new Error(result.error);
+    store().importProgress(result.state);
+    const { stats } = store();
+    expect(stats).toMatchObject({ totalMoves: 0, totalUndos: 0, totalResets: 0, nightWins: 2, winsByGridSize: { 7: 4 }, fastestWinMs: null });
+    expect(stats).not.toHaveProperty('cheat');
+    expect(maxPlausibleXp(result.state)).not.toBeNaN();
+  });
+});
+
+describe('a level in progress broken on the phone', () => {
+  it('starts the level fresh rather than crashing', () => {
+    const level = sampleLevels[4];
+    useGameStore.setState({ savedStates: { [level.id]: { moveCount: 3 } as never } });
+    expect(() => store().loadLevel(level)).not.toThrow();
+    expect(store().moveCount).toBe(0);
+    expect(store().savedStates).not.toHaveProperty(String(level.id));
+  });
+});
