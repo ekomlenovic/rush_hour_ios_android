@@ -21,3 +21,14 @@ jest.mock('expo-haptics', () => ({
 
 // The worklet runtimes (utils/solver.background.ts): the worklets run right away on the test thread
 jest.mock('react-native-worklets', () => require('react-native-worklets/lib/module/mock'));
+
+// Keychain / Keystore: an in-memory store (secureStoreMock.items for the tests)
+jest.mock('expo-secure-store', () => {
+  const items = new Map<string, string>();
+  return {
+    items,
+    getItemAsync: jest.fn(async (key: string) => items.get(key) ?? null),
+    setItemAsync: jest.fn(async (key: string, value: string) => { items.set(key, value); }),
+    deleteItemAsync: jest.fn(async (key: string) => { items.delete(key); }),
+  };
+});

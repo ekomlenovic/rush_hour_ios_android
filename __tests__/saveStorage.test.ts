@@ -106,7 +106,9 @@ describe('the multiplayer accounts on the device', () => {
     expect(JSON.parse((await AsyncStorage.getItem(MULTI_KEY))!).state.accounts).toEqual([account]);
     await flush();
     expect(store.getState().accounts).toEqual([account]);
-    expect(JSON.parse((await AsyncStorage.getItem(MULTI_KEY))!).state.accounts).toEqual([account]);
+    // Once loaded, written back without the secrets (they moved to the secure storage)
+    const { token: _token, recoveryCode: _code, ...rest } = account;
+    expect(JSON.parse((await AsyncStorage.getItem(MULTI_KEY))!).state.accounts).toEqual([rest]);
   });
 
   it('are kept when they cannot be read back', async () => {
