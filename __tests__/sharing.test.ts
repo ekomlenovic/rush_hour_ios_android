@@ -2,7 +2,8 @@ import { useGameStore } from '../store/gameStore';
 import type { Level } from '../store/types';
 import { sampleLevels } from '../data/sampleLevels';
 import { getShareUrl, isSameBoard, parseSharedLevel, serializeLevel } from '../utils/sharing';
-import { validateLevel } from '../utils/solver';
+import { MAX_VALIDATE_STATES, solvePuzzle, validateLevel } from '../utils/solver';
+import { parseSharedLevelAsync, validateLevelAsync } from '../utils/solver.background';
 import { resetStore } from './helpers';
 
 const level: Level = sampleLevels[3];
@@ -46,6 +47,36 @@ describe('shared level links', () => {
       ],
     };
     expect(parseSharedLevel(code(wall))).toBeNull();
+  });
+
+  // 10×10, the red car walled in for good, a dozen small cars free to move: millions of positions to rule it out
+  const trap: Level = {
+    id: 1, gridSize: 10, exitRow: 4, exitCol: 10, minMoves: 1, updatedAt: 0,
+    vehicles: [
+      { id: 'target', row: 4, col: 0, length: 2, orientation: 'horizontal', isTarget: true, color: '#FF0000' },
+      { id: 'wall', row: 1, col: 9, length: 9, orientation: 'vertical', isTarget: false, color: '#000000' },
+      ...[0, 2, 6, 8].flatMap(row => [0, 3, 6].map(col => (
+        { id: `c${row}${col}`, row, col, length: 2, orientation: 'horizontal' as const, isTarget: false, color: '#00FF00' }))),
+    ],
+  };
+
+  it('gives up on a board too big to search instead of freezing the app (forged link)', () => {
+    const result = solvePuzzle(trap.vehicles, trap.gridSize, trap.exitRow, trap.exitCol, 200, 50_000);
+    expect(result).toEqual({ solvable: false, minMoves: -1, moves: [], tooComplex: true });
+    expect(validateLevel(trap.vehicles, trap.gridSize, trap.exitRow, trap.exitCol, 50_000)).toBe(-2);
+  });
+
+  it('refuses such a link with the default limit, which every level of the app stays under', () => {
+    expect(parseSharedLevel(code(trap))).toBeNull();
+    // The hardest level of the app needs about 300 000 positions
+    const hardest = sampleLevels.find(l => l.id === 88)!;
+    expect(solvePuzzle(hardest.vehicles, hardest.gridSize, hardest.exitRow, hardest.exitCol, 200, 250_000).tooComplex).toBe(true);
+    expect(solvePuzzle(hardest.vehicles, hardest.gridSize, hardest.exitRow, hardest.exitCol, 200, MAX_VALIDATE_STATES).minMoves).toBe(hardest.minMoves);
+  }, 60_000);
+
+  it('solves in the background like on the calling thread', async () => {
+    expect(await parseSharedLevelAsync(getShareUrl(level), 42)).toEqual({ ...parseSharedLevel(getShareUrl(level), 42), updatedAt: expect.any(Number) });
+    expect(await validateLevelAsync(level.vehicles, level.gridSize, level.exitRow, level.exitCol)).toBe(level.minMoves);
   });
 
   it('carries the optional name, and still reads links without one', () => {

@@ -6,7 +6,7 @@ import { AudioProvider } from '@/context/AudioProvider';
 import AchievementToast from '@/components/AchievementToast';
 import { useReminderSync } from '@/utils/notifications';
 import * as Linking from 'expo-linking';
-import { parseSharedLevel } from '@/utils/sharing';
+import { parseSharedLevelAsync } from '@/utils/solver.background';
 import { useGameStore } from '@/store/gameStore';
 import { useMultiStore } from '@/store/multiStore';
 import i18n from '@/utils/i18n';
@@ -20,12 +20,12 @@ export default function RootLayout() {
   useReminderSync();
 
   useEffect(() => {
-    const handleDeepLink = (event: { url: string }) => {
+    const handleDeepLink = async (event: { url: string }) => {
       const parsed = Linking.parse(event.url);
       // We look for rush-hours://game?data=...
       if (parsed.queryParams?.data) {
-        // Checked and solved again: a broken or forged link imports nothing
-        const level = parseSharedLevel(parsed.queryParams.data as string);
+        // Checked and solved again, in the background: a broken or forged link imports nothing
+        const level = await parseSharedLevelAsync(parsed.queryParams.data as string);
         if (level) {
           // A link already imported opens the level that is there
           const id = addImportedLevel(level);
@@ -36,10 +36,10 @@ export default function RootLayout() {
       }
     };
 
-    const subscription = Linking.addEventListener('url', handleDeepLink);
+    const subscription = Linking.addEventListener('url', event => void handleDeepLink(event));
 
     Linking.getInitialURL().then(url => {
-      if (url) handleDeepLink({ url });
+      if (url) void handleDeepLink({ url });
     });
 
     return () => subscription.remove();
