@@ -6,6 +6,7 @@ import type { UiColors } from '@/theme';
 import { multiErrorMessage } from '../errors';
 import { reportReasonText } from '../verdict';
 import AdminButton from './AdminButton';
+import { useAdminRefresh } from './AdminPage';
 import { adminStyles as styles } from './styles';
 import IconText from '@/components/IconText';
 
@@ -21,11 +22,12 @@ export default function AdminReports({ api, colors }: Props) {
       setReports((await api.admin.reports()).reports);
     } catch (e) {
       Alert.alert(t('common.error'), multiErrorMessage(t, e));
-      setReports([]);
+      setReports(r => r ?? []);
     }
   }, [api, t]);
 
   useEffect(() => { void load(); }, [load]);
+  useAdminRefresh(load);
 
   const remove = async (report: AdminReport) => {
     try {

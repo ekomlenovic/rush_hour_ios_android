@@ -8,7 +8,8 @@ import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
 import type { Level } from '@/store/types';
 import { haptics, Haptics } from '@/utils/haptics';
-import { LEVEL_NAME_MAX_LENGTH, parseSharedLevel } from '@/utils/sharing';
+import { decodeSharedLevel, LEVEL_NAME_MAX_LENGTH, withOptimum } from '@/utils/sharing';
+import { validateLevelAsync } from '@/utils/solver.background';
 import { customLevelTitle, type CustomLevelKind } from '@/utils/customLevels';
 import BoardPreview from '@/components/garage/BoardPreview';
 import BottomSheet from '@/components/home/BottomSheet';
@@ -30,6 +31,8 @@ interface Entry {
 const THUMB = 64;
 /** iOS drops an alert or a sheet shown while another sheet is sliding away */
 const AFTER_SHEET_MS = 350;
+/** Pause in the typing before a pasted or typed link is solved */
+const SOLVE_DELAY_MS = 300;
 
 export default function CustomLevelsScreen() {
     const { t } = useTranslation();
@@ -58,9 +61,21 @@ export default function CustomLevelsScreen() {
 
     const data = entries[activeTab];
 
-    // Checked as it is typed or pasted: the board and the name of the link show before importing
-    const pending = useMemo(() => (importText.trim() ? parseSharedLevel(importText.trim()) : null), [importText]);
-    const pendingInvalid = importText.trim().length > 0 && !pending;
+    // Checked as it is typed or pasted: the board and the name of the link show before importing.
+    // Decoding is instant; solving waits for the typing to pause and runs in the background
+    const decoded = useMemo(() => (importText.trim() ? decodeSharedLevel(importText.trim()) : null), [importText]);
+    const [solved, setSolved] = useState<{ level: Level; result: Level | null } | null>(null);
+    useEffect(() => {
+        if (!decoded) return;
+        let cancelled = false;
+        const timer = setTimeout(() => {
+            validateLevelAsync(decoded.vehicles, decoded.gridSize, decoded.exitRow, decoded.exitCol)
+                .then(minMoves => { if (!cancelled) setSolved({ level: decoded, result: withOptimum(decoded, minMoves) }); });
+        }, SOLVE_DELAY_MS);
+        return () => { cancelled = true; clearTimeout(timer); };
+    }, [decoded]);
+    const pending = decoded && solved?.level === decoded ? solved.result : null;
+    const pendingInvalid = importText.trim().length > 0 && (!decoded || (solved?.level === decoded && !solved.result));
     // The name of the link is suggested, the player can change or clear it
     useEffect(() => setImportName(pending?.name ?? ''), [pending]);
 

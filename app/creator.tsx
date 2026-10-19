@@ -9,7 +9,7 @@ import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanima
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 import { useGameStore, Vehicle, Level } from '@/store/gameStore';
-import { validateLevel } from '@/utils/solver';
+import { validateLevelAsync } from '@/utils/solver.background';
 import { haptics, Haptics } from '@/utils/haptics';
 import {
   ExitSide, hasCollision as collides, vehicleCells, getExitSide, moveExitToSide, getNextAvailableColor, findFreeCell,
@@ -303,9 +303,12 @@ export default function LevelCreatorScreen() {
   }, []);
 
   // ── Actions ──
-  const handleTest = () => {
-    const minMoves = validateLevel(vehicles, gridSize, exitRow, exitCol);
-    if (minMoves === -1) {
+  // Solved in the background: a big board never freezes the screen; -2: too big to search
+  const handleTest = async () => {
+    const minMoves = await validateLevelAsync(vehicles, gridSize, exitRow, exitCol);
+    if (minMoves === -2) {
+      Alert.alert(t('creator.unsolvable_title'), t('creator.too_complex_desc'));
+    } else if (minMoves === -1) {
       Alert.alert(t('creator.unsolvable_title'), t('creator.unsolvable_desc'));
     } else {
       Alert.alert(t('creator.solvable_title'), t('creator.solvable_desc', { count: minMoves }));
@@ -313,18 +316,22 @@ export default function LevelCreatorScreen() {
   };
 
   // Checked first, then named: the name sheet only opens for a level that can be saved
-  const handleSave = () => {
-    if (validateLevel(vehicles, gridSize, exitRow, exitCol) === -1) {
-      Alert.alert(t('creator.unsolvable_title'), t('creator.fix_before_save'));
+  const checkedMinMoves = useRef(0);
+  const handleSave = async () => {
+    const minMoves = await validateLevelAsync(vehicles, gridSize, exitRow, exitCol);
+    if (minMoves < 0) {
+      Alert.alert(t('creator.unsolvable_title'), t(minMoves === -2 ? 'creator.too_complex_desc' : 'creator.fix_before_save'));
       return;
     }
+    checkedMinMoves.current = minMoves;
     setNaming(true);
   };
 
   // Modifying an imported level creates a level of one's own (in "Created"), the imported one stays as is
   const saveLevel = (name: string) => {
     setNaming(false);
-    const minMoves = validateLevel(vehicles, gridSize, exitRow, exitCol);
+    // The board cannot change while the name sheet is open
+    const minMoves = checkedMinMoves.current;
     const isImported = params.levelId && importedLevels.some(l => l.id === parseInt(params.levelId));
     const newId = isImported ? Date.now() : (params.levelId ? parseInt(params.levelId) : Date.now());
     const existing = createdLevels.find(l => l.id === newId);

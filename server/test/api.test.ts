@@ -10,7 +10,7 @@ describe('joining a server', () => {
   it('/info is public and tells the API version', async () => {
     const { request } = open();
     expect(await request('GET', '/info')).toEqual({
-      status: 200, body: { name: 'Rush Hours', apiVersion: 1, minAppVersion: '1.1.6', features: ['duel'] },
+      status: 200, body: { name: 'Rush Hours', apiVersion: 1, minAppVersion: '1.1.6', features: ['duel', 'ranking_range'] },
     });
   });
 
@@ -262,11 +262,33 @@ describe('leaderboards', () => {
     expect(month.body.rows.map((r: { pseudo: string; points: number }) => [r.pseudo, r.points])).toEqual([['Léo', 20], ['Mia', 18]]);
   });
 
+  it('between two dates chosen by the player, in any order', async () => {
+    const { join, request, play, clock } = open({ at: paris('2026-10-16', '13:00') });
+    const leo = await join('Léo');
+    const mia = await join('Mia');
+    await play(leo.token, SOLUTION, 10_000);  // Léo 10, Mia 8
+    await play(mia.token, SOLUTION, 20_000);
+    clock.now = paris('2026-10-17', '13:00');
+    await play(mia.token, SOLUTION, 10_000);  // Mia 10
+    clock.now = paris('2026-10-19', '13:00');
+    await play(leo.token, SOLUTION, 10_000);  // Léo 10
+
+    const range = await request('GET', '/leaderboard?period=range&from=2026-10-17&to=2026-10-19', leo.token);
+    expect(range.body).toMatchObject({ period: 'range', from: '2026-10-17', to: '2026-10-19' });
+    expect(range.body.rows.map((r: { pseudo: string; points: number }) => [r.pseudo, r.points])).toEqual([['Léo', 10], ['Mia', 10]]);
+
+    const reversed = await request('GET', '/leaderboard?period=range&from=2026-10-16&to=2026-10-12', leo.token);
+    expect(reversed.body).toMatchObject({ from: '2026-10-12', to: '2026-10-16' });
+    expect(reversed.body.rows.map((r: { pseudo: string; points: number }) => [r.pseudo, r.points])).toEqual([['Léo', 10], ['Mia', 8]]);
+  });
+
   it('refuses a bad period or date', async () => {
     const { join, request } = open();
     const { token } = await join('Léo');
     expect((await request('GET', '/leaderboard?period=year', token)).status).toBe(400);
     expect((await request('GET', '/leaderboard?date=2026-13-01', token)).status).toBe(400);
+    expect((await request('GET', '/leaderboard?period=range&from=2026-10-01', token)).status).toBe(400);
+    expect((await request('GET', '/leaderboard?period=range&from=2026-10-01&to=2026-02-30', token)).status).toBe(400);
   });
 });
 
