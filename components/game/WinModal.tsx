@@ -6,7 +6,7 @@ import { WinAchievementToasts } from '@/components/AchievementToast';
 import { formatDuration } from '@/utils/date';
 import { fixedColors, type UiColors } from '@/theme';
 import { getLevelInfo } from '@/data/progression';
-import type { WinEffectId } from '@/data/cosmetics';
+import { COSMETICS_BY_KEY, cosmeticKey, type WinEffectId } from '@/data/cosmetics';
 import type { MissionReward } from '@/data/missions';
 import XpBar from '@/components/progression/XpBar';
 import { getLevelRewardLines, missionRewardText } from '@/components/progression/rewards';
@@ -24,6 +24,9 @@ interface Props {
   timeMs: number | null;
   /** Achievements unlocked by this win, shown as toasts at the top (the global toast is under this modal) */
   unlocks: string[];
+  /** Cosmetics this win unlocked ('kind:id'), with a way to the garage to pick them */
+  cosmeticUnlocks: string[];
+  onOpenGarage: () => void;
   missionReward: MissionReward | null;
   /** XP before and after this win (level, missions and achievements included) */
   xpGain: { from: number; to: number } | null;
@@ -43,7 +46,7 @@ interface Props {
 }
 
 export default function WinModal({
-  visible, colors, stars, moveCount, minMoves, score, timeMs, unlocks, missionReward, xpGain, levelUps, effect, effectColors,
+  visible, colors, stars, moveCount, minMoves, score, timeMs, unlocks, cosmeticUnlocks, onOpenGarage, missionReward, xpGain, levelUps, effect, effectColors,
   canShareResult, onShareResult, onShowSolution, onRetry, onContinue, onRequestClose,
 }: Props) {
   const isOptimal = moveCount <= minMoves;
@@ -111,6 +114,25 @@ export default function WinModal({
               ))}
             </View>
           ))}
+          {cosmeticUnlocks.length > 0 && (
+            <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
+              <IconText icon="car-sport" color={colors.success} textStyle={styles.winUnlocksTitle}>{t('cosmetics.unlocked_title')}</IconText>
+              {cosmeticUnlocks.map(key => COSMETICS_BY_KEY[key]).filter(Boolean).map(def => (
+                <Text key={cosmeticKey(def)} style={[styles.winUnlockItem, { color: colors.text }]}>
+                  {t(`cosmetics.${def.kind}.${def.id}`)} · {t(`cosmetics.tabs.${def.kind}`)}
+                </Text>
+              ))}
+              <Pressable
+                style={[styles.smallButton, styles.garageButton, { backgroundColor: colors.primary }]}
+                onPress={onOpenGarage}
+                accessibilityRole="button"
+              >
+                <IconText icon="arrow-forward" color={colors.onPrimary} textStyle={[styles.smallButtonText, { color: colors.onPrimary }]}>
+                  {t('cosmetics.open_garage')}
+                </IconText>
+              </Pressable>
+            </View>
+          )}
           {missionReward && (
             <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
               <IconText icon="flag" color={colors.warning} textStyle={styles.winUnlocksTitle}>{t('missions.completed')}</IconText>
@@ -285,6 +307,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginVertical: 2,
   },
+  garageButton: { marginTop: 8 },
   withIcon: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   winButton: {
     paddingVertical: 14,

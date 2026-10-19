@@ -5,7 +5,7 @@ import {
   getPlayerLevel, getPlayerTitle, levelWinXp, totalXpForLevel, weeklyWinXp, xpToNextLevel,
 } from '../data/progression';
 import {
-  COSMETICS, DEFAULT_COSMETICS, buildCosmeticContext, cosmeticKey, getLevelCosmetics, isCosmeticUnlocked, sanitizeSelection,
+  COSMETICS, DEFAULT_COSMETICS, buildCosmeticContext, newlyUnlockedCosmetics, cosmeticKey, getLevelCosmetics, isCosmeticUnlocked, sanitizeSelection,
   type CosmeticSource,
 } from '../data/cosmetics';
 import { ACHIEVEMENTS_BY_ID } from '../data/achievements';
@@ -252,6 +252,25 @@ describe('cosmetics', () => {
     const target = vehicles.find(v => v.isTarget)!;
     expect(ocean.has(target.id)).toBe(false);
     expect([...ocean.values()][0]).toBe(VEHICLE_PALETTES.ocean![0]);
+  });
+});
+
+describe('win screen: cosmetics unlocked by the win', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    setToday('2026-10-14');
+    resetStore();
+  });
+  afterEach(() => jest.useRealTimers());
+
+  it('lists the green light on the 3rd level won, nothing on the 2nd', () => {
+    winMapLevel(sampleLevels[0]);
+    const beforeSecond = state();
+    winMapLevel(sampleLevels[1]);
+    expect(newlyUnlockedCosmetics(beforeSecond, state())).toEqual([]);
+    const beforeThird = state();
+    winMapLevel(sampleLevels[2]);
+    expect(newlyUnlockedCosmetics(beforeThird, state())).toContain('effect:greenlight');
   });
 });
 

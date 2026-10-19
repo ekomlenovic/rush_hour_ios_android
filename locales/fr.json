@@ -707,6 +707,8 @@
     "new": "Nouveau",
     "new_count_one": "{{count}} nouveauté",
     "new_count_other": "{{count}} nouveautés",
+    "unlocked_title": "Nouveau dans le Garage",
+    "open_garage": "Choisir au Garage",
     "unlocked_count": "{{unlocked}} / {{total}} débloqués",
     "a11y_item": "{{name}}, {{state}}",
     "tabs": {

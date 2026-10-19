@@ -154,6 +154,12 @@ export function getUnlockedCosmetics(c: CosmeticContext): string[] {
   return COSMETICS.filter(def => isCosmeticUnlocked(def, c)).map(cosmeticKey);
 }
 
+/** Cosmetics unlocked between two states of the progress, e.g. by a win ('kind:id', in garage order) */
+export function newlyUnlockedCosmetics(before: CosmeticSource, after: CosmeticSource): string[] {
+  const known = new Set(getUnlockedCosmetics(buildCosmeticContext(before)));
+  return getUnlockedCosmetics(buildCosmeticContext(after)).filter(key => !known.has(key));
+}
+
 /** Cosmetics given as the reward of reaching a player level */
 export function getLevelCosmetics(level: number): CosmeticDef[] {
   return COSMETICS.filter(def => def.unlock.type === 'level' && def.unlock.level === level);
