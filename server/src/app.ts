@@ -830,7 +830,7 @@ export function buildApp(deps: AppDeps) {
   }, { prefix: '/api/v1' });
 
   // Delete an account from the web (Google Play), with the recovery code
-  app.register(deletePage, { db, serverName: () => settings().serverName });
+  app.register(deletePage, { db, serverName: () => settings().serverName, onDeleted: playerId => duels.kick(playerId, 'deleted') });
 
   app.addHook('preClose', async () => {
     clearInterval(duelSweep);

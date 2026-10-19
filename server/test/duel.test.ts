@@ -560,6 +560,21 @@ describe('duels over a WebSocket', () => {
     expect(await closed).toEqual({ code: 4003, reason: 'banned' });
   });
 
+  it('deleting an account from the web page closes its duel connection', async () => {
+    server = testServer();
+    const leo = await server.join('Léo');
+    const { ws, closed } = await socketTo();
+    ws.send(JSON.stringify({ type: 'auth', token: leo.token }));
+    await new Promise(resolve => { ws.onmessage = resolve; });
+    const res = await server.app.inject({
+      method: 'POST', url: '/delete-account',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      payload: `code=${encodeURIComponent(leo.recoveryCode)}`,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(await closed).toEqual({ code: 4003, reason: 'deleted' });
+  });
+
   it('/info tells the app the server has duels', async () => {
     server = testServer();
     expect((await server.request('GET', '/info')).body.features).toEqual(['duel', 'ranking_range']);
