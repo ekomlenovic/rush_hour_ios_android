@@ -176,7 +176,7 @@ Pour changer de téléphone sans perdre sa progression, **sans serveur ni compte
 
 **Triche** : sans serveur, on ne peut pas l'empêcher (tout ce que l'app vérifie, quelqu'un qui lit son code peut le refaire). L'enjeu est faible : pas de classement, pas de monnaie, un tricheur ne lèse que lui-même. On bloque la triche facile et les fichiers abîmés, sans jamais refuser la sauvegarde d'un vrai joueur :
 - format non lisible (`RHSAVE1.<somme de contrôle>.<base64>`) et **somme de contrôle** : un code modifié à la main ou tronqué est refusé ;
-- **cohérence** : étoiles et score possibles pour l'optimum du niveau (campagne et niveaux générés seulement : un niveau créé peut être modifié après coup), rien dans le futur, aucune archive du jour même, streak ≤ meilleur streak ≤ défis du jour réussis ;
+- **cohérence** : étoiles et score possibles pour l'optimum du niveau, selon la règle des étoiles actuelle ou l'ancienne (2 étoiles à 3 coups près, gardée par les défis d'avant la 1.1) (campagne et niveaux générés seulement : un niveau créé peut être modifié après coup), rien dans le futur, aucune archive du jour même, streak ≤ meilleur streak ≤ défis du jour réussis ;
 - **recalcul plutôt que confiance** : XP plafonnée à ce que les victoires ont pu rapporter (`maxPlausibleXp`), gels plafonnés au stock du niveau joueur, succès inconnus retirés, cosmétiques non débloqués remis par défaut.
 
 > ⚠️ Un nouveau champ sauvegardé est exporté automatiquement. S'il est propre au téléphone, l'ajouter à `DEVICE_FIELDS`.
