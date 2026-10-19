@@ -24,7 +24,7 @@ describe('becoming admin', () => {
   it('every admin route is refused to the other players', async () => {
     const { join, request } = open();
     const { token } = await join('Léo');
-    for (const [method, url] of [['GET', '/admin/games'], ['GET', '/admin/players'], ['GET', '/admin/reports'], ['GET', '/admin/settings'], ['GET', '/admin/puzzles'], ['POST', '/admin/invite']] as const) {
+    for (const [method, url] of [['GET', '/admin/games'], ['GET', '/admin/players'], ['GET', '/admin/reports'], ['GET', '/admin/settings'], ['GET', '/admin/puzzles'], ['GET', '/admin/summary'], ['POST', '/admin/invite']] as const) {
       expect((await request(method, url, token)).body).toEqual({ error: 'forbidden' });
     }
   });
@@ -38,6 +38,31 @@ describe('duel puzzles', () => {
     expect(body.difficulties.map((d: { difficulty: string }) => d.difficulty)).toEqual(['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER']);
     expect(Array.isArray(body.puzzles)).toBe(true);
     expect(body).toHaveProperty('working');
+  });
+});
+
+describe('home of the admin panel', () => {
+  it('counts what waits for the admin, and a word on each part', async () => {
+    const { join, joinAdmin, play, request } = open();
+    const admin = await joinAdmin();
+    const leo = await join('Léo');
+    const mia = await join('Mia');
+    const summary = async () => (await request('GET', '/admin/summary', admin.token)).body;
+    expect(await summary()).toMatchObject({
+      toReview: 0, reports: 0, players: 3, banned: 0, joinOpen: true, invitesAdminOnly: false, releaseTime: '12:00',
+      puzzles: { ready: 0, size: 43, working: null },
+    });
+
+    // A suspect win (2 moves in 1 s), a report, an exclusion
+    await play(leo.token, SOLUTION.map((m, i) => ({ ...m, t: 400 + i * 300 })), 1000);
+    await request('POST', '/reports', mia.token, { playerId: leo.player.id, reason: 'pseudo' });
+    await request('PATCH', `/admin/players/${mia.player.id}`, admin.token, { banned: true });
+    expect(await summary()).toMatchObject({ toReview: 1, reports: 1, players: 3, banned: 1 });
+
+    // Decided: nothing left to review
+    const [game] = (await request('GET', '/admin/games', admin.token)).body.games;
+    await request('POST', `/admin/games/${game.attemptId}/verdict`, admin.token, { verdict: 'cleared' });
+    expect((await summary()).toReview).toBe(0);
   });
 });
 

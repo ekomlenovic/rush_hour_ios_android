@@ -272,6 +272,7 @@ describe('a multiplayer game on the phone', () => {
 
 describe('translations of the multiplayer mode', () => {
   const { MULTI_ERROR_CODES } = require('../components/multi/errors') as typeof import('../components/multi/errors');
+  const { ADMIN_SECTIONS } = require('../components/multi/admin/sections') as typeof import('../components/multi/admin/sections');
   const locales = { en: require('../locales/en.json'), fr: require('../locales/fr.json') };
 
   it.each(Object.entries(locales))('%s has the keys built at runtime', (_, strings) => {
@@ -281,7 +282,8 @@ describe('translations of the multiplayer mode', () => {
     expect(Object.keys(multi.period).sort()).toEqual(['day', 'month', 'week']);
     expect(typeof multi.my_abandoned).toBe('string');
     expect(typeof multi.my_unfinished).toBe('string');
-    expect(Object.keys(multi.admin_tab).sort()).toEqual(['games', 'players', 'puzzles', 'reports', 'reset', 'settings']);
+    // A title for each page of the admin panel
+    expect(ADMIN_SECTIONS.filter(section => typeof multi.admin_home[section] !== 'string')).toEqual([]);
     expect(['scratch', 'catalog'].filter(kind => typeof multi[`admin_puzzles_working_${kind}`] !== 'string')).toEqual([]);
     expect(Object.keys(multi.admin_reset_preset).sort()).toEqual(['all', 'dates', 'month', 'today', 'week']);
     expect(Object.keys(multi.duel).filter(k => /^(outcome|reason_short)_/.test(k)).sort()).toEqual([
@@ -457,5 +459,26 @@ describe('admin reset', () => {
   it('chosen days in any order', () => {
     expect(resetRange('dates', '2026-10-17', dates)).toEqual(dates);
     expect(resetRange('dates', '2026-10-17', { from: '2026-10-05', to: '2026-10-01' })).toEqual(dates);
+  });
+});
+
+describe('admin panel', () => {
+  const { matchesPseudo } = require('../utils/multi/format') as typeof import('../utils/multi/format');
+  const { isAdminSection } = require('../components/multi/admin/sections') as typeof import('../components/multi/admin/sections');
+
+  it('finds a player without case nor accents', () => {
+    expect(matchesPseudo('Léo', 'leo')).toBe(true);
+    expect(matchesPseudo('Léo', 'LÉ')).toBe(true);
+    expect(matchesPseudo('Chloé', ' OE ')).toBe(true);
+    expect(matchesPseudo('Chloé', 'eo')).toBe(false);
+    expect(matchesPseudo('Chloé', 'loé')).toBe(true);
+    expect(matchesPseudo('Mia', '')).toBe(true);
+    expect(matchesPseudo('Mia', 'léo')).toBe(false);
+  });
+
+  it('opens only its own pages', () => {
+    expect(isAdminSection('games')).toBe(true);
+    expect(isAdminSection('settings')).toBe(false);
+    expect(isAdminSection(undefined)).toBe(false);
   });
 });
