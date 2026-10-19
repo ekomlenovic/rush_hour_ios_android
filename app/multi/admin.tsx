@@ -10,13 +10,14 @@ import KeyboardScreen from '@/components/KeyboardScreen';
 import AdminGames from '@/components/multi/admin/AdminGames';
 import AdminPlayers from '@/components/multi/admin/AdminPlayers';
 import AdminReports from '@/components/multi/admin/AdminReports';
+import AdminPuzzles from '@/components/multi/admin/AdminPuzzles';
 import AdminSettingsPanel from '@/components/multi/admin/AdminSettingsPanel';
 import AdminReset from '@/components/multi/admin/AdminReset';
 
-const TABS = ['games', 'players', 'reports', 'settings', 'reset'] as const;
+const TABS = ['games', 'players', 'puzzles', 'reports', 'settings', 'reset'] as const;
 type Tab = typeof TABS[number];
 
-/** Panel of the admin of the server (#50): suspect games, players, reports, settings, back to zero */
+/** Panel of the admin of the server (#50): suspect games, players, duel puzzles, reports, settings, back to zero */
 export default function AdminScreen() {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
@@ -44,6 +45,7 @@ export default function AdminScreen() {
         {api && account && (
           tab === 'games' ? <AdminGames api={api} colors={colors} />
             : tab === 'players' ? <AdminPlayers api={api} colors={colors} myPlayerId={account.playerId} />
+            : tab === 'puzzles' ? <AdminPuzzles api={api} colors={colors} />
             : tab === 'reports' ? <AdminReports api={api} colors={colors} />
             : tab === 'reset' ? <AdminReset api={api} colors={colors} />
             : <AdminSettingsPanel api={api} colors={colors} isDark={isDark} serverUrl={account.url} />
