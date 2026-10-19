@@ -14,8 +14,8 @@ const merge = (persisted: Record<string, unknown>) =>
   options.merge!(persisted, useGameStore.getInitialState());
 
 describe('persisted state', () => {
-  it('is at version 6', () => {
-    expect(options.version).toBe(6);
+  it('is at version 7', () => {
+    expect(options.version).toBe(7);
   });
 
   it('keeps the player data and leaves the in-game state out', () => {
@@ -205,6 +205,60 @@ describe('migrate v5 → v6', () => {
     const merged = merge(migrate({ maxUnlockedLevel: 14, savedStates: { 12: save(120) } }, 5));
     expect(merged.maxUnlockedLevel).toBe(14);
     expect(merged.savedStates[12].history).toHaveLength(MAX_SAVED_UNDOS);
+  });
+});
+
+describe('migrate v6 → v7', () => {
+  const win = { completed: true, score: 1200, stars: 3, moves: 12, minMoves: 12 };
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    setToday('2026-10-20');
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('takes out the challenges won before their day through a link, and rebuilds the streak (#119)', () => {
+    // A 3-day streak, then the daily of 2030 opened by a link: the next real daily restarted the streak at 1
+    const v6 = {
+      dailyChallengeProgress: { '2026-10-17': win, '2026-10-18': win, '2026-10-19': win, '2030-01-01': win, '2026-10-20': win },
+      weeklyChallengeProgress: { '2026-W42': win, '2099-W01': win },
+      currentStreak: 1,
+      bestStreak: 3,
+      lastStreakDate: '2030-01-01',
+      xp: 4000,
+    };
+    const state = migrate(v6, 6);
+    expect(Object.keys(state.dailyChallengeProgress as object).sort()).toEqual(['2026-10-17', '2026-10-18', '2026-10-19', '2026-10-20']);
+    expect(Object.keys(state.weeklyChallengeProgress as object)).toEqual(['2026-W42']);
+    expect(state).toMatchObject({ currentStreak: 4, bestStreak: 4, lastStreakDate: '2026-10-20', xp: 4000 });
+  });
+
+  it('keeps a result of tomorrow, from a save made further east, and a best streak never goes down', () => {
+    const state = migrate({
+      dailyChallengeProgress: { '2026-10-21': win, '2031-05-05': win },
+      currentStreak: 1, bestStreak: 9, lastStreakDate: '2031-05-05',
+    }, 6);
+    expect(Object.keys(state.dailyChallengeProgress as object)).toEqual(['2026-10-21']);
+    expect(state).toMatchObject({ currentStreak: 1, bestStreak: 9, lastStreakDate: '2026-10-21' });
+  });
+
+  it('leaves a save without challenge to come untouched', () => {
+    const v6 = { dailyChallengeProgress: { '2026-10-19': win }, currentStreak: 1, bestStreak: 5, lastStreakDate: '2026-10-19', streakFreezes: 1 };
+    expect(migrate(v6, 6)).toEqual(v6);
+  });
+
+  it('a daily of a day to come is never won again', () => {
+    resetStore();
+    useGameStore.getState().completeDailyChallenge('2030-01-01', 300, 3);
+    useGameStore.getState().completeDailyChallenge('not-a-date', 300, 3);
+    useGameStore.getState().completeWeeklyChallenge('2099-W01', 300, 3);
+    expect(useGameStore.getState()).toMatchObject({ dailyChallengeProgress: {}, weeklyChallengeProgress: {}, currentStreak: 0, xp: 0 });
+    // Yesterday's, from a game left open past midnight, still counts
+    useGameStore.getState().completeDailyChallenge('2026-10-19', 300, 3);
+    expect(useGameStore.getState().currentStreak).toBe(1);
   });
 });
 

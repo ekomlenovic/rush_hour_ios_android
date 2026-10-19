@@ -196,6 +196,21 @@ describe('import refuses', () => {
     expect(parseSave(code)).toEqual({ ok: false, error: 'too_new' });
   });
 
+  it('accepts a save made a day ahead, on a phone in a time zone further east', () => {
+    // Exported in Auckland on the 13th, imported in New York where it is still the 12th
+    setToday('2026-10-13');
+    playSomeDays();
+    winDaily('2026-10-13');
+    const code = exportProgress();
+    resetStore();
+    setToday('2026-10-12');
+    const result = parseSave(code);
+    expect(result.ok).toBe(true);
+    // Two days ahead is not a trip any more
+    setToday('2026-10-11');
+    expect(parseSave(code)).toEqual({ ok: false, error: 'inconsistent' });
+  });
+
   describe('a save with a valid checksum but impossible data', () => {
     beforeEach(playSomeDays);
 
@@ -204,8 +219,8 @@ describe('import refuses', () => {
       ['more stars than the score allows', (s: any) => { s.progress[1].stars = 3; }],
       ['2 stars with a score of 1 star', (s: any) => { s.progress[1].bestScore = 0; }],
       ['4 stars', (s: any) => { s.progress[0].stars = 4; }],
-      ['a daily won in the future', (s: any) => { s.dailyChallengeProgress['2026-10-13'] = { completed: true, score: 100, stars: 3 }; }],
-      ['an archive won today', (s: any) => { s.archiveProgress['2026-10-12'] = { completed: true, score: 100, stars: 3 }; }],
+      ['a daily won in the future', (s: any) => { s.dailyChallengeProgress['2026-10-14'] = { completed: true, score: 100, stars: 3 }; }],
+      ['an archive of a day not over yet', (s: any) => { s.archiveProgress['2026-10-13'] = { completed: true, score: 100, stars: 3 }; }],
       ['a broken archive level', (s: any) => { s.archiveLevels = { '2026-10-09': 'level' }; }],
       ['a weekly won in the future', (s: any) => { s.weeklyChallengeProgress['2026-W45'] = { completed: true, score: 100, stars: 3 }; }],
       ['a streak longer than the dailies won', (s: any) => { s.currentStreak = 30; s.bestStreak = 30; }],

@@ -4,9 +4,10 @@ import { recomputeStreak } from './streak';
 import { computeRetroactiveXp } from '../data/progression';
 import { getStars, starsFromScore } from '../utils/scoring';
 import { compactSavedStates } from './savedStates';
+import { latestSavedDate, latestSavedWeek } from '../utils/challengeDates';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 6;
+export const STORE_VERSION = 7;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
@@ -43,7 +44,40 @@ export function migrateState(persistedState: unknown, version: number): Record<s
       state.savedStates = compactSavedStates(state.savedStates as Record<string, LevelSaveState>);
     }
   }
+  if (version < 7) {
+    // v7: a link could open the daily or weekly of any date, won before its day (issue 119): the streak
+    // jumped to that day and the save could no longer be imported. Those wins are taken out of the
+    // challenges (their XP stays) and the streak is rebuilt from the real days
+    Object.assign(state, dropChallengesToCome(state));
+  }
   return state;
+}
+
+/**
+ * Daily and weekly results of days that have not come yet (a day of tolerance: a save made
+ * in a time zone further east), and the streak that followed them, rebuilt from the dailies
+ */
+function dropChallengesToCome(state: Record<string, unknown>): Record<string, unknown> {
+  const latestDate = latestSavedDate();
+  const latestWeek = latestSavedWeek();
+  const keep = (results: unknown, isComing: (key: string) => boolean) =>
+    Object.fromEntries(Object.entries(results as Record<string, ChallengeResult>).filter(([key]) => !isComing(key)));
+
+  const fixed: Record<string, unknown> = {};
+  if (state.dailyChallengeProgress && typeof state.dailyChallengeProgress === 'object') {
+    fixed.dailyChallengeProgress = keep(state.dailyChallengeProgress, key => key > latestDate);
+  }
+  if (state.weeklyChallengeProgress && typeof state.weeklyChallengeProgress === 'object') {
+    fixed.weeklyChallengeProgress = keep(state.weeklyChallengeProgress, key => key > latestWeek);
+  }
+  if (typeof state.lastStreakDate === 'string' && state.lastStreakDate > latestDate) {
+    // The best streak never goes down; with no real daily left, the streak starts again
+    const rebuilt = recomputeStreak({ ...state, ...fixed });
+    fixed.currentStreak = rebuilt.currentStreak ?? 0;
+    fixed.bestStreak = rebuilt.bestStreak ?? (Number(state.bestStreak) || 0);
+    fixed.lastStreakDate = rebuilt.lastStreakDate ?? null;
+  }
+  return fixed;
 }
 
 /** Last level before the levels inserted in v5, and how many were inserted */

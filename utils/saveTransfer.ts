@@ -7,8 +7,9 @@ import { ACHIEVEMENTS } from '../data/achievements';
 import {
   ACHIEVEMENT_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp, REPLAY_XP_FACTOR,
 } from '../data/progression';
-import { getLocalDateString, getWeekKey } from './date';
+import { getLocalDateString } from './date';
 import { starsFromScore } from './scoring';
+import { latestSavedDate, latestSavedWeek } from './challengeDates';
 
 /**
  * Export / import of the player's progress, without any server (see docs/GAME_DESIGN.md, Sauvegarde).
@@ -204,8 +205,9 @@ function fixedLevelsOf(state: Record<string, any>): Map<number, Level> {
 
 /** Whether nothing in the save is impossible to reach by playing */
 export function isConsistent(state: Record<string, any>, now: Date = new Date()): boolean {
-  const today = getLocalDateString(now);
-  const thisWeek = getWeekKey(now);
+  // A save made on a phone ahead in time (time zone, trip) can be a day ahead of this one
+  const latestDate = latestSavedDate(now);
+  const latestWeek = latestSavedWeek(now);
   const levels = fixedLevelsOf(state);
 
   const progress = state.progress ?? [];
@@ -222,17 +224,17 @@ export function isConsistent(state: Record<string, any>, now: Date = new Date())
   if (!isRecord(dailies) || !isRecord(weeklies)) return false;
   // Date keys compare as strings: nothing in the future
   for (const [key, result] of Object.entries(dailies)) {
-    if (!DATE_KEY.test(key) || key > today || !isValidResult(result)) return false;
+    if (!DATE_KEY.test(key) || key > latestDate || !isValidResult(result)) return false;
   }
   for (const [key, result] of Object.entries(weeklies)) {
-    if (!WEEK_KEY.test(key) || key > thisWeek || !isValidResult(result)) return false;
+    if (!WEEK_KEY.test(key) || key > latestWeek || !isValidResult(result)) return false;
   }
-  // Archives are past days only: never today
+  // Archives are past days only: never the day of the save
   const archives = state.archiveProgress ?? {};
   const archiveLevels = state.archiveLevels ?? {};
   if (!isRecord(archives) || !isRecord(archiveLevels)) return false;
   for (const [key, result] of Object.entries(archives)) {
-    if (!DATE_KEY.test(key) || key >= today || !isValidResult(result)) return false;
+    if (!DATE_KEY.test(key) || key >= latestDate || !isValidResult(result)) return false;
   }
   for (const [key, level] of Object.entries(archiveLevels)) {
     if (!DATE_KEY.test(key) || !isRecord(level) || !isCount(level.minMoves) || !Array.isArray(level.vehicles)) return false;
@@ -244,7 +246,7 @@ export function isConsistent(state: Record<string, any>, now: Date = new Date())
   if (!isCount(currentStreak) || !isCount(bestStreak) || currentStreak > bestStreak || bestStreak > dailiesWon) return false;
 
   const dates = [state.lastStreakDate, state.lastOpenDate, ...(Array.isArray(state.frozenDates) ? state.frozenDates : [])];
-  if (dates.some(d => d != null && (typeof d !== 'string' || !DATE_KEY.test(d) || d > today))) return false;
+  if (dates.some(d => d != null && (typeof d !== 'string' || !DATE_KEY.test(d) || d > latestDate))) return false;
 
   for (const field of ['xp', 'streakFreezes', 'totalHintsUsed', 'maxUnlockedLevel']) {
     if (state[field] !== undefined && !isCount(state[field])) return false;
