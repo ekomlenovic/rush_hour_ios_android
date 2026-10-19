@@ -41,7 +41,11 @@ export interface DayRow {
   reasons: Flag[];
 }
 
-export interface PeriodRow { playerId: number; pseudo: string; rank: number; points: number; wins: number; played: number }
+export interface PeriodRow {
+  playerId: number; pseudo: string; rank: number; points: number; wins: number; played: number;
+  /** The points of each day played, in order (absent on older servers) */
+  days?: { date: string; points: number; status: GameStatus }[];
+}
 
 export interface MyGame {
   status: GameStatus;
