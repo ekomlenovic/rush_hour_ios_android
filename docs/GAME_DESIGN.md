@@ -213,6 +213,7 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 | Pas de serveur central : l'app ne contacte que les serveurs ajoutés par le joueur, en **HTTPS** uniquement | `normalizeServerUrl` (`utils/multi/serverUrl.ts`) |
 | **Plusieurs serveurs**, une identité par serveur | `store/multiStore.ts` |
 | Identités (jeton, code de récupération) **jamais** dans le `.rushsave` : elles vivent dans un store à part | `useMultiStore` (clé `rush-hours-multi`) |
+| Jeton et code de récupération rangés dans le **stockage sécurisé** du téléphone (Keychain iOS / Keystore Android, exclu des sauvegardes Android), jamais en clair dans AsyncStorage ; le reste du compte reste dans le store. Si le stockage sécurisé échoue, ils restent dans le store plutôt que d'être perdus | `createSecureAccountStorage` (`store/secureAccounts.ts`), v2 du store multijoueur |
 | Version de l'API vérifiée : « mets à jour l'app » ou « le serveur est trop ancien » | `checkCompatibility` (`utils/multi/api.ts`), `API_VERSION` / `MIN_APP_VERSION` (`server/src/app.ts`) |
 | Liens `rush-hours://multi/join?server=…&code=…` (invitation) et `…&mode=recover` (récupération), ouverts par Expo Router sur l'écran prérempli | `buildInviteLink`, `buildRecoveryLink` |
 | QR codes **dessinés sur le téléphone** : un code d'invitation ou de récupération ne part jamais vers un service en ligne | `components/multi/QrCode.tsx` |
