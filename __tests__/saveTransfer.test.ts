@@ -174,6 +174,17 @@ describe('export then import', () => {
     const result = parseSave(code);
     expect(result.ok && result.state.xp).toBeGreaterThan(0);
   });
+
+  it('counts the achievements of a save made before the "new" badges as seen', () => {
+    const code = encodeSave({
+      version: 9,
+      exportedAt: '2026-10-01',
+      state: { progress: [{ levelId: 1, completed: true, bestScore: sampleLevels[0].minMoves * 100, stars: 3 }], achievements: ['first_win'] },
+    });
+    const result = parseSave(code);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state.seenAchievements).toEqual(['first_win']);
+  });
 });
 
 describe('import refuses', () => {
@@ -250,6 +261,14 @@ describe('import recomputes rather than trusts', () => {
     const xp = store().xp;
     const result = parseSave(exportProgress());
     expect(result.ok && result.state.xp).toBe(xp);
+  });
+
+  it('keeps the extra XP of a boss won', () => {
+    winLevel(sampleLevels[29], 0);
+    const xp = store().xp;
+    const result = parseSave(exportProgress());
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state.xp).toBe(xp);
   });
 
   it('caps the freezes to the stock allowed at the player level', () => {

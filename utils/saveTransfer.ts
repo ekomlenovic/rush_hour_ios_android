@@ -3,9 +3,10 @@ import { STORE_VERSION, migrateState, relocateGeneratedLevels } from '../store/m
 import { isWellFormedSave } from '../store/savedStates';
 import { initialStats } from '../store/stats';
 import { sampleLevels } from '../data/sampleLevels';
+import { isBossLevel } from '../data/bosses';
 import { ACHIEVEMENTS } from '../data/achievements';
 import {
-  ACHIEVEMENT_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp, REPLAY_XP_FACTOR,
+  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp, REPLAY_XP_FACTOR,
 } from '../data/progression';
 import { getLocalDateString } from './date';
 import { starsFromScore } from './scoring';
@@ -251,7 +252,7 @@ export function isConsistent(state: Record<string, any>, now: Date = new Date())
   for (const field of ['xp', 'streakFreezes', 'totalHintsUsed', 'maxUnlockedLevel']) {
     if (state[field] !== undefined && !isCount(state[field])) return false;
   }
-  for (const field of ['achievements', 'generatedLevels', 'createdLevels', 'importedLevels', 'frozenDates', 'seenCosmetics']) {
+  for (const field of ['achievements', 'generatedLevels', 'createdLevels', 'importedLevels', 'frozenDates', 'seenCosmetics', 'seenAchievements']) {
     if (state[field] !== undefined && !Array.isArray(state[field])) return false;
   }
   for (const field of ['stats', 'savedStates', 'cosmetics']) {
@@ -289,6 +290,7 @@ export function maxPlausibleXp(state: Record<string, any>): number {
   const completed = (state.progress as LevelProgress[]).filter(p => p.completed);
   // A custom level (maybe edited or deleted since) is counted as hard as a level can be
   let xp = completed.reduce((sum, p) => sum + levelWinXp(levels.get(p.levelId)?.minMoves ?? 60, p.stars || 1, true), 0);
+  xp += completed.filter(p => isBossLevel(p.levelId)).length * BOSS_WIN_XP;
   const replays = Math.max(0, (state.stats?.totalWins ?? 0) - completed.length);
   xp += replays * levelWinXp(60, 3, true) * REPLAY_XP_FACTOR;
   for (const r of Object.values((state.dailyChallengeProgress ?? {}) as Record<string, ChallengeResult>)) {

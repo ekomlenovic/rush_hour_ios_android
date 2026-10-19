@@ -154,11 +154,11 @@
     "main_menu": "Main Menu",
     "preparing_puzzle": "Preparing Puzzle...",
     "monday_warning": "It's Monday! This hard puzzle may take a moment to generate...",
+    "level_boss": "Level {{id}} · Boss",
     "level_count": "Level {{id}}",
     "hint_left": "{{count}} left",
     "score": "Score",
     "level_complete": "Level Complete!",
-    "win_stats": "{{moves}} moves · Best: {{best}} · Score: {{score}}",
     "analyzing": "Analyzing Puzzle...",
     "share_level": "Share Level",
     "qr_hint": "Your friend scans it with the camera: the level opens in Rush Hours.",
@@ -175,7 +175,12 @@
     "share_message_named": "Challenge me on Rush Hours! Can you beat \"{{name}}\" in {{moves}} moves?\n{{url}}",
     "daily_done": "Daily challenge done!",
     "weekly_done": "Weekly challenge done!",
-    "challenge_moves": "Your moves: {{moves}} · Optimal solution: {{best}}"
+    "challenge_moves": "Your moves: {{moves}} · Optimal solution: {{best}}",
+    "perfect": "Perfect!",
+    "win_moves_optimal_one": "{{count}} move, the minimum",
+    "win_moves_optimal_other": "{{count}} moves, the minimum",
+    "win_moves_one": "{{count}} move, the minimum is {{best}}",
+    "win_moves_other": "{{count}} moves, the minimum is {{best}}"
   },
   "tutorial": {
     "title": "Tutorial",
@@ -305,6 +310,8 @@
     "stats": "Statistics",
     "achievements_count": "{{count}} of {{total}}",
     "achievements_closest": "Closest",
+    "new_achievements_one": "{{count}} new achievement",
+    "new_achievements_other": "{{count}} new achievements",
     "achievement_a11y_unlocked": "{{name}}, unlocked. {{desc}}",
     "achievement_a11y_locked": "{{name}}, locked. {{desc}}"
   },
@@ -611,6 +618,7 @@
     "level_stars_one": "{{count}} star",
     "level_stars_other": "{{count}} stars",
     "level_locked": "locked",
+    "level_boss": "boss, harder",
     "level_next": "next level",
     "map_end": "End of the levels, generate more in the options",
     "map_zone": "Zone {{number}}, {{name}}, {{stars}} of {{total}} stars",
@@ -640,7 +648,6 @@
     "start": "Starting position",
     "move": "{{vehicle}}, {{direction}}",
     "step_announce": "Move {{step}} of {{total}}: {{move}}",
-    "not_optimal": "Optimal solution in {{best}} moves, you made {{moves}}",
     "retry": "Retry for 3 stars",
     "first": "Back to the start",
     "prev": "Previous move",
@@ -693,19 +700,34 @@
     "reached": "Reached",
     "current": "You are here",
     "a11y_level_row": "Level {{level}}, {{state}}. {{rewards}}",
-    "locked": "Locked"
+    "locked": "Locked",
+    "player_level_short": "Player lv. {{level}}",
+    "xp_to_next": "{{xp}} XP to level {{level}}"
   },
   "cosmetics": {
     "garage": "Garage",
-    "garage_desc": "Unlock looks by playing: stars, player level, challenges and achievements.",
     "preview": "Preview",
     "selected": "Selected",
     "locked": "Locked",
     "new": "New",
     "new_count_one": "{{count}} new item",
     "new_count_other": "{{count}} new items",
+    "unlocked_title": "New in the Garage",
+    "open_garage": "See the Garage",
     "unlocked_count": "{{unlocked}} / {{total}} unlocked",
     "a11y_item": "{{name}}, {{state}}",
+    "tabs": {
+      "board": "Board",
+      "skin": "Car",
+      "palette": "Colors",
+      "effect": "Effects"
+    },
+    "unlock_short": {
+      "level": "Level {{level}}",
+      "levels": "{{current}}/{{count}} levels",
+      "weeklies": "Weekly {{current}}/{{count}}",
+      "winter": "Winter daily"
+    },
     "kinds": {
       "board": "Board",
       "skin": "Target car",
@@ -716,6 +738,8 @@
       "default": "Available",
       "level": "Reach level {{level}}",
       "stars": "Earn {{count}} stars ({{current}}/{{count}})",
+      "levels_one": "Win {{count}} map level",
+      "levels_other": "Win {{count}} map levels ({{current}}/{{count}})",
       "weeklies_one": "Win {{count}} weekly challenge",
       "weeklies_other": "Win {{count}} weekly challenges ({{current}}/{{count}})",
       "achievement": "Achievement: {{name}}",
@@ -758,8 +782,11 @@
       "confetti": "Confetti",
       "fireworks": "Fireworks",
       "speed": "Speed trail",
-      "bubbles": "Bubbles"
-    }
+      "bubbles": "Bubbles",
+      "greenlight": "Green light"
+    },
+    "equip": "Equip",
+    "equipped": "Equipped"
   },
   "archives": {
     "won_count_one": "{{count}} archive won",

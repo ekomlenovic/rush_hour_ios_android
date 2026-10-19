@@ -3,7 +3,7 @@ import { sampleLevels } from '../data/sampleLevels';
 import { resetStore, setToday } from './helpers';
 import { calculateScore } from '../utils/scoring';
 import { MAX_SAVED_UNDOS } from '../store/savedStates';
-import { ACHIEVEMENT_XP, MISSIONS_XP, dailyWinXp, levelWinXp, weeklyWinXp } from '../data/progression';
+import { ACHIEVEMENT_XP, BOSS_WIN_XP, MISSIONS_XP, dailyWinXp, levelWinXp, weeklyWinXp } from '../data/progression';
 
 const options = useGameStore.persist.getOptions();
 const migrate = (state: Record<string, unknown>, version: number) =>
@@ -14,8 +14,8 @@ const merge = (persisted: Record<string, unknown>) =>
   options.merge!(persisted, useGameStore.getInitialState());
 
 describe('persisted state', () => {
-  it('is at version 8', () => {
-    expect(options.version).toBe(8);
+  it('is at version 10', () => {
+    expect(options.version).toBe(10);
   });
 
   it('keeps the player data and leaves the in-game state out', () => {
@@ -110,7 +110,8 @@ describe('migrate v3 → v4', () => {
     }, 3);
     expect((state.progress as { stars: number }[]).map(p => p.stars)).toEqual([2, 1, 2]);
     expect(state.dailyChallengeProgress).toMatchObject({ '2026-10-13': { stars: 2 }, '2026-10-12': { stars: 1 } });
-    expect(state.xp).toBe(1234);
+    // The XP already earned stays, v9 adds the boss bonus of the hard level (a jump of the campaign)
+    expect(state.xp).toBe(1234 + BOSS_WIN_XP);
   });
 });
 
@@ -298,6 +299,43 @@ describe('migrate v7 → v8', () => {
   it('leaves a player without generated levels untouched', () => {
     const v7 = { progress: [{ levelId: 2, completed: true, bestScore: 300, stars: 3 }], maxUnlockedLevel: 3, generatedLevels: [] };
     expect(migrate(v7, 7)).toEqual(v7);
+  });
+});
+
+describe('migrate v9: boss levels (#19)', () => {
+  it('credits the extra XP of the bosses already won, once each', () => {
+    // Saved by v8: levels 29 to 31 won (30 is a boss), 46 (a boss) started but not won
+    const v8 = {
+      xp: 1234,
+      progress: [
+        { levelId: 29, completed: true, bestScore: 300, stars: 3 },
+        { levelId: 30, completed: true, bestScore: 100, stars: 1 },
+        { levelId: 31, completed: true, bestScore: 300, stars: 3 },
+        { levelId: 46, completed: false, bestScore: 0, stars: 0 },
+      ],
+      maxUnlockedLevel: 32,
+    };
+    const state = migrate(v8, 8);
+    expect(state.xp).toBe(1234 + BOSS_WIN_XP);
+    expect(state.progress).toEqual(v8.progress);
+    expect(state.maxUnlockedLevel).toBe(32);
+  });
+
+  it('leaves a player without a boss won untouched', () => {
+    const v8 = { xp: 80, progress: [{ levelId: 2, completed: true, bestScore: 300, stars: 3 }], maxUnlockedLevel: 3 };
+    expect(migrate(v8, 8)).toEqual(v8);
+  });
+});
+
+describe('migrate v10: new achievements (#19)', () => {
+  it('counts the achievements unlocked before as seen', () => {
+    const v9 = { achievements: ['first_win', 'streak_3'], progress: [] };
+    expect(migrate(v9, 9)).toEqual({ ...v9, seenAchievements: ['first_win', 'streak_3'] });
+  });
+
+  it('leaves a save without achievements untouched', () => {
+    const v9 = { progress: [] };
+    expect(migrate(v9, 9)).toEqual(v9);
   });
 });
 

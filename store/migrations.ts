@@ -1,13 +1,14 @@
 import type { ChallengeResult, Level, LevelProgress, LevelSaveState } from './types';
 import { sampleLevels } from '../data/sampleLevels';
 import { recomputeStreak } from './streak';
-import { computeRetroactiveXp } from '../data/progression';
+import { BOSS_WIN_XP, computeRetroactiveXp } from '../data/progression';
+import { isBossLevel } from '../data/bosses';
 import { getStars, starsFromScore } from '../utils/scoring';
 import { compactSavedStates } from './savedStates';
 import { latestSavedDate, latestSavedWeek } from '../utils/challengeDates';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 8;
+export const STORE_VERSION = 10;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
@@ -54,6 +55,18 @@ export function migrateState(persistedState: unknown, version: number): Record<s
     // v8: a generation that failed left a hole in the ids of the generated levels (issue 120): the
     // level after it never unlocked. They are numbered again, in order, right after the pack
     state = renumberGeneratedLevels(state);
+  }
+  if (version < 9) {
+    // v9: the first win of a boss level gives extra XP, credited for the bosses already won
+    const bossWins = Array.isArray(state.progress)
+      ? (state.progress as LevelProgress[]).filter(p => p?.completed && isBossLevel(p.levelId)).length
+      : 0;
+    if (bossWins > 0) state.xp = (typeof state.xp === 'number' ? state.xp : 0) + bossWins * BOSS_WIN_XP;
+  }
+  if (version < 10) {
+    // v10: a "new" badge on each achievement until it is touched in the profile. Those unlocked
+    // before were already shown by their toast: they start seen
+    if (Array.isArray(state.achievements)) state.seenAchievements = [...state.achievements];
   }
   return state;
 }
