@@ -6,6 +6,7 @@ import {
   ACHIEVEMENT_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp, REPLAY_XP_FACTOR,
 } from '../data/progression';
 import { getLocalDateString, getWeekKey } from './date';
+import { starsFromScore } from './scoring';
 
 /**
  * Export / import of the player's progress, without any server (see docs/GAME_DESIGN.md, Sauvegarde).
@@ -169,10 +170,15 @@ const isStars = (value: unknown) => value === undefined || (Number.isInteger(val
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 const WEEK_KEY = /^\d{4}-W\d{2}$/;
 
-/** Best stars a score allows (score = 100 × optimum − 15 per extra move, see utils/scoring.ts) */
+/**
+ * Best stars a score allows (score = 100 × optimum − 15 per extra move, see utils/scoring.ts), under
+ * the current rule (2 stars within half of the optimum) or the former one (within 3 extra moves),
+ * which challenges won before 1.1 still carry
+ */
 function maxStarsForScore(score: number, minMoves: number): number {
   const best = minMoves * 100;
-  return score >= best ? 3 : score >= best - 3 * 15 ? 2 : 1;
+  const former = score >= best ? 3 : score >= best - 3 * 15 ? 2 : 1;
+  return Math.max(former, starsFromScore(score, minMoves));
 }
 
 /** A challenge result that its own score allows */
