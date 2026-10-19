@@ -41,7 +41,11 @@ export interface DayRow {
   reasons: Flag[];
 }
 
-export interface PeriodRow { playerId: number; pseudo: string; rank: number; points: number; wins: number; played: number }
+export interface PeriodRow {
+  playerId: number; pseudo: string; rank: number; points: number; wins: number; played: number;
+  /** The points of each day played, in order (absent on older servers) */
+  days?: { date: string; points: number; status: GameStatus }[];
+}
 
 export interface MyGame {
   status: GameStatus;
@@ -109,6 +113,67 @@ export interface AdminReport {
 
 export type Difficulty = 'EASY' | 'NORMAL' | 'HARD' | 'EXPERT' | 'MASTER';
 
+/** The home of the admin panel: what waits for the admin, and a word on each part */
+export interface AdminSummary {
+  /** Suspect wins without a decision of the admin */
+  toReview: number;
+  reports: number;
+  players: number;
+  banned: number;
+  joinOpen: boolean;
+  invitesAdminOnly: boolean;
+  serverName: string;
+  releaseTime: string;
+  puzzles: { ready: number; size: number; working: AdminPuzzles['working'] };
+}
+
+/** The duel puzzles ready ahead on the server (server/src/puzzlePool.ts) */
+export interface AdminPuzzles {
+  difficulties: {
+    difficulty: Difficulty;
+    /** Puzzles from scratch kept ready, and how many are */
+    size: number;
+    ready: number;
+    /** Variants of the catalog, and the ones not played yet; null without a catalog */
+    catalog: { total: number; fresh: number } | null;
+    /** Left aside after a generation too long, until then */
+    asideUntil: number | null;
+    /** How many by default; absent on older servers, which cannot change the size */
+    defaultSize?: number;
+  }[];
+  /** Being generated now; null when all is ready */
+  working: { difficulty: Difficulty; kind: 'scratch' | 'catalog'; since: number } | null;
+  /** The puzzles from scratch, in the order the duels take them */
+  puzzles: { id: number; difficulty: Difficulty; createdAt: number; level: Level }[];
+}
+
+/** A daily challenge of the server as the admin sees it (server/src/challenges.ts) */
+export interface AdminChallenge {
+  date: string;
+  number: number;
+  /** The one configured until its release, then the one it came out with */
+  difficulty: Difficulty;
+  releaseAt: number;
+  /** Being played now */
+  current: boolean;
+  /** waiting: generated later, from generatesAt; failed: tried again each minute */
+  status: 'ready' | 'generating' | 'failed' | 'waiting';
+  generatesAt: number;
+  generatingSince: number | null;
+  failedAt: number | null;
+  /** In another difficulty when it changed since: generated again before its release */
+  puzzle: {
+    difficulty: Difficulty;
+    minMoves: number;
+    /** The level of the app it is a variant of; null: generated from scratch */
+    variantOf: number | null;
+    /** null: not known */
+    generationMs: number | null;
+    generatedAt: number;
+    level: Level;
+  } | null;
+}
+
 export interface Thresholds {
   minMsPerMove: number;
   copyMinMoves: number;
@@ -130,11 +195,16 @@ export interface AdminSettings {
   releaseTime: string;
   gracePeriodMs: number;
   pregenerateAheadMs: number;
+  /** Duel puzzles generated ahead by difficulty, 0: none (absent on older servers) */
+  duelPool?: Record<Difficulty, number>;
   /** Time zone of the server (TZ), not changed from the app */
   timeZone: string;
   nextReleaseAt: number;
 }
-export type AdminSettingsPatch = Partial<Omit<AdminSettings, 'thresholds' | 'timeZone' | 'nextReleaseAt'>> & { thresholds?: Partial<Thresholds> };
+export type AdminSettingsPatch = Partial<Omit<AdminSettings, 'thresholds' | 'duelPool' | 'timeZone' | 'nextReleaseAt'>> & {
+  thresholds?: Partial<Thresholds>;
+  duelPool?: Partial<Record<Difficulty, number>>;
+};
 /** A duel in the list of the server (server/src/duel.ts): open ones to join, the ones being played */
 /** What decides the winner of a duel: the first red car out, or the fewest moves */
 export type DuelMetric = 'time' | 'moves';
@@ -156,7 +226,7 @@ export interface DuelListing {
 }
 
 export interface DuelRankRow { playerId: number; pseudo: string; rank: number; wins: number; losses: number; draws: number; played: number }
-export interface DuelLeaderboard { period: Period | 'all'; from: string; to: string; rows: DuelRankRow[] }
+export interface DuelLeaderboard { period: Period | 'all' | 'range'; from: string; to: string; rows: DuelRankRow[] }
 
 export type DuelEndReason = 'won' | 'forfeit' | 'disconnected' | 'timeout';
 
@@ -195,7 +265,17 @@ export interface ResetResult { dryRun: boolean; challenges: number; duels: numbe
 export type Period = 'day' | 'week' | 'month';
 export type Leaderboard =
   | { period: 'day'; from: string; to: string; rows: DayRow[] }
-  | { period: 'week' | 'month'; from: string; to: string; rows: PeriodRow[] };
+  | { period: 'week' | 'month' | 'range'; from: string; to: string; rows: PeriodRow[] };
+
+/**
+ * Which ranking: the day, week or month of a date (none: today of the server), all time
+ * (duels only), or between two dates ('range', only on a server with 'ranking_range')
+ */
+export type RankingQuery = { period: Period | 'all'; date?: string } | { period: 'range'; from: string; to: string };
+
+export const rankingParams = (query: RankingQuery): string => query.period === 'range'
+  ? `period=range&from=${query.from}&to=${query.to}`
+  : `period=${query.period}${query.date ? `&date=${query.date}` : ''}`;
 
 type Fetch = typeof fetch;
 
@@ -248,16 +328,14 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
     today: () => call<Today>('GET', '/challenge/today'),
     /** ready: puzzles ready ahead by difficulty (absent on older servers) */
     duels: () => call<{ duels: DuelListing[]; ready?: Partial<Record<Difficulty, number>>; metrics?: DuelMetric[] }>('GET', '/duels'),
-    duelLeaderboard: (period: Period | 'all', date?: string) =>
-      call<DuelLeaderboard>('GET', `/duels/leaderboard?period=${period}${date ? `&date=${date}` : ''}`),
+    duelLeaderboard: (query: RankingQuery) => call<DuelLeaderboard>('GET', `/duels/leaderboard?${rankingParams(query)}`),
     duelHistory: () => call<{ duels: DuelHistoryItem[]; records: DuelRecordLine[] }>('GET', '/duels/history'),
     duelReplay: (duelId: number) => call<DuelReplay>('GET', `/duels/${duelId}`),
     start: (date?: string) => call<StartResult>('POST', '/challenge/start', date ? { date } : {}),
     submit: (date: string, moves: MoveRecord[], clientMs: number, backgroundMs: number) =>
       call<SubmitResult>('POST', '/challenge/submit', { date, moves, clientMs: Math.round(clientMs), backgroundMs: Math.round(backgroundMs) }),
     abandon: (date: string) => call<{ status: 'abandoned'; minMoves: number | null }>('POST', '/challenge/abandon', { date }),
-    leaderboard: (period: Period, date?: string) =>
-      call<Leaderboard>('GET', `/leaderboard?period=${period}${date ? `&date=${date}` : ''}`),
+    leaderboard: (query: RankingQuery) => call<Leaderboard>('GET', `/leaderboard?${rankingParams(query)}`),
     replay: (attemptId: number) => call<Replay>('GET', `/replay/${attemptId}`),
     report: (playerId: number, reason: string) => call<void>('POST', '/reports', { playerId, reason }),
     claimAdmin: (adminToken: string) => call<ApiPlayer>('POST', '/admin/claim', { adminToken }),
@@ -278,6 +356,9 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
         call<AdminSettings>('PATCH', '/admin/settings', patch),
       resetSettings: () => call<AdminSettings>('POST', '/admin/settings/reset'),
       reset: (request: ResetRequest) => call<ResetResult>('POST', '/admin/reset', request),
+      puzzles: () => call<AdminPuzzles>('GET', '/admin/puzzles'),
+      challenges: () => call<{ challenges: AdminChallenge[] }>('GET', '/admin/challenges'),
+      summary: () => call<AdminSummary>('GET', '/admin/summary'),
     },
   };
 }

@@ -18,3 +18,6 @@ jest.mock('expo-haptics', () => ({
     Long_Press: 'long-press',
   },
 }));
+
+// The worklet runtimes (utils/solver.background.ts): the worklets run right away on the test thread
+jest.mock('react-native-worklets', () => require('react-native-worklets/lib/module/mock'));

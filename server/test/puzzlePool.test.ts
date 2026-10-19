@@ -209,6 +209,111 @@ describe('puzzles of the duels', () => {
     expect(Object.values(p.counts()).every(n => n === 0)).toBe(true);
   });
 
+  it('shows the admin what it holds, in the order the duels take it, and what it is generating', async () => {
+    let release: () => void = () => {};
+    const clock = { now: 1000 };
+    const slow: PuzzleGenerator = {
+      generate: () => new Promise(resolve => { release = () => resolve({ ...LEVEL }); }),
+      variants: async () => [],
+      close: async () => {},
+    };
+    const db = openDatabase(':memory:');
+    const p = new PuzzlePool({ db, generator: slow, sizes: SMALL, variantsPerLevel: PER_LEVEL, levels: LEVELS, now: () => clock.now });
+    expect(p.overview().working).toBeNull();
+    const filling = p.start();
+    expect(p.overview().working).toEqual({ difficulty: 'EASY', kind: 'scratch', since: 1000 });
+    p.stop();
+    release();
+    await filling;
+    expect(p.overview().working).toBeNull();
+
+    const { pool: full } = pool();
+    await full.start();
+    // No refill: what is taken stays out
+    full.stop();
+    await full.take('MASTER');
+    await full.take('MASTER');
+    const view = full.overview();
+    expect(view.working).toBeNull();
+    expect(view.difficulties).toEqual([
+      { difficulty: 'EASY', size: 2, ready: 2, catalog: null, defaultSize: 10, asideUntil: null },
+      { difficulty: 'NORMAL', size: 2, ready: 2, catalog: null, defaultSize: 10, asideUntil: null },
+      { difficulty: 'HARD', size: 1, ready: 1, catalog: null, defaultSize: 10, asideUntil: null },
+      { difficulty: 'EXPERT', size: 1, ready: 1, catalog: { total: 6, fresh: 6 }, defaultSize: 10, asideUntil: null },
+      // The one from scratch, then a variant
+      { difficulty: 'MASTER', size: 1, ready: 0, catalog: { total: 6, fresh: 5 }, defaultSize: 3, asideUntil: null },
+    ]);
+    expect(view.puzzles.map(x => x.difficulty)).toEqual(['EASY', 'EASY', 'NORMAL', 'NORMAL', 'HARD', 'EXPERT']);
+    expect(view.puzzles[0].level).toEqual(LEVEL);
+    // Nothing taken by looking
+    expect(full.overview()).toEqual(view);
+  });
+
+  it('shows the admin a difficulty left aside', async () => {
+    const filler: PuzzleGenerator = {
+      generate: (_seed, difficulty) => difficulty === 'MASTER' ? new Promise(() => {}) : Promise.resolve({ ...LEVEL }),
+      variants: async () => [],
+      close: async () => {},
+    };
+    const p = new PuzzlePool({
+      db: openDatabase(':memory:'), generator: fakeGenerator().generator, fillGenerator: filler,
+      sizes: SMALL, variantsPerLevel: PER_LEVEL, levels: LEVELS, fillTimeoutMs: 20, now: () => 5000,
+    });
+    await p.start();
+    expect(p.overview().difficulties.find(d => d.difficulty === 'MASTER')!.asideUntil).toBe(5000 + GIVE_UP_MS);
+  });
+
+  it('keeps as many as the admin wants, none for a difficulty turned off', async () => {
+    const sizes = { ...SMALL };
+    const { fake, pool: p } = pool({ sizes: () => sizes });
+    sizes.MASTER = 0;
+    sizes.EASY = 3;
+    await p.start();
+    expect(fake.calls.filter(c => !c.kind).map(c => c.difficulty)).toEqual(['EASY', 'EASY', 'EASY', 'NORMAL', 'NORMAL', 'HARD', 'EXPERT']);
+    expect(p.overview().difficulties.find(d => d.difficulty === 'MASTER')).toMatchObject({ size: 0, defaultSize: 3, ready: 0 });
+    // A master duel still gets its puzzle: a variant of the catalog
+    expect(await p.take('MASTER')).toBeTruthy();
+
+    // Turned on again: generated at once
+    sizes.MASTER = 2;
+    p.resized();
+    await p.fill();
+    expect(p.counts().MASTER).toBeGreaterThanOrEqual(2);
+    expect(p.overview().difficulties.find(d => d.difficulty === 'MASTER')!.ready).toBe(2);
+  });
+
+  it('a generation no longer wanted stops its worker at once, without leaving the difficulty aside', async () => {
+    let closed = 0;
+    const asked: string[] = [];
+    let stopWorker: (e: Error) => void = () => {};
+    const filler: PuzzleGenerator = {
+      generate: (_seed, difficulty) => {
+        asked.push(difficulty);
+        return difficulty === 'MASTER' ? new Promise((_, reject) => { stopWorker = reject; }) : Promise.resolve({ ...LEVEL });
+      },
+      variants: async () => [],
+      close: async () => { closed++; stopWorker(new Error('generator closed')); },
+    };
+    const sizes = { ...SMALL };
+    const p = new PuzzlePool({
+      db: openDatabase(':memory:'), generator: fakeGenerator().generator, fillGenerator: filler,
+      sizes: () => sizes, variantsPerLevel: PER_LEVEL, levels: LEVELS, fillTimeoutMs: 60_000,
+    });
+    const filling = p.start();
+    // Wait for the master one, the last
+    while (p.overview().working?.difficulty !== 'MASTER') await new Promise(resolve => setTimeout(resolve, 1));
+    // Kept as it is: nothing stops
+    p.resized();
+    expect(closed).toBe(0);
+    sizes.MASTER = 0;
+    p.resized();
+    await filling;
+    expect(closed).toBe(1);
+    expect(asked.filter(d => d === 'MASTER')).toHaveLength(1);
+    expect(p.overview()).toMatchObject({ working: null });
+    expect(p.overview().difficulties.find(d => d.difficulty === 'MASTER')).toMatchObject({ ready: 0, asideUntil: null });
+  });
+
   it('real variants of the levels of the app: exact optimum, in range', () => {
     const [source] = variantSources(sampleLevels, DIFFICULTY_LEVELS.MASTER);
     const variants = generateVariants(source.id, 'MASTER', 5, 'seed');

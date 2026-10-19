@@ -145,6 +145,25 @@ describe('export then import', () => {
     expect(parseSave(code).ok).toBe(true);
   });
 
+  it('accepts a win with 2 stars far from the optimum (2 stars within half of the optimum)', () => {
+    playSomeDays();
+    const level = sampleLevels.find(l => l.minMoves >= 12)!;
+    winLevel(level, 5);
+    expect(store().progress.find(p => p.levelId === level.id)!.stars).toBe(2);
+    const code = forge(s => {
+      s.weeklyChallengeProgress = { '2026-W41': { completed: true, score: 20 * 100 - 8 * 15, stars: 2, moves: 28, minMoves: 20 } };
+    });
+    expect(parseSave(code).ok).toBe(true);
+  });
+
+  it('accepts a challenge won under the former rule (2 stars within 3 extra moves), kept without its moves', () => {
+    playSomeDays();
+    const code = forge(s => {
+      s.archiveProgress['2026-10-08'] = { completed: true, score: 2 * 100 - 3 * 15, stars: 2, minMoves: 2 };
+    });
+    expect(parseSave(code).ok).toBe(true);
+  });
+
   it('migrates a save made by an older version of the app', () => {
     // v2: no XP yet, it is credited from the progress
     const code = encodeSave({

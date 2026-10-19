@@ -2,7 +2,7 @@ import { useGameStore, Level, ARCHIVE_LEVEL_ID, whenSaveLoaded } from '@/store/g
 import { sampleLevels } from '@/data/sampleLevels';
 import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel } from '@/utils/generator';
 import { generateWeeklyLevel } from '@/utils/weekly';
-import { parseSharedLevel } from '@/utils/sharing';
+import { parseSharedLevelAsync } from '@/utils/solver.background';
 import { isArchiveDateAvailable } from '@/utils/archives';
 
 export interface GameRouteParams {
@@ -54,7 +54,7 @@ export async function resolveLevel(params: GameRouteParams): Promise<Level | nul
 
   // 0. Primary: Check if level data is passed directly in URL (Deep Link fallback)
   if (dataParamInUrl) {
-    level = parseSharedLevel(dataParamInUrl, 999998);
+    level = await parseSharedLevelAsync(dataParamInUrl, 999998);
   }
 
   if (idParam === 'daily' && dateParam) {

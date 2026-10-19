@@ -1,12 +1,15 @@
 import { DIFFICULTIES, type Config, type Difficulty } from './config';
 import { getSetting, setSetting, type Database } from './db';
 import { DEFAULT_THRESHOLDS, type Thresholds } from './cheat';
+import { POOL_SIZES } from './puzzlePool';
 import { addDays, currentChallengeDate, releaseTimeOn, zonedTimeToInstant, type ReleaseChange, type Schedule } from './time';
 
 const HOUR_MS = 3_600_000;
 /** A new release time may not bring the next challenge closer than this */
 export const MIN_RELEASE_NOTICE_MS = HOUR_MS;
 export const SERVER_NAME_MAX = 40;
+/** Most duel puzzles of a difficulty generated ahead */
+export const DUEL_POOL_MAX = 30;
 const INVISIBLE = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/;
 
 /**
@@ -28,6 +31,11 @@ export interface AdminSettings {
   releaseChanges: ReleaseChange[];
   gracePeriodMs: number;
   pregenerateAheadMs: number;
+  /**
+   * Duel puzzles generated ahead from scratch, by difficulty; 0: none (a master one can
+   * take too long for a small server: its duels then take a variant of the catalog)
+   */
+  duelPool: Record<Difficulty, number>;
 }
 
 const KEY = 'admin_settings';
@@ -44,6 +52,7 @@ export function defaultSettings(config: Config): AdminSettings {
     releaseChanges: [],
     gracePeriodMs: config.gracePeriodMs,
     pregenerateAheadMs: config.pregenerateAheadMs,
+    duelPool: { ...POOL_SIZES },
   };
 }
 
@@ -57,7 +66,11 @@ export function loadSettings(db: Database, config: Config): AdminSettings {
   const raw = getSetting(db, KEY);
   if (!raw) return defaults;
   const saved = JSON.parse(raw) as Partial<AdminSettings>;
-  return { ...defaults, ...saved, thresholds: { ...defaults.thresholds, ...saved.thresholds } };
+  return {
+    ...defaults, ...saved,
+    thresholds: { ...defaults.thresholds, ...saved.thresholds },
+    duelPool: { ...defaults.duelPool, ...saved.duelPool },
+  };
 }
 
 export class SettingsError extends Error {
@@ -102,7 +115,9 @@ export function resetSettings(db: Database, config: Config, now: number): AdminS
 /** Validates a change sent by the admin and saves it; returns the new settings */
 export function updateSettings(db: Database, config: Config, patch: Record<string, unknown>, now: number): AdminSettings {
   const current = loadSettings(db, config);
-  const next: AdminSettings = { ...current, thresholds: { ...current.thresholds }, releaseChanges: [...current.releaseChanges] };
+  const next: AdminSettings = {
+    ...current, thresholds: { ...current.thresholds }, releaseChanges: [...current.releaseChanges], duelPool: { ...current.duelPool },
+  };
 
   if ('joinOpen' in patch) {
     if (typeof patch.joinOpen !== 'boolean') throw new SettingsError('joinOpen');
@@ -136,6 +151,16 @@ export function updateSettings(db: Database, config: Config, patch: Record<strin
       const range = limits[key as keyof Thresholds];
       if (!range || !isNumber(value, range[0], range[1])) throw new SettingsError(`thresholds.${key}`);
       next.thresholds[key as keyof Thresholds] = value as number;
+    }
+  }
+  if ('duelPool' in patch) {
+    const pool = patch.duelPool as Record<string, unknown>;
+    if (!pool || typeof pool !== 'object' || Array.isArray(pool)) throw new SettingsError('duelPool');
+    for (const [difficulty, size] of Object.entries(pool)) {
+      if (!DIFFICULTIES.includes(difficulty as Difficulty) || !isNumber(size, 0, DUEL_POOL_MAX) || !Number.isInteger(size)) {
+        throw new SettingsError(`duelPool.${difficulty}`);
+      }
+      next.duelPool[difficulty as Difficulty] = size as number;
     }
   }
   if ('serverName' in patch) {

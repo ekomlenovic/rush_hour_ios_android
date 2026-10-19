@@ -4,6 +4,7 @@ import { gameKey, selectActiveAccount, useMultiStore, type MultiGame, type Serve
 import { useGameStore } from '../store/gameStore';
 import { exportProgress, parseSave } from '../utils/saveTransfer';
 import { sampleLevels } from '../data/sampleLevels';
+import { mondayOf, showsWeekRecap, weekCells } from '../utils/multi/week';
 
 describe('server address', () => {
   it.each([
@@ -272,16 +273,20 @@ describe('a multiplayer game on the phone', () => {
 
 describe('translations of the multiplayer mode', () => {
   const { MULTI_ERROR_CODES } = require('../components/multi/errors') as typeof import('../components/multi/errors');
+  const { ADMIN_SECTIONS } = require('../components/multi/admin/sections') as typeof import('../components/multi/admin/sections');
   const locales = { en: require('../locales/en.json'), fr: require('../locales/fr.json') };
 
   it.each(Object.entries(locales))('%s has the keys built at runtime', (_, strings) => {
     const multi = strings.multi;
     expect(MULTI_ERROR_CODES.filter(code => typeof multi.errors[code] !== 'string')).toEqual([]);
     expect(Object.keys(multi.status).sort()).toEqual(['abandoned', 'playing', 'unfinished', 'won']);
-    expect(Object.keys(multi.period).sort()).toEqual(['day', 'month', 'week']);
+    expect(Object.keys(multi.ranking_mode).sort()).toEqual(['all', 'dates', 'month', 'week']);
+    expect(Object.keys(multi.ranking_mode_desc).sort()).toEqual(['all', 'dates', 'month', 'week']);
     expect(typeof multi.my_abandoned).toBe('string');
     expect(typeof multi.my_unfinished).toBe('string');
-    expect(Object.keys(multi.admin_tab).sort()).toEqual(['games', 'players', 'reports', 'reset', 'settings']);
+    // A title for each page of the admin panel
+    expect(ADMIN_SECTIONS.filter(section => typeof multi.admin_home[section] !== 'string')).toEqual([]);
+    expect(['scratch', 'catalog'].filter(kind => typeof multi[`admin_puzzles_working_${kind}`] !== 'string')).toEqual([]);
     expect(Object.keys(multi.admin_reset_preset).sort()).toEqual(['all', 'dates', 'month', 'today', 'week']);
     expect(Object.keys(multi.duel).filter(k => /^(outcome|reason_short)_/.test(k)).sort()).toEqual([
       'outcome_draw', 'outcome_loss', 'outcome_win', 'reason_short_disconnected', 'reason_short_forfeit', 'reason_short_timeout', 'reason_short_won',
@@ -456,5 +461,112 @@ describe('admin reset', () => {
   it('chosen days in any order', () => {
     expect(resetRange('dates', '2026-10-17', dates)).toEqual(dates);
     expect(resetRange('dates', '2026-10-17', { from: '2026-10-05', to: '2026-10-01' })).toEqual(dates);
+  });
+});
+
+describe('admin panel', () => {
+  const { matchesPseudo } = require('../utils/multi/format') as typeof import('../utils/multi/format');
+  const { isAdminSection } = require('../components/multi/admin/sections') as typeof import('../components/multi/admin/sections');
+
+  it('finds a player without case nor accents', () => {
+    expect(matchesPseudo('Léo', 'leo')).toBe(true);
+    expect(matchesPseudo('Léo', 'LÉ')).toBe(true);
+    expect(matchesPseudo('Chloé', ' OE ')).toBe(true);
+    expect(matchesPseudo('Chloé', 'eo')).toBe(false);
+    expect(matchesPseudo('Chloé', 'loé')).toBe(true);
+    expect(matchesPseudo('Mia', '')).toBe(true);
+    expect(matchesPseudo('Mia', 'léo')).toBe(false);
+  });
+
+  it('opens only its own pages', () => {
+    expect(isAdminSection('games')).toBe(true);
+    expect(isAdminSection('settings')).toBe(false);
+    expect(isAdminSection(undefined)).toBe(false);
+  });
+});
+
+describe('week of the challenges', () => {
+  it('starts on Monday', () => {
+    expect(mondayOf('2026-10-19')).toBe('2026-10-19');
+    expect(mondayOf('2026-10-25')).toBe('2026-10-19');
+    expect(mondayOf('2026-11-01')).toBe('2026-10-26');
+  });
+
+  it('shows the recap of last week from Monday to Wednesday', () => {
+    expect(['2026-10-19', '2026-10-20', '2026-10-21'].map(showsWeekRecap)).toEqual([true, true, true]);
+    expect(['2026-10-22', '2026-10-25'].map(showsWeekRecap)).toEqual([false, false]);
+  });
+
+  it('fills the days of a player up to the challenge being played', () => {
+    const days = [
+      { date: '2026-10-19', points: 10, status: 'won' as const },
+      { date: '2026-10-20', points: 0, status: 'abandoned' as const },
+      { date: '2026-10-22', points: 0, status: 'playing' as const },
+    ];
+    expect(weekCells('2026-10-19', days, '2026-10-22').map(c => (c.kind === 'points' ? c.points : c.kind))).toEqual([
+      10, 0, 'missed', 'playing', 'upcoming', 'upcoming', 'upcoming',
+    ]);
+    // Today's challenge not started yet: still to come
+    expect(weekCells('2026-10-19', [], '2026-10-21').map(c => c.kind)).toEqual([
+      'missed', 'missed', 'upcoming', 'upcoming', 'upcoming', 'upcoming', 'upcoming',
+    ]);
+  });
+});
+
+describe('weekly rankings period', () => {
+  const { rankingQuery, rankingDays, isPeriodOver, shiftMonth, stripOffsets } = require('../utils/multi/rankingPeriod') as typeof import('../utils/multi/rankingPeriod');
+  const { rankingParams } = require('../utils/multi/api') as typeof import('../utils/multi/api');
+  const dates = { from: '2026-10-05', to: '2026-10-01' };
+  const view = (mode: 'week' | 'month' | 'dates' | 'all', offset = 0) => ({ mode, offset, dates });
+  // A Monday, early in the month
+  const today = '2026-10-19';
+
+  it('asks the server for a week or a month back from this one, or two dates in order', () => {
+    expect(rankingQuery(view('week'), today)).toEqual({ period: 'week' });
+    expect(rankingQuery(view('week', -1), today)).toEqual({ period: 'week', date: '2026-10-12' });
+    expect(rankingQuery(view('week', -3), today)).toEqual({ period: 'week', date: '2026-09-28' });
+    expect(rankingQuery(view('month'), today)).toEqual({ period: 'month' });
+    expect(rankingQuery(view('month', -1), today)).toEqual({ period: 'month', date: '2026-09-01' });
+    expect(rankingQuery(view('month', -1), '2026-01-15')).toEqual({ period: 'month', date: '2025-12-01' });
+    expect(rankingQuery(view('dates'), today)).toEqual({ period: 'range', from: '2026-10-01', to: '2026-10-05' });
+    expect(rankingQuery(view('all'), today)).toEqual({ period: 'all' });
+  });
+
+  it('offers the weeks and the months back from the current one', () => {
+    expect(stripOffsets('week').slice(0, 3)).toEqual([0, -1, -2]);
+    expect(stripOffsets('week')).toHaveLength(53);
+    expect(stripOffsets('month').at(-1)).toBe(-36);
+  });
+
+  it('steps months across the years', () => {
+    expect(shiftMonth('2026-10-19', 0)).toBe('2026-10-01');
+    expect(shiftMonth('2026-01-31', -1)).toBe('2025-12-01');
+    expect(shiftMonth('2026-03-31', -13)).toBe('2025-02-01');
+    expect(shiftMonth('2025-12-01', 1)).toBe('2026-01-01');
+  });
+
+  it('shows the days covered', () => {
+    expect(rankingDays(view('week'), today)).toEqual({ from: '2026-10-19', to: '2026-10-25' });
+    expect(rankingDays(view('week', -1), today)).toEqual({ from: '2026-10-12', to: '2026-10-18' });
+    expect(rankingDays(view('month'), today)).toEqual({ from: '2026-10-01', to: '2026-10-31' });
+    expect(rankingDays(view('month', -1), today)).toEqual({ from: '2026-09-01', to: '2026-09-30' });
+    expect(rankingDays(view('dates'), today)).toEqual({ from: '2026-10-01', to: '2026-10-05' });
+    expect(rankingDays(view('all'), today)).toBeNull();
+  });
+
+  it('a period over has a final ranking', () => {
+    expect(isPeriodOver(view('week'), today)).toBe(false);
+    expect(isPeriodOver(view('week', -1), today)).toBe(true);
+    expect(isPeriodOver(view('month'), today)).toBe(false);
+    expect(isPeriodOver(view('month', -1), today)).toBe(true);
+    expect(isPeriodOver(view('dates'), today)).toBe(true);
+    expect(isPeriodOver({ mode: 'dates', offset: 0, dates: { from: '2026-10-12', to: today } }, today)).toBe(false);
+    expect(isPeriodOver(view('all'), today)).toBe(false);
+  });
+
+  it('builds the query string of the server', () => {
+    expect(rankingParams({ period: 'day' })).toBe('period=day');
+    expect(rankingParams({ period: 'week', date: '2026-10-12' })).toBe('period=week&date=2026-10-12');
+    expect(rankingParams({ period: 'range', from: '2026-10-01', to: '2026-10-05' })).toBe('period=range&from=2026-10-01&to=2026-10-05');
   });
 });

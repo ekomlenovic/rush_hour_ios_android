@@ -153,18 +153,33 @@ function isWellFormed(level: Level): boolean {
 }
 
 /**
- * A level received from someone else (link, code, QR): decoded, checked and solved again.
- * The minimum of moves of the link is never trusted, it gives the stars and the XP.
- * Returns null for a broken or unsolvable level.
+ * A level received from someone else (link, code, QR), decoded and checked but not solved
+ * yet: its minMoves is the one of the link, never to be kept (see withOptimum).
+ * Returns null for a broken board. Quick, unlike solving it.
  */
-export function parseSharedLevel(data: string, id: number = Date.now()): Level | null {
+export function decodeSharedLevel(data: string, id: number = Date.now()): Level | null {
   const level = deserializeLevel(data, id);
   if (!level || !isWellFormed(level)) return null;
   const vehicles = level.vehicles.map((v, i) =>
     HEX_COLOR.test(v.color) ? v : { ...v, color: CLASSIC_VEHICLE_COLORS[i % CLASSIC_VEHICLE_COLORS.length] });
-  const minMoves = validateLevel(vehicles, level.gridSize, level.exitRow, level.exitCol);
-  if (minMoves < 1) return null;
-  return { ...level, vehicles, minMoves };
+  return { ...level, vehicles };
+}
+
+/**
+ * A decoded level with the optimum found by the solver (validateLevel): the minimum of moves
+ * of the link is never trusted, it gives the stars and the XP. Null if it has no solution,
+ * or is too big to search (a forged link must not freeze the app).
+ */
+export const withOptimum = (level: Level, minMoves: number): Level | null => (minMoves < 1 ? null : { ...level, minMoves });
+
+/**
+ * A level received from someone else (link, code, QR): decoded, checked and solved again.
+ * Returns null for a broken or unsolvable level. Solves on the calling thread: on a screen,
+ * decodeSharedLevel then validateLevelAsync (utils/solver.background.ts).
+ */
+export function parseSharedLevel(data: string, id: number = Date.now()): Level | null {
+  const level = decodeSharedLevel(data, id);
+  return level && withOptimum(level, validateLevel(level.vehicles, level.gridSize, level.exitRow, level.exitCol));
 }
 
 /** Same board (name and favorite aside): a link imported twice gives one level */

@@ -7,3 +7,11 @@ export function formatRemaining(t: TFunction, ms: number): string {
   if (minutes < 60) return t('multi.duration_minutes', { m: minutes });
   return t('multi.duration_hours', { h: Math.floor(minutes / 60), m: String(minutes % 60).padStart(2, '0') });
 }
+
+/** Without case nor accents, like the server compares nicknames */
+const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+
+/** A nickname found by a search: 'leo' finds 'Léo' */
+export function matchesPseudo(pseudo: string, query: string): boolean {
+  return fold(pseudo).includes(fold(query));
+}
