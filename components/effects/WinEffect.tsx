@@ -40,17 +40,20 @@ interface Light {
   delay: number;
 }
 
-/** Duration of a light, from red to its fade out */
-const LIGHT_MS = 1900;
-/** Share of LIGHT_MS when the light turns amber, then green, then fades out */
-const AMBER_AT = 0.3;
-const GREEN_AT = 0.55;
-const FADE_AT = 0.85;
+/** Duration of a light, from its appearance to its fade out */
+const LIGHT_MS = 1200;
+/**
+ * Share of LIGHT_MS when the light turns amber, then green, then fades out. It shows up already amber
+ * and is green at ~200 ms: the high point comes with the win screen, like the other effects
+ */
+const AMBER_AT = 0;
+const GREEN_AT = 0.17;
+const FADE_AT = 0.8;
 
 /** Three traffic lights across the top of the board, turning one after the other */
 function buildLights(width: number, height: number): Light[] {
   const size = Math.min(30, Math.max(16, width * 0.09));
-  return [0.25, 0.5, 0.75].map((fx, i) => ({ x: fx * width, y: height * 0.22, size, delay: i * 120 }));
+  return [0.25, 0.5, 0.75].map((fx, i) => ({ x: fx * width, y: height * 0.22, size, delay: i * 60 }));
 }
 
 /** Center of the green lamp, at the bottom of the housing */
@@ -133,7 +136,7 @@ function buildParticles(effect: WinEffectId, width: number, height: number, colo
         x: light.x, y: greenLampY(light),
         dx: Math.cos(angle) * distance, dy: Math.sin(angle) * distance + light.size,
         size: 4 + rand() * 3, color: i % 2 ? TRAFFIC_LIGHT.green : pick(),
-        delay: light.delay + LIGHT_MS * GREEN_AT, duration: 900, rotate: 0,
+        delay: light.delay + LIGHT_MS * GREEN_AT, duration: 650, rotate: 0,
       };
     }));
   }
