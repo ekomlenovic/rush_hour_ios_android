@@ -24,7 +24,7 @@ describe('becoming admin', () => {
   it('every admin route is refused to the other players', async () => {
     const { join, request } = open();
     const { token } = await join('Léo');
-    for (const [method, url] of [['GET', '/admin/games'], ['GET', '/admin/players'], ['GET', '/admin/reports'], ['GET', '/admin/settings'], ['GET', '/admin/puzzles'], ['GET', '/admin/summary'], ['POST', '/admin/invite']] as const) {
+    for (const [method, url] of [['GET', '/admin/games'], ['GET', '/admin/players'], ['GET', '/admin/reports'], ['GET', '/admin/settings'], ['GET', '/admin/puzzles'], ['GET', '/admin/challenges'], ['GET', '/admin/summary'], ['POST', '/admin/invite']] as const) {
       expect((await request(method, url, token)).body).toEqual({ error: 'forbidden' });
     }
   });
@@ -38,6 +38,18 @@ describe('duel puzzles', () => {
     expect(body.difficulties.map((d: { difficulty: string }) => d.difficulty)).toEqual(['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER']);
     expect(Array.isArray(body.puzzles)).toBe(true);
     expect(body).toHaveProperty('working');
+  });
+});
+
+describe('daily challenges', () => {
+  it('the admin sees the current challenge and the next ones, with their puzzle', async () => {
+    const { joinAdmin, request, challenges } = open();
+    const admin = await joinAdmin();
+    await challenges.pregenerate();
+    const body = (await request('GET', '/admin/challenges', admin.token)).body;
+    expect(body.challenges[0]).toMatchObject({ date: '2026-10-16', current: true, status: 'ready', difficulty: 'NORMAL' });
+    expect(body.challenges[0].puzzle).toMatchObject({ minMoves: 2, variantOf: null });
+    expect(body.challenges[0].puzzle.level.vehicles).toHaveLength(3);
   });
 });
 

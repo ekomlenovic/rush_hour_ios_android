@@ -3,7 +3,7 @@ import { DatabaseSync } from 'node:sqlite';
 export type Database = DatabaseSync;
 
 /** Schema versions, applied in order (PRAGMA user_version): only ever add one at the end */
-const MIGRATIONS: string[] = [
+export const MIGRATIONS: string[] = [
   `
   CREATE TABLE players (
     id INTEGER PRIMARY KEY,
@@ -107,6 +107,12 @@ const MIGRATIONS: string[] = [
   // What decided the winner of a duel: the first out ('time') or the fewest moves ('moves')
   `
   ALTER TABLE duels ADD COLUMN metric TEXT NOT NULL DEFAULT 'time' CHECK (metric IN ('time', 'moves'));
+  `,
+  // Where a daily challenge comes from: null from scratch (all the challenges before this step),
+  // else the level of the app it is a variant of; and how long it took (null: not known)
+  `
+  ALTER TABLE challenges ADD COLUMN variant_of INTEGER;
+  ALTER TABLE challenges ADD COLUMN generation_ms INTEGER;
   `,
 ];
 

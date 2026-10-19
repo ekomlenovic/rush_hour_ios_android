@@ -8,6 +8,7 @@ import BottomSheet from '@/components/home/BottomSheet';
 import { RFValue } from '@/utils/responsive';
 import type { UiColors } from '@/theme';
 import AdminButton from './AdminButton';
+import AdminChallenges from './AdminChallenges';
 import Stepper from './Stepper';
 import { useAdminSettings } from './useAdminSettings';
 import { adminStyles as styles } from './styles';
@@ -43,7 +44,7 @@ function formatDuration(t: TFunction, ms: number): string {
 
 interface Props { api: MultiApi; colors: UiColors; isDark: boolean }
 
-/** The daily challenge: when it comes out, how long to finish it, its difficulty each day */
+/** The daily challenge: the ones prepared, when it comes out, how long to finish it, its difficulty each day */
 export default function AdminChallenge({ api, colors, isDark }: Props) {
   const { t, i18n } = useTranslation();
   const { settings, save } = useAdminSettings(api);
@@ -77,6 +78,9 @@ export default function AdminChallenge({ api, colors, isDark }: Props) {
 
   return (
     <View>
+      <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('multi.admin_section_prepared')}</Text>
+      <AdminChallenges api={api} colors={colors} timeZone={settings.timeZone} />
+
       <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('multi.admin_section_schedule')}</Text>
       <View style={card}>
         <View style={styles.row}>

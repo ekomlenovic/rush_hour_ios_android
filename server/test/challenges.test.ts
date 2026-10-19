@@ -223,3 +223,57 @@ describe('real generation', () => {
     }
   });
 });
+
+describe('what the admin sees', () => {
+  it('the current challenge and the next ones: generated ahead, then the first one generated later', async () => {
+    const { challenges } = challengesAt(paris('2026-10-16', '15:00'), { PREGENERATE_AHEAD: '24h' });
+    expect(challenges.overview().map(c => [c.date, c.status])).toEqual([
+      ['2026-10-16', 'waiting'], ['2026-10-17', 'waiting'], ['2026-10-18', 'waiting'],
+    ]);
+    await challenges.pregenerate();
+    const [today, tomorrow, after] = challenges.overview();
+    expect(today).toMatchObject({ date: '2026-10-16', number: 1, current: true, status: 'ready', difficulty: 'NORMAL' });
+    expect(today.puzzle).toMatchObject({ difficulty: 'NORMAL', minMoves: LEVEL.minMoves, variantOf: null });
+    expect(today.puzzle!.generationMs).toBeGreaterThanOrEqual(0);
+    expect(tomorrow).toMatchObject({ date: '2026-10-17', number: 2, current: false, status: 'ready' });
+    // Generated 24 h before its release at noon
+    expect(after).toMatchObject({ date: '2026-10-18', status: 'waiting', puzzle: null, generatesAt: paris('2026-10-17', '12:00') });
+  });
+
+  it('a variant says which level of the app it comes from, kept in the database', async () => {
+    const db = openDatabase(':memory:');
+    const generator: PuzzleGenerator = {
+      ...fakeGenerator(null).generator,
+      variants: async (_id, _d, count) => Array.from({ length: count }, () => ({ ...LEVEL, minMoves: 42 })),
+    };
+    const challenges = new Challenges(db, testConfig({ DIFFICULTY: 'MASTER', PREGENERATE_AHEAD: '1m' }), generator, () => paris('2026-10-16', '15:00'), silent);
+    await challenges.pregenerate();
+    const [today] = challenges.overview();
+    expect(today.status).toBe('ready');
+    expect(variantSources(sampleLevels, DIFFICULTY_LEVELS.MASTER).map(l => l.id)).toContain(today.puzzle!.variantOf);
+    expect(challengesRow(db, '2026-10-16')).toMatchObject({ variant_of: today.puzzle!.variantOf, min_moves: 42 });
+  });
+
+  it('being generated, failed, or to generate again in a new difficulty', async () => {
+    const db = openDatabase(':memory:');
+    const clock = { now: paris('2026-10-16', '15:00') };
+    await new Challenges(db, testConfig({ PREGENERATE_AHEAD: '24h' }), fakeGenerator().generator, () => clock.now, silent).pregenerate();
+
+    // Every seed gives nothing, once the gate is open
+    let open: () => void = () => {};
+    const gate = new Promise<void>(resolve => { open = resolve; });
+    const slow: PuzzleGenerator = { ...fakeGenerator().generator, generate: () => gate.then(() => null) };
+    const challenges = new Challenges(db, testConfig({ PREGENERATE_AHEAD: '24h', DIFFICULTY: 'HARD' }), slow, () => clock.now, silent);
+    // Released: kept in its difficulty; the next one: still the normal one, to generate again in hard
+    expect(challenges.overview().slice(0, 2).map(c => [c.status, c.difficulty, c.puzzle?.difficulty])).toEqual([
+      ['ready', 'NORMAL', 'NORMAL'], ['waiting', 'HARD', 'NORMAL'],
+    ]);
+
+    const job = challenges.ensure('2026-10-17');
+    clock.now += 60_000;
+    expect(challenges.overview()[1]).toMatchObject({ status: 'generating', generatingSince: paris('2026-10-16', '15:00') });
+    open();
+    expect(await job).toBeNull();
+    expect(challenges.overview()[1]).toMatchObject({ status: 'failed', failedAt: clock.now, difficulty: 'HARD' });
+  });
+});
