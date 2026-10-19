@@ -281,7 +281,8 @@ describe('translations of the multiplayer mode', () => {
     expect(Object.keys(multi.period).sort()).toEqual(['day', 'month', 'week']);
     expect(typeof multi.my_abandoned).toBe('string');
     expect(typeof multi.my_unfinished).toBe('string');
-    expect(Object.keys(multi.admin_tab).sort()).toEqual(['games', 'players', 'reports', 'reset', 'settings']);
+    expect(Object.keys(multi.admin_tab).sort()).toEqual(['games', 'players', 'puzzles', 'reports', 'reset', 'settings']);
+    expect(['scratch', 'catalog'].filter(kind => typeof multi[`admin_puzzles_working_${kind}`] !== 'string')).toEqual([]);
     expect(Object.keys(multi.admin_reset_preset).sort()).toEqual(['all', 'dates', 'month', 'today', 'week']);
     expect(Object.keys(multi.duel).filter(k => /^(outcome|reason_short)_/.test(k)).sort()).toEqual([
       'outcome_draw', 'outcome_loss', 'outcome_win', 'reason_short_disconnected', 'reason_short_forfeit', 'reason_short_timeout', 'reason_short_won',
