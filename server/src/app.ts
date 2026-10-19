@@ -12,7 +12,7 @@ import { analyzeGame, type Flag } from './cheat';
 import { loadSettings, resetSettings, SettingsError, updateSettings } from './settings';
 import { deletePage } from './deletePage';
 import { newInviteCode, newRecoveryCode, newToken, normalizeRecoveryCode, secretEquals, sha256 } from './secrets';
-import { addDays, isValidDate, periodBounds } from './time';
+import { addDays, isValidDate, localDate, periodBounds } from './time';
 import { AUTH_TIMEOUT_MS, DUEL_METRICS, Duels, type ServerMessage } from './duel';
 import { DuelStore, rankDuels } from './duelStore';
 import { PuzzlePool } from './puzzlePool';
@@ -362,7 +362,9 @@ export function buildApp(deps: AppDeps) {
         },
       }, async (request) => {
         const period = request.query.period ?? 'week';
-        const date = request.query.date ?? challenges.currentDate();
+        // Duels are dated by the day they end (not by the challenge, which lags until its release):
+        // on a Monday morning, the week is the new one
+        const date = request.query.date ?? localDate(now(), config.timeZone);
         if (!isValidDate(date)) throw new ApiError(400, 'invalid_request');
         const { from, to } = period === 'all' ? { from: '0000-01-01', to: '9999-12-31' } : periodBounds(period, date);
         return { period, from, to, rows: rankDuels(duelStore.stats(from, to)) };
