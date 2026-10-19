@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { addDays } from '@/utils/date';
-import type { MultiApi, PeriodRow } from '@/utils/multi/api';
+import type { MultiApi } from '@/utils/multi/api';
 import { mondayOf } from '@/utils/multi/week';
 import type { UiColors } from '@/theme';
 
@@ -15,28 +15,37 @@ interface Props {
   refreshKey: number;
   /** Players hidden on this phone */
   blocked: number[];
-  /** The challenge being played: the recap is of the week before its own */
+  /** The ranking of the challenges or of the duels */
+  kind: 'challenges' | 'duels';
+  /** Today (the challenge being played, or the day of the duels): the recap is of the week before */
   currentDate: string;
   /** Shows the final ranking of last week */
   onOpen: () => void;
 }
 
-/** Last week is over: its winner and my place, in one line that opens its final ranking */
-export default function WeekRecap({ api, colors, myPlayerId, refreshKey, blocked, currentDate, onOpen }: Props) {
+/** A player's place in the final ranking of last week */
+interface Place { playerId: number; pseudo: string; rank: number }
+
+/**
+ * Last week is over: its winner and my place, in one line that opens its final ranking.
+ * The same for the challenges and for the duels.
+ */
+export default function WeekRecap({ api, colors, myPlayerId, refreshKey, blocked, kind, currentDate, onOpen }: Props) {
   const { t } = useTranslation();
   const lastWeek = addDays(mondayOf(currentDate), -7);
-  const [week, setWeek] = useState<{ from: string; rows: PeriodRow[] } | null>(null);
+  const [week, setWeek] = useState<{ kind: string; from: string; rows: Place[] } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    const query = { period: 'week' as const, date: lastWeek };
     // A bonus: nothing is shown while it loads or if it fails
-    api.leaderboard({ period: 'week', date: lastWeek })
-      .then(board => { if (!cancelled && board.period === 'week') setWeek(board); })
+    (kind === 'challenges' ? api.leaderboard(query) : api.duelLeaderboard(query))
+      .then(board => { if (!cancelled && board.period === 'week') setWeek({ kind, from: board.from, rows: board.rows }); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [api, lastWeek, refreshKey]);
+  }, [api, kind, lastWeek, refreshKey]);
 
-  if (!week || week.from !== lastWeek) return null;
+  if (!week || week.kind !== kind || week.from !== lastWeek) return null;
   const rows = week.rows.filter(r => !blocked.includes(r.playerId));
   if (rows.length === 0) return null;
 
