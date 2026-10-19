@@ -767,6 +767,9 @@ export function buildApp(deps: AppDeps) {
         // The duel puzzles ready ahead, and the one being generated
         admin.get('/admin/puzzles', async () => puzzles.overview());
 
+        // The daily challenges: the current one and the next ones, ready or not, and where they come from
+        admin.get('/admin/challenges', async () => ({ challenges: challenges.overview() }));
+
         // A leaked invitation: a new code, the old links stop working
         admin.post('/admin/invite', async () => {
           const code = newInviteCode();
