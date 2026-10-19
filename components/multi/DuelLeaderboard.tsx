@@ -2,13 +2,10 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
-import type { DuelLeaderboard as Board, MultiApi, Period } from '@/utils/multi/api';
+import { rankingParams, type DuelLeaderboard as Board, type MultiApi, type RankingQuery } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
 import { multiErrorMessage } from './errors';
 import type { RowPlayer } from './Leaderboard';
-
-type DuelPeriod = Period | 'all';
-const PERIODS: DuelPeriod[] = ['week', 'month', 'all'];
 
 interface Props {
   api: MultiApi;
@@ -18,13 +15,16 @@ interface Props {
   /** Players hidden on this phone */
   blocked: number[];
   onRowPress: (player: RowPlayer) => void;
+  /** The ranking shown: week, month, two dates or all time */
+  query: RankingQuery;
 }
 
-/** Duel rankings of the week, the month or of all time: wins, then fewer losses */
-export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress }: Props) {
+/** Duel rankings of a week, a month, two dates or of all time: wins, then fewer losses */
+export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress, query }: Props) {
   const { t } = useTranslation();
-  const [period, setPeriod] = useState<DuelPeriod>('week');
-  const [board, setBoard] = useState<Board | null>(null);
+  const params = rankingParams(query);
+  // The board with the query it answers: an answer to an older query is not shown
+  const [board, setBoard] = useState<{ params: string; data: Board } | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
 
@@ -32,34 +32,21 @@ export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, b
     setLoading(true);
     setError(null);
     try {
-      setBoard(await api.duelLeaderboard(period));
+      setBoard({ params, data: await api.duelLeaderboard(query) });
     } catch (e) {
       setError(e);
     } finally {
       setLoading(false);
     }
-  }, [api, period]);
+  }, [api, params]); // params describes the query
 
   useEffect(() => { void load(); }, [load, refreshKey]);
 
-  const rows = board && board.period === period ? board.rows.filter(r => !blocked.includes(r.playerId)) : [];
+  const rows = board?.params === params ? board.data.rows.filter(r => !blocked.includes(r.playerId)) : [];
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('multi.duel.ranking')}</Text>
-      <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
-        {PERIODS.map(p => (
-          <Pressable
-            key={p}
-            onPress={() => setPeriod(p)}
-            style={[styles.tab, p === period && { backgroundColor: colors.primary }]}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: p === period }}
-          >
-            <Text style={[styles.tabText, { color: p === period ? colors.onPrimary : colors.text }]}>{p === 'all' ? t('multi.duel.period_all') : t(`multi.period.${p}`)}</Text>
-          </Pressable>
-        ))}
-      </View>
 
       {rows.length > 0 && (
         <View style={styles.head}>
@@ -118,22 +105,6 @@ const styles = StyleSheet.create({
     fontSize: RFValue(17),
     fontWeight: '800',
     marginBottom: RFValue(10),
-  },
-  tabs: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    padding: 3,
-    marginBottom: RFValue(10),
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: RFValue(7),
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  tabText: {
-    fontSize: RFValue(13),
-    fontWeight: '700',
   },
   head: {
     flexDirection: 'row',

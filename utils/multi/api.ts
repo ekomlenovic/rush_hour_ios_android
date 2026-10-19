@@ -226,7 +226,7 @@ export interface DuelListing {
 }
 
 export interface DuelRankRow { playerId: number; pseudo: string; rank: number; wins: number; losses: number; draws: number; played: number }
-export interface DuelLeaderboard { period: Period | 'all'; from: string; to: string; rows: DuelRankRow[] }
+export interface DuelLeaderboard { period: Period | 'all' | 'range'; from: string; to: string; rows: DuelRankRow[] }
 
 export type DuelEndReason = 'won' | 'forfeit' | 'disconnected' | 'timeout';
 
@@ -265,7 +265,17 @@ export interface ResetResult { dryRun: boolean; challenges: number; duels: numbe
 export type Period = 'day' | 'week' | 'month';
 export type Leaderboard =
   | { period: 'day'; from: string; to: string; rows: DayRow[] }
-  | { period: 'week' | 'month'; from: string; to: string; rows: PeriodRow[] };
+  | { period: 'week' | 'month' | 'range'; from: string; to: string; rows: PeriodRow[] };
+
+/**
+ * Which ranking: the day, week or month of a date (none: today of the server), all time
+ * (duels only), or between two dates ('range', only on a server with 'ranking_range')
+ */
+export type RankingQuery = { period: Period | 'all'; date?: string } | { period: 'range'; from: string; to: string };
+
+export const rankingParams = (query: RankingQuery): string => query.period === 'range'
+  ? `period=range&from=${query.from}&to=${query.to}`
+  : `period=${query.period}${query.date ? `&date=${query.date}` : ''}`;
 
 type Fetch = typeof fetch;
 
@@ -318,16 +328,14 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
     today: () => call<Today>('GET', '/challenge/today'),
     /** ready: puzzles ready ahead by difficulty (absent on older servers) */
     duels: () => call<{ duels: DuelListing[]; ready?: Partial<Record<Difficulty, number>>; metrics?: DuelMetric[] }>('GET', '/duels'),
-    duelLeaderboard: (period: Period | 'all', date?: string) =>
-      call<DuelLeaderboard>('GET', `/duels/leaderboard?period=${period}${date ? `&date=${date}` : ''}`),
+    duelLeaderboard: (query: RankingQuery) => call<DuelLeaderboard>('GET', `/duels/leaderboard?${rankingParams(query)}`),
     duelHistory: () => call<{ duels: DuelHistoryItem[]; records: DuelRecordLine[] }>('GET', '/duels/history'),
     duelReplay: (duelId: number) => call<DuelReplay>('GET', `/duels/${duelId}`),
     start: (date?: string) => call<StartResult>('POST', '/challenge/start', date ? { date } : {}),
     submit: (date: string, moves: MoveRecord[], clientMs: number, backgroundMs: number) =>
       call<SubmitResult>('POST', '/challenge/submit', { date, moves, clientMs: Math.round(clientMs), backgroundMs: Math.round(backgroundMs) }),
     abandon: (date: string) => call<{ status: 'abandoned'; minMoves: number | null }>('POST', '/challenge/abandon', { date }),
-    leaderboard: (period: Period, date?: string) =>
-      call<Leaderboard>('GET', `/leaderboard?period=${period}${date ? `&date=${date}` : ''}`),
+    leaderboard: (query: RankingQuery) => call<Leaderboard>('GET', `/leaderboard?${rankingParams(query)}`),
     replay: (attemptId: number) => call<Replay>('GET', `/replay/${attemptId}`),
     report: (playerId: number, reason: string) => call<void>('POST', '/reports', { playerId, reason }),
     claimAdmin: (adminToken: string) => call<ApiPlayer>('POST', '/admin/claim', { adminToken }),

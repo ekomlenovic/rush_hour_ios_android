@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { formatDuration, parseLocalDateString } from '@/utils/date';
-import type { DayRow, Leaderboard as Board, MultiApi, Period, PeriodRow } from '@/utils/multi/api';
+import { rankingParams, type DayRow, type Leaderboard as Board, type MultiApi, type PeriodRow, type RankingQuery } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
 import { weekCells, type DayCell } from '@/utils/multi/week';
 import { multiErrorMessage } from './errors';
@@ -22,21 +22,20 @@ interface Props {
   /** Players hidden on this phone */
   blocked: number[];
   onRowPress: (player: RowPlayer) => void;
-  /** The periods offered, the first one shown first */
-  periods?: readonly Period[];
+  /** The ranking shown: of a day, or of several days (week, month, two dates) */
+  query: RankingQuery;
   /** Shown instead of the default title */
   title?: string;
   /** The challenge being played: the week shows each day up to it */
   currentDate?: string;
 }
 
-const PERIODS: Period[] = ['day', 'week', 'month'];
-
-/** Rankings of the day (moves then time), of the week and of the month (points) */
-export default function Leaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress, periods = PERIODS, title, currentDate }: Props) {
+/** Rankings of a day (moves then time), or of several days: week, month, two dates (points) */
+export default function Leaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress, query, title, currentDate }: Props) {
   const { t, i18n } = useTranslation();
-  const [period, setPeriod] = useState<Period>(periods[0]);
-  const [board, setBoard] = useState<Board | null>(null);
+  const params = rankingParams(query);
+  // The board with the query it answers: an answer to an older query is not shown
+  const [board, setBoard] = useState<{ params: string; data: Board } | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
 
@@ -44,13 +43,13 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
     setLoading(true);
     setError(null);
     try {
-      setBoard(await api.leaderboard(period));
+      setBoard({ params, data: await api.leaderboard(query) });
     } catch (e) {
       setError(e);
     } finally {
       setLoading(false);
     }
-  }, [api, period]);
+  }, [api, params]); // params describes the query
 
   useEffect(() => { void load(); }, [load, refreshKey]);
 
@@ -71,9 +70,10 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
   const initials = t('multi.weekday_initials').split(' ');
   const cellText = (cell: DayCell) =>
     cell.kind === 'points' ? String(cell.points) : cell.kind === 'playing' ? '…' : cell.kind === 'missed' ? '–' : '·';
+  const current = board?.params === params ? board.data : null;
   /** The days of the week of a row, when the server sends them */
   const cellsOf = (row: PeriodRow) =>
-    board?.period === 'week' && row.days && currentDate ? weekCells(board.from, row.days, currentDate) : null;
+    current?.period === 'week' && row.days && currentDate ? weekCells(current.from, row.days, currentDate) : null;
   const cellLabel = (cell: DayCell) => {
     const day = parseLocalDateString(cell.date).toLocaleDateString(i18n.language, { weekday: 'long' });
     if (cell.kind === 'upcoming') return null;
@@ -89,25 +89,12 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
   ].filter(Boolean).join(', ');
 
   const visible = <T extends { playerId: number }>(list: T[]) => list.filter(r => !blocked.includes(r.playerId));
-  const rows = board && board.period === period ? visible(board.rows as { playerId: number }[]) : [];
-  const hidden = board && board.period === period ? board.rows.length - rows.length : 0;
+  const rows = current ? visible(current.rows as { playerId: number }[]) : [];
+  const hidden = current ? current.rows.length - rows.length : 0;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{title ?? t('multi.leaderboard')}</Text>
-      {periods.length > 1 && <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
-        {periods.map(p => (
-          <Pressable
-            key={p}
-            onPress={() => setPeriod(p)}
-            style={[styles.tab, p === period && { backgroundColor: colors.primary }]}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: p === period }}
-          >
-            <Text style={[styles.tabText, { color: p === period ? colors.onPrimary : colors.text }]}>{t(`multi.period.${p}`)}</Text>
-          </Pressable>
-        ))}
-      </View>}
 
       {loading && <ActivityIndicator color={colors.primary} style={styles.state} />}
       {!loading && !!error && (
@@ -120,7 +107,7 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
         <Text style={[styles.muted, styles.state, { color: colors.textMuted }]}>{t('multi.leaderboard_empty')}</Text>
       )}
 
-      {!loading && !error && board?.period === 'day' && visible(board.rows as DayRow[]).map(row => {
+      {!loading && !error && current?.period === 'day' && visible(current.rows as DayRow[]).map(row => {
         const mine = row.playerId === myPlayerId;
         const cheater = row.verdict === 'cheater';
         return (
@@ -146,7 +133,7 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
         );
       })}
 
-      {!loading && !error && board && board.period !== 'day' && visible(board.rows as PeriodRow[]).map(row => {
+      {!loading && !error && current && current.period !== 'day' && visible(current.rows as PeriodRow[]).map(row => {
         const mine = row.playerId === myPlayerId;
         const cells = cellsOf(row);
         return (
@@ -195,22 +182,6 @@ const styles = StyleSheet.create({
     fontSize: RFValue(17),
     fontWeight: '800',
     marginBottom: RFValue(10),
-  },
-  tabs: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    padding: 3,
-    marginBottom: RFValue(10),
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: RFValue(7),
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  tabText: {
-    fontSize: RFValue(13),
-    fontWeight: '700',
   },
   state: {
     paddingVertical: RFValue(16),

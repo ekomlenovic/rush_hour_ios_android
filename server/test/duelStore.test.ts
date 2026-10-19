@@ -85,6 +85,12 @@ describe('finished duels', () => {
     ]);
     expect((await request('GET', '/duels/leaderboard?period=all', leo.token)).body.rows).toHaveLength(3);
     expect((await request('GET', '/duels/leaderboard?period=year', leo.token)).status).toBe(400);
+    const today = (await request('GET', '/challenge/today', leo.token)).body.date;
+    const range = await request('GET', `/duels/leaderboard?period=range&from=${today}&to=${today}`, leo.token);
+    expect(range.body).toMatchObject({ period: 'range', from: today, to: today });
+    expect(range.body.rows).toHaveLength(3);
+    expect((await request('GET', '/duels/leaderboard?period=range&from=2020-01-01&to=2020-01-31', leo.token)).body.rows).toEqual([]);
+    expect((await request('GET', '/duels/leaderboard?period=range&to=2020-01-31', leo.token)).status).toBe(400);
   });
 
   it('of the week count the duels of a Monday before the release of the challenge', async () => {

@@ -280,7 +280,7 @@ describe('translations of the multiplayer mode', () => {
     const multi = strings.multi;
     expect(MULTI_ERROR_CODES.filter(code => typeof multi.errors[code] !== 'string')).toEqual([]);
     expect(Object.keys(multi.status).sort()).toEqual(['abandoned', 'playing', 'unfinished', 'won']);
-    expect(Object.keys(multi.period).sort()).toEqual(['day', 'month', 'week']);
+    expect(Object.keys(multi.ranking_period).sort()).toEqual(['all', 'dates', 'last_month', 'last_week', 'month', 'week']);
     expect(typeof multi.my_abandoned).toBe('string');
     expect(typeof multi.my_unfinished).toBe('string');
     // A title for each page of the admin panel
@@ -509,5 +509,38 @@ describe('week of the challenges', () => {
     expect(weekCells('2026-10-19', [], '2026-10-21').map(c => c.kind)).toEqual([
       'missed', 'missed', 'upcoming', 'upcoming', 'upcoming', 'upcoming', 'upcoming',
     ]);
+  });
+});
+
+describe('weekly rankings period', () => {
+  const { rankingQuery, rankingDays } = require('../utils/multi/rankingPeriod') as typeof import('../utils/multi/rankingPeriod');
+  const { rankingParams } = require('../utils/multi/api') as typeof import('../utils/multi/api');
+  const dates = { from: '2026-10-05', to: '2026-10-01' };
+  // A Monday, early in the month
+  const today = '2026-10-19';
+
+  it('asks the server for this week or month, the last one, or two dates in order', () => {
+    expect(rankingQuery('week', today, dates)).toEqual({ period: 'week' });
+    expect(rankingQuery('last_week', today, dates)).toEqual({ period: 'week', date: '2026-10-12' });
+    expect(rankingQuery('month', today, dates)).toEqual({ period: 'month' });
+    expect(rankingQuery('last_month', today, dates)).toEqual({ period: 'month', date: '2026-09-30' });
+    expect(rankingQuery('last_month', '2026-01-15', dates)).toEqual({ period: 'month', date: '2025-12-31' });
+    expect(rankingQuery('dates', today, dates)).toEqual({ period: 'range', from: '2026-10-01', to: '2026-10-05' });
+    expect(rankingQuery('all', today, dates)).toEqual({ period: 'all' });
+  });
+
+  it('shows the days covered', () => {
+    expect(rankingDays('week', today, dates)).toEqual({ from: '2026-10-19', to: '2026-10-25' });
+    expect(rankingDays('last_week', today, dates)).toEqual({ from: '2026-10-12', to: '2026-10-18' });
+    expect(rankingDays('month', today, dates)).toEqual({ from: '2026-10-01', to: '2026-10-31' });
+    expect(rankingDays('last_month', today, dates)).toEqual({ from: '2026-09-01', to: '2026-09-30' });
+    expect(rankingDays('dates', today, dates)).toEqual({ from: '2026-10-01', to: '2026-10-05' });
+    expect(rankingDays('all', today, dates)).toBeNull();
+  });
+
+  it('builds the query string of the server', () => {
+    expect(rankingParams({ period: 'day' })).toBe('period=day');
+    expect(rankingParams({ period: 'week', date: '2026-10-12' })).toBe('period=week&date=2026-10-12');
+    expect(rankingParams({ period: 'range', from: '2026-10-01', to: '2026-10-05' })).toBe('period=range&from=2026-10-01&to=2026-10-05');
   });
 });

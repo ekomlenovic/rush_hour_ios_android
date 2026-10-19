@@ -809,11 +809,6 @@
     "invite_message": "Rejoins-moi sur Rush Hours pour le défi multijoueur « {{server}} » : {{link}}",
     "leaderboard": "Classement",
     "leaderboard_empty": "Personne n'a encore joué.",
-    "period": {
-      "day": "Jour",
-      "week": "Semaine",
-      "month": "Mois"
-    },
     "status": {
       "playing": "en cours",
       "won": "réussi",
@@ -1120,6 +1115,22 @@
     "ranking_challenges": "Défis",
     "ranking_duels": "Duels",
     "ranking_challenges_title": "Classement des défis",
+    "ranking_period": {
+      "week": "Cette semaine",
+      "last_week": "Semaine dernière",
+      "month": "Ce mois-ci",
+      "last_month": "Mois dernier",
+      "dates": "Dates",
+      "all": "Depuis toujours"
+    },
+    "ranking_days": "Du {{from}} au {{to}}",
+    "ranking_dates_title": "Choisis tes dates",
+    "ranking_dates_hint_start": "Touche le premier jour de la période.",
+    "ranking_dates_hint_end": "Touche maintenant le dernier jour.",
+    "ranking_dates_last_days_one": "Dernier jour",
+    "ranking_dates_last_days_other": "{{count}} derniers jours",
+    "ranking_dates_apply": "Voir le classement",
+    "ranking_dates_change": "Modifier",
     "admin_reset_what": "Quoi",
     "admin_reset_when": "Période",
     "admin_reset_who": "Joueurs",
@@ -1222,7 +1233,6 @@
       "losses_short": "D",
       "draws_short": "N",
       "ranking_empty": "Aucun duel joué sur cette période.",
-      "period_all": "Tout",
       "record_a11y": "{{wins}} victoires, {{losses}} défaites, {{draws}} nuls",
       "history_title": "Mes duels",
       "history_empty": "Tes duels terminés apparaîtront ici.",
