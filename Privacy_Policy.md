@@ -1,6 +1,6 @@
 # Privacy Policy for Rush Hours
 
-Last updated: 16/10/2026
+Last updated: 19/10/2026
 
 This privacy policy applies to the **Rush Hours** mobile application, developed and published by **Imelein**.
 
@@ -32,7 +32,7 @@ The multiplayer mode lets you play a daily challenge with friends on a **server 
 
 ## 5. Third-Party Services
 
-Rush Hours does not use any third-party services that collect user data. QR codes of the multiplayer mode are drawn on your device. (Sharing a level as a QR code uses the QRServer API with the link of that level, which contains no personal data.)
+Rush Hours does not use any third-party service: no advertising, no analytics, no crash reporting, no in-app purchases, no social login. Every QR code (shared levels, multiplayer invitations) is drawn on your device: nothing is sent to an online service to make it.
 
 ## 6. Data Usage
 
@@ -40,9 +40,13 @@ The developer collects no data, so no data is used, processed, or shared by the 
 
 ## 7. Children’s Privacy
 
-This application is not directed to children under the age of 13.
+Rush Hours is made for everyone, **children included**. It is a puzzle game with no ads, no purchases, no chat and no account.
 
-The app does not knowingly collect any personal information from children.
+- **Solo play** (the map, the daily and weekly challenges, the levels you create or receive) works entirely on the device: no personal information is collected from anyone, child or adult.
+- **The multiplayer mode is off by default** and cannot be reached by chance: joining a server needs its address and an invite code, given by the person who hosts it. We ask that a **parent or guardian** decide whether a child joins a server, and choose it with them (for example, a server hosted by the family or by people they know).
+- In multiplayer, the only thing a player writes is a **nickname**, shown to the other players of that server. Children should use a nickname that is **not their real name**. Nicknames are limited to letters, numbers and a few signs, and the administrator of the server can rename or exclude a player. Players can report or block another player.
+- What a multiplayer server receives and stores is listed in section 4. The developer receives none of it.
+- **A parent or guardian can delete a child's data at any time**: in the app, Multiplayer → My account → Delete my data, or on the web at `https://<the server>/delete-account` with the recovery code. They can also ask the administrator of the server. Uninstalling the app removes what it stored on the device (the phone's own backup, if turned on, may keep a copy).
 
 ## 8. Security
 
@@ -51,3 +55,7 @@ The developer collects and stores no data. Multiplayer servers only accept HTTPS
 ## 9. Changes to This Privacy Policy
 
 This Privacy Policy may be updated from time to time. Any changes will be reflected on this page.
+
+## 10. Contact
+
+Questions about this policy, including from parents: open an issue at https://github.com/ekomlenovic/rush_hour_ios_android/issues.
