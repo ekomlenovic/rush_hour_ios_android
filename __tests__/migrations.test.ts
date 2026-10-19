@@ -14,8 +14,8 @@ const merge = (persisted: Record<string, unknown>) =>
   options.merge!(persisted, useGameStore.getInitialState());
 
 describe('persisted state', () => {
-  it('is at version 9', () => {
-    expect(options.version).toBe(9);
+  it('is at version 10', () => {
+    expect(options.version).toBe(10);
   });
 
   it('keeps the player data and leaves the in-game state out', () => {
@@ -324,6 +324,18 @@ describe('migrate v9: boss levels (#19)', () => {
   it('leaves a player without a boss won untouched', () => {
     const v8 = { xp: 80, progress: [{ levelId: 2, completed: true, bestScore: 300, stars: 3 }], maxUnlockedLevel: 3 };
     expect(migrate(v8, 8)).toEqual(v8);
+  });
+});
+
+describe('migrate v10: new achievements (#19)', () => {
+  it('counts the achievements unlocked before as seen', () => {
+    const v9 = { achievements: ['first_win', 'streak_3'], progress: [] };
+    expect(migrate(v9, 9)).toEqual({ ...v9, seenAchievements: ['first_win', 'streak_3'] });
+  });
+
+  it('leaves a save without achievements untouched', () => {
+    const v9 = { progress: [] };
+    expect(migrate(v9, 9)).toEqual(v9);
   });
 });
 

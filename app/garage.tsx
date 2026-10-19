@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,11 +38,8 @@ export default function GarageScreen() {
   const [previewed, setPreviewed] = useState<CosmeticDef | null>(null);
   const [effectKey, setEffectKey] = useState(0);
 
-  // "New" badges stay visible during the visit, they are cleared when leaving
-  const unlockedRef = useRef(unlocked);
-  unlockedRef.current = unlocked;
-  const [newKeys] = useState(() => new Set(unseen));
-  useEffect(() => () => markCosmeticsSeen(unlockedRef.current), []);
+  // A new item keeps its badge until it is touched
+  const newKeys = new Set(unseen);
 
   const previewSelection: CosmeticSelection = previewed
     ? { ...selection, [previewed.kind]: previewed.id }
@@ -53,6 +50,7 @@ export default function GarageScreen() {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (isCosmeticUnlocked(def, context)) {
       selectCosmetic(def.kind, def.id);
+      markCosmeticsSeen([cosmeticKey(def)]);
       setPreviewed(null);
     } else {
       setPreviewed(def);
@@ -98,7 +96,7 @@ export default function GarageScreen() {
         <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
           {KINDS.map(k => {
             const active = k === kind;
-            const hasNew = COSMETICS.some(def => def.kind === k && newKeys.has(cosmeticKey(def)));
+            const newCount = COSMETICS.filter(def => def.kind === k && newKeys.has(cosmeticKey(def))).length;
             return (
               <Pressable
                 key={k}
@@ -106,10 +104,18 @@ export default function GarageScreen() {
                 style={[styles.tab, active && { backgroundColor: colors.primary }]}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
+                accessibilityLabel={newCount > 0
+                  ? `${t(`cosmetics.kinds.${k}`)}, ${t('cosmetics.new_count', { count: newCount })}`
+                  : t(`cosmetics.kinds.${k}`)}
               >
                 <Text style={[styles.tabText, { color: active ? colors.onPrimary : colors.text }]} numberOfLines={2}>
-                  {t(`cosmetics.kinds.${k}`)}{hasNew ? ' •' : ''}
+                  {t(`cosmetics.kinds.${k}`)}
                 </Text>
+                {newCount > 0 && (
+                  <View style={[styles.tabCount, { backgroundColor: colors.primary, borderColor: colors.surface }]}>
+                    <Text style={[styles.tabCountText, { color: colors.onPrimary }]}>{newCount}</Text>
+                  </View>
+                )}
               </Pressable>
             );
           })}
@@ -122,7 +128,10 @@ export default function GarageScreen() {
             const isSelected = selection[def.kind] === def.id;
             const name = t(`cosmetics.${def.kind}.${def.id}`);
             const condition = describeUnlock(t, def, context);
-            const state = isSelected ? t('cosmetics.selected') : isUnlocked ? t('cosmetics.unlock.default') : `${t('cosmetics.locked')}, ${condition}`;
+            const isNew = newKeys.has(key);
+            const state = isSelected ? t('cosmetics.selected')
+              : isUnlocked ? (isNew ? `${t('cosmetics.new')}, ${t('cosmetics.unlock.default')}` : t('cosmetics.unlock.default'))
+              : `${t('cosmetics.locked')}, ${condition}`;
             return (
               <Pressable
                 key={key}
@@ -136,13 +145,16 @@ export default function GarageScreen() {
                 accessibilityLabel={t('cosmetics.a11y_item', { name, state })}
                 accessibilityState={{ selected: isSelected }}
               >
+                {isNew && (
+                  <View style={[styles.newPill, { backgroundColor: colors.primary }]}>
+                    <Text style={[styles.newPillText, { color: colors.onPrimary }]}>{t('cosmetics.new')}</Text>
+                  </View>
+                )}
                 <CosmeticThumb def={def} scheme={scheme} size={56} locked={!isUnlocked} />
                 <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>{name}</Text>
                 {isSelected ? (
                   <Text style={[styles.itemState, { color: colors.primaryText }]}>✓ {t('cosmetics.selected')}</Text>
-                ) : isUnlocked ? (
-                  newKeys.has(key) && <Text style={[styles.itemState, { color: colors.success }]}>{t('cosmetics.new')}</Text>
-                ) : (
+                ) : isUnlocked ? null : (
                   <>
                     <IconText icon="lock-closed" color={colors.textMuted} textStyle={styles.itemCondition} numberOfLines={3}>{condition}</IconText>
                     <XpBar colors={colors} ratio={unlockProgress(def, context)} height={4} />
@@ -171,6 +183,29 @@ const styles = StyleSheet.create({
   tabs: { flexDirection: 'row', padding: 4, borderRadius: 12, gap: 4, marginBottom: 16 },
   tab: { flex: 1, paddingVertical: 8, paddingHorizontal: 4, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   tabText: { fontSize: RFValue(12), fontWeight: '700', textAlign: 'center' },
+  tabCount: {
+    position: 'absolute',
+    top: -6,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabCountText: { fontSize: 10, fontWeight: '800' },
+  newPill: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    zIndex: 1,
+  },
+  newPillText: { fontSize: RFValue(10), fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   item: {
     flexBasis: '47%',

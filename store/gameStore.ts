@@ -142,8 +142,10 @@ interface GameState {
   lastXpGain: { from: number; to: number } | null;
   /** Selected board theme, car skin, palette and win effect */
   cosmetics: CosmeticSelection;
-  /** Unlocked cosmetics already seen in the garage ('kind:id') */
+  /** Unlocked cosmetics already seen in the garage ('kind:id'): touched once, the "new" badge goes */
   seenCosmetics: string[];
+  /** Unlocked achievements already seen in the profile: touched once, the "new" badge goes */
+  seenAchievements: string[];
 
   // Actions
   loadLevel: (level: Level, savedState?: LevelSaveState) => void;
@@ -190,6 +192,7 @@ interface GameState {
   consumeLevelUps: () => number[];
   selectCosmetic: (kind: CosmeticKind, id: string) => boolean;
   markCosmeticsSeen: (keys: string[]) => void;
+  markAchievementSeen: (id: string) => void;
 }
 
 /** Key under which a level's in-progress state is saved */
@@ -350,6 +353,7 @@ export const useGameStore = create<GameState>()(
       lastXpGain: null,
       cosmetics: { ...DEFAULT_COSMETICS },
       seenCosmetics: [],
+      seenAchievements: [],
       generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
 
       loadLevel: (level, savedState) => {
@@ -634,6 +638,11 @@ export const useGameStore = create<GameState>()(
         set({ seenCosmetics: [...seen] });
       },
 
+      markAchievementSeen: (id) => {
+        const { seenAchievements } = get();
+        if (!seenAchievements.includes(id)) set({ seenAchievements: [...seenAchievements, id] });
+      },
+
       consumeUnlockQueue: () => {
         const { unlockQueue } = get();
         if (unlockQueue.length > 0) set({ unlockQueue: [] });
@@ -848,6 +857,7 @@ export const useGameStore = create<GameState>()(
           lastXpGain: null,
           cosmetics: { ...DEFAULT_COSMETICS },
           seenCosmetics: [],
+          seenAchievements: [],
         });
       },
 
@@ -932,6 +942,7 @@ export const useGameStore = create<GameState>()(
         xp: state.xp,
         cosmetics: state.cosmetics,
         seenCosmetics: state.seenCosmetics,
+        seenAchievements: state.seenAchievements,
       }),
     }
   )

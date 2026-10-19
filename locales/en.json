@@ -306,6 +306,8 @@
     "stats": "Statistics",
     "achievements_count": "{{count}} of {{total}}",
     "achievements_closest": "Closest",
+    "new_achievements_one": "{{count}} new achievement",
+    "new_achievements_other": "{{count}} new achievements",
     "achievement_a11y_unlocked": "{{name}}, unlocked. {{desc}}",
     "achievement_a11y_locked": "{{name}}, locked. {{desc}}"
   },
