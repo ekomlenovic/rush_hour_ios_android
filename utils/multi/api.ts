@@ -147,6 +147,33 @@ export interface AdminPuzzles {
   puzzles: { id: number; difficulty: Difficulty; createdAt: number; level: Level }[];
 }
 
+/** A daily challenge of the server as the admin sees it (server/src/challenges.ts) */
+export interface AdminChallenge {
+  date: string;
+  number: number;
+  /** The one configured until its release, then the one it came out with */
+  difficulty: Difficulty;
+  releaseAt: number;
+  /** Being played now */
+  current: boolean;
+  /** waiting: generated later, from generatesAt; failed: tried again each minute */
+  status: 'ready' | 'generating' | 'failed' | 'waiting';
+  generatesAt: number;
+  generatingSince: number | null;
+  failedAt: number | null;
+  /** In another difficulty when it changed since: generated again before its release */
+  puzzle: {
+    difficulty: Difficulty;
+    minMoves: number;
+    /** The level of the app it is a variant of; null: generated from scratch */
+    variantOf: number | null;
+    /** null: not known */
+    generationMs: number | null;
+    generatedAt: number;
+    level: Level;
+  } | null;
+}
+
 export interface Thresholds {
   minMsPerMove: number;
   copyMinMoves: number;
@@ -322,6 +349,7 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
       resetSettings: () => call<AdminSettings>('POST', '/admin/settings/reset'),
       reset: (request: ResetRequest) => call<ResetResult>('POST', '/admin/reset', request),
       puzzles: () => call<AdminPuzzles>('GET', '/admin/puzzles'),
+      challenges: () => call<{ challenges: AdminChallenge[] }>('GET', '/admin/challenges'),
       summary: () => call<AdminSummary>('GET', '/admin/summary'),
     },
   };
