@@ -109,6 +109,14 @@
       "mountains": "Mountain pass",
       "snow": "Snowy peaks",
       "night": "City by night",
+      "beach": "Seaside",
+      "farm": "Farm lanes",
+      "jungle": "Jungle trail",
+      "volcano": "Volcanic lands",
+      "lake": "Lakeshore",
+      "airport": "The airport",
+      "fairground": "Funfair",
+      "space": "Space base",
       "workshop": "The workshop"
     },
     "background_music": "Background Music",
@@ -341,10 +349,16 @@
     "levels_250_desc": "Complete 250 levels",
     "levels_500": "King of the Road",
     "levels_500_desc": "Complete 500 levels",
+    "levels_700": "Globetrotter",
+    "levels_700_desc": "Complete 700 levels",
     "perfect_50": "Precision",
     "perfect_50_desc": "Get 3 stars on 50 levels",
     "perfect_100": "Flawless",
     "perfect_100_desc": "Get 3 stars on 100 levels",
+    "perfect_250": "Shooting Star",
+    "perfect_250_desc": "Get 3 stars on 250 levels",
+    "perfect_500": "Constellation",
+    "perfect_500_desc": "Get 3 stars on 500 levels",
     "master_driver": "Traffic Master",
     "master_driver_desc": "Complete a level of 40+ minimum moves",
     "big_grid": "Big League",
@@ -419,6 +433,16 @@
     "optimal_hard_10_desc": "Get 3 stars on 10 map levels of 30+ minimum moves",
     "optimal_hard_25": "Grandmaster",
     "optimal_hard_25_desc": "Get 3 stars on 25 map levels of 30+ minimum moves",
+    "optimal_hard_50": "Strategist",
+    "optimal_hard_50_desc": "Get 3 stars on 50 map levels of 30+ minimum moves",
+    "optimal_hard_100": "Traffic Mastermind",
+    "optimal_hard_100_desc": "Get 3 stars on 100 map levels of 30+ minimum moves",
+    "zone_perfect_1": "Perfect Zone",
+    "zone_perfect_1_desc": "Get 3 stars on every level of a map zone",
+    "zone_perfect_10": "Cartographer",
+    "zone_perfect_10_desc": "Get 3 stars on every level of 10 map zones",
+    "zone_perfect_25": "Ruler of the Roads",
+    "zone_perfect_25_desc": "Get 3 stars on every level of 25 map zones",
     "first_try_50": "First Try",
     "first_try_50_desc": "Complete 50 levels without restarting",
     "weekly_12": "Fortress",
@@ -704,7 +728,9 @@
       "neon": "Neon night",
       "pixel": "Pixel art",
       "snow": "Snow",
-      "fire": "On fire"
+      "fire": "On fire",
+      "beach": "Sandy beach",
+      "space": "Outer space"
     },
     "skin": {
       "classic": "Red car",
@@ -713,7 +739,9 @@
       "police": "Police car",
       "rocket": "Rocket",
       "sport": "Sports car",
-      "gold": "Golden car"
+      "gold": "Golden car",
+      "tractor": "Tractor",
+      "ufo": "Flying saucer"
     },
     "palette": {
       "classic": "Classic",
@@ -721,13 +749,16 @@
       "pastel": "Pastel",
       "earth": "Earth",
       "neon": "Neon",
-      "candy": "Candy"
+      "candy": "Candy",
+      "lava": "Lava",
+      "jungle": "Jungle"
     },
     "effect": {
       "none": "None",
       "confetti": "Confetti",
       "fireworks": "Fireworks",
-      "speed": "Speed trail"
+      "speed": "Speed trail",
+      "bubbles": "Bubbles"
     }
   },
   "archives": {

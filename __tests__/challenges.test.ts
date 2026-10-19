@@ -3,6 +3,8 @@ import { generateWeeklyLevel } from '../utils/weekly';
 import { solvePuzzle } from '../utils/solver';
 import { checkWin } from '../utils/collision';
 import { sampleLevels } from '../data/sampleLevels';
+import { getWeekKey } from '../utils/date';
+import { canonicalKey } from '../scripts/campaign/canonical';
 import { DAILY_LEVEL_ID, WEEKLY_LEVEL_ID, Level } from '../store/gameStore';
 
 /** The puzzle itself, without the creation timestamp */
@@ -107,6 +109,17 @@ describe('weekly challenge', () => {
       const shape = (l: Level) => l.vehicles.map(v => [v.row, v.col, v.length, v.orientation]);
       expect(sampleLevels.some(s => s.gridSize === level.gridSize && JSON.stringify(shape(s)) === JSON.stringify(shape(level)))).toBe(false);
     }
+  });
+
+  it('goes through every hard level of the campaign before one comes back, whatever the size of the pool', async () => {
+    const pool = sampleLevels.filter(l => l.minMoves >= 25);
+    const sources = new Set<string>();
+    const monday = new Date(2026, 9, 12, 12);
+    for (let week = 0; week < pool.length; week++) {
+      const level = (await generateWeeklyLevel(getWeekKey(new Date(monday.getTime() + week * 7 * 86400000))))!;
+      sources.add(canonicalKey(level));
+    }
+    expect(sources.size).toBe(pool.length);
   });
 
   it('two consecutive weeks do not look alike', async () => {

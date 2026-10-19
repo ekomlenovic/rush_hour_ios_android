@@ -109,6 +109,14 @@
       "mountains": "Col de montagne",
       "snow": "Sommets enneigés",
       "night": "Ville de nuit",
+      "beach": "Bord de mer",
+      "farm": "Chemins de la ferme",
+      "jungle": "Piste de la jungle",
+      "volcano": "Terres volcaniques",
+      "lake": "Rives du lac",
+      "airport": "L'aéroport",
+      "fairground": "Fête foraine",
+      "space": "Base spatiale",
       "workshop": "L'atelier"
     },
     "background_music": "Musique de fond",
@@ -341,10 +349,16 @@
     "levels_250_desc": "Compléter 250 niveaux",
     "levels_500": "Roi de la route",
     "levels_500_desc": "Compléter 500 niveaux",
+    "levels_700": "Grand voyageur",
+    "levels_700_desc": "Compléter 700 niveaux",
     "perfect_50": "Précision",
     "perfect_50_desc": "Obtenir 3 étoiles sur 50 niveaux",
     "perfect_100": "Sans faute",
     "perfect_100_desc": "Obtenir 3 étoiles sur 100 niveaux",
+    "perfect_250": "Étoile filante",
+    "perfect_250_desc": "Obtenir 3 étoiles sur 250 niveaux",
+    "perfect_500": "Constellation",
+    "perfect_500_desc": "Obtenir 3 étoiles sur 500 niveaux",
     "master_driver": "Maître du trafic",
     "master_driver_desc": "Réussir un niveau de 40 coups minimum ou plus",
     "big_grid": "Grand format",
@@ -419,6 +433,16 @@
     "optimal_hard_10_desc": "Obtenir 3 étoiles sur 10 niveaux de la carte de 30 coups minimum ou plus",
     "optimal_hard_25": "Grand maître",
     "optimal_hard_25_desc": "Obtenir 3 étoiles sur 25 niveaux de la carte de 30 coups minimum ou plus",
+    "optimal_hard_50": "Stratège",
+    "optimal_hard_50_desc": "Obtenir 3 étoiles sur 50 niveaux de la carte de 30 coups minimum ou plus",
+    "optimal_hard_100": "Cerveau du trafic",
+    "optimal_hard_100_desc": "Obtenir 3 étoiles sur 100 niveaux de la carte de 30 coups minimum ou plus",
+    "zone_perfect_1": "Zone parfaite",
+    "zone_perfect_1_desc": "Obtenir 3 étoiles sur tous les niveaux d'une zone de la carte",
+    "zone_perfect_10": "Cartographe",
+    "zone_perfect_10_desc": "Obtenir 3 étoiles sur tous les niveaux de 10 zones de la carte",
+    "zone_perfect_25": "Maître du monde",
+    "zone_perfect_25_desc": "Obtenir 3 étoiles sur tous les niveaux de 25 zones de la carte",
     "first_try_50": "Du premier coup",
     "first_try_50_desc": "Réussir 50 niveaux sans recommencer",
     "weekly_12": "Forteresse",
@@ -704,7 +728,9 @@
       "neon": "Nuit néon",
       "pixel": "Pixel art",
       "snow": "Neige",
-      "fire": "En feu"
+      "fire": "En feu",
+      "beach": "Plage de sable",
+      "space": "Espace"
     },
     "skin": {
       "classic": "Voiture rouge",
@@ -713,7 +739,9 @@
       "police": "Voiture de police",
       "rocket": "Fusée",
       "sport": "Voiture de sport",
-      "gold": "Voiture dorée"
+      "gold": "Voiture dorée",
+      "tractor": "Tracteur",
+      "ufo": "Soucoupe volante"
     },
     "palette": {
       "classic": "Classique",
@@ -721,13 +749,16 @@
       "pastel": "Pastel",
       "earth": "Terre",
       "neon": "Néon",
-      "candy": "Bonbon"
+      "candy": "Bonbon",
+      "lava": "Lave",
+      "jungle": "Jungle"
     },
     "effect": {
       "none": "Aucun",
       "confetti": "Confettis",
       "fireworks": "Feu d'artifice",
-      "speed": "Trace de vitesse"
+      "speed": "Trace de vitesse",
+      "bubbles": "Bulles"
     }
   },
   "archives": {

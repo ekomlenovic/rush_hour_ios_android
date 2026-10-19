@@ -50,6 +50,22 @@ struct Cli {
     #[arg(long, default_value_t = 300_000)] max_bfs_states: usize,
     /// Budget de temps (secondes) par level avant d'abandonner
     #[arg(long, default_value_t = 120)] time_budget_secs: u64,
+
+    // ── Mode « un seul niveau » (scripts/campaign/generate.ts) ──
+    // Avec --grid, génère un seul niveau aux paramètres donnés et l'écrit en JSON
+    // sur la sortie standard (code de sortie 1 en cas d'échec). Avec la même --seed,
+    // le même niveau sort à chaque fois (tant que le budget de temps n'est pas atteint).
+    #[arg(long)] grid: Option<u8>,
+    #[arg(long, default_value_t = 0)] min_moves: u32,
+    #[arg(long, default_value_t = 0)] max_moves: u32,
+    #[arg(long, default_value_t = 0)] min_vehicles: usize,
+    #[arg(long, default_value_t = 0)] max_vehicles: usize,
+    /// right | left | bottom | top
+    #[arg(long, default_value = "right")] exit: String,
+    #[arg(long, default_value_t = 0)] seed: u64,
+    #[arg(long, default_value_t = 1)] id: u32,
+    /// Rejoue uniquement ce restart (champ `restart` d'un résultat précédent, même --seed)
+    #[arg(long)] restart: Option<u32>,
 }
 
 // ── Exit ──────────────────────────────────────────────────────────────────────
@@ -58,6 +74,16 @@ struct Cli {
 enum ExitSide { Right, Left, Bottom, Top }
 
 impl ExitSide {
+    fn parse(name: &str) -> Self {
+        match name {
+            "right"  => ExitSide::Right,
+            "left"   => ExitSide::Left,
+            "bottom" => ExitSide::Bottom,
+            "top"    => ExitSide::Top,
+            _ => panic!("--exit doit valoir right, left, bottom ou top"),
+        }
+    }
+
     fn random(rng: &mut SmallRng) -> Self {
         match rng.gen_range(0..4u8) {
             0 => ExitSide::Right,
@@ -498,14 +524,32 @@ fn try_restart(
     None
 }
 
+/// Graine du restart `r` : chaque restart a son propre tirage, indépendant du thread qui l'exécute
+fn restart_seed(seed: u64, r: u32) -> u64 {
+    // SplitMix64
+    let mut z = seed ^ (r as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15);
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    z ^ (z >> 31)
+}
+
 /// Restarts parallélisés + budget de temps.
-fn generate_single(task: &Task, max_restarts: u32, budget: Duration) -> Option<(Level, u32, Duration)> {
+/// Avec `seed`, le restart `r` tire ses boards avec la graine restart_seed(seed, r) : le restart
+/// qui a réussi (renvoyé dans le résultat, 1 + son indice) se rejoue à l'identique avec `only`.
+fn generate_single(
+    task:         &Task,
+    max_restarts: u32,
+    budget:       Duration,
+    seed:         Option<u64>,
+    only:         Option<u32>,
+) -> Option<(Level, u32, Duration)> {
     let t0       = Instant::now();
     let deadline = t0 + budget;
     let cap      = task.max_states.min(1 << 17);
     let found    = AtomicBool::new(false);
+    let range    = match only { Some(r) => r..r + 1, None => 0..max_restarts };
 
-    (0..max_restarts)
+    range
         .into_par_iter()
         .map_init(
             || (
@@ -513,6 +557,7 @@ fn generate_single(task: &Task, max_restarts: u32, budget: Duration) -> Option<(
                 FxHashSet::<u64>::with_capacity_and_hasher(cap, Default::default()),
             ),
             |(rng, seen), r| {
+                if let Some(s) = seed { *rng = SmallRng::seed_from_u64(restart_seed(s, r)); }
                 let res = try_restart(task, rng, seen, r, deadline, &found);
                 if res.is_some() { found.store(true, Ordering::Relaxed); }
                 res
@@ -520,6 +565,45 @@ fn generate_single(task: &Task, max_restarts: u32, budget: Duration) -> Option<(
         )
         .find_map_any(|x| x)
         .map(|(level, restarts)| (level, restarts, t0.elapsed()))
+}
+
+/// Mode « un seul niveau » : JSON sur la sortie standard
+fn main_single(cli: &Cli, gs: u8) {
+    let cfg = DifficultyConfig {
+        grid_size:    gs,
+        min_vehicles: cli.min_vehicles,
+        max_vehicles: cli.max_vehicles.min(MAX_VEHICLES),
+        min_moves:    cli.min_moves,
+        max_moves:    cli.max_moves,
+    };
+    assert!(cfg.min_vehicles >= 1 && cfg.min_vehicles <= cfg.max_vehicles, "--min-vehicles / --max-vehicles");
+    assert!(cfg.min_moves >= 1 && cfg.min_moves <= cfg.max_moves, "--min-moves / --max-moves");
+
+    let task = Task {
+        id:         cli.id,
+        cfg,
+        label:      "SINGLE",
+        idx:        1,
+        count:      1,
+        exit_side:  ExitSide::parse(&cli.exit),
+        max_states: cli.max_bfs_states,
+    };
+    let budget = Duration::from_secs(cli.time_budget_secs);
+    match generate_single(&task, cli.max_restarts, budget, Some(cli.seed), cli.restart) {
+        Some((mut level, restarts, elapsed)) => {
+            level.updated_at = 0;
+            let restart = restarts - 1;
+            eprintln!("  id={} {}x{} {} coups, restart {}, {:.2?}", level.id, gs, gs, level.min_moves, restart, elapsed);
+            println!(
+                "{{\"seed\":{},\"restart\":{},\"level\":{}}}",
+                cli.seed, restart, serde_json::to_string(&level).unwrap()
+            );
+        }
+        None => {
+            eprintln!("  id={} : échec", cli.id);
+            std::process::exit(1);
+        }
+    }
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -533,6 +617,11 @@ fn main() {
         std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4)
     };
     rayon::ThreadPoolBuilder::new().num_threads(num_threads).build_global().unwrap();
+
+    if let Some(gs) = cli.grid {
+        main_single(&cli, gs);
+        return;
+    }
 
     println!("╔══════════════════════════════════════════════════════╗");
     println!("║  Rush Hour Gen v2 — {} threads, bfs_states={}", num_threads, cli.max_bfs_states);
@@ -596,7 +685,7 @@ fn main() {
     let results: Vec<Option<(Level, u32, Duration)>> = tasks
         .iter()
         .map(|task| {
-            let res  = generate_single(task, cli.max_restarts, budget);
+            let res  = generate_single(task, cli.max_restarts, budget, None, None);
             let done = done_counter.fetch_add(1, Ordering::Relaxed) + 1;
             match &res {
                 Some((level, restarts, elapsed)) => println!(

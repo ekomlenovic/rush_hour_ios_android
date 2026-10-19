@@ -3,12 +3,29 @@ import { sampleLevels } from './sampleLevels';
 import { computeDayRuns, getLocalDateString, parseLocalDateString } from '../utils/date';
 import type { IoniconName } from '../utils/icons';
 import { countArchiveWins, countCompleteArchiveMonths } from '../utils/archives';
+import { ZONE_SIZE } from '../components/map/zones';
 const HOUR_MS = 60 * 60 * 1000;
 
 /** Minimum moves from which a map level counts as hard for the "hard perfect" achievements */
 export const HARD_LEVEL_MIN_MOVES = 30;
 
 const MAP_MIN_MOVES = new Map(sampleLevels.map(l => [l.id, l.minMoves]));
+
+/** Full zones of the map (ZONE_SIZE levels): a zone still growing at the end of the campaign does not count yet */
+const FULL_ZONES = Math.floor(sampleLevels.length / ZONE_SIZE);
+
+/** Full zones of the map with every level won with 3 stars */
+function countPerfectZones(progress: LevelProgress[]): number {
+  const perfect = new Set(progress.filter(p => p.completed && p.stars === 3).map(p => p.levelId));
+  let zones = 0;
+  for (let zone = 0; zone < FULL_ZONES; zone++) {
+    const first = zone * ZONE_SIZE + 1;
+    let all = true;
+    for (let id = first; id < first + ZONE_SIZE && all; id++) all = perfect.has(id);
+    if (all) zones++;
+  }
+  return zones;
+}
 
 export type AchievementCategory = 'progress' | 'mastery' | 'purity' | 'speed' | 'daily' | 'streak' | 'creator' | 'secret';
 
@@ -47,6 +64,8 @@ export interface AchievementContext {
   perfectLevels: number;
   /** Distinct map levels of HARD_LEVEL_MIN_MOVES+ minimum moves won with 3 stars */
   hardPerfectLevels: number;
+  /** Full zones of the map with every level won with 3 stars */
+  perfectZones: number;
   noHintLevels: number;
   noHelpLevels: number;
   dailies: number;
@@ -88,6 +107,7 @@ export function buildAchievementContext(s: AchievementSource): AchievementContex
     completedLevels: completed.length,
     perfectLevels: completed.filter(p => p.stars === 3).length,
     hardPerfectLevels: completed.filter(p => p.stars === 3 && (MAP_MIN_MOVES.get(p.levelId) ?? 0) >= HARD_LEVEL_MIN_MOVES).length,
+    perfectZones: countPerfectZones(s.progress),
     noHintLevels: completed.filter(p => p.noHint).length,
     noHelpLevels: completed.filter(p => p.noHelp).length,
     dailies: dailyEntries.length,
@@ -123,6 +143,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'veteran', icon: 'ribbon', category: 'progress', target: 100, value: c => c.completedLevels },
   { id: 'levels_250', icon: 'trophy', category: 'progress', target: 250, value: c => c.completedLevels },
   { id: 'levels_500', icon: 'podium', category: 'progress', target: 500, value: c => c.completedLevels },
+  { id: 'levels_700', icon: 'rocket', category: 'progress', target: 700, value: c => c.completedLevels },
   { id: 'moves_1000', icon: 'footsteps', category: 'progress', target: 1000, value: c => c.stats.totalMoves },
   { id: 'moves_10000', icon: 'footsteps', iconCount: 2, category: 'progress', target: 10000, value: c => c.stats.totalMoves },
   { id: 'play_10h', icon: 'hourglass', category: 'progress', target: 10, value: c => Math.floor(c.stats.totalPlayTimeMs / HOUR_MS) },
@@ -131,6 +152,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'perfectionist', icon: 'star', category: 'mastery', target: 10, value: c => c.perfectLevels },
   { id: 'perfect_50', icon: 'star', iconCount: 2, category: 'mastery', target: 50, value: c => c.perfectLevels },
   { id: 'perfect_100', icon: 'star', iconCount: 3, category: 'mastery', target: 100, value: c => c.perfectLevels },
+  { id: 'perfect_250', icon: 'planet', category: 'mastery', target: 250, value: c => c.perfectLevels },
+  { id: 'perfect_500', icon: 'planet', iconCount: 2, category: 'mastery', target: 500, value: c => c.perfectLevels },
   { id: 'master_driver', icon: 'bulb', category: 'mastery', target: 40, value: c => c.stats.hardestWinMoves },
   { id: 'big_grid', icon: 'map', category: 'mastery', target: 1, value: c => c.stats.winsByGridSize['8'] || 0 },
   { id: 'grid_explorer', icon: 'compass', category: 'mastery', target: 3, value: c => ['6', '7', '8'].filter(g => (c.stats.winsByGridSize[g] || 0) > 0).length },
@@ -146,6 +169,12 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'optimal_60', icon: 'telescope', category: 'mastery', target: 60, value: c => c.stats.hardestPerfectMoves },
   { id: 'optimal_hard_10', icon: 'cube', category: 'mastery', target: 10, value: c => c.hardPerfectLevels },
   { id: 'optimal_hard_25', icon: 'cube', iconCount: 2, category: 'mastery', target: 25, value: c => c.hardPerfectLevels },
+  { id: 'optimal_hard_50', icon: 'cube', iconCount: 3, category: 'mastery', target: 50, value: c => c.hardPerfectLevels },
+  { id: 'optimal_hard_100', icon: 'layers', category: 'mastery', target: 100, value: c => c.hardPerfectLevels },
+  // Zones of the map with every level won with 3 stars
+  { id: 'zone_perfect_1', icon: 'navigate', category: 'mastery', target: 1, value: c => c.perfectZones },
+  { id: 'zone_perfect_10', icon: 'navigate', iconCount: 2, category: 'mastery', target: 10, value: c => c.perfectZones },
+  { id: 'zone_perfect_25', icon: 'navigate', iconCount: 3, category: 'mastery', target: 25, value: c => c.perfectZones },
 
   // Purity (map and custom levels only: the daily never has hints)
   { id: 'clean_run', icon: 'locate', category: 'purity', target: 1, value: c => c.noHelpLevels },
