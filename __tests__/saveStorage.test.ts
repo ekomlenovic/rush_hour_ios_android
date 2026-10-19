@@ -230,3 +230,113 @@ describe('the grouped device storage', () => {
     expect(AsyncStorage.setItem).not.toHaveBeenCalled();
   });
 });
+
+describe('the map and the archive days, in their own entries', () => {
+  const GENERATED_KEY = `${KEY}:generatedLevels`;
+  const ARCHIVES_KEY = `${KEY}:archiveLevels`;
+  const { sampleLevels } = require('../data/sampleLevels');
+  const generatedLevels = [0, 1].map(i => ({ ...sampleLevels[30 + i], id: sampleLevels.length + 1 + i }));
+  const archiveLevels = { '2026-10-09': { ...sampleLevels[3], id: 900003 } };
+  // Written by 2.0.2 and before: everything in one entry
+  const oneEntry = {
+    state: {
+      progress: [{ levelId: 1, completed: true, bestScore: 300, stars: 3 }],
+      maxUnlockedLevel: sampleLevels.length + 2,
+      xp: 500,
+      generatedLevels,
+      archiveLevels,
+      archiveProgress: { '2026-10-09': { completed: true, score: 1200, stars: 3, moves: 12, minMoves: 12 } },
+    },
+    version: 6,
+  };
+  const entry = async (key: string) => JSON.parse((await AsyncStorage.getItem(key))!);
+  const writtenKeys = () => (AsyncStorage.multiSet as jest.Mock).mock.calls.map(([pairs]) => pairs.map(([key]: [string]) => key));
+  async function launched() {
+    const store = launch();
+    await flush();
+    await settle();
+    return store;
+  }
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    await AsyncStorage.setItem(KEY, JSON.stringify(oneEntry));
+    jest.clearAllMocks();
+  });
+
+  it('a save in one entry loads whole, then is split, and loads the same', async () => {
+    let store = await launched();
+    expect(store.getState().generatedLevels).toEqual(generatedLevels);
+    expect(store.getState().archiveLevels).toEqual(archiveLevels);
+    expect(store.getState().maxUnlockedLevel).toBe(sampleLevels.length + 2);
+
+    const main = await entry(KEY);
+    expect(main.state).not.toHaveProperty('generatedLevels');
+    expect(main.state).not.toHaveProperty('archiveLevels');
+    expect(main.state.progress).toEqual(oneEntry.state.progress);
+    expect(await entry(GENERATED_KEY)).toEqual(generatedLevels);
+    expect(await entry(ARCHIVES_KEY)).toEqual(archiveLevels);
+
+    store = await launched();
+    expect(store.getState().generatedLevels).toEqual(generatedLevels);
+    expect(store.getState().archiveLevels).toEqual(archiveLevels);
+    expect(store.getState().progress).toEqual(oneEntry.state.progress);
+    expect(store.getState().xp).toBeGreaterThanOrEqual(500);
+  });
+
+  it('are not written again by moves', async () => {
+    await launched();
+    const store = await launched();
+    (AsyncStorage.multiSet as jest.Mock).mockClear();
+    const level = sampleLevels[20];
+    const v = level.vehicles.find((x: { isTarget: boolean }) => !x.isTarget);
+    store.getState().loadLevel(level);
+    for (let i = 0; i < 5; i++) store.getState().moveVehicle(v.id, v.row, v.col);
+    await settle();
+    expect(writtenKeys()).toEqual([[KEY]]);
+  });
+
+  it('a new map level is written with the rest, in the same call, before it', async () => {
+    const store = await launched();
+    (AsyncStorage.multiSet as jest.Mock).mockClear();
+    const level = { ...sampleLevels[32], id: sampleLevels.length + 3 };
+    store.getState().addGeneratedLevel(level);
+    await settle();
+    expect(writtenKeys()).toEqual([[GENERATED_KEY, KEY]]);
+    expect(await entry(GENERATED_KEY)).toEqual([...generatedLevels, level]);
+
+    const relaunched = await launched();
+    expect(relaunched.getState().generatedLevels).toEqual([...generatedLevels, level]);
+  });
+
+  it('the main entry wins when it still has them (written by an older version since)', async () => {
+    await launched();
+    // An older version, installed back, wrote everything in one entry, with one more map level
+    const older = { ...oneEntry, state: { ...oneEntry.state, generatedLevels: [...generatedLevels, { ...sampleLevels[32], id: sampleLevels.length + 3 }] } };
+    await AsyncStorage.setItem(KEY, JSON.stringify(older));
+    const store = await launched();
+    expect(store.getState().generatedLevels).toEqual(older.state.generatedLevels);
+    expect(await entry(GENERATED_KEY)).toEqual(older.state.generatedLevels);
+    expect((await entry(KEY)).state).not.toHaveProperty('generatedLevels');
+  });
+
+  it('are emptied by a reset, and still in the export', async () => {
+    let store!: typeof UseGameStore;
+    let exportProgress!: typeof import('../utils/saveTransfer').exportProgress;
+    let decodeSave!: typeof import('../utils/saveTransfer').decodeSave;
+    jest.isolateModules(() => {
+      store = require('../store/gameStore').useGameStore;
+      ({ exportProgress, decodeSave } = require('../utils/saveTransfer'));
+    });
+    await flush();
+    await settle();
+    const exported = decodeSave(exportProgress()) as { state: Record<string, unknown> };
+    expect(exported.state.generatedLevels).toEqual(generatedLevels);
+    expect(exported.state.archiveLevels).toEqual(archiveLevels);
+
+    store.getState().hardReset();
+    await settle();
+    expect(await entry(GENERATED_KEY)).toEqual([]);
+    expect(await entry(ARCHIVES_KEY)).toEqual({});
+  });
+});
