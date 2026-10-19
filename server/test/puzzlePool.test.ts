@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { openDatabase } from '../src/db';
+import { createHash } from 'node:crypto';
+import { openDatabase, setSetting } from '../src/db';
 import { GIVE_UP_MS, POOL_SIZES, PuzzlePool, VARIANTS_PER_LEVEL } from '../src/puzzlePool';
 import { generateVariants, type PuzzleGenerator } from '../src/generation';
 import { DIFFICULTY_LEVELS, sampleLevels, variantSources } from '../src/core';
@@ -67,18 +68,60 @@ describe('puzzles of the duels', () => {
     expect(looks.size).toBeGreaterThan(1);
   });
 
-  it('the catalog is kept, prepared again only when the levels change; a restart goes on', async () => {
+  it('the catalog is kept, a level that leaves loses its variants; a restart goes on', async () => {
     const db = openDatabase(':memory:');
     await new PuzzlePool({ db, generator: fakeGenerator().generator, sizes: SMALL, variantsPerLevel: PER_LEVEL, levels: LEVELS }).start();
     const again = fakeGenerator();
     await new PuzzlePool({ db, generator: again.generator, sizes: SMALL, variantsPerLevel: PER_LEVEL, levels: LEVELS }).start();
     expect(again.calls).toEqual([]);
-    // The master levels changed: that catalog is prepared again, the expert one stays
+    // A master level left: only its variants go, the others stay
     const other = fakeGenerator();
     const p = new PuzzlePool({ db, generator: other.generator, sizes: SMALL, variantsPerLevel: PER_LEVEL, levels: LEVELS.slice(1) });
     await p.start();
-    expect(other.calls.filter(c => c.kind === 'variants')).toEqual([{ seed: `variants:${LEVELS[1].id}`, difficulty: 'MASTER', kind: 'variants' }]);
+    expect(other.calls.filter(c => c.kind === 'variants')).toEqual([]);
     expect(p.catalogSize()).toEqual({ EXPERT: 6, MASTER: 3 });
+  });
+
+  it('levels added at the end of the campaign: only their variants are prepared, the marks stay', async () => {
+    const db = openDatabase(':memory:');
+    await new PuzzlePool({ db, generator: fakeGenerator().generator, sizes: SMALL, variantsPerLevel: PER_LEVEL, levels: LEVELS.slice(0, 1) }).start();
+    db.prepare('UPDATE duel_variants SET used_at = 1').run();
+    const more = fakeGenerator();
+    const p = new PuzzlePool({ db, generator: more.generator, sizes: SMALL, variantsPerLevel: PER_LEVEL, levels: LEVELS });
+    await p.start();
+    expect(more.calls.filter(c => c.kind === 'variants').map(c => c.seed).sort())
+      .toEqual(LEVELS.slice(1).map(l => `variants:${l.id}`).sort());
+    expect(db.prepare('SELECT COUNT(*) AS n FROM duel_variants WHERE used_at = 1').get()).toEqual({ n: 3 });
+  });
+
+  it('a level that changes, or a new way of making variants: prepared again', async () => {
+    const db = openDatabase(':memory:');
+    await new PuzzlePool({ db, generator: fakeGenerator().generator, sizes: SMALL, variantsPerLevel: PER_LEVEL, levels: LEVELS }).start();
+    const changed = [{ ...LEVELS[0], minMoves: LEVELS[0].minMoves + 1 }, ...LEVELS.slice(1)];
+    const other = fakeGenerator();
+    await new PuzzlePool({ db, generator: other.generator, sizes: SMALL, variantsPerLevel: PER_LEVEL, levels: changed }).start();
+    expect(other.calls.filter(c => c.kind === 'variants').map(c => c.seed)).toEqual([`variants:${LEVELS[0].id}`]);
+    const fewer = fakeGenerator();
+    await new PuzzlePool({ db, generator: fewer.generator, sizes: SMALL, variantsPerLevel: { ...PER_LEVEL, MASTER: 2 }, levels: changed }).start();
+    expect(fewer.calls.filter(c => c.kind === 'variants' && c.difficulty === 'MASTER')).toHaveLength(2);
+  });
+
+  it('a catalog of the previous version (a hash of all its levels) is kept', async () => {
+    const db = openDatabase(':memory:');
+    await new PuzzlePool({ db, generator: fakeGenerator().generator, sizes: SMALL, variantsPerLevel: PER_LEVEL, levels: LEVELS }).start();
+    // The setting as the previous version wrote it
+    for (const [difficulty, perLevel] of Object.entries(PER_LEVEL)) {
+      const sources = variantSources(LEVELS, DIFFICULTY_LEVELS[difficulty]);
+      const hash = createHash('sha256')
+        .update(JSON.stringify([1, perLevel, sources.map(l => [l.id, l.minMoves, l.vehicles.length])]))
+        .digest('hex');
+      setSetting(db, `duel_variants_${difficulty}`, hash);
+    }
+    const again = fakeGenerator();
+    const p = new PuzzlePool({ db, generator: again.generator, sizes: SMALL, variantsPerLevel: PER_LEVEL, levels: LEVELS });
+    await p.start();
+    expect(again.calls.filter(c => c.kind === 'variants')).toEqual([]);
+    expect(p.catalogSize()).toEqual({ EXPERT: 6, MASTER: 6 });
   });
 
   it('a duel takes a puzzle at once, and the pool fills up again', async () => {
