@@ -10,6 +10,11 @@ on:
         required: false
         type: boolean
         default: false
+      create_release:
+        description: 'Publish the release and update sources even outside main?'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   prepare:
@@ -130,9 +135,14 @@ jobs:
 
   release:
     name: Create Release
-    needs: [prepare, build-ios] # Android is optional, so we don't 'need' it to start release logic
-    # A run on another branch only builds: no release, no update sources pointing to it
-    if: github.ref == 'refs/heads/main'
+    # Waits for Android so the APK is in the release; Android skipped is fine, failed is not
+    needs: [prepare, build-ios, build-android]
+    # A run on another branch only builds, unless create_release is checked
+    if: >-
+      always()
+      && needs.build-ios.result == 'success'
+      && (needs.build-android.result == 'success' || needs.build-android.result == 'skipped')
+      && (github.ref == 'refs/heads/main' || inputs.create_release)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -164,6 +174,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.prepare.outputs.version }}-b${{ github.run_number }}
+          # Tag the built commit, not the default branch head
+          target_commitish: ${{ github.sha }}
           name: Rush Hours v${{ needs.prepare.outputs.version }} (Build ${{ github.run_number }})
           body: |
             ## Release v${{ needs.prepare.outputs.version }}
@@ -215,7 +227,11 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add sidestore-source.json
-          git commit -m "chore: update update sources for ${VERSION} [skip ci]"
-          git push
+          git diff --cached --quiet || git commit -m "chore: update update sources for ${VERSION} [skip ci]"
+          # The branch may have moved since the build started (a merge, or a re-run, which
+          # checks out the original commit): replay the sources commit on its current head.
+          # On a conflict (another sources commit), this build's values win.
+          git pull --rebase -X theirs origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { sampleLevels } from '../data/sampleLevels';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
@@ -22,6 +21,8 @@ import {
 } from '../data/cosmetics';
 import { emptyAttempt, initialStats, withWinStats, mergeChallengeResult } from './stats';
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from './migrations';
+import { compactSavedStates, savedHistory } from './savedStates';
+import { createGuardedStorage } from './guardedStorage';
 import { DAILY_LEVEL_ID, WEEKLY_LEVEL_ID, ARCHIVE_LEVEL_ID } from './levelIds';
 
 export type * from './types';
@@ -87,6 +88,8 @@ interface GameState {
   weeklyLevelKey: string | null;
   /** Archive levels already generated, keyed by date: the puzzle of a day never changes once played */
   archiveLevels: Record<string, Level>;
+  /** The save could not be read back: nothing is written until the next launch (not persisted) */
+  saveLoadFailed: boolean;
   /** Date of the archive being played (not persisted) */
   archiveDate: string | null;
   generationState: GenerationState;
@@ -210,6 +213,8 @@ export function isSaveForLevel(level: Pick<Level, 'vehicles'>, saved: Pick<Level
   });
 }
 
+const saveStorage = createGuardedStorage();
+
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => {
@@ -227,7 +232,7 @@ export const useGameStore = create<GameState>()(
             [levelKey]: {
               vehicles: next.vehicles.map(v => ({ ...v })),
               moveCount: next.moveCount,
-              history: next.history.map(h => h.map(v => ({ ...v }))),
+              history: savedHistory(levelKey, next.history).map(h => h.map(v => ({ ...v }))),
               attempt: { ...next.currentAttempt },
               moveLog: next.moveLog.map(m => ({ ...m })),
               startedAt: next.attemptStartedAt,
@@ -306,6 +311,7 @@ export const useGameStore = create<GameState>()(
       weeklyLevelKey: null,
       archiveLevels: {},
       archiveDate: null,
+      saveLoadFailed: false,
       savedStates: {},
       isMusicEnabled: true,
       isHapticsEnabled: true,
@@ -655,6 +661,8 @@ export const useGameStore = create<GameState>()(
         set({
           lastOpenDate: today,
           stats: { ...stats, longestAbsenceDays: Math.max(stats.longestAbsenceDays, missedDays) },
+          // Keeps the save small: capped undo stacks, past challenges cleared
+          savedStates: compactSavedStates(get().savedStates),
         });
         const { patch, frozenDays, lostStreak } = settleStreak(get(), today);
         set(patch);
@@ -831,7 +839,7 @@ export const useGameStore = create<GameState>()(
     },
     {
       name: 'rush-hour-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => saveStorage.storage),
       version: STORE_VERSION,
       migrate: (persistedState, version) => migrateState(persistedState, version) as unknown as GameState,
       // Relocate generated levels if the official pack grew, and deep-merge stats
@@ -847,8 +855,17 @@ export const useGameStore = create<GameState>()(
         return { ...merged, cosmetics: sanitizeSelection(merged.cosmetics, buildCosmeticContext(merged)) };
       },
       // Unlock achievements already earned (e.g. new ones after an update) without a toast flood
-      onRehydrateStorage: () => (state) => {
-        state?.checkAchievements({ silent: true });
+      onRehydrateStorage: () => (state, error) => {
+        if (error || !state) {
+          // Starting empty would overwrite the save at the first write: keep writes held
+          console.warn('[gameStore] save not loaded, writes held until the next launch', error);
+          useGameStore.setState({ saveLoadFailed: true });
+          return;
+        }
+        saveStorage.allowWrites();
+        state.checkAchievements({ silent: true });
+        // Writes the loaded state (migrated if needed) now that writes are allowed
+        useGameStore.setState({});
       },
       partialize: (state) => ({
         progress: state.progress,
@@ -891,3 +908,14 @@ export const useGameStore = create<GameState>()(
     }
   )
 );
+
+/** Resolves once the save is loaded from the device storage (never if it could not be read) */
+export function whenSaveLoaded(): Promise<void> {
+  if (useGameStore.persist.hasHydrated()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const unsubscribe = useGameStore.persist.onFinishHydration(() => {
+      unsubscribe();
+      resolve();
+    });
+  });
+}

@@ -1,4 +1,4 @@
-import { useGameStore, Level, ARCHIVE_LEVEL_ID } from '@/store/gameStore';
+import { useGameStore, Level, ARCHIVE_LEVEL_ID, whenSaveLoaded } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
 import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel } from '@/utils/generator';
 import { generateWeeklyLevel } from '@/utils/weekly';
@@ -10,17 +10,6 @@ export interface GameRouteParams {
   date?: string;
   week?: string;
   data?: string;
-}
-
-/** Resolves once the saved state is loaded from the device storage */
-function waitForHydration(): Promise<void> {
-  if (useGameStore.persist.hasHydrated()) return Promise.resolve();
-  return new Promise((resolve) => {
-    const unsubscribe = useGameStore.persist.onFinishHydration(() => {
-      unsubscribe();
-      resolve();
-    });
-  });
 }
 
 /**
@@ -55,7 +44,7 @@ export async function resolveArchiveLevel(dateKey: string): Promise<Level | null
 export async function resolveLevel(params: GameRouteParams): Promise<Level | null> {
   // Opened right at launch (deep link, notification), the cached daily / weekly level
   // may not be loaded yet: regenerating it could give another puzzle than the saved game
-  await waitForHydration();
+  await whenSaveLoaded();
 
   const { levelId: idParam, date: dateParam, week: weekParam, data: dataParamInUrl } = params;
   const id = Number(idParam);
