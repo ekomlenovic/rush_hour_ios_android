@@ -109,6 +109,24 @@ export interface AdminReport {
 
 export type Difficulty = 'EASY' | 'NORMAL' | 'HARD' | 'EXPERT' | 'MASTER';
 
+/** The duel puzzles ready ahead on the server (server/src/puzzlePool.ts) */
+export interface AdminPuzzles {
+  difficulties: {
+    difficulty: Difficulty;
+    /** Puzzles from scratch kept ready, and how many are */
+    size: number;
+    ready: number;
+    /** Variants of the catalog, and the ones not played yet; null without a catalog */
+    catalog: { total: number; fresh: number } | null;
+    /** Left aside after a generation too long, until then */
+    asideUntil: number | null;
+  }[];
+  /** Being generated now; null when all is ready */
+  working: { difficulty: Difficulty; kind: 'scratch' | 'catalog'; since: number } | null;
+  /** The puzzles from scratch, in the order the duels take them */
+  puzzles: { id: number; difficulty: Difficulty; createdAt: number; level: Level }[];
+}
+
 export interface Thresholds {
   minMsPerMove: number;
   copyMinMoves: number;
@@ -278,6 +296,7 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
         call<AdminSettings>('PATCH', '/admin/settings', patch),
       resetSettings: () => call<AdminSettings>('POST', '/admin/settings/reset'),
       reset: (request: ResetRequest) => call<ResetResult>('POST', '/admin/reset', request),
+      puzzles: () => call<AdminPuzzles>('GET', '/admin/puzzles'),
     },
   };
 }

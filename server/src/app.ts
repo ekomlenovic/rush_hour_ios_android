@@ -736,6 +736,9 @@ export function buildApp(deps: AppDeps) {
           return { dryRun, ...count };
         });
 
+        // The duel puzzles ready ahead, and the one being generated
+        admin.get('/admin/puzzles', async () => puzzles.overview());
+
         // A leaked invitation: a new code, the old links stop working
         admin.post('/admin/invite', async () => {
           const code = newInviteCode();
