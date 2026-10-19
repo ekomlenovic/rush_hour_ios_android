@@ -259,7 +259,7 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 | Semaine (ISO), mois et entre deux dates : **points** par jour, 10, 8, 6, 5, 4, 3, 2 puis 1 par victoire, 0 sinon | `RANK_POINTS`, `rankPeriod` |
 | Semaine : chaque joueur a ses **7 cases du lundi au dimanche** (points du jour, « – » pas joué, « … » en cours, « · » à venir) qui se remplissent au fil des défis | `days` de `rankPeriod`, `weekCells` (`utils/multi/week.ts`), `Leaderboard` |
 | Période **terminée** (semaine ou mois passé, dates passées) : classement final, **médailles** 🥇🥈🥉 et **ta place** (défis et duels) | `isPeriodOver`, `final` (`Leaderboard`, `DuelLeaderboard`) |
-| Du lundi au mercredi (jours du défi en cours), un **bandeau** « Semaine dernière terminée » (vainqueur, ta place) ouvre son classement final, d'où « ↩ Cette semaine » ramène : pas de doublon du classement | `showsWeekRecap`, `WeekRecap` |
+| Du lundi au mercredi (jours du défi en cours pour les défis, jours de fin des duels pour les duels), pour les défis **comme pour les duels**, un **bandeau** « Semaine dernière terminée » (vainqueur, ta place) ouvre son classement final, d'où « ↩ Cette semaine » ramène : pas de doublon du classement | `showsWeekRecap`, `WeekRecap` |
 | **Deux dates** (dans n'importe quel ordre, bornes comprises) : seulement sur un serveur qui l'annonce (`features: ['ranking_range']` dans `/info`) ; sinon « Dates » explique que le serveur doit être mis à jour ; semaines et mois passés marchent partout | `rankingSpan` (`server/src/app.ts`), `FEATURES` |
 | Scores gardés pour toujours ; **coups** effacés après `REPLAY_RETENTION_DAYS` | `Challenges.purgeReplays` |
 

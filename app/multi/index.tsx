@@ -373,14 +373,16 @@ export default function MultiplayerScreen() {
             ))}
           </View>
           {/* Last week is over: a word on it in the first days, opening its final ranking */}
-          {rankingKind === 'challenges' && weeklyView.mode === 'week' && weeklyView.offset === 0 && today && showsWeekRecap(today.date) && (
+          {/* For the challenges, once the server says which one is being played */}
+          {weeklyView.mode === 'week' && weeklyView.offset === 0 && (rankingKind === 'duels' || today) && showsWeekRecap(serverToday) && (
             <WeekRecap
               api={api}
               colors={colors}
               myPlayerId={account.playerId}
               refreshKey={refreshKey}
               blocked={blocked}
-              currentDate={today.date}
+              kind={rankingKind}
+              currentDate={serverToday}
               onOpen={() => setRankingView(v => ({ ...v, mode: 'week', offset: -1 }))}
             />
           )}
