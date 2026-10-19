@@ -31,6 +31,14 @@ export interface SolverResult {
 export const MAX_VALIDATE_STATES = 1_000_000;
 
 /**
+ * Most positions the generator lets the solver go through for one board (a few hundred MB
+ * at worst): a board over it is dropped as if unsolvable. Some 7×7 boards have a huge
+ * number of positions, and their search used to take all the memory of the server.
+ * The former solver ran out of memory well before this (~4.5 million), so no puzzle it made changes.
+ */
+export const GENERATOR_MAX_STATES = 8_000_000;
+
+/**
  * High-performance BFS Solver.
  * Finds the shortest sequence of moves to solve the puzzle.
  * The search order is part of the game: the generator (daily levels, server puzzles)

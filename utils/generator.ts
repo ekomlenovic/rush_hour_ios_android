@@ -1,6 +1,6 @@
 import type { Vehicle, Level } from '../store/types';
 import { DAILY_LEVEL_ID } from '../store/levelIds';
-import { solvePuzzle } from './solver';
+import { GENERATOR_MAX_STATES, solvePuzzle } from './solver';
 import { parseLocalDateString } from './date';
 import { GENERATOR_VEHICLE_COLORS, TARGET_CAR_COLOR } from '../theme/board';
 
@@ -247,7 +247,7 @@ export function generateScrambledLevel(id: number, config: DifficultyConfig, ret
   }
 
   // 4. Validate and get minMoves
-  const solveResult = solvePuzzle(vehicles, gridSize, exitRow, exitCol, 200);
+  const solveResult = solvePuzzle(vehicles, gridSize, exitRow, exitCol, 200, GENERATOR_MAX_STATES);
 
   if (solveResult.solvable && solveResult.minMoves >= (minMovesRequired / 2)) {
     return {
@@ -427,7 +427,7 @@ export function generateLevel(id: number, config: DifficultyConfig): Level | nul
     }
 
     // ── 4. optimized solver – exact minimum move count ─────────────────────────────
-    const moves = solvePuzzle(vehicles, gridSize, exitRow, exitCol, bfsLimit).minMoves;
+    const moves = solvePuzzle(vehicles, gridSize, exitRow, exitCol, bfsLimit, GENERATOR_MAX_STATES).minMoves;
 
     if (moves >= minMovesRequired && moves <= maxMovesRequired) {
       return {
