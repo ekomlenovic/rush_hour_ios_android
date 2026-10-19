@@ -62,6 +62,10 @@ export default function WinModal({
     if (selectCosmetic(kind, id)) markCosmeticsSeen([`${kind}:${id}`]);
   };
   const title = isOptimal ? t('game.perfect') : t('game.level_complete');
+  // One line that says what the moves mean, rather than numbers the stats bar already shows
+  const movesLine = isOptimal
+    ? t('game.win_moves_optimal', { count: moveCount })
+    : t('game.win_moves', { count: moveCount, best: minMoves });
   const { width, height } = useWindowDimensions();
   const xpAfter = xpGain ? getLevelInfo(xpGain.to) : null;
   const xpBefore = xpGain ? getLevelInfo(xpGain.from) : null;
@@ -73,7 +77,7 @@ export default function WinModal({
     AccessibilityInfo.announceForAccessibility(t('a11y.win', {
       title,
       stars,
-      stats: t('game.win_stats', { moves: moveCount, best: minMoves, score }),
+      stats: movesLine,
     }));
     for (const level of levelUps) AccessibilityInfo.announceForAccessibility(t('progression.level_up', { level }));
   }, [visible]);
@@ -91,18 +95,22 @@ export default function WinModal({
             ))}
           </View>
           <Text style={[styles.winTitle, { color: colors.primaryText }]} accessibilityRole="header">{title}</Text>
-          <Text style={[styles.winScore, { color: colors.text }]}>
-            {t('game.win_stats', { moves: moveCount, best: minMoves, score: score })}
-          </Text>
-          {!isOptimal && (
-            <Text style={[styles.notOptimal, { color: colors.warning }]}>
-              {t('solution.not_optimal', { best: minMoves, moves: moveCount })}
-            </Text>
-          )}
-          {timeMs !== null && timeMs > 0 && (
-            <IconText icon="time-outline" color={colors.textMuted} style={styles.winTime} textStyle={styles.winTimeText}>
-              {formatDuration(timeMs)}
-            </IconText>
+          <View style={[styles.movesRow, onRetry && !isOptimal ? styles.movesRowTight : null]}>
+            <Text style={[styles.winScore, { color: isOptimal ? colors.success : colors.text }]}>{movesLine}</Text>
+            {timeMs !== null && timeMs > 0 && (
+              <IconText icon="time-outline" color={colors.textMuted} textStyle={styles.winTimeText}>
+                {formatDuration(timeMs)}
+              </IconText>
+            )}
+          </View>
+          {onRetry && !isOptimal && (
+            <Pressable
+              style={[styles.smallButton, styles.retryButton, { backgroundColor: colors.card }]}
+              onPress={onRetry}
+              accessibilityRole="button"
+            >
+              <IconText icon="refresh" color={colors.primaryText} textStyle={styles.smallButtonText}>{t('solution.retry')}</IconText>
+            </Pressable>
           )}
           {xpAfter && xpBefore && gained > 0 && (
             <View style={styles.xpBlock} accessible accessibilityLabel={`${t('progression.xp_gain', { xp: gained })}, ${t('progression.player_level_short', { level: xpAfter.level })}, ${t('progression.xp_to_next', { xp: xpAfter.xpForNext - xpAfter.xpInLevel, level: xpAfter.level + 1 })}`}>
@@ -186,15 +194,6 @@ export default function WinModal({
                 {t('solution.show')}
               </IconText>
             </Pressable>
-            {onRetry && !isOptimal && (
-              <Pressable
-                style={[styles.smallButton, { backgroundColor: colors.card }]}
-                onPress={onRetry}
-                accessibilityRole="button"
-              >
-                <IconText icon="refresh" color={colors.primaryText} textStyle={styles.smallButtonText}>{t('solution.retry')}</IconText>
-              </Pressable>
-            )}
           </View>
           {canShareResult && (
             <Pressable
@@ -283,23 +282,26 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 8,
   },
-  winScore: {
-    fontSize: 15,
-    fontWeight: '500',
+  movesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    columnGap: 12,
+    rowGap: 4,
     marginBottom: 24,
+  },
+  movesRowTight: { marginBottom: 10 },
+  winScore: {
+    fontSize: 16,
+    fontWeight: '700',
     textAlign: 'center',
   },
+  retryButton: { marginBottom: 24 },
   winShareButton: {
     backgroundColor: 'transparent',
     borderWidth: 2,
     marginBottom: 12,
-  },
-  notOptimal: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: -16,
-    marginBottom: 20,
-    textAlign: 'center',
   },
   solutionRow: {
     flexDirection: 'row',
@@ -316,10 +318,6 @@ const styles = StyleSheet.create({
   smallButtonText: {
     fontSize: 14,
     fontWeight: '700',
-  },
-  winTime: {
-    marginTop: -16,
-    marginBottom: 20,
   },
   winTimeText: {
     fontSize: 14,
