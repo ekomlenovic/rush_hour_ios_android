@@ -12,6 +12,8 @@ on:
       - 'store/levelIds.ts'
       - 'theme/**'
       - 'data/sampleLevels.ts'
+      - 'data/campaignPack.ts'
+      - 'data/levelCodec.ts'
       - '.dockerignore'
       - '.github/workflows/server.yml'
   push:
@@ -23,6 +25,8 @@ on:
       - 'store/levelIds.ts'
       - 'theme/**'
       - 'data/sampleLevels.ts'
+      - 'data/campaignPack.ts'
+      - 'data/levelCodec.ts'
       - '.dockerignore'
       - '.github/workflows/server.yml'
   workflow_dispatch:
