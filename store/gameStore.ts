@@ -16,6 +16,7 @@ import {
   ACHIEVEMENT_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp,
 } from '../data/progression';
 import { isArchiveDateAvailable } from '../utils/archives';
+import { isDailyWinnable, isWeeklyWinnable } from '../utils/challengeDates';
 import {
   CosmeticKind, CosmeticSelection, COSMETICS_BY_KEY, DEFAULT_COSMETICS, buildCosmeticContext, isCosmeticUnlocked, sanitizeSelection,
 } from '../data/cosmetics';
@@ -505,6 +506,8 @@ export const useGameStore = create<GameState>()(
       },
 
       completeDailyChallenge: (dateKey, score, stars, timeMs, details) => {
+        // A day to come (a forged link) would break the streak and the export of the save (issue 119)
+        if (!isDailyWinnable(dateKey)) return;
         const { dailyChallengeProgress, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
         const firstWin = !dailyChallengeProgress[dateKey]?.completed;
         const newSavedStates = { ...savedStates };
@@ -532,6 +535,7 @@ export const useGameStore = create<GameState>()(
       },
 
       completeWeeklyChallenge: (weekKey, score, stars, timeMs, details) => {
+        if (!isWeeklyWinnable(weekKey)) return;
         const { weeklyChallengeProgress, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
         const firstWin = !weeklyChallengeProgress[weekKey]?.completed;
         const newSavedStates = { ...savedStates };
@@ -753,14 +757,19 @@ export const useGameStore = create<GameState>()(
       },
 
       purgeCustomLevels: (baseLevelCount) => {
-        const { progress, maxUnlockedLevel } = get();
+        const { progress, maxUnlockedLevel, savedStates, lastPlayedLevelId } = get();
+        const isGenerated = (id: number) => id > baseLevelCount && id < 900000;
         const cleanedProgress = progress.filter(p => p.levelId <= baseLevelCount);
         const clampedUnlocked = Math.min(maxUnlockedLevel, baseLevelCount + 1);
+        // The games in progress go with the levels, and the map no longer opens on one of them
+        const keptSaves = Object.fromEntries(Object.entries(savedStates).filter(([key]) => !isGenerated(Number(key))));
 
         set({
           generatedLevels: [],
           progress: cleanedProgress,
           maxUnlockedLevel: clampedUnlocked,
+          savedStates: keptSaves,
+          lastPlayedLevelId: lastPlayedLevelId !== null && isGenerated(lastPlayedLevelId) ? null : lastPlayedLevelId,
         });
       },
 

@@ -14,7 +14,9 @@ import { parseLocalDateString } from '@/utils/date';
 import { buildChallengeShareText } from '@/utils/shareResult';
 import { requestReminderPermission } from '@/utils/notifications';
 import { calculateScore, getStars } from '@/utils/scoring';
-import { resolveLevel, GameRouteParams } from '@/utils/levelResolver';
+import { importSharedLevel, resolveLevel, GameRouteParams } from '@/utils/levelResolver';
+import { isArchiveDateAvailable } from '@/utils/archives';
+import { isDailyOpen, isWeeklyOpen } from '@/utils/challengeDates';
 import { useActivePlayTime } from '@/hooks/useActivePlayTime';
 import { describeVehicle, getVehicleLetters, getMoveDirection } from '@/utils/accessibility';
 import { useTheme } from '@/theme';
@@ -130,6 +132,13 @@ export default function GameScreen() {
     }, 400);
   };
 
+  /** A route to a level that can't be played (a broken or outdated link) */
+  const closeUnavailable = () => {
+    Alert.alert(t('common.error'), t('game.load_error'));
+    if (router.canGoBack()) router.back();
+    else router.replace('/');
+  };
+
   // Load the level and compute the real minMoves via BFS
   useEffect(() => {
     setLoading(true);
@@ -140,6 +149,26 @@ export default function GameScreen() {
     cancelGeneration();
 
     const timer = setTimeout(async () => {
+      // A shared link (rush-hours://game?data=…): imported, then opened as an imported level
+      if (params.data && !params.levelId) {
+        const id = await importSharedLevel(params.data);
+        if (id !== null) {
+          router.replace(`/game?levelId=${id}`);
+        } else {
+          Alert.alert(t('common.error'), t('custom_levels.import_error'));
+          // Opened by the link at launch: nothing to go back to
+          if (router.canGoBack()) router.back();
+          else router.replace('/');
+        }
+        return;
+      }
+      // The daily and the weekly open on their own day and week only (issue 119): a past day is an archive
+      if (params.levelId === 'daily' && !isDailyOpen(params.date ?? '')) {
+        if (params.date && isArchiveDateAvailable(params.date)) return router.replace(`/game?levelId=archive&date=${params.date}`);
+        return closeUnavailable();
+      }
+      if (params.levelId === 'weekly' && !isWeeklyOpen(params.week ?? '')) return closeUnavailable();
+
       const level = await resolveLevel(params as GameRouteParams);
 
       if (level) {
@@ -158,7 +187,7 @@ export default function GameScreen() {
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [params.levelId, params.date, params.week, createdLevels, importedLevels]);
+  }, [params.levelId, params.date, params.week, params.data, createdLevels, importedLevels]);
 
   const playTime = useActivePlayTime(!isLoading && !!currentLevel && !won && !isChallengeCompleted);
 

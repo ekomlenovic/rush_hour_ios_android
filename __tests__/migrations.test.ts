@@ -14,8 +14,8 @@ const merge = (persisted: Record<string, unknown>) =>
   options.merge!(persisted, useGameStore.getInitialState());
 
 describe('persisted state', () => {
-  it('is at version 6', () => {
-    expect(options.version).toBe(6);
+  it('is at version 8', () => {
+    expect(options.version).toBe(8);
   });
 
   it('keeps the player data and leaves the in-game state out', () => {
@@ -205,6 +205,99 @@ describe('migrate v5 → v6', () => {
     const merged = merge(migrate({ maxUnlockedLevel: 14, savedStates: { 12: save(120) } }, 5));
     expect(merged.maxUnlockedLevel).toBe(14);
     expect(merged.savedStates[12].history).toHaveLength(MAX_SAVED_UNDOS);
+  });
+});
+
+describe('migrate v6 → v7', () => {
+  const win = { completed: true, score: 1200, stars: 3, moves: 12, minMoves: 12 };
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    setToday('2026-10-20');
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('takes out the challenges won before their day through a link, and rebuilds the streak (#119)', () => {
+    // A 3-day streak, then the daily of 2030 opened by a link: the next real daily restarted the streak at 1
+    const v6 = {
+      dailyChallengeProgress: { '2026-10-17': win, '2026-10-18': win, '2026-10-19': win, '2030-01-01': win, '2026-10-20': win },
+      weeklyChallengeProgress: { '2026-W42': win, '2099-W01': win },
+      currentStreak: 1,
+      bestStreak: 3,
+      lastStreakDate: '2030-01-01',
+      xp: 4000,
+    };
+    const state = migrate(v6, 6);
+    expect(Object.keys(state.dailyChallengeProgress as object).sort()).toEqual(['2026-10-17', '2026-10-18', '2026-10-19', '2026-10-20']);
+    expect(Object.keys(state.weeklyChallengeProgress as object)).toEqual(['2026-W42']);
+    expect(state).toMatchObject({ currentStreak: 4, bestStreak: 4, lastStreakDate: '2026-10-20', xp: 4000 });
+  });
+
+  it('keeps a result of tomorrow, from a save made further east, and a best streak never goes down', () => {
+    const state = migrate({
+      dailyChallengeProgress: { '2026-10-21': win, '2031-05-05': win },
+      currentStreak: 1, bestStreak: 9, lastStreakDate: '2031-05-05',
+    }, 6);
+    expect(Object.keys(state.dailyChallengeProgress as object)).toEqual(['2026-10-21']);
+    expect(state).toMatchObject({ currentStreak: 1, bestStreak: 9, lastStreakDate: '2026-10-21' });
+  });
+
+  it('leaves a save without challenge to come untouched', () => {
+    const v6 = { dailyChallengeProgress: { '2026-10-19': win }, currentStreak: 1, bestStreak: 5, lastStreakDate: '2026-10-19', streakFreezes: 1 };
+    expect(migrate(v6, 6)).toEqual(v6);
+  });
+
+  it('a daily of a day to come is never won again', () => {
+    resetStore();
+    useGameStore.getState().completeDailyChallenge('2030-01-01', 300, 3);
+    useGameStore.getState().completeDailyChallenge('not-a-date', 300, 3);
+    useGameStore.getState().completeWeeklyChallenge('2099-W01', 300, 3);
+    expect(useGameStore.getState()).toMatchObject({ dailyChallengeProgress: {}, weeklyChallengeProgress: {}, currentStreak: 0, xp: 0 });
+    // Yesterday's, from a game left open past midnight, still counts
+    useGameStore.getState().completeDailyChallenge('2026-10-19', 300, 3);
+    expect(useGameStore.getState().currentStreak).toBe(1);
+  });
+});
+
+describe('migrate v7 → v8', () => {
+  const base = sampleLevels.length;
+  const gen = (id: number): Level => ({ ...sampleLevels[0], id });
+
+  it('numbers the generated levels again without the hole a failed generation left (issue 120)', () => {
+    // Level base+3 failed: base+2 won unlocked base+3, which did not exist, and base+4 stayed locked
+    const v7 = {
+      generatedLevels: [gen(base + 1), gen(base + 4), gen(base + 2), gen(base + 5)],
+      progress: [
+        { levelId: 3, completed: true, bestScore: 300, stars: 3 },
+        { levelId: base + 1, completed: true, bestScore: 300, stars: 3 },
+        { levelId: base + 2, completed: true, bestScore: 200, stars: 2 },
+      ],
+      savedStates: { [base + 4]: { vehicles: [], moveCount: 4, history: [] }, 'daily-2026-10-20': { vehicles: [], moveCount: 1, history: [] } },
+      lastPlayedLevelId: base + 4,
+      maxUnlockedLevel: base + 3,
+    };
+    const state = migrate(v7, 7);
+    expect((state.generatedLevels as Level[]).map(l => l.id)).toEqual([base + 1, base + 2, base + 3, base + 4]);
+    expect(state.progress).toEqual(v7.progress);
+    expect(Object.keys(state.savedStates as object).sort()).toEqual([String(base + 3), 'daily-2026-10-20'].sort());
+    expect(state.lastPlayedLevelId).toBe(base + 3);
+    // The old base+4, next to play, is unlocked
+    expect(state.maxUnlockedLevel).toBe(base + 3);
+  });
+
+  it('keeps the unlocking of a player on the pack, or done with every level', () => {
+    const levels = [gen(base + 1), gen(base + 2)];
+    expect(migrate({ generatedLevels: levels, maxUnlockedLevel: 12 }, 7).maxUnlockedLevel).toBe(12);
+    expect(migrate({ generatedLevels: levels, maxUnlockedLevel: base + 3 }, 7).maxUnlockedLevel).toBe(base + 3);
+    expect(migrate({ generatedLevels: [gen(base + 1), gen(base + 3)], maxUnlockedLevel: base + 4 }, 7).maxUnlockedLevel).toBe(base + 3);
+  });
+
+  it('leaves a player without generated levels untouched', () => {
+    const v7 = { progress: [{ levelId: 2, completed: true, bestScore: 300, stars: 3 }], maxUnlockedLevel: 3, generatedLevels: [] };
+    expect(migrate(v7, 7)).toEqual(v7);
   });
 });
 
