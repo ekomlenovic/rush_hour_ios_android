@@ -211,7 +211,7 @@ describe('servers and games of the player', () => {
 });
 
 describe('a multiplayer game on the phone', () => {
-  const { elapsedMs, gameFromStart, playMove, submission } = require('../utils/multi/game') as typeof import('../utils/multi/game');
+  const { elapsedMs, gameFromStart, isWon, playMove, submission, wonResult } = require('../utils/multi/game') as typeof import('../utils/multi/game');
   const { applyMoves } = require('../utils/moveLog') as typeof import('../utils/moveLog');
   const { solvePuzzle } = require('../utils/solver') as typeof import('../utils/solver');
   const level = { ...sampleLevels[0], minMoves: 0 };
@@ -268,6 +268,38 @@ describe('a multiplayer game on the phone', () => {
     expect(resumed.clockOffset).toBe(1000);
     // Another day: the saved game is not this one
     expect(gameFromStart(URL, { ...start, date: '2026-10-17' }, saved, 1_099_000).moveLog).toEqual([]);
+  });
+
+  it('a game won but not sent is resumed won, and takes no more moves (#117)', () => {
+    let game = gameFromStart(URL, start, undefined, 1_000_500);
+    for (const move of solvePuzzle(level.vehicles, level.gridSize, level.exitRow, level.exitCol).moves) {
+      game = playMove(game, move.vehicleId, move.toRow, move.toCol, 1_002_000)!.game;
+    }
+    // The phone closed before the server answered: the saved game comes back as it was
+    const resumed = gameFromStart(URL, { ...start, serverNow: 1_100_000 }, game, 1_100_000);
+    expect(isWon(resumed)).toBe(true);
+    expect(isWon(gameFromStart(URL, start, undefined, 1_000_500))).toBe(false);
+    // A move after the win would make the server refuse the whole game
+    const other = level.vehicles.find(v => !v.isTarget)!;
+    for (const delta of [-2, -1, 1, 2]) {
+      const row = other.orientation === 'vertical' ? resumed.vehicles.find(v => v.id === other.id)!.row + delta : other.row;
+      const col = other.orientation === 'horizontal' ? resumed.vehicles.find(v => v.id === other.id)!.col + delta : other.col;
+      expect(playMove(resumed, other.id, row, col, 1_101_000)).toBeNull();
+    }
+    expect(applyMoves(level, resumed.moveLog)).toMatchObject({ ok: true, won: true });
+  });
+
+  it('a win the server took but whose answer was lost is read back from the day (#117)', () => {
+    const today = {
+      date: '2026-10-16', number: 3, status: 'ready' as const, releasedAt: 0, closesAt: 0, serverNow: 0, pending: null,
+      me: { status: 'won' as const, startedAt: 0, deadline: 0, moves: 12, timeMs: 42_000, minMoves: 10 },
+      results: [{ playerId: 7, pseudo: 'Léa', date: '2026-10-16', status: 'won' as const, rank: 2, moves: 12, timeMs: 42_000, points: 8, attemptId: 1, verdict: null, reasons: [] }],
+    };
+    expect(wonResult(today, '2026-10-16', 7)).toEqual({ status: 'won', moves: 12, timeMs: 42_000, minMoves: 10, rank: 2, points: 8, verdict: null });
+    // Another day, another player, or not won: nothing to show
+    expect(wonResult(today, '2026-10-15', 7)).toBeNull();
+    expect(wonResult(today, '2026-10-16', 8)).toBeNull();
+    expect(wonResult({ ...today, me: { ...today.me, status: 'abandoned' as const } }, '2026-10-16', 7)).toBeNull();
   });
 });
 
