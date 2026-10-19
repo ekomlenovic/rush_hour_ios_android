@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { rankingParams, type DuelLeaderboard as Board, type MultiApi, type RankingQuery } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
 import { multiErrorMessage } from './errors';
-import type { RowPlayer } from './Leaderboard';
+import { MEDALS, type RowPlayer } from './Leaderboard';
 
 interface Props {
   api: MultiApi;
@@ -15,24 +15,29 @@ interface Props {
   /** Players hidden on this phone */
   blocked: number[];
   onRowPress: (player: RowPlayer) => void;
-  /** The ranking shown: week, month, two dates or all time */
-  query: RankingQuery;
+  /** The ranking shown: week, month, two dates or all time; null: none */
+  query: RankingQuery | null;
+  /** Under the title: the choice of the period */
+  header?: ReactNode;
+  /** The period is over: its podium */
+  final?: boolean;
 }
 
 /** Duel rankings of a week, a month, two dates or of all time: wins, then fewer losses */
-export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress, query }: Props) {
+export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress, query, header, final }: Props) {
   const { t } = useTranslation();
-  const params = rankingParams(query);
+  const params = query ? rankingParams(query) : null;
   // The board with the query it answers: an answer to an older query is not shown
   const [board, setBoard] = useState<{ params: string; data: Board } | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    if (!query) return setLoading(false);
     setLoading(true);
     setError(null);
     try {
-      setBoard({ params, data: await api.duelLeaderboard(query) });
+      setBoard({ params: rankingParams(query), data: await api.duelLeaderboard(query) });
     } catch (e) {
       setError(e);
     } finally {
@@ -42,11 +47,12 @@ export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, b
 
   useEffect(() => { void load(); }, [load, refreshKey]);
 
-  const rows = board?.params === params ? board.data.rows.filter(r => !blocked.includes(r.playerId)) : [];
+  const rows = board && board.params === params ? board.data.rows.filter(r => !blocked.includes(r.playerId)) : [];
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('multi.duel.ranking')}</Text>
+      {header}
 
       {rows.length > 0 && (
         <View style={styles.head}>
@@ -65,7 +71,7 @@ export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, b
           <Text style={[styles.retry, { color: colors.primaryText }]}>{t('multi.retry')}</Text>
         </Pressable>
       )}
-      {!loading && !error && rows.length === 0 && (
+      {!loading && !error && !!query && rows.length === 0 && (
         <Text style={[styles.muted, styles.state, { color: colors.textMuted }]}>{t('multi.duel.ranking_empty')}</Text>
       )}
 
@@ -82,7 +88,9 @@ export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, b
               t('multi.duel.record_a11y', { wins: row.wins, losses: row.losses, draws: row.draws }),
             ].filter(Boolean).join(', ')}
           >
-            <Text style={[styles.rank, { color: colors.textMuted }]}>{row.rank}</Text>
+            <Text style={[styles.rank, { color: colors.textMuted }, final && row.rank <= MEDALS.length && styles.medal]}>
+              {final ? MEDALS[row.rank - 1] ?? row.rank : row.rank}
+            </Text>
             <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{row.pseudo}</Text>
             <Text style={[styles.cell, styles.wins, { color: colors.success }]}>{row.wins}</Text>
             <Text style={[styles.cell, { color: colors.danger }]}>{row.losses}</Text>
@@ -143,6 +151,9 @@ const styles = StyleSheet.create({
     paddingVertical: RFValue(9),
     paddingHorizontal: RFValue(8),
     borderRadius: 10,
+  },
+  medal: {
+    fontSize: RFValue(17),
   },
   rank: {
     width: RFValue(24),
