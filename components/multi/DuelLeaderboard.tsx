@@ -19,12 +19,14 @@ interface Props {
   query: RankingQuery | null;
   /** Under the title: the choice of the period */
   header?: ReactNode;
+  /** Next to the title: the kind of period */
+  titleAccessory?: ReactNode;
   /** The period is over: its podium */
   final?: boolean;
 }
 
 /** Duel rankings of a week, a month, two dates or of all time: wins, then fewer losses */
-export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress, query, header, final }: Props) {
+export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress, query, header, titleAccessory, final }: Props) {
   const { t } = useTranslation();
   const params = query ? rankingParams(query) : null;
   // The board with the query it answers: an answer to an older query is not shown
@@ -48,10 +50,14 @@ export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, b
   useEffect(() => { void load(); }, [load, refreshKey]);
 
   const rows = board && board.params === params ? board.data.rows.filter(r => !blocked.includes(r.playerId)) : [];
+  const me = rows.find(r => r.playerId === myPlayerId);
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('multi.duel.ranking')}</Text>
+      <View style={styles.titleRow}>
+        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header" numberOfLines={1}>{t('multi.duel.ranking')}</Text>
+        {titleAccessory}
+      </View>
       {header}
 
       {rows.length > 0 && (
@@ -98,6 +104,13 @@ export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, b
           </Pressable>
         );
       })}
+      {!loading && !error && final && rows.length > 0 && (
+        <Text style={[styles.me, { color: me ? colors.text : colors.textMuted, borderTopColor: colors.border }]}>
+          {me
+            ? t('multi.duel.ranking_me', { rank: me.rank, count: rows.length })
+            : t('multi.duel.ranking_absent')}
+        </Text>
+      )}
     </View>
   );
 }
@@ -109,10 +122,16 @@ const styles = StyleSheet.create({
     padding: RFValue(14),
     marginTop: RFValue(16),
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(8),
+    marginBottom: RFValue(12),
+  },
   title: {
+    flex: 1,
     fontSize: RFValue(17),
     fontWeight: '800',
-    marginBottom: RFValue(10),
   },
   head: {
     flexDirection: 'row',
@@ -151,6 +170,14 @@ const styles = StyleSheet.create({
     paddingVertical: RFValue(9),
     paddingHorizontal: RFValue(8),
     borderRadius: 10,
+  },
+  me: {
+    fontSize: RFValue(14),
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: RFValue(8),
+    paddingTop: RFValue(10),
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   medal: {
     fontSize: RFValue(17),

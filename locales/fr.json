@@ -1124,6 +1124,14 @@
       "dates": "Dates",
       "all": "Tout"
     },
+    "ranking_mode_title": "Classement sur…",
+    "ranking_mode_a11y": "Période : {{mode}}. Changer",
+    "ranking_mode_desc": {
+      "week": "Du lundi au dimanche, cette semaine ou une passée",
+      "month": "Un mois entier, celui-ci ou un passé",
+      "dates": "Choisis le premier et le dernier jour",
+      "all": "Tous les duels depuis le début"
+    },
     "ranking_week_this": "Cette semaine",
     "ranking_week_last": "Semaine dernière",
     "ranking_month_this": "Ce mois-ci",
@@ -1243,6 +1251,8 @@
       "wins_short": "V",
       "losses_short": "D",
       "draws_short": "N",
+      "ranking_me": "Ta place : {{rank}}e sur {{count}}",
+      "ranking_absent": "Tu n'as pas fait de duel sur cette période.",
       "ranking_empty": "Aucun duel joué sur cette période.",
       "record_a11y": "{{wins}} victoires, {{losses}} défaites, {{draws}} nuls",
       "history_title": "Mes duels",

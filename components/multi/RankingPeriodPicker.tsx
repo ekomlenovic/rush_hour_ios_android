@@ -17,7 +17,6 @@ interface Props {
   isDark: boolean;
   /** The day of the current challenge on the server */
   today: string;
-  modes: readonly RankingMode[];
   view: RankingView;
   onView: (view: RankingView) => void;
   /** The server can rank between two dates */
@@ -25,12 +24,13 @@ interface Props {
 }
 
 /**
- * The period of the weekly rankings, at the top of their card: week, month, two dates or
- * all time. Weeks and months are a strip of chips, the current one first: a past one is a
- * touch away, and so is the way back. Under it, the days covered and whether the ranking is
- * still going or final. Two dates are picked on a calendar.
+ * The period of the weekly rankings, at the top of their card (the kind of period, week,
+ * month, two dates or all time, is chosen by the RankingModeButton next to its title).
+ * Weeks and months are a strip of chips, the current one first: a past one is a touch away,
+ * and so is the way back. Under it, whether the ranking is still going or final, and its
+ * days. Two dates are picked on a calendar.
  */
-export default function RankingPeriodPicker({ colors, isDark, today, modes, view, onView, datesSupported }: Props) {
+export default function RankingPeriodPicker({ colors, isDark, today, view, onView, datesSupported }: Props) {
   const { t, i18n } = useTranslation();
   const [isSheetVisible, setSheetVisible] = useState(false);
   const strip = useRef<ScrollView>(null);
@@ -53,7 +53,7 @@ export default function RankingPeriodPicker({ colors, isDark, today, modes, view
     if (view.mode === 'week') {
       if (offset === 0) return t('multi.ranking_week_this');
       if (offset === -1) return t('multi.ranking_week_last');
-      return weekLabel(rankingDays(chip, today)!, today, locale);
+      return spanLabel(rankingDays(chip, today)!, today, locale);
     }
     if (offset === 0) return t('multi.ranking_month_this');
     const first = shiftMonth(today, offset);
@@ -68,10 +68,12 @@ export default function RankingPeriodPicker({ colors, isDark, today, modes, view
     if (x !== undefined) strip.current?.scrollTo({ x: Math.max(0, x - RFValue(40)), animated: true });
   }, [stepped, view.mode, view.offset]);
 
-  const pickMode = (mode: RankingMode) => {
-    onView({ ...view, mode, offset: 0 });
-    if (mode === 'dates' && datesSupported && mode !== view.mode) setSheetVisible(true);
-  };
+  // Dates just chosen: straight to the calendar
+  const previousMode = useRef(view.mode);
+  useEffect(() => {
+    if (view.mode === 'dates' && previousMode.current !== 'dates' && datesSupported) setSheetVisible(true);
+    previousMode.current = view.mode;
+  }, [view.mode, datesSupported]);
 
   const over = isPeriodOver(view, today);
   const daysLeft = days ? daysBetween(today, days.to) + 1 : 0;
@@ -79,23 +81,6 @@ export default function RankingPeriodPicker({ colors, isDark, today, modes, view
 
   return (
     <View style={styles.container}>
-      <View style={[styles.segment, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
-        {modes.map(mode => {
-          const active = mode === view.mode;
-          return (
-            <Pressable
-              key={mode}
-              onPress={() => pickMode(mode)}
-              style={[styles.segmentItem, active && { backgroundColor: colors.surface }]}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
-            >
-              <Text style={[styles.segmentText, { color: active ? colors.text : colors.textMuted }]} numberOfLines={1}>{t(`multi.ranking_mode.${mode}`)}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
       {stepped && (
         <ScrollView
           ref={strip}
@@ -144,15 +129,13 @@ export default function RankingPeriodPicker({ colors, isDark, today, modes, view
       {showStatus && (
         <View style={styles.status}>
           <View style={styles.statusTexts} accessible accessibilityLiveRegion="polite">
-            {stepped && <Text style={[styles.statusDays, { color: colors.text }]} numberOfLines={1}>{daysText}</Text>}
-            <View style={styles.badgeRow}>
-              <View style={[styles.badge, { backgroundColor: over ? colors.neutralSoft : colors.primarySoft }]}>
-                <Ionicons name={over ? 'flag' : 'time-outline'} size={RFValue(12)} color={over ? colors.textMuted : colors.primaryText} />
-                <Text style={[styles.badgeText, { color: over ? colors.textMuted : colors.primaryText }]}>
-                  {over ? t('multi.ranking_final') : t('multi.ranking_live', { count: daysLeft })}
-                </Text>
-              </View>
+            <View style={[styles.badge, { backgroundColor: over ? colors.neutralSoft : colors.primarySoft }]}>
+              <Ionicons name={over ? 'flag' : 'time-outline'} size={RFValue(12)} color={over ? colors.textMuted : colors.primaryText} />
+              <Text style={[styles.badgeText, { color: over ? colors.textMuted : colors.primaryText }]} numberOfLines={1}>
+                {over ? t('multi.ranking_final') : t('multi.ranking_live', { count: daysLeft })}
+              </Text>
             </View>
+            {stepped && <Text style={[styles.statusDays, { color: colors.textMuted }]} numberOfLines={1}>{spanLabel(days!, today, locale)}</Text>}
           </View>
           {stepped && view.offset !== 0 && (
             <Pressable
@@ -182,8 +165,64 @@ export default function RankingPeriodPicker({ colors, isDark, today, modes, view
   );
 }
 
-/** A past week on its chip: '12–18 oct.', '28 sept. – 4 oct.', with the year when not this one */
-function weekLabel(days: { from: string; to: string }, today: string, locale: string): string {
+/** The kind of period, next to the title of the ranking: a button that opens the choices */
+export function RankingModeButton({ colors, isDark, modes, mode, onMode }: {
+  colors: UiColors; isDark: boolean;
+  modes: readonly RankingMode[];
+  mode: RankingMode;
+  onMode: (mode: RankingMode) => void;
+}) {
+  const { t } = useTranslation();
+  const [isOpen, setOpen] = useState(false);
+  return (
+    <>
+      <Pressable
+        onPress={() => setOpen(true)}
+        hitSlop={6}
+        style={({ pressed }) => [styles.modeButton, { backgroundColor: colors.neutralSoft, opacity: pressed ? 0.6 : 1 }]}
+        accessibilityRole="button"
+        accessibilityLabel={t('multi.ranking_mode_a11y', { mode: t(`multi.ranking_mode.${mode}`) })}
+      >
+        <Ionicons name={MODE_ICONS[mode]} size={RFValue(14)} color={colors.text} />
+        <Text style={[styles.modeButtonText, { color: colors.text }]}>{t(`multi.ranking_mode.${mode}`)}</Text>
+        <Ionicons name="chevron-down" size={RFValue(14)} color={colors.textMuted} />
+      </Pressable>
+      <BottomSheet visible={isOpen} title={t('multi.ranking_mode_title')} colors={colors} isDark={isDark} onClose={() => setOpen(false)} onRequestClose={() => setOpen(false)}>
+        {modes.map(m => {
+          const active = m === mode;
+          return (
+            <Pressable
+              key={m}
+              onPress={() => { onMode(m); setOpen(false); }}
+              style={({ pressed }) => [styles.modeRow, { backgroundColor: active ? colors.primarySoft : 'transparent', opacity: pressed ? 0.6 : 1 }]}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: active }}
+            >
+              <View style={[styles.modeIcon, { backgroundColor: active ? colors.primary : colors.neutralSoft }]}>
+                <Ionicons name={MODE_ICONS[m]} size={RFValue(18)} color={active ? colors.onPrimary : colors.text} />
+              </View>
+              <View style={styles.modeTexts}>
+                <Text style={[styles.modeLabel, { color: colors.text }]}>{t(`multi.ranking_mode.${m}`)}</Text>
+                <Text style={[styles.modeDesc, { color: colors.textMuted }]}>{t(`multi.ranking_mode_desc.${m}`)}</Text>
+              </View>
+              {active && <Ionicons name="checkmark" size={RFValue(20)} color={colors.primaryText} />}
+            </Pressable>
+          );
+        })}
+      </BottomSheet>
+    </>
+  );
+}
+
+const MODE_ICONS: Record<RankingMode, 'calendar-outline' | 'calendar-number-outline' | 'options-outline' | 'infinite-outline'> = {
+  week: 'calendar-outline',
+  month: 'calendar-number-outline',
+  dates: 'options-outline',
+  all: 'infinite-outline',
+};
+
+/** Days in short: '12–18 oct.', '28 sept. – 4 oct.', with the year when not this one */
+function spanLabel(days: { from: string; to: string }, today: string, locale: string): string {
   const from = parseLocalDateString(days.from);
   const to = parseLocalDateString(days.to);
   const year = days.to.slice(0, 4) !== today.slice(0, 4) ? { year: 'numeric' as const } : {};
@@ -318,21 +357,6 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: RFValue(8),
   },
-  segment: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    padding: 3,
-  },
-  segmentItem: {
-    flex: 1,
-    paddingVertical: RFValue(7),
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  segmentText: {
-    fontSize: RFValue(13),
-    fontWeight: '700',
-  },
   stepButton: {
     width: 44,
     height: 44,
@@ -341,7 +365,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   strip: {
-    marginTop: RFValue(12),
     marginHorizontal: -RFValue(14),
   },
   stripContent: {
@@ -356,14 +379,52 @@ const styles = StyleSheet.create({
   },
   statusTexts: {
     flex: 1,
-    gap: RFValue(5),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(8),
   },
   statusDays: {
-    fontSize: RFValue(14),
+    flexShrink: 1,
+    fontSize: RFValue(13),
+    fontWeight: '600',
+  },
+  modeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderRadius: 999,
+    paddingVertical: RFValue(6),
+    paddingHorizontal: RFValue(10),
+  },
+  modeButtonText: {
+    fontSize: RFValue(13),
     fontWeight: '700',
   },
-  badgeRow: {
+  modeRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(12),
+    borderRadius: 14,
+    padding: RFValue(10),
+    marginBottom: RFValue(4),
+  },
+  modeIcon: {
+    width: RFValue(38),
+    height: RFValue(38),
+    borderRadius: RFValue(12),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modeTexts: {
+    flex: 1,
+  },
+  modeLabel: {
+    fontSize: RFValue(16),
+    fontWeight: '800',
+  },
+  modeDesc: {
+    fontSize: RFValue(13),
+    marginTop: 2,
   },
   badge: {
     flexDirection: 'row',

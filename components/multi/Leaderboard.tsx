@@ -31,6 +31,8 @@ interface Props {
   title?: string;
   /** Under the title: the choice of the period */
   header?: ReactNode;
+  /** Next to the title: the kind of period */
+  titleAccessory?: ReactNode;
   /** The period is over: its podium, and my place */
   final?: boolean;
   /** The challenge being played: the week shows each day up to it */
@@ -38,7 +40,7 @@ interface Props {
 }
 
 /** Rankings of a day (moves then time), or of several days: week, month, two dates (points) */
-export default function Leaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress, query, title, header, final, currentDate }: Props) {
+export default function Leaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress, query, title, header, titleAccessory, final, currentDate }: Props) {
   const { t, i18n } = useTranslation();
   const params = query ? rankingParams(query) : null;
   // The board with the query it answers: an answer to an older query is not shown
@@ -103,7 +105,10 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{title ?? t('multi.leaderboard')}</Text>
+      <View style={styles.titleRow}>
+        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header" numberOfLines={1}>{title ?? t('multi.leaderboard')}</Text>
+        {titleAccessory}
+      </View>
       {header}
 
       {loading && <ActivityIndicator color={colors.primary} style={styles.state} />}
@@ -197,10 +202,16 @@ const styles = StyleSheet.create({
     padding: RFValue(14),
     marginTop: RFValue(16),
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(8),
+    marginBottom: RFValue(12),
+  },
   title: {
+    flex: 1,
     fontSize: RFValue(17),
     fontWeight: '800',
-    marginBottom: RFValue(10),
   },
   state: {
     paddingVertical: RFValue(16),
