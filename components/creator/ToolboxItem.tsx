@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, runOnJS, SharedValue } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, SharedValue } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 import { useTheme, type UiColors } from '@/theme';
@@ -33,19 +34,19 @@ const ToolboxItem = React.memo(function ToolboxItem({ template, colors, dragX, d
       dragX.value = e.absoluteX;
       dragY.value = e.absoluteY;
       dragVisible.value = 1;
-      runOnJS(onDragStart)(template, e.absoluteX, e.absoluteY);
+      scheduleOnRN(onDragStart, template, e.absoluteX, e.absoluteY);
     })
     .onUpdate(e => {
       'use worklet';
       dragX.value = e.absoluteX;
       dragY.value = e.absoluteY;
-      runOnJS(onDragMove)(e.absoluteX, e.absoluteY);
+      scheduleOnRN(onDragMove, e.absoluteX, e.absoluteY);
     })
     .onEnd(e => {
       'use worklet';
       sc.value = SNAP(1);
       dragVisible.value = 0;
-      runOnJS(onDrop)(e.absoluteX, e.absoluteY);
+      scheduleOnRN(onDrop, e.absoluteX, e.absoluteY);
     });
 
   const animStyle = useAnimatedStyle(() => ({
