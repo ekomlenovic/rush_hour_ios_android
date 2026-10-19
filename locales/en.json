@@ -159,7 +159,6 @@
     "hint_left": "{{count}} left",
     "score": "Score",
     "level_complete": "Level Complete!",
-    "win_stats": "{{moves}} moves · Best: {{best}} · Score: {{score}}",
     "analyzing": "Analyzing Puzzle...",
     "share_level": "Share Level",
     "qr_hint": "Your friend scans it with the camera: the level opens in Rush Hours.",
@@ -177,7 +176,11 @@
     "daily_done": "Daily challenge done!",
     "weekly_done": "Weekly challenge done!",
     "challenge_moves": "Your moves: {{moves}} · Optimal solution: {{best}}",
-    "perfect": "Perfect!"
+    "perfect": "Perfect!",
+    "win_moves_optimal_one": "{{count}} move, the minimum",
+    "win_moves_optimal_other": "{{count}} moves, the minimum",
+    "win_moves_one": "{{count}} move, the minimum is {{best}}",
+    "win_moves_other": "{{count}} moves, the minimum is {{best}}"
   },
   "tutorial": {
     "title": "Tutorial",
@@ -645,7 +648,6 @@
     "start": "Starting position",
     "move": "{{vehicle}}, {{direction}}",
     "step_announce": "Move {{step}} of {{total}}: {{move}}",
-    "not_optimal": "Optimal solution in {{best}} moves, you made {{moves}}",
     "retry": "Retry for 3 stars",
     "first": "Back to the start",
     "prev": "Previous move",
