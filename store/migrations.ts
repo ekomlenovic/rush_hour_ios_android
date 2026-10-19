@@ -7,7 +7,7 @@ import { compactSavedStates } from './savedStates';
 import { latestSavedDate, latestSavedWeek } from '../utils/challengeDates';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 7;
+export const STORE_VERSION = 8;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
@@ -50,7 +50,47 @@ export function migrateState(persistedState: unknown, version: number): Record<s
     // challenges (their XP stays) and the streak is rebuilt from the real days
     Object.assign(state, dropChallengesToCome(state));
   }
+  if (version < 8) {
+    // v8: a generation that failed left a hole in the ids of the generated levels (issue 120): the
+    // level after it never unlocked. They are numbered again, in order, right after the pack
+    state = renumberGeneratedLevels(state);
+  }
   return state;
+}
+
+/**
+ * Generated levels numbered from the end of the pack without holes, in the order of their ids,
+ * with the progress, saves and unlocking tied to them. The level after a hole unlocks.
+ */
+function renumberGeneratedLevels(state: Record<string, unknown>): Record<string, unknown> {
+  if (!Array.isArray(state.generatedLevels) || state.generatedLevels.length === 0) return state;
+  const generated = [...(state.generatedLevels as Level[])].sort((a, b) => a.id - b.id);
+  const base = sampleLevels.length;
+  const newIds = new Map(generated.map((l, i) => [l.id, base + 1 + i]));
+  const renumber = (id: number) => newIds.get(id) ?? id;
+
+  const renumbered: Record<string, unknown> = {
+    ...state,
+    generatedLevels: generated.map(l => ({ ...l, id: renumber(l.id) })),
+  };
+  if (Array.isArray(state.progress)) {
+    renumbered.progress = (state.progress as LevelProgress[]).map(p => ({ ...p, levelId: renumber(p.levelId) }));
+  }
+  if (state.savedStates && typeof state.savedStates === 'object') {
+    renumbered.savedStates = Object.fromEntries(Object.entries(state.savedStates as Record<string, LevelSaveState>).map(([key, value]) => {
+      const id = Number(key);
+      return [Number.isInteger(id) ? renumber(id) : key, value];
+    }));
+  }
+  if (typeof state.lastPlayedLevelId === 'number') renumbered.lastPlayedLevelId = renumber(state.lastPlayedLevelId);
+  // Past the pack (the one the generated levels followed, it may have grown since): every generated
+  // level before the next one to play stays unlocked, holes left out
+  const max = state.maxUnlockedLevel;
+  const packEnd = Math.min(base, generated[0].id - 1);
+  if (typeof max === 'number' && max > packEnd && max < MAP_ID_END) {
+    renumbered.maxUnlockedLevel = base + 1 + generated.filter(l => l.id < max).length;
+  }
+  return renumbered;
 }
 
 /**
