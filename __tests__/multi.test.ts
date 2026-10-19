@@ -4,6 +4,7 @@ import { gameKey, selectActiveAccount, useMultiStore, type MultiGame, type Serve
 import { useGameStore } from '../store/gameStore';
 import { exportProgress, parseSave } from '../utils/saveTransfer';
 import { sampleLevels } from '../data/sampleLevels';
+import { mondayOf, showsWeekRecap, weekCells } from '../utils/multi/week';
 
 describe('server address', () => {
   it.each([
@@ -480,5 +481,33 @@ describe('admin panel', () => {
     expect(isAdminSection('games')).toBe(true);
     expect(isAdminSection('settings')).toBe(false);
     expect(isAdminSection(undefined)).toBe(false);
+  });
+});
+
+describe('week of the challenges', () => {
+  it('starts on Monday', () => {
+    expect(mondayOf('2026-10-19')).toBe('2026-10-19');
+    expect(mondayOf('2026-10-25')).toBe('2026-10-19');
+    expect(mondayOf('2026-11-01')).toBe('2026-10-26');
+  });
+
+  it('shows the recap of last week from Monday to Wednesday', () => {
+    expect(['2026-10-19', '2026-10-20', '2026-10-21'].map(showsWeekRecap)).toEqual([true, true, true]);
+    expect(['2026-10-22', '2026-10-25'].map(showsWeekRecap)).toEqual([false, false]);
+  });
+
+  it('fills the days of a player up to the challenge being played', () => {
+    const days = [
+      { date: '2026-10-19', points: 10, status: 'won' as const },
+      { date: '2026-10-20', points: 0, status: 'abandoned' as const },
+      { date: '2026-10-22', points: 0, status: 'playing' as const },
+    ];
+    expect(weekCells('2026-10-19', days, '2026-10-22').map(c => (c.kind === 'points' ? c.points : c.kind))).toEqual([
+      10, 0, 'missed', 'playing', 'upcoming', 'upcoming', 'upcoming',
+    ]);
+    // Today's challenge not started yet: still to come
+    expect(weekCells('2026-10-19', [], '2026-10-21').map(c => c.kind)).toEqual([
+      'missed', 'missed', 'upcoming', 'upcoming', 'upcoming', 'upcoming', 'upcoming',
+    ]);
   });
 });
