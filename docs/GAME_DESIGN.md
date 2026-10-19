@@ -184,6 +184,7 @@ Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dan
 | La palette recolore les véhicules dans l'ordre du niveau ; la voiture cible garde sa skin. Le lecteur d'écran annonce la couleur affichée | `applyPalette`, `components/Board.tsx` |
 | Les effets de victoire ne se jouent pas avec « Réduire les animations » | `WinEffect` (`components/effects/WinEffect.tsx`) |
 | Les identifiants des cosmétiques sont sauvegardés : ne jamais en renommer, seulement en ajouter | |
+| L'écran de victoire liste les styles que la victoire vient de débloquer (« Nouveau dans le Garage ») avec un bouton **« Choisir au Garage »**. Depuis un niveau de la carte, le retour du Garage ramène à la carte ; depuis un défi, à son écran | `newlyUnlockedCosmetics` (`data/cosmetics.ts`), `WinModal`, `handleOpenGarage` (`app/game.tsx`) |
 | Chaque nouveauté garde sa mention verte **« Nouveau »** dans le Garage jusqu'à ce qu'on la **touche** (ce qui la sélectionne) ; chaque onglet compte les siennes, le lien Garage de l'accueil compte le total. Quitter le Garage n'acquitte rien | `seenCosmetics`, `markCosmeticsSeen` (`app/garage.tsx`) |
 
 ## Sauvegarde (export / import)

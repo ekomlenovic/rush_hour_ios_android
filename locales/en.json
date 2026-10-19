@@ -707,6 +707,8 @@
     "new": "New",
     "new_count_one": "{{count}} new item",
     "new_count_other": "{{count}} new items",
+    "unlocked_title": "New in the Garage",
+    "open_garage": "Pick it in the Garage",
     "unlocked_count": "{{unlocked}} / {{total}} unlocked",
     "a11y_item": "{{name}}, {{state}}",
     "tabs": {
