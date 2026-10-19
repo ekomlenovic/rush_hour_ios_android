@@ -215,7 +215,9 @@ export function isSaveForLevel(level: Pick<Level, 'vehicles'>, saved: Pick<Level
 
 /** A move updates the store several times: its writes, and those of the next moves, are grouped */
 const SAVE_WRITE_DELAY_MS = 1000;
-const saveStorage = createGuardedStorage<Partial<GameState>>({ delayMs: SAVE_WRITE_DELAY_MS });
+/** The infinite map and the archive days played: big, rarely changed, each in its own entry */
+export const SEPARATE_SAVE_FIELDS: readonly (keyof GameState)[] = ['generatedLevels', 'archiveLevels'];
+const saveStorage = createGuardedStorage<Partial<GameState>>({ delayMs: SAVE_WRITE_DELAY_MS, separateFields: SEPARATE_SAVE_FIELDS });
 
 export const useGameStore = create<GameState>()(
   persist(
