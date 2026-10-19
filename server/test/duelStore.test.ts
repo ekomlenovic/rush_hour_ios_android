@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { COUNTDOWN_MS, type Duels, type ServerMessage } from '../src/duel';
 import { rankDuels } from '../src/duelStore';
-import { testServer } from './helpers';
+import { paris, testServer } from './helpers';
 
 let server: ReturnType<typeof testServer>;
 afterEach(async () => { await server?.app.close(); });
@@ -85,6 +85,21 @@ describe('finished duels', () => {
     ]);
     expect((await request('GET', '/duels/leaderboard?period=all', leo.token)).body.rows).toHaveLength(3);
     expect((await request('GET', '/duels/leaderboard?period=year', leo.token)).status).toBe(400);
+  });
+
+  it('of the week count the duels of a Monday before the release of the challenge', async () => {
+    server = testServer({ at: paris('2026-10-19', '09:00') });
+    const { join, duels, clock, request } = server;
+    const [leo, emma] = [await join('Léo'), await join('Emma')];
+    const [a, b] = [phone(duels, leo.token), phone(duels, emma.token)];
+    a.send({ type: 'create', difficulty: 'EASY' });
+    b.send({ type: 'join', code: a.last('duel')!.duel.code });
+    await settle();
+    clock.now += COUNTDOWN_MS + 4000;
+    b.send({ type: 'leave' });
+    const week = (await request('GET', '/duels/leaderboard?period=week', leo.token)).body;
+    expect(week).toMatchObject({ from: '2026-10-19', to: '2026-10-25' });
+    expect(week.rows).toHaveLength(2);
   });
 
   it('ties share a rank', () => {
