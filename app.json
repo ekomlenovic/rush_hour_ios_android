@@ -42,6 +42,12 @@
           "backgroundColor": "#1A2B4C"
         }
       ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
       "./plugins/withoutPushEntitlement",
       [
         "expo-notifications",

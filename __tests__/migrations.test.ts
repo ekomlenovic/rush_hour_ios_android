@@ -246,3 +246,111 @@ describe('merge', () => {
     expect(merged.maxUnlockedLevel).toBe(12);
   });
 });
+
+describe('multiplayer accounts v2: secrets in the secure storage (#84)', () => {
+  const AsyncStorage = require('@react-native-async-storage/async-storage');
+  const SecureStore = require('expo-secure-store');
+  const { secretKey } = require('../store/secureAccounts');
+  const KEY = 'rush-hours-multi';
+  const flush = () => new Promise(resolve => setImmediate(resolve));
+  const stored = async () => JSON.parse((await AsyncStorage.getItem(KEY))!);
+
+  // A save written by the app before v2: the secrets in clear in AsyncStorage
+  const v1Save = {
+    version: 1,
+    state: {
+      accounts: [
+        { url: 'https://rush.example', name: 'Amis', playerId: 4, pseudo: 'Léa', token: 't0k', recoveryCode: 'ABCD-EFGH', joinedAt: 1 },
+        { url: 'https://other.example:8443', name: 'Club', playerId: 9, pseudo: 'Léa', token: 't1k', recoveryCode: 'IJKL-MNOP', joinedAt: 2, isAdmin: true },
+      ],
+      activeUrl: 'https://rush.example',
+      introSeen: true,
+      games: {},
+      blocked: { 'https://rush.example': [{ playerId: 7, pseudo: 'Bob' }] },
+    },
+  };
+
+  function launchMulti(): typeof import('../store/multiStore').useMultiStore {
+    let store!: typeof import('../store/multiStore').useMultiStore;
+    jest.isolateModules(() => {
+      store = require('../store/multiStore').useMultiStore;
+    });
+    return store;
+  }
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    SecureStore.items.clear();
+    await AsyncStorage.setItem(KEY, JSON.stringify(v1Save));
+  });
+
+  it('is at version 2', () => {
+    expect(launchMulti().persist.getOptions().version).toBe(2);
+  });
+
+  it('moves the secrets out of AsyncStorage, the player stays signed in', async () => {
+    const store = launchMulti();
+    await flush();
+    expect(store.getState().accounts).toEqual(v1Save.state.accounts);
+    expect(store.getState().blocked).toEqual(v1Save.state.blocked);
+
+    const { state, version } = await stored();
+    expect(version).toBe(2);
+    expect(JSON.stringify(state)).not.toMatch(/t0k|t1k|ABCD-EFGH|IJKL-MNOP/);
+    expect(state.accounts).toEqual(v1Save.state.accounts.map(({ token: _t, recoveryCode: _r, ...rest }) => rest));
+    expect(JSON.parse(SecureStore.items.get(secretKey('https://other.example:8443')))).toEqual({ token: 't1k', recoveryCode: 'IJKL-MNOP' });
+
+    // Next launch: read back from the secure storage
+    const next = launchMulti();
+    await flush();
+    expect(next.getState().accounts).toEqual(v1Save.state.accounts);
+  });
+
+  it('forgets the secrets of a server left', async () => {
+    const store = launchMulti();
+    await flush();
+    store.getState().removeAccount('https://rush.example');
+    await flush();
+    expect(SecureStore.items.has(secretKey('https://rush.example'))).toBe(false);
+    expect(SecureStore.items.has(secretKey('https://other.example:8443'))).toBe(true);
+  });
+
+  it('writes a new recovery code to the secure storage', async () => {
+    const store = launchMulti();
+    await flush();
+    store.getState().updateAccount('https://rush.example', { recoveryCode: 'QRST-UVWX' });
+    await flush();
+    expect(JSON.parse(SecureStore.items.get(secretKey('https://rush.example')))).toEqual({ token: 't0k', recoveryCode: 'QRST-UVWX' });
+    expect(JSON.stringify(await stored())).not.toContain('QRST-UVWX');
+  });
+
+  it('keeps the secrets in the save when the secure storage fails', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    SecureStore.setItemAsync.mockRejectedValue(new Error('Keystore unavailable'));
+    const store = launchMulti();
+    await flush();
+    expect((await stored()).state.accounts).toEqual(v1Save.state.accounts);
+
+    SecureStore.setItemAsync.mockImplementation(async (key: string, value: string) => { SecureStore.items.set(key, value); });
+    const next = launchMulti();
+    await flush();
+    expect(next.getState().accounts).toEqual(v1Save.state.accounts);
+    expect(store.getState().accounts).toEqual(v1Save.state.accounts);
+    warn.mockRestore();
+  });
+
+  it('keeps an account whose secrets were lost, signed out', async () => {
+    const store = launchMulti();
+    await flush();
+    SecureStore.items.clear();
+    const next = launchMulti();
+    await flush();
+    expect(next.getState().accounts[0]).toMatchObject({ url: 'https://rush.example', pseudo: 'Léa', token: '', recoveryCode: '' });
+    expect(store.getState().accounts).toHaveLength(2);
+  });
+
+  it('escapes the server address into a valid secure storage key', () => {
+    expect(secretKey('https://a.example:8443/x_y')).toMatch(/^[A-Za-z0-9._-]+$/);
+    expect(secretKey('https://a.example/a_b')).not.toBe(secretKey('https://a.example/a/b'));
+  });
+});
