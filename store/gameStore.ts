@@ -21,7 +21,7 @@ import {
 } from '../data/cosmetics';
 import { emptyAttempt, initialStats, withWinStats, mergeChallengeResult } from './stats';
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from './migrations';
-import { compactSavedStates, savedHistory } from './savedStates';
+import { compactSavedStates, isWellFormedSave, savedHistory } from './savedStates';
 import { createGuardedStorage } from './guardedStorage';
 import { DAILY_LEVEL_ID, WEEKLY_LEVEL_ID, ARCHIVE_LEVEL_ID } from './levelIds';
 
@@ -355,7 +355,7 @@ export const useGameStore = create<GameState>()(
         const levelKey = getLevelKey(level, state);
         const stored = state.savedStates[levelKey];
         // Never replay the save of another puzzle on this one: start it fresh instead
-        const storedIsValid = !!stored && isSaveForLevel(level, stored);
+        const storedIsValid = isWellFormedSave(stored) && isSaveForLevel(level, stored);
         const resolvedSavedState = savedState || (storedIsValid ? stored : undefined);
         if (stored && !storedIsValid) {
           const { [levelKey]: _stale, ...savedStates } = state.savedStates;
