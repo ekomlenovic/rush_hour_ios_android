@@ -8,6 +8,8 @@ import type { UiColors } from '@/theme';
 import { multiErrorMessage } from '../errors';
 import { reasonsText, verdictIcon } from '../verdict';
 import AdminButton from './AdminButton';
+import AdminSegmented from './AdminSegmented';
+import { useAdminRefresh } from './AdminPage';
 import { adminStyles as styles } from './styles';
 import IconText from '@/components/IconText';
 
@@ -21,16 +23,21 @@ export default function AdminGames({ api, colors }: Props) {
   const [games, setGames] = useState<AdminGame[] | null>(null);
 
   const load = useCallback(async () => {
-    setGames(null);
     try {
       setGames((await api.admin.games(filter)).games);
     } catch (e) {
       Alert.alert(t('common.error'), multiErrorMessage(t, e));
-      setGames([]);
+      setGames(g => g ?? []);
     }
   }, [api, filter, t]);
 
+  const changeFilter = (next: 'suspects' | 'all') => {
+    setGames(null);
+    setFilter(next);
+  };
+
   useEffect(() => { void load(); }, [load]);
+  useAdminRefresh(load);
 
   const setVerdict = async (game: AdminGame, verdict: 'cheater' | 'cleared' | null) => {
     try {
@@ -49,18 +56,12 @@ export default function AdminGames({ api, colors }: Props) {
 
   return (
     <View>
-      <View style={styles.actions}>
-        {(['suspects', 'all'] as const).map(f => (
-          <AdminButton
-            key={f}
-            label={t(`multi.admin_filter_${f}`)}
-            onPress={() => setFilter(f)}
-            background={f === filter ? colors.primary : colors.neutralSoft}
-            color={f === filter ? colors.onPrimary : colors.text}
-          />
-        ))}
-      </View>
-      <View style={{ height: 10 }} />
+      <AdminSegmented
+        options={(['suspects', 'all'] as const).map(f => ({ value: f, label: t(`multi.admin_filter_${f}`) }))}
+        value={filter}
+        onChange={changeFilter}
+        colors={colors}
+      />
       {!games && <ActivityIndicator color={colors.primary} />}
       {games?.length === 0 && <Text style={[styles.empty, { color: colors.textMuted }]}>{t('multi.admin_no_games')}</Text>}
       {games?.map(game => (

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, Switch, Alert, ActivityIndicator } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import type { AdminPlayer, MultiApi, ResetResult } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
 import { multiErrorMessage } from '../errors';
 import AdminButton from './AdminButton';
+import { useAdminRefresh } from './AdminPage';
 import { adminStyles as styles } from './styles';
 
 interface Props { api: MultiApi; colors: UiColors }
@@ -32,9 +33,13 @@ export default function AdminReset({ api, colors }: Props) {
   const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState(0);
 
-  useEffect(() => {
-    api.admin.players().then(r => setPlayers(r.players)).catch(() => setPlayers([]));
+  const load = useCallback(async () => {
+    await api.admin.players().then(r => setPlayers(r.players)).catch(() => setPlayers(p => p ?? []));
+    // The count of what would be deleted, again
+    setVersion(v => v + 1);
   }, [api]);
+  useEffect(() => { void load(); }, [load]);
+  useAdminRefresh(load);
 
   const range = resetRange(preset, today, dates);
   const request = useMemo(() => ({

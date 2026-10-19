@@ -109,6 +109,20 @@ export interface AdminReport {
 
 export type Difficulty = 'EASY' | 'NORMAL' | 'HARD' | 'EXPERT' | 'MASTER';
 
+/** The home of the admin panel: what waits for the admin, and a word on each part */
+export interface AdminSummary {
+  /** Suspect wins without a decision of the admin */
+  toReview: number;
+  reports: number;
+  players: number;
+  banned: number;
+  joinOpen: boolean;
+  invitesAdminOnly: boolean;
+  serverName: string;
+  releaseTime: string;
+  puzzles: { ready: number; size: number; working: AdminPuzzles['working'] };
+}
+
 /** The duel puzzles ready ahead on the server (server/src/puzzlePool.ts) */
 export interface AdminPuzzles {
   difficulties: {
@@ -297,6 +311,7 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
       resetSettings: () => call<AdminSettings>('POST', '/admin/settings/reset'),
       reset: (request: ResetRequest) => call<ResetResult>('POST', '/admin/reset', request),
       puzzles: () => call<AdminPuzzles>('GET', '/admin/puzzles'),
+      summary: () => call<AdminSummary>('GET', '/admin/summary'),
     },
   };
 }

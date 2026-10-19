@@ -7,7 +7,7 @@ import type { AdminPuzzles as Puzzles, MultiApi } from '@/utils/multi/api';
 import { RFValue } from '@/utils/responsive';
 import BoardPreview from '@/components/garage/BoardPreview';
 import { errorCode, multiErrorMessage } from '../errors';
-import AdminButton from './AdminButton';
+import { useAdminRefresh } from './AdminPage';
 import { adminStyles as styles } from './styles';
 
 const THUMB = 72;
@@ -24,23 +24,20 @@ export default function AdminPuzzles({ api, colors }: Props) {
   const cosmetics = useGameStore(s => s.cosmetics);
   const [data, setData] = useState<Puzzles | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [showBoards, setShowBoards] = useState(false);
 
   const load = useCallback(async () => {
-    setLoading(true);
     try {
       setData(await api.admin.puzzles());
       setError(null);
     } catch (e) {
       // A server without this route
       setError(errorCode(e) === 'not_found' ? t('multi.admin_puzzles_old_server') : multiErrorMessage(t, e));
-    } finally {
-      setLoading(false);
     }
   }, [api, t]);
 
   useEffect(() => { void load(); }, [load]);
+  useAdminRefresh(load);
 
   const time = (at: number) => new Date(at).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
   const date = (at: number) => new Date(at).toLocaleString(i18n.language, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -65,9 +62,6 @@ export default function AdminPuzzles({ api, colors }: Props) {
         <Switch value={showBoards} onValueChange={setShowBoards} accessibilityLabel={t('multi.admin_puzzles_show_boards')} />
       </View>
       {showBoards && <Text style={[styles.muted, { color: colors.warning }]}>{t('multi.admin_puzzles_spoiler')}</Text>}
-      <View style={styles.actions}>
-        <AdminButton label={t('multi.admin_puzzles_refresh')} icon="refresh" onPress={load} disabled={loading} background={colors.neutralSoft} color={colors.text} />
-      </View>
 
       {data.difficulties.map(d => {
         const puzzles = data.puzzles.filter(p => p.difficulty === d.difficulty);
