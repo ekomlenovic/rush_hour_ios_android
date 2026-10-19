@@ -11,6 +11,28 @@ export const MAX_SAVED_UNDOS = 50;
 
 type SavedStates = Record<string | number, LevelSaveState>;
 
+const isRecord = (value: unknown): value is Record<string, any> => typeof value === 'object' && value !== null && !Array.isArray(value);
+const isCount = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 0;
+
+function isWellFormedVehicle(value: unknown): boolean {
+  return isRecord(value) && typeof value.id === 'string' && Number.isInteger(value.row) && Number.isInteger(value.col)
+    && Number.isInteger(value.length) && value.length > 0 && (value.orientation === 'horizontal' || value.orientation === 'vertical');
+}
+
+const isBoard = (value: unknown): boolean => Array.isArray(value) && value.every(isWellFormedVehicle);
+
+/**
+ * Whether a save can be resumed without crashing the game screen: a save broken by
+ * another tool, edited by hand or corrupted on the phone is dropped rather than read.
+ */
+export function isWellFormedSave(value: unknown): value is LevelSaveState {
+  if (!isRecord(value) || !isBoard(value.vehicles) || !isCount(value.moveCount)) return false;
+  if (!Array.isArray(value.history) || !value.history.every(isBoard)) return false;
+  if (value.moveLog !== undefined && !(Array.isArray(value.moveLog) && value.moveLog.every(isRecord))) return false;
+  if (value.attempt !== undefined && !isRecord(value.attempt)) return false;
+  return value.startedAt === undefined || Number.isFinite(value.startedAt);
+}
+
 /** Challenges have no undo (see docs/GAME_DESIGN.md): their save needs no undo stack */
 const isChallengeKey = (key: string) => key.startsWith('daily-') || key.startsWith('weekly-');
 
