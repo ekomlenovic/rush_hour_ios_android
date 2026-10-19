@@ -4,9 +4,11 @@ import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { WinAchievementToasts } from '@/components/AchievementToast';
 import { formatDuration } from '@/utils/date';
-import { fixedColors, type UiColors } from '@/theme';
+import { fixedColors, useTheme, type UiColors } from '@/theme';
+import { useGameStore } from '@/store/gameStore';
+import CosmeticThumb from '@/components/garage/CosmeticThumb';
 import { getLevelInfo } from '@/data/progression';
-import { COSMETICS_BY_KEY, cosmeticKey, type WinEffectId } from '@/data/cosmetics';
+import { COSMETICS_BY_KEY, cosmeticKey, type CosmeticKind, type WinEffectId } from '@/data/cosmetics';
 import type { MissionReward } from '@/data/missions';
 import XpBar from '@/components/progression/XpBar';
 import { getLevelRewardLines, missionRewardText } from '@/components/progression/rewards';
@@ -24,7 +26,7 @@ interface Props {
   timeMs: number | null;
   /** Achievements unlocked by this win, shown as toasts at the top (the global toast is under this modal) */
   unlocks: string[];
-  /** Cosmetics this win unlocked ('kind:id'), with a way to the garage to pick them */
+  /** Cosmetics this win unlocked ('kind:id'): equipped from here, or browsed in the garage */
   cosmeticUnlocks: string[];
   onOpenGarage: () => void;
   missionReward: MissionReward | null;
@@ -51,6 +53,15 @@ export default function WinModal({
 }: Props) {
   const isOptimal = moveCount <= minMoves;
   const { t } = useTranslation();
+  const { scheme } = useTheme();
+  const selection = useGameStore(s => s.cosmetics);
+  const selectCosmetic = useGameStore(s => s.selectCosmetic);
+  const markCosmeticsSeen = useGameStore(s => s.markCosmeticsSeen);
+  // Equipping a win effect plays it at once over this screen
+  const equip = (kind: CosmeticKind, id: string) => {
+    if (selectCosmetic(kind, id)) markCosmeticsSeen([`${kind}:${id}`]);
+  };
+  const title = isOptimal ? t('game.perfect') : t('game.level_complete');
   const { width, height } = useWindowDimensions();
   const xpAfter = xpGain ? getLevelInfo(xpGain.to) : null;
   const xpBefore = xpGain ? getLevelInfo(xpGain.from) : null;
@@ -60,7 +71,7 @@ export default function WinModal({
   useEffect(() => {
     if (!visible) return;
     AccessibilityInfo.announceForAccessibility(t('a11y.win', {
-      title: t('game.level_complete'),
+      title,
       stars,
       stats: t('game.win_stats', { moves: moveCount, best: minMoves, score }),
     }));
@@ -79,7 +90,7 @@ export default function WinModal({
               <Ionicons key={i} name={i <= stars ? 'star' : 'star-outline'} size={36} color={i <= stars ? colors.star : colors.textMuted} />
             ))}
           </View>
-          <Text style={[styles.winTitle, { color: colors.primaryText }]} accessibilityRole="header">{t('game.level_complete')}</Text>
+          <Text style={[styles.winTitle, { color: colors.primaryText }]} accessibilityRole="header">{title}</Text>
           <Text style={[styles.winScore, { color: colors.text }]}>
             {t('game.win_stats', { moves: moveCount, best: minMoves, score: score })}
           </Text>
@@ -94,16 +105,20 @@ export default function WinModal({
             </IconText>
           )}
           {xpAfter && xpBefore && gained > 0 && (
-            <View style={styles.xpBlock} accessible accessibilityLabel={`${t('progression.xp_gain', { xp: gained })}, ${t('progression.level', { level: xpAfter.level })}, ${t('progression.xp_progress', { xp: xpAfter.xpInLevel, next: xpAfter.xpForNext })}`}>
+            <View style={styles.xpBlock} accessible accessibilityLabel={`${t('progression.xp_gain', { xp: gained })}, ${t('progression.player_level_short', { level: xpAfter.level })}, ${t('progression.xp_to_next', { xp: xpAfter.xpForNext - xpAfter.xpInLevel, level: xpAfter.level + 1 })}`}>
               <View style={styles.xpRow}>
                 <Text style={[styles.xpGain, { color: colors.primaryText }]}>{t('progression.xp_gain', { xp: gained })}</Text>
-                <Text style={[styles.xpLevel, { color: colors.textMuted }]}>{t('progression.level', { level: xpAfter.level })}</Text>
+                {/* "Player": the title already names the map level */}
+                <Text style={[styles.xpLevel, { color: colors.textMuted }]}>{t('progression.player_level_short', { level: xpAfter.level })}</Text>
               </View>
               <XpBar
                 colors={colors}
                 ratio={xpAfter.ratio}
                 from={xpAfter.level > xpBefore.level ? 0 : xpBefore.ratio}
               />
+              <Text style={[styles.xpToNext, { color: colors.textMuted }]}>
+                {t('progression.xp_to_next', { xp: xpAfter.xpForNext - xpAfter.xpInLevel, level: xpAfter.level + 1 })}
+              </Text>
             </View>
           )}
           {levelUps.map(level => (
@@ -117,19 +132,33 @@ export default function WinModal({
           {cosmeticUnlocks.length > 0 && (
             <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
               <IconText icon="car-sport" color={colors.success} textStyle={styles.winUnlocksTitle}>{t('cosmetics.unlocked_title')}</IconText>
-              {cosmeticUnlocks.map(key => COSMETICS_BY_KEY[key]).filter(Boolean).map(def => (
-                <Text key={cosmeticKey(def)} style={[styles.winUnlockItem, { color: colors.text }]}>
-                  {t(`cosmetics.${def.kind}.${def.id}`)} · {t(`cosmetics.tabs.${def.kind}`)}
-                </Text>
-              ))}
-              <Pressable
-                style={[styles.smallButton, styles.garageButton, { backgroundColor: colors.primary }]}
-                onPress={onOpenGarage}
-                accessibilityRole="button"
-              >
-                <IconText icon="arrow-forward" color={colors.onPrimary} textStyle={[styles.smallButtonText, { color: colors.onPrimary }]}>
-                  {t('cosmetics.open_garage')}
-                </IconText>
+              {cosmeticUnlocks.map(key => COSMETICS_BY_KEY[key]).filter(Boolean).map(def => {
+                const name = t(`cosmetics.${def.kind}.${def.id}`);
+                const isEquipped = selection[def.kind] === def.id;
+                return (
+                  <View key={cosmeticKey(def)} style={styles.cosmeticRow}>
+                    <CosmeticThumb def={def} scheme={scheme} size={40} />
+                    <View style={styles.cosmeticText}>
+                      <Text style={[styles.cosmeticName, { color: colors.text }]} numberOfLines={1}>{name}</Text>
+                      <Text style={[styles.cosmeticKind, { color: colors.textMuted }]}>{t(`cosmetics.tabs.${def.kind}`)}</Text>
+                    </View>
+                    {isEquipped ? (
+                      <Text style={[styles.equipped, { color: colors.success }]}>✓ {t('cosmetics.equipped')}</Text>
+                    ) : (
+                      <Pressable
+                        style={[styles.equipButton, { borderColor: colors.primary }]}
+                        onPress={() => equip(def.kind, def.id)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${t('cosmetics.equip')} : ${name}`}
+                      >
+                        <Text style={[styles.smallButtonText, { color: colors.primaryText }]}>{t('cosmetics.equip')}</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                );
+              })}
+              <Pressable onPress={onOpenGarage} accessibilityRole="link" hitSlop={8} style={styles.garageLink}>
+                <Text style={[styles.linkText, { color: colors.primaryText }]}>{t('cosmetics.open_garage')} →</Text>
               </Pressable>
             </View>
           )}
@@ -142,12 +171,20 @@ export default function WinModal({
             </View>
           )}
           <View style={styles.solutionRow}>
+            {/* Played in the minimum: the solution looks like the game just played, a discreet link is enough */}
             <Pressable
-              style={[styles.smallButton, { backgroundColor: colors.card }]}
+              style={isOptimal ? styles.solutionLink : [styles.smallButton, { backgroundColor: colors.card }]}
               onPress={onShowSolution}
               accessibilityRole="button"
+              hitSlop={isOptimal ? 8 : undefined}
             >
-              <IconText icon="play-circle-outline" color={colors.primaryText} textStyle={styles.smallButtonText}>{t('solution.show')}</IconText>
+              <IconText
+                icon="play-circle-outline"
+                color={isOptimal ? colors.textMuted : colors.primaryText}
+                textStyle={[styles.smallButtonText, isOptimal && { color: colors.textMuted, fontWeight: '600' }]}
+              >
+                {t('solution.show')}
+              </IconText>
             </Pressable>
             {onRetry && !isOptimal && (
               <Pressable
@@ -307,7 +344,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginVertical: 2,
   },
-  garageButton: { marginTop: 8 },
+  cosmeticRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', gap: 10, marginTop: 4 },
+  cosmeticText: { flex: 1 },
+  cosmeticName: { fontSize: 15, fontWeight: '700' },
+  cosmeticKind: { fontSize: 12, fontWeight: '600' },
+  equipButton: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1.5 },
+  equipped: { fontSize: 14, fontWeight: '700' },
+  garageLink: { marginTop: 10 },
+  linkText: { fontSize: 13, fontWeight: '700' },
+  solutionLink: { paddingVertical: 4 },
+  xpToNext: { fontSize: 12, fontWeight: '600', marginTop: 4 },
   withIcon: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   winButton: {
     paddingVertical: 14,

@@ -176,7 +176,8 @@
     "share_message_named": "Challenge me on Rush Hours! Can you beat \"{{name}}\" in {{moves}} moves?\n{{url}}",
     "daily_done": "Daily challenge done!",
     "weekly_done": "Weekly challenge done!",
-    "challenge_moves": "Your moves: {{moves}} · Optimal solution: {{best}}"
+    "challenge_moves": "Your moves: {{moves}} · Optimal solution: {{best}}",
+    "perfect": "Perfect!"
   },
   "tutorial": {
     "title": "Tutorial",
@@ -697,7 +698,9 @@
     "reached": "Reached",
     "current": "You are here",
     "a11y_level_row": "Level {{level}}, {{state}}. {{rewards}}",
-    "locked": "Locked"
+    "locked": "Locked",
+    "player_level_short": "Player lv. {{level}}",
+    "xp_to_next": "{{xp}} XP to level {{level}}"
   },
   "cosmetics": {
     "garage": "Garage",
@@ -708,7 +711,7 @@
     "new_count_one": "{{count}} new item",
     "new_count_other": "{{count}} new items",
     "unlocked_title": "New in the Garage",
-    "open_garage": "Pick it in the Garage",
+    "open_garage": "See the Garage",
     "unlocked_count": "{{unlocked}} / {{total}} unlocked",
     "a11y_item": "{{name}}, {{state}}",
     "tabs": {
@@ -779,7 +782,9 @@
       "speed": "Speed trail",
       "bubbles": "Bubbles",
       "greenlight": "Green light"
-    }
+    },
+    "equip": "Equip",
+    "equipped": "Equipped"
   },
   "archives": {
     "won_count_one": "{{count}} archive won",
