@@ -14,8 +14,12 @@ export const CHALLENGE_MODES: readonly RankingMode[] = ['week', 'month', 'dates'
 export const DUEL_MODES: readonly RankingMode[] = [...CHALLENGE_MODES, 'all'];
 
 /** How far back the weeks and the months go */
-export const MAX_WEEKS_BACK = 156;
+export const MAX_WEEKS_BACK = 52;
 export const MAX_MONTHS_BACK = 36;
+
+/** The weeks or the months offered, the current one first: 0, -1, -2… */
+export const stripOffsets = (mode: 'week' | 'month'): number[] =>
+  Array.from({ length: (mode === 'week' ? MAX_WEEKS_BACK : MAX_MONTHS_BACK) + 1 }, (_, i) => (i === 0 ? 0 : -i));
 
 export interface RankingView {
   mode: RankingMode;

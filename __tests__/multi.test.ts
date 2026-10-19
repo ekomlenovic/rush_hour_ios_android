@@ -513,7 +513,7 @@ describe('week of the challenges', () => {
 });
 
 describe('weekly rankings period', () => {
-  const { rankingQuery, rankingDays, isPeriodOver, shiftMonth } = require('../utils/multi/rankingPeriod') as typeof import('../utils/multi/rankingPeriod');
+  const { rankingQuery, rankingDays, isPeriodOver, shiftMonth, stripOffsets } = require('../utils/multi/rankingPeriod') as typeof import('../utils/multi/rankingPeriod');
   const { rankingParams } = require('../utils/multi/api') as typeof import('../utils/multi/api');
   const dates = { from: '2026-10-05', to: '2026-10-01' };
   const view = (mode: 'week' | 'month' | 'dates' | 'all', offset = 0) => ({ mode, offset, dates });
@@ -529,6 +529,12 @@ describe('weekly rankings period', () => {
     expect(rankingQuery(view('month', -1), '2026-01-15')).toEqual({ period: 'month', date: '2025-12-01' });
     expect(rankingQuery(view('dates'), today)).toEqual({ period: 'range', from: '2026-10-01', to: '2026-10-05' });
     expect(rankingQuery(view('all'), today)).toEqual({ period: 'all' });
+  });
+
+  it('offers the weeks and the months back from the current one', () => {
+    expect(stripOffsets('week').slice(0, 3)).toEqual([0, -1, -2]);
+    expect(stripOffsets('week')).toHaveLength(53);
+    expect(stripOffsets('month').at(-1)).toBe(-36);
   });
 
   it('steps months across the years', () => {
