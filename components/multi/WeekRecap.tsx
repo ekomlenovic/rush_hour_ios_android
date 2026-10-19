@@ -59,7 +59,7 @@ export default function WeekRecap({ api, colors, myPlayerId, refreshKey, blocked
         <Ionicons name="trophy" size={RFValue(18)} color={colors.warning} />
       </View>
       <View style={styles.texts}>
-        <Text style={[styles.title, { color: colors.text }]}>{t('multi.recap_title')}</Text>
+        <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{t('multi.recap_title')}</Text>
         <Text style={[styles.detail, { color: colors.textMuted }]} numberOfLines={1}>{detail}</Text>
       </View>
       <Text style={[styles.open, { color: colors.primaryText }]}>{t('multi.recap_open')}</Text>

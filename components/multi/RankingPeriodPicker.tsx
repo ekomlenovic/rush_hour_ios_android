@@ -1,12 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import BottomSheet from '@/components/home/BottomSheet';
 import { RFValue } from '@/utils/responsive';
-import { addDays, getMonthGrid, parseLocalDateString } from '@/utils/date';
+import { addDays, daysBetween, getMonthGrid, parseLocalDateString } from '@/utils/date';
 import {
-  MAX_MONTHS_BACK, MAX_WEEKS_BACK, orderedDates, rankingDays, shiftMonth, type RankingMode, type RankingView,
+  MAX_MONTHS_BACK, isPeriodOver, orderedDates, rankingDays, shiftMonth, stripOffsets, type RankingMode, type RankingView,
 } from '@/utils/multi/rankingPeriod';
 import type { UiColors } from '@/theme';
 
@@ -26,14 +26,18 @@ interface Props {
 
 /**
  * The period of the weekly rankings, at the top of their card: week, month, two dates or
- * all time; a week or a month is stepped back one at a time (‹ ›), two dates are picked on
- * a calendar.
+ * all time. Weeks and months are a strip of chips, the current one first: a past one is a
+ * touch away, and so is the way back. Under it, the days covered and whether the ranking is
+ * still going or final. Two dates are picked on a calendar.
  */
 export default function RankingPeriodPicker({ colors, isDark, today, modes, view, onView, datesSupported }: Props) {
   const { t, i18n } = useTranslation();
   const [isSheetVisible, setSheetVisible] = useState(false);
+  const strip = useRef<ScrollView>(null);
+  const chipX = useRef<Record<number, number>>({});
 
-  const day = (date: string, withYear = false) => parseLocalDateString(date).toLocaleDateString(i18n.language, {
+  const locale = i18n.language;
+  const day = (date: string, withYear = false) => parseLocalDateString(date).toLocaleDateString(locale, {
     weekday: 'short', day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}),
   });
   const days = rankingDays(view, today);
@@ -43,21 +47,35 @@ export default function RankingPeriodPicker({ colors, isDark, today, modes, view
     : t('multi.ranking_days', { from: day(days.from, withYear), to: day(days.to, withYear) });
 
   const stepped = view.mode === 'week' || view.mode === 'month';
-  const maxBack = view.mode === 'week' ? MAX_WEEKS_BACK : MAX_MONTHS_BACK;
-  const title = view.mode === 'week'
-    ? view.offset === 0 ? t('multi.ranking_week_this') : view.offset === -1 ? t('multi.ranking_week_last') : t('multi.ranking_weeks_ago', { count: -view.offset })
-    : view.mode === 'month'
-      ? parseLocalDateString(shiftMonth(today, view.offset)).toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })
-      : '';
-  // A month is named by its name: its days are not needed, how far back it is helps
-  const subtitle = view.mode === 'month'
-    ? view.offset === 0 ? t('multi.ranking_month_this') : view.offset === -1 ? t('multi.ranking_month_last') : null
-    : daysText;
+  const offsets = stepped ? stripOffsets(view.mode as 'week' | 'month') : [];
+  const chipLabel = (offset: number) => {
+    const chip = { ...view, offset };
+    if (view.mode === 'week') {
+      if (offset === 0) return t('multi.ranking_week_this');
+      if (offset === -1) return t('multi.ranking_week_last');
+      return weekLabel(rankingDays(chip, today)!, today, locale);
+    }
+    if (offset === 0) return t('multi.ranking_month_this');
+    const first = shiftMonth(today, offset);
+    const name = parseLocalDateString(first).toLocaleDateString(locale, first.slice(0, 4) === today.slice(0, 4) ? { month: 'long' } : { month: 'long', year: 'numeric' });
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
+
+  // The chip chosen stays in sight, wherever it was chosen from (the recap banner, a touch)
+  useEffect(() => {
+    if (!stepped) return;
+    const x = view.offset === 0 ? 0 : chipX.current[view.offset];
+    if (x !== undefined) strip.current?.scrollTo({ x: Math.max(0, x - RFValue(40)), animated: true });
+  }, [stepped, view.mode, view.offset]);
 
   const pickMode = (mode: RankingMode) => {
     onView({ ...view, mode, offset: 0 });
     if (mode === 'dates' && datesSupported && mode !== view.mode) setSheetVisible(true);
   };
+
+  const over = isPeriodOver(view, today);
+  const daysLeft = days ? daysBetween(today, days.to) + 1 : 0;
+  const showStatus = !!days && (view.mode !== 'dates' || datesSupported);
 
   return (
     <View style={styles.container}>
@@ -68,37 +86,41 @@ export default function RankingPeriodPicker({ colors, isDark, today, modes, view
             <Pressable
               key={mode}
               onPress={() => pickMode(mode)}
-              style={[styles.segmentItem, active && { backgroundColor: colors.primary }]}
+              style={[styles.segmentItem, active && { backgroundColor: colors.surface }]}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
             >
-              <Text style={[styles.segmentText, { color: active ? colors.onPrimary : colors.text }]} numberOfLines={1}>{t(`multi.ranking_mode.${mode}`)}</Text>
+              <Text style={[styles.segmentText, { color: active ? colors.text : colors.textMuted }]} numberOfLines={1}>{t(`multi.ranking_mode.${mode}`)}</Text>
             </Pressable>
           );
         })}
       </View>
 
       {stepped && (
-        <View style={styles.stepper}>
-          <StepButton
-            colors={colors}
-            icon="chevron-back"
-            label={t(view.mode === 'week' ? 'multi.ranking_prev_week' : 'archives.prev_month')}
-            disabled={view.offset <= -maxBack}
-            onPress={() => onView({ ...view, offset: view.offset - 1 })}
-          />
-          <View style={styles.stepperTexts} accessible accessibilityLiveRegion="polite" accessibilityLabel={[title, subtitle].filter(Boolean).join(', ')}>
-            <Text style={[styles.stepperTitle, { color: colors.text }]} numberOfLines={1}>{title}</Text>
-            {!!subtitle && <Text style={[styles.stepperSubtitle, { color: colors.textMuted }]} numberOfLines={1}>{subtitle}</Text>}
-          </View>
-          <StepButton
-            colors={colors}
-            icon="chevron-forward"
-            label={t(view.mode === 'week' ? 'multi.ranking_next_week' : 'archives.next_month')}
-            disabled={view.offset >= 0}
-            onPress={() => onView({ ...view, offset: view.offset + 1 })}
-          />
-        </View>
+        <ScrollView
+          ref={strip}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.strip}
+          contentContainerStyle={styles.stripContent}
+          accessibilityRole="radiogroup"
+        >
+          {offsets.map(offset => {
+            const active = offset === view.offset;
+            return (
+              <Pressable
+                key={offset}
+                onLayout={e => { chipX.current[offset] = e.nativeEvent.layout.x; }}
+                onPress={() => onView({ ...view, offset })}
+                style={[styles.chip, { borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary : colors.surface }]}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: active }}
+              >
+                <Text style={[styles.chipText, { color: active ? colors.onPrimary : colors.text }]}>{chipLabel(offset)}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
       )}
 
       {view.mode === 'dates' && (datesSupported ? (
@@ -119,6 +141,34 @@ export default function RankingPeriodPicker({ colors, isDark, today, modes, view
         </View>
       ))}
 
+      {showStatus && (
+        <View style={styles.status}>
+          <View style={styles.statusTexts} accessible accessibilityLiveRegion="polite">
+            {stepped && <Text style={[styles.statusDays, { color: colors.text }]} numberOfLines={1}>{daysText}</Text>}
+            <View style={styles.badgeRow}>
+              <View style={[styles.badge, { backgroundColor: over ? colors.neutralSoft : colors.primarySoft }]}>
+                <Ionicons name={over ? 'flag' : 'time-outline'} size={RFValue(12)} color={over ? colors.textMuted : colors.primaryText} />
+                <Text style={[styles.badgeText, { color: over ? colors.textMuted : colors.primaryText }]}>
+                  {over ? t('multi.ranking_final') : t('multi.ranking_live', { count: daysLeft })}
+                </Text>
+              </View>
+            </View>
+          </View>
+          {stepped && view.offset !== 0 && (
+            <Pressable
+              onPress={() => onView({ ...view, offset: 0 })}
+              hitSlop={8}
+              style={({ pressed }) => [styles.back, { backgroundColor: colors.primarySoft, opacity: pressed ? 0.6 : 1 }]}
+              accessibilityRole="button"
+              accessibilityLabel={t(view.mode === 'week' ? 'multi.ranking_back_week' : 'multi.ranking_back_month')}
+            >
+              <Ionicons name="arrow-undo" size={RFValue(14)} color={colors.primaryText} />
+              <Text style={[styles.backText, { color: colors.primaryText }]}>{t(view.mode === 'week' ? 'multi.ranking_week_this' : 'multi.ranking_month_this')}</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
+
       <DateRangeSheet
         visible={isSheetVisible}
         colors={colors}
@@ -132,6 +182,18 @@ export default function RankingPeriodPicker({ colors, isDark, today, modes, view
   );
 }
 
+/** A past week on its chip: '12–18 oct.', '28 sept. – 4 oct.', with the year when not this one */
+function weekLabel(days: { from: string; to: string }, today: string, locale: string): string {
+  const from = parseLocalDateString(days.from);
+  const to = parseLocalDateString(days.to);
+  const year = days.to.slice(0, 4) !== today.slice(0, 4) ? { year: 'numeric' as const } : {};
+  const end = to.toLocaleDateString(locale, { day: 'numeric', month: 'short', ...year });
+  return from.getMonth() === to.getMonth()
+    ? `${from.getDate()}–${end}`
+    : `${from.toLocaleDateString(locale, { day: 'numeric', month: 'short' })} – ${end}`;
+}
+
+/** Previous or next month of the calendar */
 function StepButton({ colors, icon, label, disabled, onPress }: {
   colors: UiColors; icon: 'chevron-back' | 'chevron-forward'; label: string; disabled: boolean; onPress: () => void;
 }) {
@@ -271,12 +333,6 @@ const styles = StyleSheet.create({
     fontSize: RFValue(13),
     fontWeight: '700',
   },
-  stepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: RFValue(10),
-    marginTop: RFValue(12),
-  },
   stepButton: {
     width: 44,
     height: 44,
@@ -284,19 +340,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepperTexts: {
-    flex: 1,
+  strip: {
+    marginTop: RFValue(12),
+    marginHorizontal: -RFValue(14),
+  },
+  stripContent: {
+    paddingHorizontal: RFValue(14),
+    gap: 8,
+  },
+  status: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: RFValue(10),
+    marginTop: RFValue(12),
   },
-  stepperTitle: {
-    fontSize: RFValue(16),
-    fontWeight: '800',
-    textTransform: 'capitalize',
+  statusTexts: {
+    flex: 1,
+    gap: RFValue(5),
   },
-  stepperSubtitle: {
+  statusDays: {
+    fontSize: RFValue(14),
+    fontWeight: '700',
+  },
+  badgeRow: {
+    flexDirection: 'row',
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: 999,
+    paddingVertical: 3,
+    paddingHorizontal: RFValue(8),
+  },
+  badgeText: {
+    fontSize: RFValue(12),
+    fontWeight: '700',
+  },
+  back: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderRadius: 999,
+    paddingVertical: RFValue(7),
+    paddingHorizontal: RFValue(11),
+  },
+  backText: {
     fontSize: RFValue(13),
-    fontWeight: '600',
-    marginTop: 2,
+    fontWeight: '800',
   },
   datesButton: {
     flexDirection: 'row',
