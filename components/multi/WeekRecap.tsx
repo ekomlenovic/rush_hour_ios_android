@@ -32,7 +32,7 @@ export default function WeekRecap({ api, colors, myPlayerId, refreshKey, blocked
   useEffect(() => {
     let cancelled = false;
     // A bonus: nothing is shown while it loads or if it fails
-    api.leaderboard('week', lastWeek)
+    api.leaderboard({ period: 'week', date: lastWeek })
       .then(board => { if (!cancelled && board.period === 'week') setWeek(board); })
       .catch(() => {});
     return () => { cancelled = true; };

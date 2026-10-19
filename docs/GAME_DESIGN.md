@@ -234,7 +234,7 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 
 | Règle | Implémentation |
 |---|---|
-| L'écran Multijoueur a trois onglets en bas : **Défi** (défi du jour, classement du jour), **Hebdo** (classements semaine / mois, des défis ou des duels), **Duels** | `app/multi/index.tsx`, `HomeTabBar` (`activeKey`) |
+| L'écran Multijoueur a trois onglets en bas : **Défi** (défi du jour, classement du jour), **Hebdo** (classements des défis ou des duels : cette semaine, la semaine dernière, ce mois-ci, le mois dernier, **deux dates** choisies sur un calendrier, et depuis toujours pour les duels), **Duels** | `app/multi/index.tsx`, `HomeTabBar` (`activeKey`), `RankingPeriodPicker`, `rankingQuery` (`utils/multi/rankingPeriod.ts`) |
 | Deux joueurs du **même serveur**. L'onglet **Duels** liste en direct les duels ouverts (rejoints d'un toucher, **sans code**) et ceux en cours ; elle grandit avec les duels | `GET /duels`, `DuelsCard` (`components/multi/DuelsCard.tsx`) |
 | Créer un duel : difficulté au choix, **vainqueur** au choix (**le plus rapide** ou **le moins de coups**), **privé** en option (absent de la liste, rejoint avec son **code à 5 caractères**) | `NewDuelSheet`, `DuelCodeSheet` (`components/multi/DuelSheets.tsx`), `Duels` (`server/src/duel.ts`) |
 | Un **WebSocket** par joueur (`/api/v1/duel`), authentifié par le premier message ; le reverse proxy doit laisser passer les WebSockets | `useDuel` (`hooks/useDuel.ts`), `buildNginx` |
@@ -247,7 +247,7 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 | **Revanche** quand les deux la demandent : nouveau puzzle | `rematch` |
 | **Spectateurs** : un duel en cours de la liste se regarde d'un toucher (« Regarder »), un duel privé avec son code (un code d'un duel déjà commencé ouvre le duel en spectateur) ; les deux plateaux en direct, de la même taille, rien à jouer, revanches comprises. Les joueurs voient combien regardent (👁) ; 50 spectateurs au plus par duel ; pas de replay pour un spectateur | `watch` (`Duels`), `SpectatorResult` (`app/multi/duel.tsx`), `DuelsCard` |
 | Un duel **terminé est gardé** : score entre les deux joueurs (affiché à la fin), historique « Mes duels », **replay** des deux plateaux au rythme réel (coups effacés après `REPLAY_RETENTION_DAYS`, résultats gardés) | `DuelStore` (`server/src/duelStore.ts`), `DuelHistoryCard`, `app/multi/duel-replay.tsx` |
-| **Classement des duels** (semaine, mois, tout) : victoires, puis moins de défaites | `rankDuels`, `GET /duels/leaderboard`, `DuelLeaderboard` |
+| **Classement des duels** (semaine, mois, deux dates, tout) : victoires, puis moins de défaites | `rankDuels`, `GET /duels/leaderboard`, `DuelLeaderboard` |
 | Aucun effet sur le reste du jeu (streak, XP…) | |
 | Un serveur trop ancien (sans `features: ['duel']` dans `/info`) ou un WebSocket bloqué : message clair | `useDuel` |
 
@@ -256,9 +256,10 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 | Règle | Implémentation |
 |---|---|
 | Jour : **coups, puis temps** ; égalité parfaite = même rang ; puis en cours, non terminé, abandon | `rankDay` (`server/src/leaderboard.ts`) |
-| Semaine (ISO) et mois : **points** par jour, 10, 8, 6, 5, 4, 3, 2 puis 1 par victoire, 0 sinon | `RANK_POINTS`, `rankPeriod` |
+| Semaine (ISO), mois et entre deux dates : **points** par jour, 10, 8, 6, 5, 4, 3, 2 puis 1 par victoire, 0 sinon | `RANK_POINTS`, `rankPeriod` |
 | Semaine : chaque joueur a ses **7 cases du lundi au dimanche** (points du jour, « – » pas joué, « … » en cours, « · » à venir) qui se remplissent au fil des défis | `days` de `rankPeriod`, `weekCells` (`utils/multi/week.ts`), `Leaderboard` |
 | **Récap de la semaine dernière** (podium + ta place) en haut de l'onglet Hebdo, du lundi au mercredi (jours du défi en cours) | `showsWeekRecap`, `WeekRecap` |
+| **Deux dates** (dans n'importe quel ordre, bornes comprises) : seulement sur un serveur qui l'annonce (`features: ['ranking_range']` dans `/info`) ; sinon le choix « Dates » n'apparaît pas, la semaine et le mois derniers marchent partout | `rankingSpan` (`server/src/app.ts`), `FEATURES` |
 | Scores gardés pour toujours ; **coups** effacés après `REPLAY_RETENTION_DAYS` | `Challenges.purgeReplays` |
 
 ### Anti-triche
