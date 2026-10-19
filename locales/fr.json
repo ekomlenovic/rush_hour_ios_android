@@ -176,7 +176,8 @@
     "share_message_named": "Défie-moi sur Rush Hours ! Peux-tu battre « {{name}} » en {{moves}} coups ?\n{{url}}",
     "daily_done": "Défi du jour terminé !",
     "weekly_done": "Défi de la semaine terminé !",
-    "challenge_moves": "Tes coups : {{moves}} · Solution optimale : {{best}}"
+    "challenge_moves": "Tes coups : {{moves}} · Solution optimale : {{best}}",
+    "perfect": "Parfait !"
   },
   "tutorial": {
     "title": "Tutoriel",
@@ -697,7 +698,9 @@
     "reached": "Atteint",
     "current": "Tu es ici",
     "a11y_level_row": "Niveau {{level}}, {{state}}. {{rewards}}",
-    "locked": "À venir"
+    "locked": "À venir",
+    "player_level_short": "Joueur niv. {{level}}",
+    "xp_to_next": "Encore {{xp}} XP avant le niveau {{level}}"
   },
   "cosmetics": {
     "garage": "Garage",
@@ -708,7 +711,7 @@
     "new_count_one": "{{count}} nouveauté",
     "new_count_other": "{{count}} nouveautés",
     "unlocked_title": "Nouveau dans le Garage",
-    "open_garage": "Choisir au Garage",
+    "open_garage": "Voir au Garage",
     "unlocked_count": "{{unlocked}} / {{total}} débloqués",
     "a11y_item": "{{name}}, {{state}}",
     "tabs": {
@@ -779,7 +782,9 @@
       "speed": "Trace de vitesse",
       "bubbles": "Bulles",
       "greenlight": "Feu vert"
-    }
+    },
+    "equip": "Équiper",
+    "equipped": "Équipé"
   },
   "archives": {
     "won_count_one": "{{count}} archive réussie",
