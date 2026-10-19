@@ -3,9 +3,10 @@ import { sampleLevels } from '../data/sampleLevels';
 import { recomputeStreak } from './streak';
 import { computeRetroactiveXp } from '../data/progression';
 import { getStars, starsFromScore } from '../utils/scoring';
+import { compactSavedStates } from './savedStates';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 5;
+export const STORE_VERSION = 6;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
@@ -34,6 +35,13 @@ export function migrateState(persistedState: unknown, version: number): Record<s
   if (version < 4) {
     // v4: 2 stars within half of the optimum instead of 3 extra moves, past wins recounted
     Object.assign(state, recountStars(state));
+  }
+  if (version < 6) {
+    // v6: undo stacks capped and dead challenge saves cleared, the save grew past what Android
+    // reads back (2 MB) and the game started empty. A past daily in progress moves to its archive
+    if (state.savedStates && typeof state.savedStates === 'object') {
+      state.savedStates = compactSavedStates(state.savedStates as Record<string, LevelSaveState>);
+    }
   }
   return state;
 }
