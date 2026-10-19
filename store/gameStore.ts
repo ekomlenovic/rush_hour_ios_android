@@ -213,7 +213,7 @@ export function isSaveForLevel(level: Pick<Level, 'vehicles'>, saved: Pick<Level
   });
 }
 
-/** A move updates the store several times: its writes, and those of the next moves, are grouped */
+/** Moves, undos, hints and play time are written grouped, at most this long after (see guardedStorage) */
 const SAVE_WRITE_DELAY_MS = 1000;
 /** The infinite map and the archive days played: big, rarely changed, each in its own entry */
 export const SEPARATE_SAVE_FIELDS: readonly (keyof GameState)[] = ['generatedLevels', 'archiveLevels'];
@@ -245,8 +245,11 @@ export const useGameStore = create<GameState>()(
         };
       };
 
-      /** Updates the in-progress state and mirrors it into savedStates */
-      const saveSnapshot = (partial: Parameters<typeof withSnapshot>[0]) => set(withSnapshot(partial));
+      /** Updates the in-progress state and mirrors it into savedStates, written with the next moves */
+      const saveSnapshot = (partial: Parameters<typeof withSnapshot>[0]) => {
+        saveStorage.deferNextWrite();
+        set(withSnapshot(partial));
+      };
 
       /**
        * Advances today's mission counters; completing them all grants XP and a streak freeze (more XP if the stock is full).
@@ -382,6 +385,7 @@ export const useGameStore = create<GameState>()(
         const moved = vehicles.find(v => v.id === vehicleId);
         const record = moved && toMoveRecord(moved, newRow, newCol, Date.now() - attemptStartedAt);
 
+        saveStorage.deferNextWrite();
         bumpMissions({ moves: 1 }, withSnapshot({
           vehicles: updated,
           moveCount: moveCount + 1,
@@ -434,6 +438,7 @@ export const useGameStore = create<GameState>()(
       addPlayTime: (ms) => {
         if (ms <= 0) return;
         const { currentAttempt, stats } = get();
+        saveStorage.deferNextWrite();
         bumpMissions({ playMs: ms }, withSnapshot({
           currentAttempt: { ...currentAttempt, elapsedMs: currentAttempt.elapsedMs + ms },
           stats: { ...stats, totalPlayTimeMs: stats.totalPlayTimeMs + ms },
@@ -779,7 +784,10 @@ export const useGameStore = create<GameState>()(
         set({ maxUnlockedLevel: Math.max(1, totalLevels) });
       },
 
-      setGenerationState: (state) => set((s) => ({ generationState: { ...s.generationState, ...state } })),
+      setGenerationState: (state) => {
+        saveStorage.deferNextWrite();
+        set((s) => ({ generationState: { ...s.generationState, ...state } }));
+      },
 
       cancelGeneration: () => {
         const current = get().generationState;

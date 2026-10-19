@@ -149,12 +149,13 @@ describe('the writes of the save', () => {
     const store = launch();
     await flush();
     await settle();
-    (AsyncStorage.setItem as jest.Mock).mockClear();
 
     const { sampleLevels } = require('../data/sampleLevels');
     const level = sampleLevels[20];
     const v = level.vehicles.find((x: { isTarget: boolean }) => !x.isTarget);
     store.getState().loadLevel(level);
+    await flush();
+    (AsyncStorage.setItem as jest.Mock).mockClear();
     for (let i = 0; i < 10; i++) store.getState().moveVehicle(v.id, v.row, v.col);
     expect(AsyncStorage.setItem).not.toHaveBeenCalled();
 
@@ -164,6 +165,22 @@ describe('the writes of the save', () => {
     expect(state.savedStates[level.id].moveCount).toBe(10);
     expect(state.stats.totalMoves).toBe(store.getState().stats.totalMoves);
     expect(state.dailyMissions.counters.moves).toBe(10);
+  });
+
+  it('a win is written right away, with the moves before it', async () => {
+    const store = launch();
+    await flush();
+    const { sampleLevels } = require('../data/sampleLevels');
+    const level = sampleLevels[20];
+    const v = level.vehicles.find((x: { isTarget: boolean }) => !x.isTarget);
+    store.getState().loadLevel(level);
+    for (let i = 0; i < 3; i++) store.getState().moveVehicle(v.id, v.row, v.col);
+    store.getState().completeLevel(level.id, 300, 3, 30_000);
+    // No timer run: nothing waits
+    await flush();
+    const { state } = await stored();
+    expect(state.progress.find((p: { levelId: number }) => p.levelId === level.id)).toMatchObject({ completed: true, stars: 3 });
+    expect(state.stats.totalMoves).toBe(store.getState().stats.totalMoves);
   });
 
   it('a move updates the store once, with its mission counters', async () => {
@@ -195,11 +212,17 @@ describe('the grouped device storage', () => {
     jest.clearAllMocks();
   });
 
+  /** A grouped write, as the store makes for a move */
+  const deferred = (guarded: ReturnType<typeof createGuardedStorage<{ moves: number }>>, moves: number) => {
+    guarded.deferNextWrite();
+    guarded.storage.setItem('k', value(moves));
+  };
+
   it('writes what is pending as soon as the app leaves the foreground, then writes at once until it is back', async () => {
-    const { storage, allowWrites } = createGuardedStorage<{ moves: number }>({ delayMs: 1000 });
-    allowWrites();
-    storage.setItem('k', value(1));
-    storage.setItem('k', value(2));
+    const guarded = createGuardedStorage<{ moves: number }>({ delayMs: 1000 });
+    guarded.allowWrites();
+    deferred(guarded, 1);
+    deferred(guarded, 2);
     expect(AsyncStorage.setItem).not.toHaveBeenCalled();
 
     // Killed in the background right after: nothing is lost
@@ -209,22 +232,36 @@ describe('the grouped device storage', () => {
     expect(JSON.parse((await AsyncStorage.getItem('k'))!)).toEqual(value(2));
 
     // Play time recorded on the way out
-    storage.setItem('k', value(3));
+    deferred(guarded, 3);
     await flush();
     expect(AsyncStorage.setItem).toHaveBeenCalledTimes(2);
     expect(JSON.parse((await AsyncStorage.getItem('k'))!)).toEqual(value(3));
 
     appGoes('active');
-    storage.setItem('k', value(4));
+    deferred(guarded, 4);
     await flush();
     expect(AsyncStorage.setItem).toHaveBeenCalledTimes(2);
     await settle();
     expect(JSON.parse((await AsyncStorage.getItem('k'))!)).toEqual(value(4));
   });
 
+  it('writes at once what is not grouped, with what was pending', async () => {
+    const guarded = createGuardedStorage<{ moves: number }>({ delayMs: 1000 });
+    guarded.allowWrites();
+    deferred(guarded, 1);
+    // A win: written right away, the move before it with it
+    guarded.storage.setItem('k', value(2));
+    await flush();
+    expect(AsyncStorage.setItem).toHaveBeenCalledTimes(1);
+    expect(JSON.parse((await AsyncStorage.getItem('k'))!)).toEqual(value(2));
+    await settle();
+    expect(AsyncStorage.setItem).toHaveBeenCalledTimes(1);
+  });
+
   it('holds every write until the save is loaded', async () => {
-    const { storage } = createGuardedStorage<{ moves: number }>({ delayMs: 1000 });
-    storage.setItem('k', value(1));
+    const guarded = createGuardedStorage<{ moves: number }>({ delayMs: 1000 });
+    deferred(guarded, 1);
+    guarded.storage.setItem('k', value(2));
     appGoes('background');
     await settle();
     expect(AsyncStorage.setItem).not.toHaveBeenCalled();
@@ -287,10 +324,11 @@ describe('the map and the archive days, in their own entries', () => {
   it('are not written again by moves', async () => {
     await launched();
     const store = await launched();
-    (AsyncStorage.multiSet as jest.Mock).mockClear();
     const level = sampleLevels[20];
     const v = level.vehicles.find((x: { isTarget: boolean }) => !x.isTarget);
     store.getState().loadLevel(level);
+    await flush();
+    (AsyncStorage.multiSet as jest.Mock).mockClear();
     for (let i = 0; i < 5; i++) store.getState().moveVehicle(v.id, v.row, v.col);
     await settle();
     expect(writtenKeys()).toEqual([[KEY]]);
@@ -309,15 +347,29 @@ describe('the map and the archive days, in their own entries', () => {
     expect(relaunched.getState().generatedLevels).toEqual([...generatedLevels, level]);
   });
 
-  it('the main entry wins when it still has them (written by an older version since)', async () => {
+  it('an older version installed back, which saw no map, never makes it lost', async () => {
     await launched();
-    // An older version, installed back, wrote everything in one entry, with one more map level
-    const older = { ...oneEntry, state: { ...oneEntry.state, generatedLevels: [...generatedLevels, { ...sampleLevels[32], id: sampleLevels.length + 3 }] } };
+    // It wrote everything in one entry: an empty map, the archive day it played, and the rest
+    const otherDay = { '2026-10-10': { ...sampleLevels[4], id: 900003 } };
+    const older = { ...oneEntry, state: { ...oneEntry.state, xp: 650, generatedLevels: [], archiveLevels: otherDay } };
     await AsyncStorage.setItem(KEY, JSON.stringify(older));
+
     const store = await launched();
-    expect(store.getState().generatedLevels).toEqual(older.state.generatedLevels);
-    expect(await entry(GENERATED_KEY)).toEqual(older.state.generatedLevels);
+    expect(store.getState().generatedLevels).toEqual(generatedLevels);
+    expect(store.getState().archiveLevels).toEqual({ ...archiveLevels, ...otherDay });
+    expect(store.getState().xp).toBeGreaterThanOrEqual(650);
+    expect(await entry(GENERATED_KEY)).toEqual(generatedLevels);
+    expect(await entry(ARCHIVES_KEY)).toEqual({ ...archiveLevels, ...otherDay });
     expect((await entry(KEY)).state).not.toHaveProperty('generatedLevels');
+  });
+
+  it('an older version installed back, which extended the map, keeps the longer map', async () => {
+    await launched();
+    const longer = [...generatedLevels, { ...sampleLevels[32], id: sampleLevels.length + 3 }];
+    await AsyncStorage.setItem(KEY, JSON.stringify({ ...oneEntry, state: { ...oneEntry.state, generatedLevels: longer } }));
+    const store = await launched();
+    expect(store.getState().generatedLevels).toEqual(longer);
+    expect(await entry(GENERATED_KEY)).toEqual(longer);
   });
 
   it('are emptied by a reset, and still in the export', async () => {
