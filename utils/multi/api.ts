@@ -134,6 +134,8 @@ export interface AdminPuzzles {
     catalog: { total: number; fresh: number } | null;
     /** Left aside after a generation too long, until then */
     asideUntil: number | null;
+    /** How many by default; absent on older servers, which cannot change the size */
+    defaultSize?: number;
   }[];
   /** Being generated now; null when all is ready */
   working: { difficulty: Difficulty; kind: 'scratch' | 'catalog'; since: number } | null;
@@ -162,11 +164,16 @@ export interface AdminSettings {
   releaseTime: string;
   gracePeriodMs: number;
   pregenerateAheadMs: number;
+  /** Duel puzzles generated ahead by difficulty, 0: none (absent on older servers) */
+  duelPool?: Record<Difficulty, number>;
   /** Time zone of the server (TZ), not changed from the app */
   timeZone: string;
   nextReleaseAt: number;
 }
-export type AdminSettingsPatch = Partial<Omit<AdminSettings, 'thresholds' | 'timeZone' | 'nextReleaseAt'>> & { thresholds?: Partial<Thresholds> };
+export type AdminSettingsPatch = Partial<Omit<AdminSettings, 'thresholds' | 'duelPool' | 'timeZone' | 'nextReleaseAt'>> & {
+  thresholds?: Partial<Thresholds>;
+  duelPool?: Partial<Record<Difficulty, number>>;
+};
 /** A duel in the list of the server (server/src/duel.ts): open ones to join, the ones being played */
 /** What decides the winner of a duel: the first red car out, or the fewest moves */
 export type DuelMetric = 'time' | 'moves';
