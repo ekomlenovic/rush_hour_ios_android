@@ -14,7 +14,7 @@ import { errorCode, multiErrorMessage } from '@/components/multi/errors';
 import { gameKey, selectActiveAccount, useMultiStore, type MultiGame } from '@/store/multiStore';
 import { useMultiApi } from '@/hooks/useMultiApi';
 import { elapsedMs, gameFromStart, playMove, submission } from '@/utils/multi/game';
-import type { SubmitResult } from '@/utils/multi/api';
+import { MultiApiError, type SubmitResult } from '@/utils/multi/api';
 import IconText from '@/components/IconText';
 
 type Phase = 'loading' | 'playing' | 'sending' | 'send_failed' | 'won' | 'error';
@@ -122,11 +122,15 @@ export default function MultiPlayScreen() {
         text: t('multi.abandon'), style: 'destructive', onPress: async () => {
           try {
             await api.abandon(game.date);
-            removeGame(game.serverUrl, game.date);
-            router.back();
           } catch (e) {
-            Alert.alert(t('common.error'), multiErrorMessage(t, e));
+            // Past its deadline the game is already over (unfinished): nothing left to abandon
+            if (!(e instanceof MultiApiError && e.code === 'too_late')) {
+              Alert.alert(t('common.error'), multiErrorMessage(t, e));
+              return;
+            }
           }
+          removeGame(game.serverUrl, game.date);
+          router.back();
         },
       },
     ]);

@@ -515,7 +515,10 @@ export function buildApp(deps: AppDeps) {
       }, async (request) => {
         const attempt = getAttempt(request.player.id, request.body.date);
         if (!attempt) throw new ApiError(404, 'no_game');
-        if (attempt.status !== 'playing') throw new ApiError(409, 'already_finished');
+        // Past its deadline, the game is unfinished for good: it stays so in the leaderboards
+        const status = statusOf(attempt);
+        if (status === 'unfinished') throw new ApiError(409, 'too_late');
+        if (status !== 'playing') throw new ApiError(409, 'already_finished');
         db.prepare("UPDATE attempts SET status = 'abandoned', finished_at = ? WHERE id = ?").run(now(), attempt.id);
         return { status: 'abandoned', minMoves: challenges.get(attempt.date)?.min_moves ?? null };
       });

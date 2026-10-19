@@ -218,6 +218,18 @@ describe('grace period', () => {
     expect((await request('GET', '/challenge/today', token)).body.pending).toBeNull();
   });
 
+  it('a game past its deadline cannot be abandoned: it stays unfinished', async () => {
+    const { join, request, clock, db } = open({ at: paris('2026-10-17', '11:50') });
+    const { token } = await join('Léo');
+    await request('POST', '/challenge/start', token, {});
+    clock.now = paris('2026-10-17', '13:01');
+    const res = await request('POST', '/challenge/abandon', token, { date: '2026-10-16' });
+    expect(res).toEqual({ status: 409, body: { error: 'too_late' } });
+    expect(db.prepare('SELECT status, finished_at FROM attempts').get()).toEqual({ status: 'playing', finished_at: null });
+    const day = await request('GET', '/leaderboard?period=day&date=2026-10-16', token);
+    expect(day.body.rows[0]).toMatchObject({ status: 'unfinished' });
+  });
+
   it('a closed challenge cannot be started', async () => {
     const { join, request } = open({ at: paris('2026-10-17', '12:30') });
     const { token } = await join('Léo');
