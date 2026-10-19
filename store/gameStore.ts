@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 import * as Haptics from 'expo-haptics';
 import { sampleLevels } from '../data/sampleLevels';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
@@ -213,19 +213,23 @@ export function isSaveForLevel(level: Pick<Level, 'vehicles'>, saved: Pick<Level
   });
 }
 
-const saveStorage = createGuardedStorage();
+/** Moves, undos, hints and play time are written grouped, at most this long after (see guardedStorage) */
+const SAVE_WRITE_DELAY_MS = 1000;
+/** The infinite map and the archive days played: big, rarely changed, each in its own entry */
+export const SEPARATE_SAVE_FIELDS: readonly (keyof GameState)[] = ['generatedLevels', 'archiveLevels'];
+const saveStorage = createGuardedStorage<Partial<GameState>>({ delayMs: SAVE_WRITE_DELAY_MS, separateFields: SEPARATE_SAVE_FIELDS });
 
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => {
-      /** Updates the in-progress state and mirrors it into savedStates */
-      const saveSnapshot = (partial: Partial<Pick<GameState, 'vehicles' | 'moveCount' | 'history' | 'moveLog' | 'currentAttempt' | 'stats' | 'totalHintsUsed'>>) => {
+      /** The in-progress state updated and mirrored into savedStates (nothing without a level loaded) */
+      const withSnapshot = (partial: Partial<Pick<GameState, 'vehicles' | 'moveCount' | 'history' | 'moveLog' | 'currentAttempt' | 'stats' | 'totalHintsUsed'>>): Partial<GameState> => {
         const state = get();
-        if (!state.currentLevel) return;
+        if (!state.currentLevel) return {};
         const next = { ...state, ...partial };
         const levelKey = getLevelKey(state.currentLevel, state);
 
-        set({
+        return {
           ...partial,
           savedStates: {
             ...state.savedStates,
@@ -238,12 +242,21 @@ export const useGameStore = create<GameState>()(
               startedAt: next.attemptStartedAt,
             }
           }
-        });
+        };
       };
 
-      /** Advances today's mission counters; completing them all grants XP and a streak freeze (more XP if the stock is full) */
-      const bumpMissions = (increments: Partial<Record<MissionCounter, number>>) => {
-        const state = get();
+      /** Updates the in-progress state and mirrors it into savedStates, written with the next moves */
+      const saveSnapshot = (partial: Parameters<typeof withSnapshot>[0]) => {
+        saveStorage.deferNextWrite();
+        set(withSnapshot(partial));
+      };
+
+      /**
+       * Advances today's mission counters; completing them all grants XP and a streak freeze (more XP if the stock is full).
+       * `update` is applied in the same set: a move is written once, with its mission counters.
+       */
+      const bumpMissions = (increments: Partial<Record<MissionCounter, number>>, update: Partial<GameState> = {}) => {
+        const state = { ...get(), ...update };
         const missions = getMissionsForDay(state.dailyMissions, getLocalDateString(new Date()));
         const counters = { ...missions.counters };
         for (const [counter, amount] of Object.entries(increments) as [MissionCounter, number][]) {
@@ -252,11 +265,12 @@ export const useGameStore = create<GameState>()(
 
         const allDone = missions.ids.every(id => MISSIONS_BY_ID[id] && isMissionDone(MISSIONS_BY_ID[id], counters));
         if (!allDone || missions.rewarded) {
-          set({ dailyMissions: { ...missions, counters } });
+          set({ ...update, dailyMissions: { ...missions, counters } });
           return;
         }
 
         set({
+          ...update,
           dailyMissions: { ...missions, counters, rewarded: true },
           stats: { ...state.stats, missionDaysCompleted: state.stats.missionDaysCompleted + 1 },
         });
@@ -371,14 +385,14 @@ export const useGameStore = create<GameState>()(
         const moved = vehicles.find(v => v.id === vehicleId);
         const record = moved && toMoveRecord(moved, newRow, newCol, Date.now() - attemptStartedAt);
 
-        saveSnapshot({
+        saveStorage.deferNextWrite();
+        bumpMissions({ moves: 1 }, withSnapshot({
           vehicles: updated,
           moveCount: moveCount + 1,
           history: [...history, snapshot],
           moveLog: record ? [...moveLog, record] : moveLog,
           stats: { ...stats, totalMoves: stats.totalMoves + 1 },
-        });
-        bumpMissions({ moves: 1 });
+        }));
       },
 
       undo: () => {
@@ -424,11 +438,11 @@ export const useGameStore = create<GameState>()(
       addPlayTime: (ms) => {
         if (ms <= 0) return;
         const { currentAttempt, stats } = get();
-        saveSnapshot({
+        saveStorage.deferNextWrite();
+        bumpMissions({ playMs: ms }, withSnapshot({
           currentAttempt: { ...currentAttempt, elapsedMs: currentAttempt.elapsedMs + ms },
           stats: { ...stats, totalPlayTimeMs: stats.totalPlayTimeMs + ms },
-        });
-        bumpMissions({ playMs: ms });
+        }));
       },
 
       completeLevel: (levelId, score, stars, timeMs) => {
@@ -770,7 +784,10 @@ export const useGameStore = create<GameState>()(
         set({ maxUnlockedLevel: Math.max(1, totalLevels) });
       },
 
-      setGenerationState: (state) => set((s) => ({ generationState: { ...s.generationState, ...state } })),
+      setGenerationState: (state) => {
+        saveStorage.deferNextWrite();
+        set((s) => ({ generationState: { ...s.generationState, ...state } }));
+      },
 
       cancelGeneration: () => {
         const current = get().generationState;
@@ -839,7 +856,7 @@ export const useGameStore = create<GameState>()(
     },
     {
       name: 'rush-hour-storage',
-      storage: createJSONStorage(() => saveStorage.storage),
+      storage: saveStorage.storage,
       version: STORE_VERSION,
       migrate: (persistedState, version) => migrateState(persistedState, version) as unknown as GameState,
       // Relocate generated levels if the official pack grew, and deep-merge stats
