@@ -21,6 +21,39 @@ export interface ChallengeRow {
   level_json: string;
   min_moves: number;
   generated_at: number;
+  /** The level of the app it is a variant of; null: generated from scratch */
+  variant_of: number | null;
+  /** How long its generation took; null: not known (generated before it was kept) */
+  generation_ms: number | null;
+}
+
+/** A daily challenge as the admin sees it: the current one and the next ones */
+export interface ChallengeOverview {
+  date: string;
+  number: number;
+  /** Its difficulty: the one configured until its release, then the one it came out with */
+  difficulty: Difficulty;
+  releaseAt: number;
+  /** Being played now */
+  current: boolean;
+  /**
+   * ready: generated (in its difficulty); generating: being generated now; failed: the last
+   * generation gave nothing, tried again each minute; waiting: generated later, from generatesAt
+   */
+  status: 'ready' | 'generating' | 'failed' | 'waiting';
+  /** When the background work generates it (PREGENERATE_AHEAD before its release) */
+  generatesAt: number;
+  generatingSince: number | null;
+  failedAt: number | null;
+  /** The puzzle generated; in another difficulty when it changed since, generated again before its release */
+  puzzle: {
+    difficulty: Difficulty;
+    minMoves: number;
+    variantOf: number | null;
+    generationMs: number | null;
+    generatedAt: number;
+    level: Level;
+  } | null;
 }
 
 /** What the admin can change in the app (#50); the environment until then */
@@ -53,6 +86,9 @@ export interface ChallengesOptions {
  */
 export class Challenges {
   private inflight = new Map<string, Promise<ChallengeRow | null>>();
+  /** Since when a date is being generated, and when its last generation failed */
+  private generatingSince = new Map<string, number>();
+  private failedAt = new Map<string, number>();
   private timer: NodeJS.Timeout | null = null;
   private ticking: Promise<void> | null = null;
 
@@ -118,7 +154,23 @@ export class Challenges {
     }
     let job = this.inflight.get(date);
     if (!job) {
-      job = this.generate(date, difficulty).finally(() => this.inflight.delete(date));
+      this.generatingSince.set(date, this.now());
+      job = this.generate(date, difficulty)
+        .then(
+          (row) => {
+            if (row) this.failedAt.delete(date);
+            else this.failedAt.set(date, this.now());
+            return row;
+          },
+          (err: unknown) => {
+            this.failedAt.set(date, this.now());
+            throw err;
+          },
+        )
+        .finally(() => {
+          this.inflight.delete(date);
+          this.generatingSince.delete(date);
+        });
       this.inflight.set(date, job);
     }
     return job;
@@ -149,14 +201,14 @@ export class Challenges {
       const released = this.released(date);
       if (released) return released;
       if (level === 'timeout') break;
-      if (level) return this.save(date, difficulty, level, { ms: Date.now() - started });
+      if (level) return this.save(date, difficulty, level, null, Date.now() - started);
     }
     if (withVariants) {
       for (let attempt = 0; attempt < GENERATION_TRIES; attempt++) {
         const variant = await this.variant(`${seed}:variant:${attempt}`, difficulty);
         const released = this.released(date);
         if (released) return released;
-        if (variant) return this.save(date, difficulty, variant.level, { variantOf: variant.sourceId, ms: Date.now() - started });
+        if (variant) return this.save(date, difficulty, variant.level, variant.sourceId, Date.now() - started);
       }
     }
     this.log.error({ date, difficulty }, 'challenge generation failed');
@@ -198,17 +250,65 @@ export class Challenges {
     }
   }
 
-  private save(date: string, difficulty: Difficulty, level: Level, details: object): ChallengeRow {
+  private save(date: string, difficulty: Difficulty, level: Level, variantOf: number | null, ms: number): ChallengeRow {
     const row: ChallengeRow = {
       date, difficulty, level_json: JSON.stringify(level), min_moves: level.minMoves, generated_at: this.now(),
+      variant_of: variantOf, generation_ms: ms,
     };
     this.db.prepare(`
-      INSERT INTO challenges (date, difficulty, level_json, min_moves, generated_at) VALUES (?, ?, ?, ?, ?)
+      INSERT INTO challenges (date, difficulty, level_json, min_moves, generated_at, variant_of, generation_ms) VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(date) DO UPDATE SET difficulty = excluded.difficulty, level_json = excluded.level_json,
-        min_moves = excluded.min_moves, generated_at = excluded.generated_at
-    `).run(row.date, row.difficulty, row.level_json, row.min_moves, row.generated_at);
-    this.log.info({ date, difficulty, minMoves: level.minMoves, ...details }, 'challenge generated');
+        min_moves = excluded.min_moves, generated_at = excluded.generated_at,
+        variant_of = excluded.variant_of, generation_ms = excluded.generation_ms
+    `).run(row.date, row.difficulty, row.level_json, row.min_moves, row.generated_at, row.variant_of, row.generation_ms);
+    this.log.info({ date, difficulty, minMoves: level.minMoves, variantOf: variantOf ?? undefined, ms }, 'challenge generated');
     return row;
+  }
+
+  /**
+   * The current challenge and the next ones: those generated ahead (PREGENERATE_AHEAD),
+   * and the first one after them, generated later
+   */
+  overview(): ChallengeOverview[] {
+    const current = this.currentDate();
+    const ahead = this.settings().pregenerateAheadMs;
+    const list: ChallengeOverview[] = [];
+    let date = current;
+    for (let i = 0; i < 32; i++) {
+      const releaseAt = this.releaseAt(date);
+      const generatesAt = releaseAt - ahead;
+      const row = this.get(date);
+      const released = this.now() >= releaseAt;
+      const difficulty = released && row ? row.difficulty : this.difficultyFor(date);
+      const generatingSince = this.generatingSince.get(date) ?? null;
+      const failedAt = this.failedAt.get(date) ?? null;
+      list.push({
+        date,
+        number: this.number(date),
+        difficulty,
+        releaseAt,
+        current: date === current,
+        status: generatingSince !== null ? 'generating'
+          : row && row.difficulty === difficulty ? 'ready'
+          : failedAt !== null ? 'failed'
+          : 'waiting',
+        generatesAt,
+        generatingSince,
+        failedAt,
+        puzzle: row ? {
+          difficulty: row.difficulty,
+          minMoves: row.min_moves,
+          variantOf: row.variant_of,
+          generationMs: row.generation_ms,
+          generatedAt: row.generated_at,
+          level: this.level(row),
+        } : null,
+      });
+      // The first one generated later closes the list
+      if (generatesAt > this.now()) break;
+      date = addDays(date, 1);
+    }
+    return list;
   }
 
   /** Generates the current challenge and every one coming out within PREGENERATE_AHEAD */
