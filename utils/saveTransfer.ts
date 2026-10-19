@@ -1,5 +1,7 @@
 import { useGameStore, type Level, type LevelProgress, type ChallengeResult } from '../store/gameStore';
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from '../store/migrations';
+import { isWellFormedSave } from '../store/savedStates';
+import { initialStats } from '../store/stats';
 import { sampleLevels } from '../data/sampleLevels';
 import { ACHIEVEMENTS } from '../data/achievements';
 import {
@@ -258,6 +260,27 @@ export function isConsistent(state: Record<string, any>, now: Date = new Date())
   return true;
 }
 
+/** The levels in progress that can be resumed: a broken one is dropped (only that game is lost), not the whole save */
+function wellFormedSavedStates(savedStates: Record<string, unknown> = {}): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(savedStates).filter(([, saved]) => isWellFormedSave(saved)));
+}
+
+const isAmount = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0;
+
+/** The known statistics with a valid value: a missing or broken one takes its default */
+function wellFormedStats(stats: Record<string, unknown> = {}): Record<string, unknown> {
+  const clean: Record<string, unknown> = {};
+  for (const [field, initial] of Object.entries(initialStats())) {
+    const value = stats[field];
+    if (isRecord(initial)) {
+      if (isRecord(value)) clean[field] = Object.fromEntries(Object.entries(value).filter(([, count]) => isAmount(count)));
+    } else if (isAmount(value) || (initial === null && value === null)) {
+      clean[field] = value;
+    }
+  }
+  return clean;
+}
+
 /** Most XP the save's wins can have given: first wins at their best stars, every other win as a replay */
 export function maxPlausibleXp(state: Record<string, any>): number {
   const levels = fixedLevelsOf(state);
@@ -302,6 +325,8 @@ export function parseSave(code: string, now: Date = new Date()): ImportResult {
   state = Object.fromEntries(Object.entries(state).filter(([field]) => persistedFields.has(field)));
   state.progress ??= [];
   if (!isConsistent(state, now)) return { ok: false, error: 'inconsistent' };
+  if (state.savedStates !== undefined) state.savedStates = wellFormedSavedStates(state.savedStates);
+  if (state.stats !== undefined) state.stats = wellFormedStats(state.stats);
 
   const knownAchievements = new Set(ACHIEVEMENTS.map(a => a.id));
   state.achievements = [...new Set((state.achievements ?? []) as string[])].filter(id => knownAchievements.has(id));
