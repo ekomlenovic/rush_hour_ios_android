@@ -20,6 +20,7 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 | Le **lundi**, le puzzle est plus difficile | `isMondayDaily` |
 | La réussite fait avancer le **streak** | `completeDailyChallenge` → `updateStreak` |
 | N'affecte pas la progression de la carte | ID réservé `999999`, exclu de `maxUnlockedLevel` |
+| Ne s'ouvre **que le jour même** : un lien vers un jour passé ouvre son archive, un jour à venir rien du tout (sinon le streak sautait à ce jour et la sauvegarde ne s'importait plus) ; même règle pour l'hebdo et sa semaine. Une partie restée ouverte après minuit gagne encore le défi de la veille | `isDailyOpen`, `isDailyWinnable` (`utils/challengeDates.ts`), `app/game.tsx`, migration v7 |
 
 > ⚠️ Toute évolution touchant au défi du jour (missions, succès, partage…) doit respecter ces contraintes. Exemple : un succès « finir le défi du jour sans indice » n'a pas de sens, il n'y a jamais d'indice.
 
@@ -199,7 +200,7 @@ Pour changer de téléphone sans perdre sa progression, **sans serveur ni compte
 
 **Triche** : sans serveur, on ne peut pas l'empêcher (tout ce que l'app vérifie, quelqu'un qui lit son code peut le refaire). L'enjeu est faible : pas de classement, pas de monnaie, un tricheur ne lèse que lui-même. On bloque la triche facile et les fichiers abîmés, sans jamais refuser la sauvegarde d'un vrai joueur :
 - format non lisible (`RHSAVE1.<somme de contrôle>.<base64>`) et **somme de contrôle** : un code modifié à la main ou tronqué est refusé ;
-- **cohérence** : étoiles et score possibles pour l'optimum du niveau, selon la règle des étoiles actuelle ou l'ancienne (2 étoiles à 3 coups près, gardée par les défis d'avant la 1.1) (campagne et niveaux générés seulement : un niveau créé peut être modifié après coup), rien dans le futur, aucune archive du jour même, streak ≤ meilleur streak ≤ défis du jour réussis ;
+- **cohérence** : étoiles et score possibles pour l'optimum du niveau, selon la règle des étoiles actuelle ou l'ancienne (2 étoiles à 3 coups près, gardée par les défis d'avant la 1.1) (campagne et niveaux générés seulement : un niveau créé peut être modifié après coup), rien dans le futur (au plus **un jour d'avance** : une sauvegarde faite sur un téléphone plus à l'est, `TIME_ZONE_TOLERANCE_DAYS`), aucune archive du jour même, streak ≤ meilleur streak ≤ défis du jour réussis ;
 - **recalcul plutôt que confiance** : XP plafonnée à ce que les victoires ont pu rapporter (`maxPlausibleXp`), gels plafonnés au stock du niveau joueur, succès inconnus retirés, cosmétiques non débloqués remis par défaut.
 
 > ⚠️ Un nouveau champ sauvegardé est exporté automatiquement. S'il est propre au téléphone, l'ajouter à `DEVICE_FIELDS`.
