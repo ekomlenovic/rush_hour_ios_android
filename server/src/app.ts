@@ -736,6 +736,31 @@ export function buildApp(deps: AppDeps) {
           return { dryRun, ...count };
         });
 
+        // What the home of the admin panel shows: what is waiting, and a word on each part
+        admin.get('/admin/summary', async () => {
+          const flagged = db.prepare(`
+            SELECT a.* FROM attempts a WHERE a.status = 'won' AND a.flags_json IS NOT NULL AND a.verdict IS NULL
+          `).all() as unknown as AttemptRow[];
+          const count = (sql: string) => Number((db.prepare(sql).get() as { n: number }).n);
+          const pool = puzzles.overview();
+          const current = settings();
+          return {
+            toReview: flagged.filter(a => verdictOf(a) === 'suspect').length,
+            reports: count('SELECT COUNT(*) AS n FROM reports'),
+            players: count('SELECT COUNT(*) AS n FROM players'),
+            banned: count('SELECT COUNT(*) AS n FROM players WHERE banned = 1'),
+            joinOpen: current.joinOpen,
+            invitesAdminOnly: current.invitesAdminOnly,
+            serverName: current.serverName,
+            releaseTime: current.releaseTime,
+            puzzles: {
+              ready: pool.difficulties.reduce((n, d) => n + d.ready, 0),
+              size: pool.difficulties.reduce((n, d) => n + d.size, 0),
+              working: pool.working,
+            },
+          };
+        });
+
         // The duel puzzles ready ahead, and the one being generated
         admin.get('/admin/puzzles', async () => puzzles.overview());
 
