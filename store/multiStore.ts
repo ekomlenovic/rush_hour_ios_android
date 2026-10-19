@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 import { createGuardedStorage } from './guardedStorage';
 import type { Level, MoveRecord, Vehicle } from './types';
 
@@ -71,7 +71,7 @@ interface MultiState {
 
 export const gameKey = (serverUrl: string, date: string) => `${serverUrl}|${date}`;
 
-const multiStorage = createGuardedStorage();
+const multiStorage = createGuardedStorage<Partial<MultiState>>();
 
 export const useMultiStore = create<MultiState>()(
   persist(
@@ -123,7 +123,7 @@ export const useMultiStore = create<MultiState>()(
     {
       name: 'rush-hours-multi',
       version: 1,
-      storage: createJSONStorage(() => multiStorage.storage),
+      storage: multiStorage.storage,
       // Accounts (token, recovery code) are only written once read back: never overwritten by an empty list
       onRehydrateStorage: () => (state, error) => {
         if (error || !state) {
