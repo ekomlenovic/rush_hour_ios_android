@@ -156,18 +156,15 @@ export default function GarageScreen() {
                 accessibilityLabel={t('cosmetics.a11y_item', { name, state })}
                 accessibilityState={{ selected: isSelected }}
               >
-                {isNew && (
-                  <View style={[styles.newPill, { backgroundColor: colors.primary }]}>
-                    <Text style={[styles.newPillText, { color: colors.onPrimary }]}>{t('cosmetics.new')}</Text>
-                  </View>
-                )}
                 <CosmeticThumb def={def} scheme={scheme} size={56} locked={!isUnlocked} />
                 <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>{name}</Text>
                 {isSelected ? (
                   <Text style={[styles.itemState, { color: colors.primaryText }]}>✓ {t('cosmetics.selected')}</Text>
-                ) : isUnlocked ? null : (
+                ) : isUnlocked ? (
+                  isNew && <Text style={[styles.itemState, { color: colors.success }]}>{t('cosmetics.new')}</Text>
+                ) : (
                   <>
-                    <Text style={[styles.itemCondition, { color: colors.textMuted }]} numberOfLines={1}>{shortCondition}</Text>
+                    <Text style={[styles.itemCondition, { color: colors.textMuted }]} numberOfLines={3}>{shortCondition}</Text>
                     <XpBar colors={colors} ratio={unlockProgress(def, context)} height={4} />
                   </>
                 )}
@@ -207,16 +204,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tabCountText: { fontSize: 10, fontWeight: '800' },
-  newPill: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    zIndex: 1,
-  },
-  newPillText: { fontSize: RFValue(10), fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   item: {
     flexBasis: '47%',
