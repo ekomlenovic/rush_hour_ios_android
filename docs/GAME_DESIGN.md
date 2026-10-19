@@ -57,6 +57,9 @@ Les défis du jour **passés** se rejouent depuis les archives : toucher un jour
 | On garde le meilleur score et les meilleures étoiles | `completeLevel` |
 | Après une victoire, on peut **revoir la solution optimale** : elle se joue toute seule depuis la position de départ, et on avance ou recule coup par coup | `SolutionPlayer`, `vehiclesAtStep` (`utils/solutionReplay.ts`) |
 | Si la victoire n'est pas optimale, l'écran de victoire affiche l'écart et propose **« Réessayer pour 3 ⭐ »** : une nouvelle tentative depuis le départ (compteurs remis à zéro, ce n'est pas un recommencer) | `handleRetry` (`app/game.tsx`) |
+| **3 niveaux jouables d'avance** : le prochain niveau et les **2 suivants**. Un joueur bloqué sur un niveau dur continue et y revient plus tard ; gagner un niveau plus loin fait avancer la fenêtre. Calculé à partir de `maxUnlockedLevel` (sa signification ne change pas), rien de sauvegardé en plus | `MAP_LOOKAHEAD`, `isMapLevelUnlocked` (`utils/mapFocus.ts`) |
+| **Boss** : un niveau de la campagne qui demande **au moins 8 coups de plus** que la médiane des 5 niveaux avant lui. Repéré dans la courbe, jamais choisi à la main ; la campagne ne grandissant qu'à la fin, un boss le reste | `findBossLevels`, `isBossLevel` (`data/bosses.ts`) |
+| Un boss est **annoncé** : badge sur son nœud de la carte (même verrouillé), « Niveau N · Boss » en titre de partie, « boss » dans l'annonce du lecteur d'écran. Sa **première victoire** rapporte **50 XP de plus** | `LevelNode`, `app/game.tsx`, `BOSS_WIN_XP` |
 
 ## Campagne — on n'ajoute qu'à la fin
 
@@ -156,6 +159,7 @@ Chaque victoire fait avancer une barre d'XP : la progression se voit même sur u
 | XP pour passer du niveau `n` au niveau `n + 1` : `150 × n^1,6` | `xpToNextLevel` (`data/progression.ts`) |
 | Niveau de la carte ou personnalisé : `10 + 2 × coups minimum` (plafonné à 60 coups), × 0,5 / 0,75 / 1 selon les étoiles | `levelWinXp` |
 | Un niveau **déjà réussi** ne rapporte que **25 %** : rejouer fait progresser, sans permettre de farmer | `REPLAY_XP_FACTOR` |
+| Première victoire d'un **boss** de la carte : **50 XP** en plus ; les boss déjà gagnés ont été crédités (migration v9) | `BOSS_WIN_XP`, `isBossLevel` (`data/bosses.ts`) |
 | Défi du jour : `60 + 20 × étoiles` ; défi hebdo : `150 + 50 × étoiles`, **une seule fois** par défi | `dailyWinXp`, `weeklyWinXp` |
 | 3 missions du jour terminées : **100 XP** (**150 XP** si le stock de gels est plein) ; chaque succès débloqué : **50 XP** | `MISSIONS_XP`, `ACHIEVEMENT_XP` |
 | Le tutoriel ne rapporte rien | `completeLevel` (niveau non chargé) |

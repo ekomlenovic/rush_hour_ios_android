@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import * as Haptics from 'expo-haptics';
 import { sampleLevels } from '../data/sampleLevels';
+import { isBossLevel } from '../data/bosses';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
 import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
 import { DailyMissionsState, FAST_WIN_MS, MissionCounter, MissionReward, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
@@ -13,7 +14,7 @@ import type {
 } from './types';
 import { MAX_STREAK_FREEZES, settleStreak, advanceStreak } from './streak';
 import {
-  ACHIEVEMENT_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp,
+  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp,
 } from '../data/progression';
 import { isArchiveDateAvailable } from '../utils/archives';
 import { isDailyWinnable, isWeeklyWinnable } from '../utils/challengeDates';
@@ -490,7 +491,8 @@ export const useGameStore = create<GameState>()(
           currentAttempt: emptyAttempt(),
         });
         if (isCurrentLevel && currentLevel) {
-          addXp(levelWinXp(currentLevel.minMoves, stars, !existing?.completed));
+          const isFirstWin = !existing?.completed;
+          addXp(levelWinXp(currentLevel.minMoves, stars, isFirstWin) + (isFirstWin && isBossLevel(levelId) ? BOSS_WIN_XP : 0));
           bumpMissions({
             levelWins: 1,
             perfectWins: stars === 3 ? 1 : 0,
