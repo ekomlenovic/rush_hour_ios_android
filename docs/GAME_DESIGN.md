@@ -56,6 +56,25 @@ Les défis du jour **passés** se rejouent depuis les archives : toucher un jour
 | Après une victoire, on peut **revoir la solution optimale** : elle se joue toute seule depuis la position de départ, et on avance ou recule coup par coup | `SolutionPlayer`, `vehiclesAtStep` (`utils/solutionReplay.ts`) |
 | Si la victoire n'est pas optimale, l'écran de victoire affiche l'écart et propose **« Réessayer pour 3 ⭐ »** : une nouvelle tentative depuis le départ (compteurs remis à zéro, ce n'est pas un recommencer) | `handleRetry` (`app/game.tsx`) |
 
+## Campagne — on n'ajoute qu'à la fin
+
+Objectif : **1000 niveaux** (#40), livrés par lots (305-500, 501-750, 751-1000), chacun dans sa PR.
+
+| Règle | Implémentation |
+|---|---|
+| Un niveau livré n'est **jamais modifié, réordonné ni retiré** : `progress`, `savedStates` et `maxUnlockedLevel` sont indexés par id. On **ajoute** uniquement à la fin | hash des niveaux livrés dans `SHIPPED` (`__tests__/campaignPack.test.ts`), une ligne de plus par lot |
+| Format compact : une ligne par niveau, l'id est la position dans la liste (ids 1..N sans trou). ~100 octets par niveau au lieu de ~2,6 Ko en JSON | `data/campaignPack.ts`, `data/levelCodec.ts` |
+| Courbe de difficulté **par zone de 20 niveaux** : 2 niveaux de **respiration** (~12 coups sous la zone), une **rampe** autour de la base de la zone, un **boss** (+12 coups) en dernier. La base monte de 38 coups (zone 16) à 58 (zone 50) | `planLevel` (`scripts/campaign/plan.ts`) |
+| Plus de **7×7 et 8×8** quand ça devient dur (6×6 seulement jusqu'à ~42 coups, jamais pour un boss), sorties sur les **4 bords** | idem |
+| Qualité : **pas de doublon**, même à une rotation ou un miroir près ; un nombre minimum de véhicules différents bougent dans la solution optimale (4 + coups / 10, au plus 9) ; `minMoves` vérifié par le solveur du jeu | `canonicalKey`, `generate.ts` ; `verify.ts` (hors CI) |
+| Génération **reproductible** et **reprenable** : chaque niveau trouvé est écrit tout de suite dans `generated.jsonl` avec ses paramètres, sa graine et son restart (rejouable avec `--seed --restart`). On peut couper à tout moment, relancer reprend au premier niveau manquant | `scripts/campaign/generate.ts`, `checkpoint.ts`, `hardlvl/` |
+
+Ajouter un lot :
+
+1. `npx tsx scripts/campaign/generate.ts --to 500` (relancer autant de fois que nécessaire après une coupure ; `--threads N` pour laisser des cœurs libres, `--budget S` secondes par essai) ;
+2. `npx tsx scripts/campaign/build.ts --to 500` copie les niveaux dans le pack et affiche la ligne à ajouter à `SHIPPED` ;
+3. `npx tsx scripts/campaign/verify.ts --from <premier id du lot>`, puis `npm test`.
+
 ## Niveaux personnalisés — créer, importer, partager
 
 Accueil → **Mes niveaux** : onglets Créés, Importés, Favoris.
