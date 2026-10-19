@@ -701,7 +701,6 @@
   },
   "cosmetics": {
     "garage": "Garage",
-    "garage_desc": "Unlock looks by playing: stars, player level, challenges and achievements.",
     "preview": "Preview",
     "selected": "Selected",
     "locked": "Locked",
@@ -710,6 +709,18 @@
     "new_count_other": "{{count}} new items",
     "unlocked_count": "{{unlocked}} / {{total}} unlocked",
     "a11y_item": "{{name}}, {{state}}",
+    "tabs": {
+      "board": "Board",
+      "skin": "Car",
+      "palette": "Colors",
+      "effect": "Effects"
+    },
+    "unlock_short": {
+      "level": "Level {{level}}",
+      "levels": "{{current}}/{{count}} levels",
+      "weeklies": "Weekly {{current}}/{{count}}",
+      "winter": "Winter daily"
+    },
     "kinds": {
       "board": "Board",
       "skin": "Target car",

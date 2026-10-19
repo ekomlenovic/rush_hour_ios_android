@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next';
+import { describeUnlockShort } from '../components/garage/describeUnlock';
 import {
   ACHIEVEMENT_XP, BASE_FREEZE_SLOTS, BOSS_WIN_XP, MISSIONS_XP, REPLAY_XP_FACTOR, dailyWinXp, getFreezeCapacity, getLevelInfo,
   getPlayerLevel, getPlayerTitle, levelWinXp, totalXpForLevel, weeklyWinXp, xpToNextLevel,
@@ -250,5 +252,20 @@ describe('cosmetics', () => {
     const target = vehicles.find(v => v.isTarget)!;
     expect(ocean.has(target.id)).toBe(false);
     expect([...ocean.values()][0]).toBe(VEHICLE_PALETTES.ocean![0]);
+  });
+});
+
+describe('garage: short unlock conditions', () => {
+  const t = ((key: string, options?: Record<string, unknown>) => `${key}${options ? JSON.stringify(options) : ''}`) as unknown as TFunction;
+  const context = buildCosmeticContext({
+    xp: 0, progress: [{ levelId: 1, completed: true, bestScore: 300, stars: 3 }],
+    dailyChallengeProgress: {}, weeklyChallengeProgress: {}, achievements: [],
+  });
+
+  it('fit one line, the progress capped at the target', () => {
+    expect(describeUnlockShort(t, COSMETICS.find(c => c.id === 'confetti')!, context)).toBe('★ 3/100');
+    expect(describeUnlockShort(t, COSMETICS.find(c => c.id === 'greenlight')!, context))
+      .toBe('cosmetics.unlock_short.levels{"count":3,"current":1}');
+    expect(describeUnlockShort(t, COSMETICS.find(c => c.id === 'tractor')!, context)).toBe('achievements.zone_perfect_1');
   });
 });

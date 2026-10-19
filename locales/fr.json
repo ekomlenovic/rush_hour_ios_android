@@ -701,7 +701,6 @@
   },
   "cosmetics": {
     "garage": "Garage",
-    "garage_desc": "Débloque des styles en jouant : étoiles, niveau joueur, défis et succès.",
     "preview": "Aperçu",
     "selected": "Choisi",
     "locked": "Verrouillé",
@@ -710,6 +709,18 @@
     "new_count_other": "{{count}} nouveautés",
     "unlocked_count": "{{unlocked}} / {{total}} débloqués",
     "a11y_item": "{{name}}, {{state}}",
+    "tabs": {
+      "board": "Plateau",
+      "skin": "Voiture",
+      "palette": "Couleurs",
+      "effect": "Effets"
+    },
+    "unlock_short": {
+      "level": "Niveau {{level}}",
+      "levels": "{{current}}/{{count}} niveaux",
+      "weeklies": "Hebdo {{current}}/{{count}}",
+      "winter": "Défi en hiver"
+    },
     "kinds": {
       "board": "Plateau",
       "skin": "Voiture cible",
