@@ -145,7 +145,8 @@ export function buildApp(deps: AppDeps) {
   // ── Duels ──────────────────────────────────────────────────────────────────
 
   const duelStore = new DuelStore(db, config.timeZone);
-  const puzzles = new PuzzlePool({ db, generator, fillGenerator: deps.poolGenerator, log: app.log, now });
+  // How many are kept ready ahead: the settings of the admin
+  const puzzles = new PuzzlePool({ db, generator, fillGenerator: deps.poolGenerator, log: app.log, now, sizes: () => settings().duelPool });
   const duels = new Duels({
     puzzles, now, log: app.log,
     save: (record) => duelStore.save(record),
@@ -786,6 +787,7 @@ export function buildApp(deps: AppDeps) {
             updateSettings(db, config, request.body, now());
             // A new difficulty: the puzzles not released yet are generated again right away
             void challenges.tick();
+            if ('duelPool' in request.body) puzzles.resized();
             return settingsView();
           } catch (e) {
             if (e instanceof SettingsError) throw new ApiError(400, e.code, { field: e.message });
@@ -798,6 +800,7 @@ export function buildApp(deps: AppDeps) {
           try {
             resetSettings(db, config, now());
             void challenges.tick();
+            puzzles.resized();
             return settingsView();
           } catch (e) {
             if (e instanceof SettingsError) throw new ApiError(400, e.code, { field: e.message });

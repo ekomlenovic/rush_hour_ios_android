@@ -41,6 +41,33 @@ describe('duel puzzles', () => {
   });
 });
 
+describe('duel puzzles kept ready', () => {
+  it('the admin chooses how many by difficulty, 0 to turn one off', async () => {
+    const { joinAdmin, request } = open();
+    const admin = await joinAdmin();
+    const settings = (await request('GET', '/admin/settings', admin.token)).body;
+    expect(settings.duelPool).toEqual({ EASY: 10, NORMAL: 10, HARD: 10, EXPERT: 10, MASTER: 3 });
+
+    const changed = (await request('PATCH', '/admin/settings', admin.token, { duelPool: { MASTER: 0, EASY: 5 } })).body;
+    expect(changed.duelPool).toEqual({ EASY: 5, NORMAL: 10, HARD: 10, EXPERT: 10, MASTER: 0 });
+    const puzzles = (await request('GET', '/admin/puzzles', admin.token)).body;
+    expect(puzzles.difficulties.map((d: { size: number }) => d.size)).toEqual([5, 10, 10, 10, 0]);
+    expect((await request('GET', '/admin/summary', admin.token)).body.puzzles.size).toBe(35);
+
+    for (const duelPool of [{ MASTER: -1 }, { MASTER: 31 }, { MASTER: 1.5 }, { LEGEND: 3 }, [3], 'none']) {
+      expect((await request('PATCH', '/admin/settings', admin.token, { duelPool })).body.error).toBe('invalid_settings');
+    }
+    // Back to the defaults with the other settings
+    expect((await request('POST', '/admin/settings/reset', admin.token)).body.duelPool.MASTER).toBe(3);
+  });
+
+  it('settings saved before keep the default sizes', async () => {
+    const { db, config } = open();
+    db.prepare("INSERT INTO settings (key, value) VALUES ('admin_settings', ?)").run(JSON.stringify({ joinOpen: false }));
+    expect(loadSettings(db, config)).toMatchObject({ joinOpen: false, duelPool: { EASY: 10, NORMAL: 10, HARD: 10, EXPERT: 10, MASTER: 3 } });
+  });
+});
+
 describe('home of the admin panel', () => {
   it('counts what waits for the admin, and a word on each part', async () => {
     const { join, joinAdmin, play, request } = open();
