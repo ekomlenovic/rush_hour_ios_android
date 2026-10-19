@@ -280,7 +280,8 @@ describe('translations of the multiplayer mode', () => {
     const multi = strings.multi;
     expect(MULTI_ERROR_CODES.filter(code => typeof multi.errors[code] !== 'string')).toEqual([]);
     expect(Object.keys(multi.status).sort()).toEqual(['abandoned', 'playing', 'unfinished', 'won']);
-    expect(Object.keys(multi.period).sort()).toEqual(['day', 'month', 'week']);
+    expect(Object.keys(multi.ranking_mode).sort()).toEqual(['all', 'dates', 'month', 'week']);
+    expect(Object.keys(multi.ranking_mode_desc).sort()).toEqual(['all', 'dates', 'month', 'week']);
     expect(typeof multi.my_abandoned).toBe('string');
     expect(typeof multi.my_unfinished).toBe('string');
     // A title for each page of the admin panel
@@ -509,5 +510,63 @@ describe('week of the challenges', () => {
     expect(weekCells('2026-10-19', [], '2026-10-21').map(c => c.kind)).toEqual([
       'missed', 'missed', 'upcoming', 'upcoming', 'upcoming', 'upcoming', 'upcoming',
     ]);
+  });
+});
+
+describe('weekly rankings period', () => {
+  const { rankingQuery, rankingDays, isPeriodOver, shiftMonth, stripOffsets } = require('../utils/multi/rankingPeriod') as typeof import('../utils/multi/rankingPeriod');
+  const { rankingParams } = require('../utils/multi/api') as typeof import('../utils/multi/api');
+  const dates = { from: '2026-10-05', to: '2026-10-01' };
+  const view = (mode: 'week' | 'month' | 'dates' | 'all', offset = 0) => ({ mode, offset, dates });
+  // A Monday, early in the month
+  const today = '2026-10-19';
+
+  it('asks the server for a week or a month back from this one, or two dates in order', () => {
+    expect(rankingQuery(view('week'), today)).toEqual({ period: 'week' });
+    expect(rankingQuery(view('week', -1), today)).toEqual({ period: 'week', date: '2026-10-12' });
+    expect(rankingQuery(view('week', -3), today)).toEqual({ period: 'week', date: '2026-09-28' });
+    expect(rankingQuery(view('month'), today)).toEqual({ period: 'month' });
+    expect(rankingQuery(view('month', -1), today)).toEqual({ period: 'month', date: '2026-09-01' });
+    expect(rankingQuery(view('month', -1), '2026-01-15')).toEqual({ period: 'month', date: '2025-12-01' });
+    expect(rankingQuery(view('dates'), today)).toEqual({ period: 'range', from: '2026-10-01', to: '2026-10-05' });
+    expect(rankingQuery(view('all'), today)).toEqual({ period: 'all' });
+  });
+
+  it('offers the weeks and the months back from the current one', () => {
+    expect(stripOffsets('week').slice(0, 3)).toEqual([0, -1, -2]);
+    expect(stripOffsets('week')).toHaveLength(53);
+    expect(stripOffsets('month').at(-1)).toBe(-36);
+  });
+
+  it('steps months across the years', () => {
+    expect(shiftMonth('2026-10-19', 0)).toBe('2026-10-01');
+    expect(shiftMonth('2026-01-31', -1)).toBe('2025-12-01');
+    expect(shiftMonth('2026-03-31', -13)).toBe('2025-02-01');
+    expect(shiftMonth('2025-12-01', 1)).toBe('2026-01-01');
+  });
+
+  it('shows the days covered', () => {
+    expect(rankingDays(view('week'), today)).toEqual({ from: '2026-10-19', to: '2026-10-25' });
+    expect(rankingDays(view('week', -1), today)).toEqual({ from: '2026-10-12', to: '2026-10-18' });
+    expect(rankingDays(view('month'), today)).toEqual({ from: '2026-10-01', to: '2026-10-31' });
+    expect(rankingDays(view('month', -1), today)).toEqual({ from: '2026-09-01', to: '2026-09-30' });
+    expect(rankingDays(view('dates'), today)).toEqual({ from: '2026-10-01', to: '2026-10-05' });
+    expect(rankingDays(view('all'), today)).toBeNull();
+  });
+
+  it('a period over has a final ranking', () => {
+    expect(isPeriodOver(view('week'), today)).toBe(false);
+    expect(isPeriodOver(view('week', -1), today)).toBe(true);
+    expect(isPeriodOver(view('month'), today)).toBe(false);
+    expect(isPeriodOver(view('month', -1), today)).toBe(true);
+    expect(isPeriodOver(view('dates'), today)).toBe(true);
+    expect(isPeriodOver({ mode: 'dates', offset: 0, dates: { from: '2026-10-12', to: today } }, today)).toBe(false);
+    expect(isPeriodOver(view('all'), today)).toBe(false);
+  });
+
+  it('builds the query string of the server', () => {
+    expect(rankingParams({ period: 'day' })).toBe('period=day');
+    expect(rankingParams({ period: 'week', date: '2026-10-12' })).toBe('period=week&date=2026-10-12');
+    expect(rankingParams({ period: 'range', from: '2026-10-01', to: '2026-10-05' })).toBe('period=range&from=2026-10-01&to=2026-10-05');
   });
 });
