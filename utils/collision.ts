@@ -16,13 +16,8 @@ export function getMoveBounds(
     let minCol = 0;
     let maxCol = gridSize - vehicle.length;
 
-    // IF target vehicle, it might go BEYOND the grid if the exit is at col -1 or col gridSize
-    // But getMoveBounds is used for visual snapping. 
-    // Usually, the game "wins" when it hits the boundary.
-    // However, if we want to allow smooth sliding OFF the board, we'd increase bounds.
-    // For now, let's keep it tight but allow +1 if it is the target car.
-    // Looking at Rust: exitCol = gs (Right) or 255 (Left).
-    // TypeScript checkWin will trigger as soon as it TOUCHES the exit.
+    // Bounds stay inside the grid, target car included: checkWin detects the win
+    // as soon as the car touches the exit edge.
 
     for (const other of others) {
       if (other.orientation === 'horizontal') {
@@ -31,7 +26,7 @@ export function getMoveBounds(
           // Strictly to the left
           if (otherEnd <= vehicle.col) {
             minCol = Math.max(minCol, otherEnd);
-          } 
+          }
           // Strictly to the right
           else if (other.col >= vehicle.col + vehicle.length) {
             maxCol = Math.min(maxCol, other.col - vehicle.length);
