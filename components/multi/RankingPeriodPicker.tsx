@@ -5,82 +5,148 @@ import { useTranslation } from 'react-i18next';
 import BottomSheet from '@/components/home/BottomSheet';
 import { RFValue } from '@/utils/responsive';
 import { addDays, getMonthGrid, parseLocalDateString } from '@/utils/date';
-import { orderedDates, rankingDays, type RankingChoice } from '@/utils/multi/rankingPeriod';
+import {
+  MAX_MONTHS_BACK, MAX_WEEKS_BACK, orderedDates, rankingDays, shiftMonth, type RankingMode, type RankingView,
+} from '@/utils/multi/rankingPeriod';
 import type { UiColors } from '@/theme';
 
 const WEEK_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-/** How far back the calendar of the dates goes */
-const MAX_MONTHS_BACK = 36;
 
 interface Props {
   colors: UiColors;
   isDark: boolean;
   /** The day of the current challenge on the server */
   today: string;
-  choices: readonly RankingChoice[];
-  choice: RankingChoice;
-  onChoice: (choice: RankingChoice) => void;
-  dates: { from: string; to: string };
-  onDates: (dates: { from: string; to: string }) => void;
+  modes: readonly RankingMode[];
+  view: RankingView;
+  onView: (view: RankingView) => void;
+  /** The server can rank between two dates */
+  datesSupported: boolean;
 }
 
-/** The period of the weekly rankings: this week, last week, this month, last month, two dates, all time */
-export default function RankingPeriodPicker({ colors, isDark, today, choices, choice, onChoice, dates, onDates }: Props) {
+/**
+ * The period of the weekly rankings, at the top of their card: week, month, two dates or
+ * all time; a week or a month is stepped back one at a time (‹ ›), two dates are picked on
+ * a calendar.
+ */
+export default function RankingPeriodPicker({ colors, isDark, today, modes, view, onView, datesSupported }: Props) {
   const { t, i18n } = useTranslation();
   const [isSheetVisible, setSheetVisible] = useState(false);
 
-  const day = (date: string) => parseLocalDateString(date).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' });
-  const days = rankingDays(choice, today, dates);
-  const daysText = !days ? t('multi.ranking_period.all')
-    : days.from === days.to ? day(days.from) : t('multi.ranking_days', { from: day(days.from), to: day(days.to) });
+  const day = (date: string, withYear = false) => parseLocalDateString(date).toLocaleDateString(i18n.language, {
+    weekday: 'short', day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}),
+  });
+  const days = rankingDays(view, today);
+  // The year only when it is not this one
+  const withYear = !!days && days.from.slice(0, 4) !== today.slice(0, 4);
+  const daysText = !days ? '' : days.from === days.to ? day(days.from, withYear)
+    : t('multi.ranking_days', { from: day(days.from, withYear), to: day(days.to, withYear) });
 
-  const pick = (next: RankingChoice) => {
-    onChoice(next);
-    if (next === 'dates') setSheetVisible(true);
+  const stepped = view.mode === 'week' || view.mode === 'month';
+  const maxBack = view.mode === 'week' ? MAX_WEEKS_BACK : MAX_MONTHS_BACK;
+  const title = view.mode === 'week'
+    ? view.offset === 0 ? t('multi.ranking_week_this') : view.offset === -1 ? t('multi.ranking_week_last') : t('multi.ranking_weeks_ago', { count: -view.offset })
+    : view.mode === 'month'
+      ? parseLocalDateString(shiftMonth(today, view.offset)).toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })
+      : '';
+  // A month is named by its name: its days are not needed, how far back it is helps
+  const subtitle = view.mode === 'month'
+    ? view.offset === 0 ? t('multi.ranking_month_this') : view.offset === -1 ? t('multi.ranking_month_last') : null
+    : daysText;
+
+  const pickMode = (mode: RankingMode) => {
+    onView({ ...view, mode, offset: 0 });
+    if (mode === 'dates' && datesSupported && mode !== view.mode) setSheetVisible(true);
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.chips} accessibilityRole="radiogroup">
-        {choices.map(c => {
-          const active = c === choice;
+      <View style={[styles.segment, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
+        {modes.map(mode => {
+          const active = mode === view.mode;
           return (
             <Pressable
-              key={c}
-              onPress={() => pick(c)}
-              style={[styles.chip, { borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primarySoft : 'transparent' }]}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: active }}
+              key={mode}
+              onPress={() => pickMode(mode)}
+              style={[styles.segmentItem, active && { backgroundColor: colors.primary }]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
             >
-              {c === 'dates' && <Ionicons name="calendar-outline" size={RFValue(13)} color={active ? colors.primaryText : colors.text} />}
-              <Text style={[styles.chipText, { color: active ? colors.primaryText : colors.text }]}>{t(`multi.ranking_period.${c}`)}</Text>
+              <Text style={[styles.segmentText, { color: active ? colors.onPrimary : colors.text }]} numberOfLines={1}>{t(`multi.ranking_mode.${mode}`)}</Text>
             </Pressable>
           );
         })}
       </View>
-      {choice === 'dates' ? (
+
+      {stepped && (
+        <View style={styles.stepper}>
+          <StepButton
+            colors={colors}
+            icon="chevron-back"
+            label={t(view.mode === 'week' ? 'multi.ranking_prev_week' : 'archives.prev_month')}
+            disabled={view.offset <= -maxBack}
+            onPress={() => onView({ ...view, offset: view.offset - 1 })}
+          />
+          <View style={styles.stepperTexts} accessible accessibilityLiveRegion="polite" accessibilityLabel={[title, subtitle].filter(Boolean).join(', ')}>
+            <Text style={[styles.stepperTitle, { color: colors.text }]} numberOfLines={1}>{title}</Text>
+            {!!subtitle && <Text style={[styles.stepperSubtitle, { color: colors.textMuted }]} numberOfLines={1}>{subtitle}</Text>}
+          </View>
+          <StepButton
+            colors={colors}
+            icon="chevron-forward"
+            label={t(view.mode === 'week' ? 'multi.ranking_next_week' : 'archives.next_month')}
+            disabled={view.offset >= 0}
+            onPress={() => onView({ ...view, offset: view.offset + 1 })}
+          />
+        </View>
+      )}
+
+      {view.mode === 'dates' && (datesSupported ? (
         <Pressable
           onPress={() => setSheetVisible(true)}
-          style={[styles.datesButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          style={({ pressed }) => [styles.datesButton, { borderColor: colors.primary, backgroundColor: colors.primarySoft, opacity: pressed ? 0.7 : 1 }]}
           accessibilityRole="button"
           accessibilityLabel={`${daysText}, ${t('multi.ranking_dates_change')}`}
         >
-          <Text style={[styles.daysText, { color: colors.text }]}>{daysText}</Text>
+          <Ionicons name="calendar-outline" size={RFValue(18)} color={colors.primaryText} />
+          <Text style={[styles.datesText, { color: colors.text }]} numberOfLines={2}>{daysText}</Text>
           <Text style={[styles.change, { color: colors.primaryText }]}>{t('multi.ranking_dates_change')}</Text>
         </Pressable>
       ) : (
-        <Text style={[styles.daysText, styles.daysLine, { color: colors.textMuted }]}>{daysText}</Text>
-      )}
+        <View style={[styles.unsupported, { backgroundColor: colors.neutralSoft }]}>
+          <Ionicons name="cloud-offline-outline" size={RFValue(18)} color={colors.textMuted} />
+          <Text style={[styles.unsupportedText, { color: colors.textMuted }]}>{t('multi.ranking_dates_unsupported')}</Text>
+        </View>
+      ))}
+
       <DateRangeSheet
         visible={isSheetVisible}
         colors={colors}
         isDark={isDark}
         today={today}
-        dates={dates}
+        dates={view.dates}
         onClose={() => setSheetVisible(false)}
-        onApply={(next) => { onDates(next); setSheetVisible(false); }}
+        onApply={(dates) => { onView({ ...view, dates }); setSheetVisible(false); }}
       />
     </View>
+  );
+}
+
+function StepButton({ colors, icon, label, disabled, onPress }: {
+  colors: UiColors; icon: 'chevron-back' | 'chevron-forward'; label: string; disabled: boolean; onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      hitSlop={6}
+      style={({ pressed }) => [styles.stepButton, { backgroundColor: colors.neutralSoft, opacity: disabled ? 0.3 : pressed ? 0.6 : 1 }]}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+    >
+      <Ionicons name={icon} size={RFValue(20)} color={colors.text} />
+    </Pressable>
   );
 }
 
@@ -105,16 +171,8 @@ function DateRangeSheet({ visible, colors, isDark, today, dates, onClose, onAppl
   }, [visible, dates.from, dates.to]);
 
   const thisMonth = today.slice(0, 7);
-  const firstMonth = useMemo(() => {
-    const d = parseLocalDateString(`${thisMonth}-01`);
-    d.setMonth(d.getMonth() - MAX_MONTHS_BACK);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  }, [thisMonth]);
-  const shiftMonth = (by: number) => {
-    const d = parseLocalDateString(`${month}-01`);
-    d.setMonth(d.getMonth() + by);
-    setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-  };
+  const firstMonth = shiftMonth(today, -MAX_MONTHS_BACK).slice(0, 7);
+  const shiftShown = (by: number) => setMonth(shiftMonth(`${month}-01`, by).slice(0, 7));
 
   const cells = useMemo(() => getMonthGrid(month), [month]);
   const monthTitle = parseLocalDateString(`${month}-01`).toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' });
@@ -138,9 +196,9 @@ function DateRangeSheet({ visible, colors, isDark, today, dates, onClose, onAppl
     <BottomSheet visible={visible} title={t('multi.ranking_dates_title')} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose}>
       <Text style={[styles.hint, { color: colors.textMuted }]}>{t(to ? 'multi.ranking_dates_hint_start' : 'multi.ranking_dates_hint_end')}</Text>
       <View style={styles.monthRow}>
-        <MonthButton colors={colors} icon="chevron-back" label={t('archives.prev_month')} disabled={month <= firstMonth} onPress={() => shiftMonth(-1)} />
+        <StepButton colors={colors} icon="chevron-back" label={t('archives.prev_month')} disabled={month <= firstMonth} onPress={() => shiftShown(-1)} />
         <Text style={[styles.monthTitle, { color: colors.text }]} accessibilityRole="header">{monthTitle}</Text>
-        <MonthButton colors={colors} icon="chevron-forward" label={t('archives.next_month')} disabled={month >= thisMonth} onPress={() => shiftMonth(1)} />
+        <StepButton colors={colors} icon="chevron-forward" label={t('archives.next_month')} disabled={month >= thisMonth} onPress={() => shiftShown(1)} />
       </View>
       <View style={styles.row}>
         {WEEK_DAYS.map(d => (
@@ -194,36 +252,85 @@ function DateRangeSheet({ visible, colors, isDark, today, dates, onClose, onAppl
   );
 }
 
-function MonthButton({ colors, icon, label, disabled, onPress }: {
-  colors: UiColors; icon: 'chevron-back' | 'chevron-forward'; label: string; disabled: boolean; onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      style={({ pressed }) => [styles.monthButton, { backgroundColor: colors.neutralSoft, opacity: disabled ? 0.3 : pressed ? 0.6 : 1 }]}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled }}
-    >
-      <Ionicons name={icon} size={RFValue(20)} color={colors.text} />
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
-    marginTop: RFValue(14),
+    marginBottom: RFValue(8),
   },
-  chips: {
+  segment: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    borderRadius: 12,
+    padding: 3,
   },
-  chip: {
+  segmentItem: {
+    flex: 1,
+    paddingVertical: RFValue(7),
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  segmentText: {
+    fontSize: RFValue(13),
+    fontWeight: '700',
+  },
+  stepper: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: RFValue(10),
+    marginTop: RFValue(12),
+  },
+  stepButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperTexts: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  stepperTitle: {
+    fontSize: RFValue(16),
+    fontWeight: '800',
+    textTransform: 'capitalize',
+  },
+  stepperSubtitle: {
+    fontSize: RFValue(13),
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  datesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(10),
+    marginTop: RFValue(12),
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingVertical: RFValue(10),
+    paddingHorizontal: RFValue(12),
+  },
+  datesText: {
+    flex: 1,
+    fontSize: RFValue(14),
+    fontWeight: '700',
+  },
+  change: {
+    fontSize: RFValue(13),
+    fontWeight: '800',
+  },
+  unsupported: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(10),
+    marginTop: RFValue(12),
+    borderRadius: 12,
+    padding: RFValue(12),
+  },
+  unsupportedText: {
+    flex: 1,
+    fontSize: RFValue(13),
+    lineHeight: RFValue(18),
+  },
+  chip: {
     borderWidth: 1.5,
     borderRadius: 999,
     paddingVertical: RFValue(6),
@@ -232,29 +339,6 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: RFValue(13),
     fontWeight: '700',
-  },
-  daysLine: {
-    marginTop: RFValue(8),
-    textAlign: 'center',
-  },
-  daysText: {
-    fontSize: RFValue(13),
-    fontWeight: '600',
-  },
-  datesButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: RFValue(8),
-    marginTop: RFValue(10),
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: RFValue(10),
-    paddingHorizontal: RFValue(12),
-  },
-  change: {
-    fontSize: RFValue(13),
-    fontWeight: '800',
   },
   hint: {
     fontSize: RFValue(14),
@@ -270,13 +354,6 @@ const styles = StyleSheet.create({
     fontSize: RFValue(16),
     fontWeight: '700',
     textTransform: 'capitalize',
-  },
-  monthButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   row: {
     flexDirection: 'row',

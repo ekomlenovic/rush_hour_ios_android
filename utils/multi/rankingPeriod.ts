@@ -3,42 +3,67 @@ import { resetRange } from './reset';
 import type { RankingQuery } from './api';
 
 /**
- * The periods of the weekly rankings: this week or the last one, this month or the
- * last one, two dates chosen by the player, all time (duels). Dates are 'YYYY-MM-DD'
- * days of the server (the day of a challenge, the day a duel ended).
+ * The period of the weekly rankings: a week or a month, stepped back one at a time from the
+ * current one (offset 0, -1 the one before…), two dates chosen by the player, or all time
+ * (duels). Dates are 'YYYY-MM-DD' days of the server (the day of a challenge, the day a
+ * duel ended).
  */
 
-export type RankingChoice = 'week' | 'last_week' | 'month' | 'last_month' | 'dates' | 'all';
-export const CHALLENGE_CHOICES: readonly RankingChoice[] = ['week', 'last_week', 'month', 'last_month', 'dates'];
-export const DUEL_CHOICES: readonly RankingChoice[] = [...CHALLENGE_CHOICES, 'all'];
+export type RankingMode = 'week' | 'month' | 'dates' | 'all';
+export const CHALLENGE_MODES: readonly RankingMode[] = ['week', 'month', 'dates'];
+export const DUEL_MODES: readonly RankingMode[] = [...CHALLENGE_MODES, 'all'];
+
+/** How far back the weeks and the months go */
+export const MAX_WEEKS_BACK = 156;
+export const MAX_MONTHS_BACK = 36;
+
+export interface RankingView {
+  mode: RankingMode;
+  /** Weeks or months back from the current one: 0, -1, -2… */
+  offset: number;
+  dates: { from: string; to: string };
+}
 
 /** Two days in the right order */
 export const orderedDates = (dates: { from: string; to: string }) =>
   dates.from <= dates.to ? dates : { from: dates.to, to: dates.from };
 
-/** A day of the last month */
-const lastMonth = (today: string) => addDays(`${today.slice(0, 7)}-01`, -1);
+/** A day of the month `offset` months away from the one of `today` */
+export function shiftMonth(today: string, offset: number): string {
+  const [year, month] = today.split('-').map(Number);
+  const index = year * 12 + (month - 1) + offset;
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}-01`;
+}
+
+/** The day the period is asked around */
+function anchor(view: RankingView, today: string): string {
+  return view.mode === 'week' ? addDays(today, 7 * view.offset) : shiftMonth(today, view.offset);
+}
 
 /** What to ask the server; the current week and month are left to its own today */
-export function rankingQuery(choice: RankingChoice, today: string, dates: { from: string; to: string }): RankingQuery {
-  switch (choice) {
-    case 'week': return { period: 'week' };
-    case 'last_week': return { period: 'week', date: addDays(today, -7) };
-    case 'month': return { period: 'month' };
-    case 'last_month': return { period: 'month', date: lastMonth(today) };
-    case 'dates': return { period: 'range', ...orderedDates(dates) };
+export function rankingQuery(view: RankingView, today: string): RankingQuery {
+  switch (view.mode) {
+    case 'week':
+    case 'month':
+      return view.offset === 0 ? { period: view.mode } : { period: view.mode, date: anchor(view, today) };
+    case 'dates': return { period: 'range', ...orderedDates(view.dates) };
     case 'all': return { period: 'all' };
   }
 }
 
-/** The days a choice covers, to show them; null: all time */
-export function rankingDays(choice: RankingChoice, today: string, dates: { from: string; to: string }): { from: string; to: string } | null {
-  switch (choice) {
-    case 'week': return resetRange('week', today, dates) as { from: string; to: string };
-    case 'last_week': return resetRange('week', addDays(today, -7), dates) as { from: string; to: string };
-    case 'month': return resetRange('month', today, dates) as { from: string; to: string };
-    case 'last_month': return resetRange('month', lastMonth(today), dates) as { from: string; to: string };
-    case 'dates': return orderedDates(dates);
+/** The days a view covers; null: all time */
+export function rankingDays(view: RankingView, today: string): { from: string; to: string } | null {
+  switch (view.mode) {
+    case 'week':
+    case 'month':
+      return resetRange(view.mode, anchor(view, today), view.dates) as { from: string; to: string };
+    case 'dates': return orderedDates(view.dates);
     case 'all': return null;
   }
+}
+
+/** A period over: its ranking is final (podium, my place) */
+export function isPeriodOver(view: RankingView, today: string): boolean {
+  const days = rankingDays(view, today);
+  return !!days && days.to < today;
 }
