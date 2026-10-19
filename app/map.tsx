@@ -14,6 +14,7 @@ import ZoneLayer from '@/components/map/ZoneLayer';
 import MapHeader from '@/components/map/MapHeader';
 import JumpButton from '@/components/map/JumpButton';
 import GenerationPill from '@/components/map/GenerationPill';
+import { isGenerationActive } from '@/hooks/useLevelGenerator';
 import OptionsSheet from '@/components/settings/OptionsSheet';
 
 /** Height of the blurred header over the map */
@@ -110,8 +111,9 @@ export default function MapScreen() {
   }, [maxUnlockedLevel]);
 
   useEffect(() => {
-    // Reset generation state on mount to prevent stuck "Canceling..." state
-    setGenerationState({ isRunning: false, shouldCancel: false, estimatedRemainingSeconds: 0 });
+    // A generation left over by a closed app (the state is saved) is not running any more;
+    // one still going on keeps its state: starting another would give the same ids (issue 120)
+    if (!isGenerationActive()) setGenerationState({ isRunning: false, shouldCancel: false, estimatedRemainingSeconds: 0 });
   }, []);
 
   const minY = scrollY - DRAW_MARGIN;

@@ -52,6 +52,7 @@ Les défis du jour **passés** se rejouent depuis les archives : toucher un jour
 | **Annuler compte comme un coup** | `undo` incrémente `moveCount` : annuler n'est pas gratuit pour le score |
 | **Recommencer** remet le compteur à zéro | `resetLevel` |
 | Progression sauvegardée par niveau | `savedStates[levelId]` |
+| Les niveaux **générés** sont numérotés à la suite de la campagne, **sans trou** : un niveau que le générateur n'a pas réussi à produire ne prend pas de numéro (sinon le suivant ne se débloquait jamais). Une seule génération à la fois | `startLevelGeneration` (`hooks/useLevelGenerator.ts`), migration v8 |
 | Étoiles **proportionnelles au niveau** : 3 ⭐ = solution optimale, 2 ⭐ ≤ optimal + 50 % (arrondi au-dessus : +6 à 12 coups, +10 à 20, +20 à 40), sinon 1 ⭐. Les victoires déjà enregistrées ont été recomptées avec cette règle (l'XP déjà gagnée ne change pas) | `getStars`, `twoStarTolerance` (`utils/scoring.ts`), migration v4 (`store/migrations.ts`) |
 | On garde le meilleur score et les meilleures étoiles | `completeLevel` |
 | Après une victoire, on peut **revoir la solution optimale** : elle se joue toute seule depuis la position de départ, et on avance ou recule coup par coup | `SolutionPlayer`, `vehiclesAtStep` (`utils/solutionReplay.ts`) |

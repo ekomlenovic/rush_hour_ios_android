@@ -14,8 +14,8 @@ const merge = (persisted: Record<string, unknown>) =>
   options.merge!(persisted, useGameStore.getInitialState());
 
 describe('persisted state', () => {
-  it('is at version 7', () => {
-    expect(options.version).toBe(7);
+  it('is at version 8', () => {
+    expect(options.version).toBe(8);
   });
 
   it('keeps the player data and leaves the in-game state out', () => {
@@ -259,6 +259,45 @@ describe('migrate v6 → v7', () => {
     // Yesterday's, from a game left open past midnight, still counts
     useGameStore.getState().completeDailyChallenge('2026-10-19', 300, 3);
     expect(useGameStore.getState().currentStreak).toBe(1);
+  });
+});
+
+describe('migrate v7 → v8', () => {
+  const base = sampleLevels.length;
+  const gen = (id: number): Level => ({ ...sampleLevels[0], id });
+
+  it('numbers the generated levels again without the hole a failed generation left (issue 120)', () => {
+    // Level base+3 failed: base+2 won unlocked base+3, which did not exist, and base+4 stayed locked
+    const v7 = {
+      generatedLevels: [gen(base + 1), gen(base + 4), gen(base + 2), gen(base + 5)],
+      progress: [
+        { levelId: 3, completed: true, bestScore: 300, stars: 3 },
+        { levelId: base + 1, completed: true, bestScore: 300, stars: 3 },
+        { levelId: base + 2, completed: true, bestScore: 200, stars: 2 },
+      ],
+      savedStates: { [base + 4]: { vehicles: [], moveCount: 4, history: [] }, 'daily-2026-10-20': { vehicles: [], moveCount: 1, history: [] } },
+      lastPlayedLevelId: base + 4,
+      maxUnlockedLevel: base + 3,
+    };
+    const state = migrate(v7, 7);
+    expect((state.generatedLevels as Level[]).map(l => l.id)).toEqual([base + 1, base + 2, base + 3, base + 4]);
+    expect(state.progress).toEqual(v7.progress);
+    expect(Object.keys(state.savedStates as object).sort()).toEqual([String(base + 3), 'daily-2026-10-20'].sort());
+    expect(state.lastPlayedLevelId).toBe(base + 3);
+    // The old base+4, next to play, is unlocked
+    expect(state.maxUnlockedLevel).toBe(base + 3);
+  });
+
+  it('keeps the unlocking of a player on the pack, or done with every level', () => {
+    const levels = [gen(base + 1), gen(base + 2)];
+    expect(migrate({ generatedLevels: levels, maxUnlockedLevel: 12 }, 7).maxUnlockedLevel).toBe(12);
+    expect(migrate({ generatedLevels: levels, maxUnlockedLevel: base + 3 }, 7).maxUnlockedLevel).toBe(base + 3);
+    expect(migrate({ generatedLevels: [gen(base + 1), gen(base + 3)], maxUnlockedLevel: base + 4 }, 7).maxUnlockedLevel).toBe(base + 3);
+  });
+
+  it('leaves a player without generated levels untouched', () => {
+    const v7 = { progress: [{ levelId: 2, completed: true, bestScore: 300, stars: 3 }], maxUnlockedLevel: 3, generatedLevels: [] };
+    expect(migrate(v7, 7)).toEqual(v7);
   });
 });
 
