@@ -718,6 +718,8 @@
       "default": "Available",
       "level": "Reach level {{level}}",
       "stars": "Earn {{count}} stars ({{current}}/{{count}})",
+      "levels_one": "Win {{count}} map level",
+      "levels_other": "Win {{count}} map levels ({{current}}/{{count}})",
       "weeklies_one": "Win {{count}} weekly challenge",
       "weeklies_other": "Win {{count}} weekly challenges ({{current}}/{{count}})",
       "achievement": "Achievement: {{name}}",
@@ -760,7 +762,8 @@
       "confetti": "Confetti",
       "fireworks": "Fireworks",
       "speed": "Speed trail",
-      "bubbles": "Bubbles"
+      "bubbles": "Bubbles",
+      "greenlight": "Green light"
     }
   },
   "archives": {

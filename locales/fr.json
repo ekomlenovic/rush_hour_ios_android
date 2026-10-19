@@ -718,6 +718,8 @@
       "default": "Disponible",
       "level": "Atteins le niveau {{level}}",
       "stars": "Gagne {{count}} étoiles ({{current}}/{{count}})",
+      "levels_one": "Réussis {{count}} niveau de la carte",
+      "levels_other": "Réussis {{count}} niveaux de la carte ({{current}}/{{count}})",
       "weeklies_one": "Réussis {{count}} défi hebdo",
       "weeklies_other": "Réussis {{count}} défis hebdo ({{current}}/{{count}})",
       "achievement": "Succès : {{name}}",
@@ -760,7 +762,8 @@
       "confetti": "Confettis",
       "fireworks": "Feu d'artifice",
       "speed": "Trace de vitesse",
-      "bubbles": "Bulles"
+      "bubbles": "Bulles",
+      "greenlight": "Feu vert"
     }
   },
   "archives": {

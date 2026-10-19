@@ -178,7 +178,7 @@ Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dan
 | Règle | Implémentation |
 |---|---|
 | 4 types : **thème de plateau**, **skin de la voiture cible**, **palette des autres véhicules**, **effet de victoire** | `COSMETICS` (`data/cosmetics.ts`), `theme/board.ts` |
-| Déblocage **en jouant uniquement**, jamais par achat : paliers d'étoiles, niveau joueur, défis hebdo réussis, succès, défi du jour réussi en hiver (déc. à fév.) pour la Neige | `isCosmeticUnlocked` |
+| Déblocage **en jouant uniquement**, jamais par achat : niveaux de la carte réussis (**Feu vert** dès 3, pour découvrir le Garage dès la première partie), paliers d'étoiles, niveau joueur, défis hebdo réussis, succès, défi du jour réussi en hiver (déc. à fév.) pour la Neige | `isCosmeticUnlocked` |
 | Le déblocage est calculé à partir de la progression : rien n'est perdu, rien ne se « dépense » | `buildCosmeticContext` |
 | Un style choisi mais plus débloqué (réinitialisation) revient au style par défaut | `sanitizeSelection` |
 | La palette recolore les véhicules dans l'ordre du niveau ; la voiture cible garde sa skin. Le lecteur d'écran annonce la couleur affichée | `applyPalette`, `components/Board.tsx` |
