@@ -202,6 +202,7 @@
     "solvable_title": "Solvable ✓",
     "solvable_desc": "Minimum {{count}} moves to complete.",
     "fix_before_save": "Fix the level before saving.",
+    "too_complex_desc": "Too many possible positions to search for a solution. Remove a few vehicles or use a smaller grid.",
     "saved_new": "Saved as a new level.",
     "level_updated": "Level updated.",
     "hint_text": "Drag to move  ·  Tap to rotate  ·  Long press to remove",
