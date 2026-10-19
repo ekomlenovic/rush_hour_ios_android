@@ -299,7 +299,11 @@ export class Duels {
         if (error) connection.send({ type: 'error', error });
         return;
       }
-      if (message.type === 'create' && !this.creates.hit(player.id, now)) return connection.send({ type: 'error', error: 'rate_limited' });
+      if (message.type === 'create') {
+        // A refused create takes nothing from the pool: it does not count in the limit
+        if (this.isInGame(player.id)) return connection.send({ type: 'error', error: 'already_in_duel' });
+        if (!this.creates.hit(player.id, now)) return connection.send({ type: 'error', error: 'rate_limited' });
+      }
       const error = this.handle(player, message);
       if (error) connection.send({ type: 'error', error });
     };
@@ -427,6 +431,12 @@ export class Duels {
   }
 
   // ── Messages ───────────────────────────────────────────────────────────────
+
+  /** Whether the player's duel is under way: they cannot create another one */
+  private isInGame(playerId: number): boolean {
+    const duel = this.byPlayer.get(playerId);
+    return !!duel && (duel.status === 'preparing' || duel.status === 'playing');
+  }
 
   private handle(player: DuelIdentity, message: Exclude<ClientMessage, { type: 'auth' | 'join' | 'watch' }>): string | null {
     const duel = this.byPlayer.get(player.id);

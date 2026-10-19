@@ -472,6 +472,21 @@ describe('duels', () => {
     expect(leo.last('duel')!.duel.difficulty).toBe('NORMAL');
   });
 
+  it('a create refused during a duel does not count in the limit', async () => {
+    const { started, clock, duels } = setup();
+    const { leo } = await started();
+    for (let i = 0; i <= MAX_CREATES; i++) {
+      leo.send({ type: 'create' });
+      clock.now += 1000;
+    }
+    expect(leo.received.filter(m => m.type === 'error').map(m => (m as { error: string }).error))
+      .toEqual(Array(MAX_CREATES + 1).fill('already_in_duel'));
+    // Once the duel is over, the player can create the next one
+    duels.kick(2, 'banned');
+    leo.send({ type: 'create' });
+    expect(leo.last('duel')!.duel.status).toBe('waiting');
+  });
+
   it('counts the wrong codes by player: connecting again gives no more tries', () => {
     const { connect, clock } = setup();
     const first = connect('token-sam');
