@@ -52,7 +52,7 @@ export interface BoardColors {
 }
 
 /** Board themes, persisted in the cosmetics selection: never rename one, only add */
-export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire';
+export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire' | 'beach' | 'space';
 
 /** Vehicle colors of the classic board (also the creator palette) */
 export const CLASSIC_VEHICLE_COLORS = [
@@ -255,8 +255,47 @@ const fire: Record<ColorScheme, BoardColors> = {
   },
 };
 
+const beach: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#F6E3B4',
+    frame: '#0E7490',
+    grid: 'rgba(180,130,60,0.3)',
+    vehicleBorder: 'rgba(120,80,30,0.35)',
+    winVeil: 'rgba(246,227,180,0.6)',
+    winBadge: 'rgba(255,250,240,0.95)',
+    winBadgeBorder: 'rgba(14,116,144,0.4)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#3A3020',
+    frame: '#0E7490',
+    grid: 'rgba(240,210,150,0.18)',
+    vehicleBorder: 'rgba(240,210,150,0.35)',
+    winVeil: 'rgba(58,48,32,0.7)',
+    winBadge: 'rgba(80,66,44,0.92)',
+    winBadgeBorder: 'rgba(34,211,238,0.4)',
+  },
+};
+
+const space = both({
+  ...classicShared,
+  background: '#070B1F',
+  frame: '#A855F7',
+  grid: 'rgba(168,85,247,0.2)',
+  exit: '#FACC15',
+  exitOutline: '#FFFFFF',
+  vehicleBorder: 'rgba(255,255,255,0.4)',
+  vehicleShine: 'rgba(255,255,255,0.22)',
+  hint: '#FACC15',
+  hintOutline: '#A855F7',
+  winVeil: 'rgba(7,11,31,0.7)',
+  winBadge: 'rgba(25,20,60,0.9)',
+  winBadgeBorder: 'rgba(168,85,247,0.6)',
+});
+
 export const BOARD_THEMES: Record<BoardThemeId, Record<ColorScheme, BoardColors>> = {
-  classic, paper, wood, neon, pixel, snow, fire,
+  classic, paper, wood, neon, pixel, snow, fire, beach, space,
 };
 
 export function getBoardColors(id: BoardThemeId, scheme: ColorScheme): BoardColors {
@@ -265,7 +304,7 @@ export function getBoardColors(id: BoardThemeId, scheme: ColorScheme): BoardColo
 
 // ─── Target car skins ─────────────────────────────────────────────────────────
 
-export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold';
+export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold' | 'tractor' | 'ufo';
 
 export interface CarSkin {
   /** Body color, the board's target car color when absent */
@@ -283,12 +322,15 @@ export const CAR_SKINS: Record<CarSkinId, CarSkin> = {
   sport: { color: '#15803D', icon: '🏎️' },
   rocket: { color: '#7C3AED', icon: '🚀' },
   gold: { color: '#EAB308', icon: '👑' },
+  // Green body: the red tractor emoji stays visible
+  tractor: { color: '#16A34A', icon: '🚜' },
+  ufo: { color: '#64748B', icon: '🛸' },
 };
 
 // ─── Vehicle palettes ─────────────────────────────────────────────────────────
 
 /** 'classic' keeps the colors saved in each level */
-export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy';
+export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy' | 'lava' | 'jungle';
 
 export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   classic: null,
@@ -297,6 +339,9 @@ export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   earth: ['#A16207', '#4D7C0F', '#78716C', '#B45309', '#365314', '#92400E', '#57534E', '#65A30D'],
   neon: ['#00E5FF', '#39FF14', '#FFF200', '#B026FF', '#FF6EC7', '#00FFA3', '#FF9E00', '#4D4DFF'],
   candy: ['#F472B6', '#A78BFA', '#34D399', '#FBBF24', '#60A5FA', '#FB923C', '#2DD4BF', '#E879F9'],
+  // No red: the target car must stand out
+  lava: ['#EA580C', '#F59E0B', '#FACC15', '#78350F', '#FB923C', '#57534E', '#B45309', '#FDE047'],
+  jungle: ['#15803D', '#65A30D', '#0D9488', '#CA8A04', '#166534', '#4ADE80', '#A3E635', '#0F766E'],
 };
 
 /** Board colors with the target car skin applied */

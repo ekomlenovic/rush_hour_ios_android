@@ -9,7 +9,7 @@ import { getPlayerLevel } from './progression';
  */
 
 export type CosmeticKind = 'board' | 'skin' | 'palette' | 'effect';
-export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed';
+export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed' | 'bubbles';
 
 export interface CosmeticSelection {
   board: BoardThemeId;
@@ -51,6 +51,8 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'board', id: 'pixel', icon: '👾', unlock: { type: 'stars', count: 500 } },
   { kind: 'board', id: 'snow', icon: '❄️', unlock: { type: 'winter' } },
   { kind: 'board', id: 'fire', icon: '🔥', unlock: { type: 'achievement', id: 'streak_30' } },
+  { kind: 'board', id: 'beach', icon: '🏖️', unlock: { type: 'stars', count: 1200 } },
+  { kind: 'board', id: 'space', icon: '🌌', unlock: { type: 'achievement', id: 'zone_perfect_10' } },
 
   // Target car skins
   { kind: 'skin', id: 'classic', icon: '🚗', unlock: { type: 'default' } },
@@ -60,6 +62,8 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'skin', id: 'rocket', icon: '🚀', unlock: { type: 'level', level: 25 } },
   { kind: 'skin', id: 'sport', icon: '🏎️', unlock: { type: 'level', level: 35 } },
   { kind: 'skin', id: 'gold', icon: '👑', unlock: { type: 'stars', count: 800 } },
+  { kind: 'skin', id: 'tractor', icon: '🚜', unlock: { type: 'achievement', id: 'zone_perfect_1' } },
+  { kind: 'skin', id: 'ufo', icon: '🛸', unlock: { type: 'stars', count: 2000 } },
 
   // Vehicle palettes
   { kind: 'palette', id: 'classic', icon: '🎨', unlock: { type: 'default' } },
@@ -68,12 +72,15 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'palette', id: 'earth', icon: '🍂', unlock: { type: 'weeklies', count: 5 } },
   { kind: 'palette', id: 'neon', icon: '💡', unlock: { type: 'level', level: 30 } },
   { kind: 'palette', id: 'candy', icon: '🍬', unlock: { type: 'achievement', id: 'daily_100' } },
+  { kind: 'palette', id: 'lava', icon: '🌋', unlock: { type: 'achievement', id: 'optimal_hard_50' } },
+  { kind: 'palette', id: 'jungle', icon: '🌴', unlock: { type: 'stars', count: 1600 } },
 
   // Win effects
   { kind: 'effect', id: 'none', icon: '⏹️', unlock: { type: 'default' } },
   { kind: 'effect', id: 'confetti', icon: '🎊', unlock: { type: 'stars', count: 100 } },
   { kind: 'effect', id: 'fireworks', icon: '🎆', unlock: { type: 'level', level: 20 } },
   { kind: 'effect', id: 'speed', icon: '💨', unlock: { type: 'weeklies', count: 10 } },
+  { kind: 'effect', id: 'bubbles', icon: '💧', unlock: { type: 'achievement', id: 'perfect_250' } },
 ];
 
 export const cosmeticKey = (def: Pick<CosmeticDef, 'kind' | 'id'>): string => `${def.kind}:${def.id}`;

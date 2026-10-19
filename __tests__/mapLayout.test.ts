@@ -1,4 +1,7 @@
-import { buildZones, zoneOf, ZONE_SIZE } from '../components/map/zones';
+import { buildZones, zoneOf, ZONE_SIZE, ZONE_THEMES, NEW_ZONE_THEMES, ZONE_SCENERY, ZONE_ICONS } from '../components/map/zones';
+import { lightColors, darkColors } from '../theme/ui';
+import fr from '../locales/fr.json';
+import en from '../locales/en.json';
 import { getMapFocusLevel } from '@/utils/mapFocus';
 import { createMapLayout, generateRoadSegments, ZONE_GAP } from '../components/map/path';
 
@@ -10,6 +13,31 @@ describe('map zones', () => {
     ]);
     expect(zones[3].theme).toBe('workshop');
     expect(ZONE_SIZE).toBe(20);
+  });
+
+  it('keeps the themes of the first 16 zones, then opens with the new ones (#40)', () => {
+    const themes = buildZones(734, 1).map(z => z.theme);
+    expect(themes.slice(0, 16)).toEqual([...ZONE_THEMES, ...ZONE_THEMES]);
+    expect(themes.slice(16, 24)).toEqual([...NEW_ZONE_THEMES]);
+    expect(themes.slice(24, 32)).toEqual([...ZONE_THEMES]);
+    expect(themes[themes.length - 1]).toBe('workshop');
+  });
+
+  it('gives every theme its own zone color', () => {
+    const zones = buildZones(48 * ZONE_SIZE, 1);
+    const colorOf = new Map(zones.map(z => [z.theme, z.colorIndex]));
+    expect(colorOf.size).toBe(ZONE_THEMES.length + NEW_ZONE_THEMES.length + 1);
+    expect(new Set(colorOf.values()).size).toBe(colorOf.size);
+    for (const colors of [lightColors, darkColors]) {
+      expect(colors.mapZoneAccents).toHaveLength(colorOf.size);
+      expect(colors.mapZoneTints).toHaveLength(colorOf.size);
+    }
+    for (const theme of colorOf.keys()) {
+      expect(ZONE_SCENERY[theme].length).toBeGreaterThan(0);
+      expect(ZONE_ICONS[theme]).toBeTruthy();
+      expect(fr.map.zones[theme]).toBeTruthy();
+      expect(en.map.zones[theme]).toBeTruthy();
+    }
   });
 
   it('finds the zone of a level, the tutorial and the padlock included', () => {
