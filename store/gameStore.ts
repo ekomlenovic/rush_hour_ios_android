@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import * as Haptics from 'expo-haptics';
 import { sampleLevels } from '../data/sampleLevels';
+import { isBossLevel } from '../data/bosses';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
 import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
 import { DailyMissionsState, FAST_WIN_MS, MissionCounter, MissionReward, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
@@ -13,7 +14,7 @@ import type {
 } from './types';
 import { MAX_STREAK_FREEZES, settleStreak, advanceStreak } from './streak';
 import {
-  ACHIEVEMENT_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp,
+  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp,
 } from '../data/progression';
 import { isArchiveDateAvailable } from '../utils/archives';
 import { isDailyWinnable, isWeeklyWinnable } from '../utils/challengeDates';
@@ -141,8 +142,10 @@ interface GameState {
   lastXpGain: { from: number; to: number } | null;
   /** Selected board theme, car skin, palette and win effect */
   cosmetics: CosmeticSelection;
-  /** Unlocked cosmetics already seen in the garage ('kind:id') */
+  /** Unlocked cosmetics already seen in the garage ('kind:id'): touched once, the "new" badge goes */
   seenCosmetics: string[];
+  /** Unlocked achievements already seen in the profile: touched once, the "new" badge goes */
+  seenAchievements: string[];
 
   // Actions
   loadLevel: (level: Level, savedState?: LevelSaveState) => void;
@@ -189,6 +192,7 @@ interface GameState {
   consumeLevelUps: () => number[];
   selectCosmetic: (kind: CosmeticKind, id: string) => boolean;
   markCosmeticsSeen: (keys: string[]) => void;
+  markAchievementSeen: (id: string) => void;
 }
 
 /** Key under which a level's in-progress state is saved */
@@ -349,6 +353,7 @@ export const useGameStore = create<GameState>()(
       lastXpGain: null,
       cosmetics: { ...DEFAULT_COSMETICS },
       seenCosmetics: [],
+      seenAchievements: [],
       generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
 
       loadLevel: (level, savedState) => {
@@ -490,7 +495,8 @@ export const useGameStore = create<GameState>()(
           currentAttempt: emptyAttempt(),
         });
         if (isCurrentLevel && currentLevel) {
-          addXp(levelWinXp(currentLevel.minMoves, stars, !existing?.completed));
+          const isFirstWin = !existing?.completed;
+          addXp(levelWinXp(currentLevel.minMoves, stars, isFirstWin) + (isFirstWin && isBossLevel(levelId) ? BOSS_WIN_XP : 0));
           bumpMissions({
             levelWins: 1,
             perfectWins: stars === 3 ? 1 : 0,
@@ -630,6 +636,11 @@ export const useGameStore = create<GameState>()(
         if (keys.every(k => seen.has(k))) return;
         keys.forEach(k => seen.add(k));
         set({ seenCosmetics: [...seen] });
+      },
+
+      markAchievementSeen: (id) => {
+        const { seenAchievements } = get();
+        if (!seenAchievements.includes(id)) set({ seenAchievements: [...seenAchievements, id] });
       },
 
       consumeUnlockQueue: () => {
@@ -846,6 +857,7 @@ export const useGameStore = create<GameState>()(
           lastXpGain: null,
           cosmetics: { ...DEFAULT_COSMETICS },
           seenCosmetics: [],
+          seenAchievements: [],
         });
       },
 
@@ -930,6 +942,7 @@ export const useGameStore = create<GameState>()(
         xp: state.xp,
         cosmetics: state.cosmetics,
         seenCosmetics: state.seenCosmetics,
+        seenAchievements: state.seenAchievements,
       }),
     }
   )

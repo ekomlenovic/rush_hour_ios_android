@@ -4,7 +4,8 @@ import { useRouter } from 'expo-router';
 import { haptics, Haptics } from '@/utils/haptics';
 import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
-import { getMapFocusLevel } from '@/utils/mapFocus';
+import { getMapFocusLevel, isMapLevelUnlocked } from '@/utils/mapFocus';
+import { isBossLevel } from '@/data/bosses';
 import { useTheme } from '@/theme';
 import { createMapLayout, generateRoadSegments } from '@/components/map/path';
 import { buildZones, zoneOf } from '@/components/map/zones';
@@ -204,7 +205,7 @@ export default function MapScreen() {
               // find level data by matching point.id with level.id
               const levelData = isTutorial || isPadlockNode ? null : levels.find(l => l.id === point.id);
 
-              const isUnlocked = isTutorial || point.id <= maxUnlockedLevel;
+              const isUnlocked = isTutorial || isMapLevelUnlocked(point.id, maxUnlockedLevel);
               const isCurrent = point.id === maxUnlockedLevel;
               const isCustom = !isTutorial && !isPadlockNode && point.id > sampleLevels.length;
 
@@ -216,6 +217,7 @@ export default function MapScreen() {
                   isUnlocked={isUnlocked}
                   isCurrent={isCurrent}
                   isCustom={isCustom}
+                  isBoss={!isPadlockNode && isBossLevel(point.id)}
                   isPadlockNode={isPadlockNode}
                   isTutorial={isTutorial}
                   stars={starsById.get(point.id) ?? 0}

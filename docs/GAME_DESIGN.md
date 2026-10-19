@@ -57,6 +57,9 @@ Les défis du jour **passés** se rejouent depuis les archives : toucher un jour
 | On garde le meilleur score et les meilleures étoiles | `completeLevel` |
 | Après une victoire, on peut **revoir la solution optimale** : elle se joue toute seule depuis la position de départ, et on avance ou recule coup par coup | `SolutionPlayer`, `vehiclesAtStep` (`utils/solutionReplay.ts`) |
 | Si la victoire n'est pas optimale, l'écran de victoire affiche l'écart et propose **« Réessayer pour 3 ⭐ »** : une nouvelle tentative depuis le départ (compteurs remis à zéro, ce n'est pas un recommencer) | `handleRetry` (`app/game.tsx`) |
+| **3 niveaux jouables d'avance** : le prochain niveau et les **2 suivants**. Un joueur bloqué sur un niveau dur continue et y revient plus tard ; gagner un niveau plus loin fait avancer la fenêtre. Calculé à partir de `maxUnlockedLevel` (sa signification ne change pas), rien de sauvegardé en plus | `MAP_LOOKAHEAD`, `isMapLevelUnlocked` (`utils/mapFocus.ts`) |
+| **Boss** : un niveau de la campagne qui demande **au moins 8 coups de plus** que la médiane des 5 niveaux avant lui. Repéré dans la courbe, jamais choisi à la main ; la campagne ne grandissant qu'à la fin, un boss le reste | `findBossLevels`, `isBossLevel` (`data/bosses.ts`) |
+| Un boss est **annoncé** : badge sur son nœud de la carte (même verrouillé), « Niveau N · Boss » en titre de partie, « boss » dans l'annonce du lecteur d'écran. Sa **première victoire** rapporte **50 XP de plus** | `LevelNode`, `app/game.tsx`, `BOSS_WIN_XP` |
 
 ## Campagne — on n'ajoute qu'à la fin
 
@@ -156,6 +159,7 @@ Chaque victoire fait avancer une barre d'XP : la progression se voit même sur u
 | XP pour passer du niveau `n` au niveau `n + 1` : `150 × n^1,6` | `xpToNextLevel` (`data/progression.ts`) |
 | Niveau de la carte ou personnalisé : `10 + 2 × coups minimum` (plafonné à 60 coups), × 0,5 / 0,75 / 1 selon les étoiles | `levelWinXp` |
 | Un niveau **déjà réussi** ne rapporte que **25 %** : rejouer fait progresser, sans permettre de farmer | `REPLAY_XP_FACTOR` |
+| Première victoire d'un **boss** de la carte : **50 XP** en plus ; les boss déjà gagnés ont été crédités (migration v9) | `BOSS_WIN_XP`, `isBossLevel` (`data/bosses.ts`) |
 | Défi du jour : `60 + 20 × étoiles` ; défi hebdo : `150 + 50 × étoiles`, **une seule fois** par défi | `dailyWinXp`, `weeklyWinXp` |
 | 3 missions du jour terminées : **100 XP** (**150 XP** si le stock de gels est plein) ; chaque succès débloqué : **50 XP** | `MISSIONS_XP`, `ACHIEVEMENT_XP` |
 | Le tutoriel ne rapporte rien | `completeLevel` (niveau non chargé) |
@@ -174,13 +178,14 @@ Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dan
 | Règle | Implémentation |
 |---|---|
 | 4 types : **thème de plateau**, **skin de la voiture cible**, **palette des autres véhicules**, **effet de victoire** | `COSMETICS` (`data/cosmetics.ts`), `theme/board.ts` |
-| Déblocage **en jouant uniquement**, jamais par achat : paliers d'étoiles, niveau joueur, défis hebdo réussis, succès, défi du jour réussi en hiver (déc. à fév.) pour la Neige | `isCosmeticUnlocked` |
+| Déblocage **en jouant uniquement**, jamais par achat : niveaux de la carte réussis (**Feu vert** dès 3, pour découvrir le Garage dès la première partie), paliers d'étoiles, niveau joueur, défis hebdo réussis, succès, défi du jour réussi en hiver (déc. à fév.) pour la Neige | `isCosmeticUnlocked` |
 | Le déblocage est calculé à partir de la progression : rien n'est perdu, rien ne se « dépense » | `buildCosmeticContext` |
 | Un style choisi mais plus débloqué (réinitialisation) revient au style par défaut | `sanitizeSelection` |
 | La palette recolore les véhicules dans l'ordre du niveau ; la voiture cible garde sa skin. Le lecteur d'écran annonce la couleur affichée | `applyPalette`, `components/Board.tsx` |
 | Les effets de victoire ne se jouent pas avec « Réduire les animations » | `WinEffect` (`components/effects/WinEffect.tsx`) |
 | Les identifiants des cosmétiques sont sauvegardés : ne jamais en renommer, seulement en ajouter | |
-| Les nouveautés sont signalées sur le lien Garage jusqu'à la prochaine visite | `seenCosmetics` |
+| L'écran de victoire liste les styles que la victoire vient de débloquer (« Nouveau dans le Garage », vignette, nom, onglet) avec un bouton secondaire **« Équiper »** : le style est sélectionné sur place (un effet de victoire se joue aussitôt) et n'est plus « Nouveau ». Un lien « Voir au Garage » y mène ; depuis un niveau de la carte, le retour du Garage ramène à la carte, depuis un défi à son écran | `newlyUnlockedCosmetics` (`data/cosmetics.ts`), `WinModal`, `handleOpenGarage` (`app/game.tsx`) |
+| Chaque nouveauté garde sa mention verte **« Nouveau »** dans le Garage jusqu'à ce qu'on la **touche** (ce qui la sélectionne) ; chaque onglet compte les siennes, le lien Garage de l'accueil compte le total. Quitter le Garage n'acquitte rien | `seenCosmetics`, `markCosmeticsSeen` (`app/garage.tsx`) |
 
 ## Sauvegarde (export / import)
 
@@ -329,12 +334,13 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 
 - Définis à un seul endroit : `data/achievements.ts`. Les **identifiants sont persistés** : ne jamais renommer un succès, seulement en ajouter.
 - Un succès ne doit jamais contredire les règles ci-dessus : aucun succès « sans indice » ou « sans annuler » sur les défis, puisqu'ils n'en ont jamais.
+- Un succès débloqué est **nouveau** jusqu'à ce qu'on le **touche** dans le profil : pastille bleue sur sa médaille, nombre de nouveautés sur sa catégorie (ouverte d'office) et sur le bouton profil de l'accueil (`seenAchievements`, `useNewAchievements`). Ceux débloqués avant cette règle comptent comme vus (migration v10).
 
 ## Dates
 
 - Les dates des défis sont des clés `YYYY-MM-DD` en **heure locale**. Ne jamais les relire avec `new Date('YYYY-MM-DD')`, que JavaScript interprète en UTC (décalage d'un jour à l'ouest de l'heure UTC) : utiliser `parseLocalDateString`.
 - Les succès « sans aide » ne comptent que les niveaux distincts (impossible de les farmer en rejouant le même niveau).
-- Le déblocage est **visible** : dans l'écran de victoire, ou par un toast ailleurs dans l'app. Après une mise à jour, les succès déjà mérités sont débloqués silencieusement.
+- Le déblocage est **visible** : toujours par un **toast en haut de l'écran**, l'un après l'autre, y compris par-dessus l'écran de victoire (`WinAchievementToasts`, `components/AchievementToast.tsx`). Après une mise à jour, les succès déjà mérités sont débloqués silencieusement.
 
 ## Statistiques
 
