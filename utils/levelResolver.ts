@@ -38,6 +38,18 @@ export async function resolveArchiveLevel(dateKey: string): Promise<Level | null
 }
 
 /**
+ * Imports the level of a shared link (rush-hours://game?data=…), checked and solved again
+ * in the background: the id of the level to open (the existing one for a board already
+ * imported), null for a broken or forged link. Waits for the save: a level added before it
+ * is loaded is lost (issue 118).
+ */
+export async function importSharedLevel(data: string): Promise<number | null> {
+  await whenSaveLoaded();
+  const level = await parseSharedLevelAsync(data);
+  return level ? useGameStore.getState().addImportedLevel(level) : null;
+}
+
+/**
  * Finds the level a game route points to: daily / weekly challenge (cached in the store),
  * archive, campaign, generated, created or imported level, or a level generated on the fly.
  */
@@ -46,16 +58,11 @@ export async function resolveLevel(params: GameRouteParams): Promise<Level | nul
   // may not be loaded yet: regenerating it could give another puzzle than the saved game
   await whenSaveLoaded();
 
-  const { levelId: idParam, date: dateParam, week: weekParam, data: dataParamInUrl } = params;
+  const { levelId: idParam, date: dateParam, week: weekParam } = params;
   const id = Number(idParam);
   const state = useGameStore.getState();
 
   let level: Level | null = null;
-
-  // 0. Primary: Check if level data is passed directly in URL (Deep Link fallback)
-  if (dataParamInUrl) {
-    level = await parseSharedLevelAsync(dataParamInUrl, 999998);
-  }
 
   if (idParam === 'daily' && dateParam) {
     // Use cache if available and date matches

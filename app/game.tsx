@@ -14,7 +14,7 @@ import { parseLocalDateString } from '@/utils/date';
 import { buildChallengeShareText } from '@/utils/shareResult';
 import { requestReminderPermission } from '@/utils/notifications';
 import { calculateScore, getStars } from '@/utils/scoring';
-import { resolveLevel, GameRouteParams } from '@/utils/levelResolver';
+import { importSharedLevel, resolveLevel, GameRouteParams } from '@/utils/levelResolver';
 import { useActivePlayTime } from '@/hooks/useActivePlayTime';
 import { describeVehicle, getVehicleLetters, getMoveDirection } from '@/utils/accessibility';
 import { useTheme } from '@/theme';
@@ -140,6 +140,19 @@ export default function GameScreen() {
     cancelGeneration();
 
     const timer = setTimeout(async () => {
+      // A shared link (rush-hours://game?data=…): imported, then opened as an imported level
+      if (params.data && !params.levelId) {
+        const id = await importSharedLevel(params.data);
+        if (id !== null) {
+          router.replace(`/game?levelId=${id}`);
+        } else {
+          Alert.alert(t('common.error'), t('custom_levels.import_error'));
+          // Opened by the link at launch: nothing to go back to
+          if (router.canGoBack()) router.back();
+          else router.replace('/');
+        }
+        return;
+      }
       const level = await resolveLevel(params as GameRouteParams);
 
       if (level) {
@@ -158,7 +171,7 @@ export default function GameScreen() {
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [params.levelId, params.date, params.week, createdLevels, importedLevels]);
+  }, [params.levelId, params.date, params.week, params.data, createdLevels, importedLevels]);
 
   const playTime = useActivePlayTime(!isLoading && !!currentLevel && !won && !isChallengeCompleted);
 
