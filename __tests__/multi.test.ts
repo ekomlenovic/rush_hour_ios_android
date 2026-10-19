@@ -281,6 +281,7 @@ describe('translations of the multiplayer mode', () => {
     expect(MULTI_ERROR_CODES.filter(code => typeof multi.errors[code] !== 'string')).toEqual([]);
     expect(Object.keys(multi.status).sort()).toEqual(['abandoned', 'playing', 'unfinished', 'won']);
     expect(Object.keys(multi.ranking_mode).sort()).toEqual(['all', 'dates', 'month', 'week']);
+    expect(Object.keys(multi.ranking_mode_desc).sort()).toEqual(['all', 'dates', 'month', 'week']);
     expect(typeof multi.my_abandoned).toBe('string');
     expect(typeof multi.my_unfinished).toBe('string');
     // A title for each page of the admin panel

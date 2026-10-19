@@ -23,7 +23,7 @@ import DuelHistoryCard from '@/components/multi/DuelHistoryCard';
 import DuelLeaderboard from '@/components/multi/DuelLeaderboard';
 import WeekRecap from '@/components/multi/WeekRecap';
 import { showsWeekRecap } from '@/utils/multi/week';
-import RankingPeriodPicker from '@/components/multi/RankingPeriodPicker';
+import RankingPeriodPicker, { RankingModeButton } from '@/components/multi/RankingPeriodPicker';
 import HomeTabBar from '@/components/home/HomeTabBar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -196,10 +196,18 @@ export default function MultiplayerScreen() {
       colors={colors}
       isDark={isDark}
       today={serverToday}
-      modes={weeklyModes}
       view={weeklyView}
       onView={setRankingView}
       datesSupported={datesSupported}
+    />
+  );
+  const modeButton = (
+    <RankingModeButton
+      colors={colors}
+      isDark={isDark}
+      modes={weeklyModes}
+      mode={weeklyView.mode}
+      onMode={mode => setRankingView(v => ({ ...v, mode, offset: 0 }))}
     />
   );
   const blocked = (blockedByServer[account.url] ?? []).map(p => p.playerId);
@@ -387,6 +395,7 @@ export default function MultiplayerScreen() {
               query={weeklyQuery}
               title={t('multi.ranking_challenges_title')}
               header={periodPicker}
+              titleAccessory={modeButton}
               final={weeklyFinal}
               currentDate={today?.date}
             />
@@ -400,6 +409,7 @@ export default function MultiplayerScreen() {
               onRowPress={setSelectedPlayer}
               query={weeklyQuery}
               header={periodPicker}
+              titleAccessory={modeButton}
               final={weeklyFinal}
             />
           )}
