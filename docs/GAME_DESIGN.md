@@ -339,7 +339,7 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 
 - Les dates des défis sont des clés `YYYY-MM-DD` en **heure locale**. Ne jamais les relire avec `new Date('YYYY-MM-DD')`, que JavaScript interprète en UTC (décalage d'un jour à l'ouest de l'heure UTC) : utiliser `parseLocalDateString`.
 - Les succès « sans aide » ne comptent que les niveaux distincts (impossible de les farmer en rejouant le même niveau).
-- Le déblocage est **visible** : dans l'écran de victoire, ou par un toast ailleurs dans l'app. Après une mise à jour, les succès déjà mérités sont débloqués silencieusement.
+- Le déblocage est **visible** : toujours par un **toast en haut de l'écran**, l'un après l'autre, y compris par-dessus l'écran de victoire (`WinAchievementToasts`, `components/AchievementToast.tsx`). Après une mise à jour, les succès déjà mérités sont débloqués silencieusement.
 
 ## Statistiques
 

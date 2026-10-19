@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Modal, AccessibilityInfo, ScrollView, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
+import { WinAchievementToasts } from '@/components/AchievementToast';
 import { formatDuration } from '@/utils/date';
 import { fixedColors, type UiColors } from '@/theme';
 import { getLevelInfo } from '@/data/progression';
@@ -22,7 +22,7 @@ interface Props {
   minMoves: number;
   score: number;
   timeMs: number | null;
-  /** Achievements unlocked by this win (shown here instead of the global toast) */
+  /** Achievements unlocked by this win, shown as toasts at the top (the global toast is under this modal) */
   unlocks: string[];
   missionReward: MissionReward | null;
   /** XP before and after this win (level, missions and achievements included) */
@@ -89,16 +89,6 @@ export default function WinModal({
             <IconText icon="time-outline" color={colors.textMuted} style={styles.winTime} textStyle={styles.winTimeText}>
               {formatDuration(timeMs)}
             </IconText>
-          )}
-          {unlocks.length > 0 && (
-            <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
-              <IconText icon="trophy" color={colors.warning} textStyle={styles.winUnlocksTitle}>{t('achievements.unlocked')}</IconText>
-              {unlocks.filter(id => ACHIEVEMENTS_BY_ID[id]).map((id) => (
-                <Text key={id} style={[styles.winUnlockItem, { color: colors.text }]}>
-                  {t(`achievements.${id}`)}
-                </Text>
-              ))}
-            </View>
           )}
           {xpAfter && xpBefore && gained > 0 && (
             <View style={styles.xpBlock} accessible accessibilityLabel={`${t('progression.xp_gain', { xp: gained })}, ${t('progression.level', { level: xpAfter.level })}, ${t('progression.xp_progress', { xp: xpAfter.xpInLevel, next: xpAfter.xpForNext })}`}>
@@ -167,6 +157,7 @@ export default function WinModal({
           </ScrollView>
         </View>
         {visible && <WinEffect effect={effect} width={width} height={height} colors={effectColors} />}
+        {visible && <WinAchievementToasts ids={unlocks} />}
       </View>
     </Modal>
   );
