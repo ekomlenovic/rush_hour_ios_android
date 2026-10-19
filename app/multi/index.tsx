@@ -20,6 +20,8 @@ import ServerPickerSheet from '@/components/multi/ServerPickerSheet';
 import DuelsCard from '@/components/multi/DuelsCard';
 import DuelHistoryCard from '@/components/multi/DuelHistoryCard';
 import DuelLeaderboard from '@/components/multi/DuelLeaderboard';
+import WeekRecap from '@/components/multi/WeekRecap';
+import { showsWeekRecap } from '@/utils/multi/week';
 import HomeTabBar from '@/components/home/HomeTabBar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -336,6 +338,17 @@ export default function MultiplayerScreen() {
               </Pressable>
             ))}
           </View>
+          {rankingKind === 'challenges' && today && showsWeekRecap(today.date) && (
+            <WeekRecap
+              api={api}
+              colors={colors}
+              myPlayerId={account.playerId}
+              refreshKey={refreshKey}
+              blocked={blocked}
+              currentDate={today.date}
+              onRowPress={setSelectedPlayer}
+            />
+          )}
           {rankingKind === 'challenges' ? (
             <Leaderboard
               api={api}
@@ -346,6 +359,7 @@ export default function MultiplayerScreen() {
               onRowPress={setSelectedPlayer}
               periods={WEEK_MONTH}
               title={t('multi.ranking_challenges_title')}
+              currentDate={today?.date}
             />
           ) : (
             <DuelLeaderboard api={api} colors={colors} myPlayerId={account.playerId} refreshKey={refreshKey} blocked={blocked} onRowPress={setSelectedPlayer} />
