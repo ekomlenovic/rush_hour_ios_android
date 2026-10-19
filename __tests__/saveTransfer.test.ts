@@ -252,6 +252,14 @@ describe('import recomputes rather than trusts', () => {
     expect(result.ok && result.state.xp).toBe(xp);
   });
 
+  it('keeps the extra XP of a boss won', () => {
+    winLevel(sampleLevels[29], 0);
+    const xp = store().xp;
+    const result = parseSave(exportProgress());
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state.xp).toBe(xp);
+  });
+
   it('caps the freezes to the stock allowed at the player level', () => {
     const result = parseSave(forge(s => { s.streakFreezes = 50; }));
     if (!result.ok) throw new Error(result.error);

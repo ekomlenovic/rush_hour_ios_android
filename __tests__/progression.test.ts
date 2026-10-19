@@ -1,5 +1,5 @@
 import {
-  ACHIEVEMENT_XP, BASE_FREEZE_SLOTS, MISSIONS_XP, REPLAY_XP_FACTOR, dailyWinXp, getFreezeCapacity, getLevelInfo,
+  ACHIEVEMENT_XP, BASE_FREEZE_SLOTS, BOSS_WIN_XP, MISSIONS_XP, REPLAY_XP_FACTOR, dailyWinXp, getFreezeCapacity, getLevelInfo,
   getPlayerLevel, getPlayerTitle, levelWinXp, totalXpForLevel, weeklyWinXp, xpToNextLevel,
 } from '../data/progression';
 import {
@@ -109,6 +109,15 @@ describe('store: XP', () => {
     winMapLevel(sampleLevels[0], { stars: 3 });
     expect(state().achievements).toContain('first_win');
     expect(state().xp).toBe(levelWinXp(sampleLevels[0].minMoves, 3, true) + state().achievements.length * ACHIEVEMENT_XP);
+  });
+
+  it('the first win of a boss gives extra XP, not a replay', () => {
+    const boss = sampleLevels[29];
+    winMapLevel(boss, { stars: 3 });
+    expect(state().xp).toBe(levelWinXp(boss.minMoves, 3, true) + BOSS_WIN_XP + state().achievements.length * ACHIEVEMENT_XP);
+    const before = state().xp;
+    winMapLevel(boss, { stars: 3 });
+    expect(state().xp - before).toBe(levelWinXp(boss.minMoves, 3, false));
   });
 
   it('reaching a level gives a freeze and is queued for display', () => {

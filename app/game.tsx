@@ -6,6 +6,7 @@ import { haptics, Haptics } from '@/utils/haptics';
 import Board from '@/components/Board';
 import { useGameStore } from '@/store/gameStore';
 import type { MissionReward } from '@/data/missions';
+import { isBossLevel } from '@/data/bosses';
 import { checkWin } from '@/utils/collision';
 import { solvePuzzleAsync } from '@/utils/solver.background';
 import { customLevelKind, customLevelTitle } from '@/utils/customLevels';
@@ -355,6 +356,7 @@ export default function GameScreen() {
             : isArchive ? t('game.archive_title', {
                 date: parseLocalDateString(params.date!).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' }),
               })
+            : !customKind && isBossLevel(currentLevel.id) ? t('game.level_boss', { id: currentLevel.id })
             : levelTitle}
         </Text>
         <Pressable onPress={() => setShareVisible(true)} style={styles.shareHeaderBtn} accessibilityRole="button" accessibilityLabel={t('a11y.share_level')}>
