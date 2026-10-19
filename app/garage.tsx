@@ -16,10 +16,13 @@ import BoardPreview from '@/components/garage/BoardPreview';
 import WinEffect from '@/components/effects/WinEffect';
 import XpBar from '@/components/progression/XpBar';
 import CosmeticThumb from '@/components/garage/CosmeticThumb';
-import { describeUnlock } from '@/components/garage/describeUnlock';
+import { describeUnlock, describeUnlockShort } from '@/components/garage/describeUnlock';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import type { IoniconName } from '@/utils/icons';
 import IconText from '@/components/IconText';
 
 const KINDS: CosmeticKind[] = ['board', 'skin', 'palette', 'effect'];
+const KIND_ICONS: Record<CosmeticKind, IoniconName> = { board: 'grid', skin: 'car-sport', palette: 'color-palette', effect: 'sparkles' };
 
 /** Customization: board themes, target car skins, vehicle palettes and win effects (#7) */
 export default function GarageScreen() {
@@ -44,7 +47,7 @@ export default function GarageScreen() {
   const previewSelection: CosmeticSelection = previewed
     ? { ...selection, [previewed.kind]: previewed.id }
     : selection;
-  const previewSize = Math.min(width - 96, 260);
+  const previewSize = Math.min(width - 96, 210);
 
   const handlePress = (def: CosmeticDef) => {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -72,9 +75,8 @@ export default function GarageScreen() {
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}>
-        <Text style={[styles.desc, { color: colors.textMuted }]}>{t('cosmetics.garage_desc')}</Text>
-
+      {/* The tabs stay at the top while the items scroll */}
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]} stickyHeaderIndices={[1]}>
         <View style={styles.previewWrap}>
           <View>
             <BoardPreview selection={previewSelection} scheme={scheme} size={previewSize} />
@@ -88,11 +90,12 @@ export default function GarageScreen() {
           </View>
           {previewed && (
             <IconText icon="lock-closed" color={colors.warning} textStyle={styles.previewNote}>
-              {t('cosmetics.preview')} : {t(`cosmetics.${previewed.kind}.${previewed.id}`)}
+              {t(`cosmetics.${previewed.kind}.${previewed.id}`)} : {describeUnlock(t, previewed, context)}
             </IconText>
           )}
         </View>
 
+        <View style={[styles.tabsSticky, { backgroundColor: colors.background }]}>
         <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
           {KINDS.map(k => {
             const active = k === kind;
@@ -108,8 +111,14 @@ export default function GarageScreen() {
                   ? `${t(`cosmetics.kinds.${k}`)}, ${t('cosmetics.new_count', { count: newCount })}`
                   : t(`cosmetics.kinds.${k}`)}
               >
-                <Text style={[styles.tabText, { color: active ? colors.onPrimary : colors.text }]} numberOfLines={2}>
-                  {t(`cosmetics.kinds.${k}`)}
+                <Ionicons name={KIND_ICONS[k]} size={20} color={active ? colors.onPrimary : colors.primaryText} />
+                <Text
+                  style={[styles.tabText, { color: active ? colors.onPrimary : colors.text }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  {t(`cosmetics.tabs.${k}`)}
                 </Text>
                 {newCount > 0 && (
                   <View style={[styles.tabCount, { backgroundColor: colors.primary, borderColor: colors.surface }]}>
@@ -120,6 +129,7 @@ export default function GarageScreen() {
             );
           })}
         </View>
+        </View>
 
         <View style={styles.grid}>
           {items.map(def => {
@@ -128,6 +138,7 @@ export default function GarageScreen() {
             const isSelected = selection[def.kind] === def.id;
             const name = t(`cosmetics.${def.kind}.${def.id}`);
             const condition = describeUnlock(t, def, context);
+            const shortCondition = describeUnlockShort(t, def, context);
             const isNew = newKeys.has(key);
             const state = isSelected ? t('cosmetics.selected')
               : isUnlocked ? (isNew ? `${t('cosmetics.new')}, ${t('cosmetics.unlock.default')}` : t('cosmetics.unlock.default'))
@@ -156,7 +167,7 @@ export default function GarageScreen() {
                   <Text style={[styles.itemState, { color: colors.primaryText }]}>✓ {t('cosmetics.selected')}</Text>
                 ) : isUnlocked ? null : (
                   <>
-                    <IconText icon="lock-closed" color={colors.textMuted} textStyle={styles.itemCondition} numberOfLines={3}>{condition}</IconText>
+                    <Text style={[styles.itemCondition, { color: colors.textMuted }]} numberOfLines={1}>{shortCondition}</Text>
                     <XpBar colors={colors} ratio={unlockProgress(def, context)} height={4} />
                   </>
                 )}
@@ -177,11 +188,11 @@ const styles = StyleSheet.create({
   title: { fontSize: RFValue(28), fontWeight: '800' },
   count: { fontSize: RFValue(13), fontWeight: '600', marginTop: 2 },
   content: { paddingHorizontal: 20 },
-  desc: { fontSize: RFValue(14), marginBottom: 16 },
-  previewWrap: { alignItems: 'center', marginBottom: 20, gap: 8 },
+  previewWrap: { alignItems: 'center', marginBottom: 4, gap: 8 },
   previewNote: { fontSize: RFValue(13), fontWeight: '700', textAlign: 'center' },
-  tabs: { flexDirection: 'row', padding: 4, borderRadius: 12, gap: 4, marginBottom: 16 },
-  tab: { flex: 1, paddingVertical: 8, paddingHorizontal: 4, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  tabsSticky: { paddingTop: 8, paddingBottom: 12 },
+  tabs: { flexDirection: 'row', padding: 4, borderRadius: 12, gap: 4 },
+  tab: { flex: 1, paddingVertical: 6, paddingHorizontal: 4, borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 2 },
   tabText: { fontSize: RFValue(12), fontWeight: '700', textAlign: 'center' },
   tabCount: {
     position: 'absolute',
@@ -222,5 +233,5 @@ const styles = StyleSheet.create({
   itemSelected: { borderWidth: 2.5 },
   itemName: { fontSize: RFValue(14), fontWeight: '700' },
   itemState: { fontSize: RFValue(12), fontWeight: '700' },
-  itemCondition: { fontSize: RFValue(11), fontWeight: '500' },
+  itemCondition: { fontSize: RFValue(12), fontWeight: '600' },
 });
