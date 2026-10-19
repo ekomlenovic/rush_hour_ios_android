@@ -55,6 +55,30 @@ describe('the save on the device', () => {
     expect((await stored()).state).toMatchObject({ progress: save.state.progress, maxUnlockedLevel: 2, xp: store.getState().xp });
   });
 
+  it('keeps a level shared by a link that opened the app, imported once loaded (#118)', async () => {
+    // The link is solved on a worklet runtime, whose mock runs on timers
+    jest.useRealTimers();
+    const { sampleLevels } = require('../data/sampleLevels');
+    const { serializeLevel } = require('../utils/sharing');
+    const imported = { ...sampleLevels[3], id: 111, name: 'Ancien' };
+    await AsyncStorage.setItem(KEY, JSON.stringify({ state: { ...save.state, importedLevels: [imported] }, version: 6 }));
+    let store!: typeof UseGameStore;
+    let importSharedLevel!: typeof import('../utils/levelResolver').importSharedLevel;
+    jest.isolateModules(() => {
+      store = require('../store/gameStore').useGameStore;
+      importSharedLevel = require('../utils/levelResolver').importSharedLevel;
+    });
+    // The link is handled before the save is read back
+    const id = await importSharedLevel(serializeLevel(sampleLevels[10]));
+    expect(store.persist.hasHydrated()).toBe(true);
+    const ids = store.getState().importedLevels.map(l => l.id);
+    expect(ids).toEqual([111, id]);
+    // The same link again opens the level already imported, a broken one imports nothing
+    expect(await importSharedLevel(serializeLevel(sampleLevels[10]))).toBe(id);
+    expect(await importSharedLevel('not-a-level')).toBeNull();
+    expect(store.getState().importedLevels).toHaveLength(2);
+  });
+
   it('is kept when it cannot be read back, nothing is written over it', async () => {
     (AsyncStorage.getItem as jest.Mock).mockRejectedValueOnce(new Error('Row too big to fit into CursorWindow'));
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
@@ -76,7 +100,7 @@ describe('the save on the device', () => {
     await flush();
     await settle();
     const { state, version } = await stored();
-    expect(version).toBe(6);
+    expect(version).toBe(8);
     expect(state.savedStates[12].history).toHaveLength(MAX_SAVED_UNDOS);
   });
 });

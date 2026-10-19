@@ -183,3 +183,28 @@ describe('hardReset', () => {
     jest.useRealTimers();
   });
 });
+
+describe('resetting the generated levels', () => {
+  it('takes their progress, games in progress and map focus with them, nothing else', () => {
+    resetStore();
+    const base = sampleLevels.length;
+    const generated = { ...level, id: base + 1 };
+    useGameStore.setState({
+      generatedLevels: [generated],
+      progress: [{ levelId: 1, completed: true, bestScore: 300, stars: 3 }, { levelId: base + 1, completed: true, bestScore: 300, stars: 3 }],
+      maxUnlockedLevel: base + 2,
+      savedStates: {
+        2: { vehicles: level.vehicles, moveCount: 1, history: [] },
+        [base + 1]: { vehicles: level.vehicles, moveCount: 3, history: [] },
+        'daily-2026-10-14': { vehicles: level.vehicles, moveCount: 2, history: [] },
+      },
+      lastPlayedLevelId: base + 1,
+    });
+    state().purgeCustomLevels(base);
+    expect(state().generatedLevels).toEqual([]);
+    expect(state().progress.map(p => p.levelId)).toEqual([1]);
+    expect(state().maxUnlockedLevel).toBe(base + 1);
+    expect(Object.keys(state().savedStates).sort()).toEqual(['2', 'daily-2026-10-14']);
+    expect(state().lastPlayedLevelId).toBeNull();
+  });
+});

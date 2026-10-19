@@ -60,10 +60,10 @@ describe('updating from 2.0.0', () => {
     expect(state.stats).toEqual(old.stats);
     expect(state.dailyMissions).toEqual(old.dailyMissions);
 
-    // And it is written back as v6, nothing lost on the device either
+    // And it is written back as the current version, nothing lost on the device either
     await settle();
     const { state: written, version } = await onDevice();
-    expect(version).toBe(6);
+    expect(version).toBe(8);
     expect(written.progress).toEqual(old.progress);
     expect(written.xp).toBe(old.xp);
   });
