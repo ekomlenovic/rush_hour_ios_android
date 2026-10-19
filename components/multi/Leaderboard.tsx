@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-nati
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
-import { formatDuration } from '@/utils/date';
+import { formatDuration, parseLocalDateString } from '@/utils/date';
 import type { DayRow, Leaderboard as Board, MultiApi, Period, PeriodRow } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
+import { weekCells, type DayCell } from '@/utils/multi/week';
 import { multiErrorMessage } from './errors';
 import { reasonsText, verdictIcon } from './verdict';
 
@@ -25,13 +26,15 @@ interface Props {
   periods?: readonly Period[];
   /** Shown instead of the default title */
   title?: string;
+  /** The challenge being played: the week shows each day up to it */
+  currentDate?: string;
 }
 
 const PERIODS: Period[] = ['day', 'week', 'month'];
 
 /** Rankings of the day (moves then time), of the week and of the month (points) */
-export default function Leaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress, periods = PERIODS, title }: Props) {
-  const { t } = useTranslation();
+export default function Leaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress, periods = PERIODS, title, currentDate }: Props) {
+  const { t, i18n } = useTranslation();
   const [period, setPeriod] = useState<Period>(periods[0]);
   const [board, setBoard] = useState<Board | null>(null);
   const [error, setError] = useState<unknown>(null);
@@ -65,9 +68,24 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
     row.verdict === 'suspect' ? `${t('multi.suspect')} : ${reasonsText(t, row.reasons)}` : null,
   ].filter(Boolean).join(', ');
 
+  const initials = t('multi.weekday_initials').split(' ');
+  const cellText = (cell: DayCell) =>
+    cell.kind === 'points' ? String(cell.points) : cell.kind === 'playing' ? '…' : cell.kind === 'missed' ? '–' : '·';
+  /** The days of the week of a row, when the server sends them */
+  const cellsOf = (row: PeriodRow) =>
+    board?.period === 'week' && row.days && currentDate ? weekCells(board.from, row.days, currentDate) : null;
+  const cellLabel = (cell: DayCell) => {
+    const day = parseLocalDateString(cell.date).toLocaleDateString(i18n.language, { weekday: 'long' });
+    if (cell.kind === 'upcoming') return null;
+    const value = cell.kind === 'points' ? t('multi.points', { count: cell.points })
+      : cell.kind === 'playing' ? t('multi.status.playing') : t('multi.not_played');
+    return t('multi.week_day_a11y', { day, value });
+  };
+
   const periodLabel = (row: PeriodRow) => [
     t('multi.rank_a11y', { rank: row.rank }), row.pseudo, row.playerId === myPlayerId ? t('multi.you') : null,
     t('multi.points', { count: row.points }), t('multi.wins', { count: row.wins }),
+    ...(cellsOf(row)?.map(cellLabel) ?? []),
   ].filter(Boolean).join(', ');
 
   const visible = <T extends { playerId: number }>(list: T[]) => list.filter(r => !blocked.includes(r.playerId));
@@ -130,6 +148,7 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
 
       {!loading && !error && board && board.period !== 'day' && visible(board.rows as PeriodRow[]).map(row => {
         const mine = row.playerId === myPlayerId;
+        const cells = cellsOf(row);
         return (
           <Pressable
             key={row.playerId}
@@ -144,6 +163,18 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
               <Text style={[styles.detail, { color: colors.textMuted }]}>{t('multi.wins', { count: row.wins })}</Text>
               <Text style={[styles.score, { color: colors.primaryText }]}>{t('multi.points_short', { count: row.points })}</Text>
             </View>
+            {cells && (
+              <View style={styles.week} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+                {cells.map((cell, i) => (
+                  <View key={cell.date} style={styles.weekDay}>
+                    <Text style={[styles.weekInitial, { color: colors.textMuted }]}>{initials[i]}</Text>
+                    <Text style={[styles.weekPoints, { color: cell.kind === 'points' && cell.points > 0 ? colors.primaryText : colors.textMuted }]}>
+                      {cellText(cell)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </Pressable>
         );
       })}
@@ -217,6 +248,24 @@ const styles = StyleSheet.create({
     fontSize: RFValue(12),
     textAlign: 'center',
     marginTop: RFValue(8),
+  },
+  week: {
+    flexDirection: 'row',
+    marginTop: RFValue(4),
+    marginLeft: RFValue(32),
+    marginRight: RFValue(4),
+  },
+  weekDay: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  weekInitial: {
+    fontSize: RFValue(10),
+    fontWeight: '700',
+  },
+  weekPoints: {
+    fontSize: RFValue(13),
+    fontWeight: '800',
   },
   rank: {
     width: RFValue(24),

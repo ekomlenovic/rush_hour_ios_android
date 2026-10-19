@@ -55,4 +55,14 @@ describe('ranking of a week or a month', () => {
     const rows = rankPeriod([win(1, 10, 1000, '2026-10-12'), win(2, 10, 2000, '2026-10-12'), win(2, 10, 1000, '2026-10-13')]);
     expect(rows.map(r => [r.playerId, r.points])).toEqual([[2, 18], [1, 10]]);
   });
+
+  it('gives the points of each day played, in order', () => {
+    const rows = rankPeriod([
+      win(1, 10, 1000, '2026-10-14'), other(1, 'abandoned', '2026-10-12'), win(2, 10, 1000, '2026-10-12'),
+    ]);
+    expect(rows.find(r => r.playerId === 1)!.days).toEqual([
+      { date: '2026-10-12', points: 0, status: 'abandoned' }, { date: '2026-10-14', points: 10, status: 'won' },
+    ]);
+    expect(rows.find(r => r.playerId === 2)!.days).toEqual([{ date: '2026-10-12', points: 10, status: 'won' }]);
+  });
 });

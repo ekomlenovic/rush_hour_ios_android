@@ -68,6 +68,8 @@ export interface PeriodRow {
   points: number;
   wins: number;
   played: number;
+  /** The points of each day played, in order: a day missing was not played */
+  days: { date: string; points: number; status: GameStatus }[];
 }
 
 /** The ranking of a week or a month: sum of the points of each day, then wins */
@@ -76,10 +78,11 @@ export function rankPeriod(results: GameResult[]): PeriodRow[] {
   for (const r of results) byDate.set(r.date, [...(byDate.get(r.date) ?? []), r]);
 
   const totals = new Map<number, Omit<PeriodRow, 'rank'>>();
-  for (const day of byDate.values()) {
+  for (const [date, day] of [...byDate].sort(([a], [b]) => a.localeCompare(b))) {
     for (const row of rankDay(day)) {
-      const total = totals.get(row.playerId) ?? { playerId: row.playerId, pseudo: row.pseudo, points: 0, wins: 0, played: 0 };
+      const total = totals.get(row.playerId) ?? { playerId: row.playerId, pseudo: row.pseudo, points: 0, wins: 0, played: 0, days: [] };
       total.points += row.points;
+      total.days.push({ date, points: row.points, status: row.status });
       total.wins += row.status === 'won' && row.verdict !== 'cheater' ? 1 : 0;
       total.played += 1;
       totals.set(row.playerId, total);

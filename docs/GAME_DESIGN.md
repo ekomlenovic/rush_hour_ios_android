@@ -256,6 +256,8 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 |---|---|
 | Jour : **coups, puis temps** ; égalité parfaite = même rang ; puis en cours, non terminé, abandon | `rankDay` (`server/src/leaderboard.ts`) |
 | Semaine (ISO) et mois : **points** par jour, 10, 8, 6, 5, 4, 3, 2 puis 1 par victoire, 0 sinon | `RANK_POINTS`, `rankPeriod` |
+| Semaine : chaque joueur a ses **7 cases du lundi au dimanche** (points du jour, « – » pas joué, « … » en cours, « · » à venir) qui se remplissent au fil des défis | `days` de `rankPeriod`, `weekCells` (`utils/multi/week.ts`), `Leaderboard` |
+| **Récap de la semaine dernière** (podium + ta place) en haut de l'onglet Hebdo, du lundi au mercredi (jours du défi en cours) | `showsWeekRecap`, `WeekRecap` |
 | Scores gardés pour toujours ; **coups** effacés après `REPLAY_RETENTION_DAYS` | `Challenges.purgeReplays` |
 
 ### Anti-triche
