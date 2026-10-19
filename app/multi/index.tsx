@@ -5,11 +5,12 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
-import { formatDuration } from '@/utils/date';
+import { addDays, formatDuration, getLocalDateString } from '@/utils/date';
 import { useTheme } from '@/theme';
 import { selectActiveAccount, useMultiStore } from '@/store/multiStore';
 import { useMultiApi } from '@/hooks/useMultiApi';
-import { checkCompatibility, type Period, type Today } from '@/utils/multi/api';
+import { checkCompatibility, type RankingQuery, type Today } from '@/utils/multi/api';
+import { CHALLENGE_MODES, DUEL_MODES, isPeriodOver, rankingQuery, type RankingView } from '@/utils/multi/rankingPeriod';
 import { formatRemaining } from '@/utils/multi/format';
 import { serverHost } from '@/utils/multi/serverUrl';
 import MultiHeader from '@/components/multi/MultiHeader';
@@ -22,6 +23,7 @@ import DuelHistoryCard from '@/components/multi/DuelHistoryCard';
 import DuelLeaderboard from '@/components/multi/DuelLeaderboard';
 import WeekRecap from '@/components/multi/WeekRecap';
 import { showsWeekRecap } from '@/utils/multi/week';
+import RankingPeriodPicker, { RankingModeButton } from '@/components/multi/RankingPeriodPicker';
 import HomeTabBar from '@/components/home/HomeTabBar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,10 +34,9 @@ import IconText from '@/components/IconText';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 
-/** The tabs at the bottom: the challenge of the day, the rankings of the week and the month, the duels */
+/** The tabs at the bottom: the challenge of the day, the rankings of the week, the month or two dates, the duels */
 type MultiTab = 'challenge' | 'weekly' | 'duels';
-const DAY: Period[] = ['day'];
-const WEEK_MONTH: Period[] = ['week', 'month'];
+const DAY: RankingQuery = { period: 'day' };
 /** Margin after the release of the next challenge before asking the server for it */
 const NEXT_CHALLENGE_MARGIN_MS = 1000;
 /** Never ask again sooner than this, even with a clock that disagrees with the server */
@@ -108,6 +109,11 @@ export default function MultiplayerScreen() {
   const [selectedPlayer, setSelectedPlayer] = useState<RowPlayer | null>(null);
   const [tab, setTab] = useState<MultiTab>('challenge');
   const [rankingKind, setRankingKind] = useState<'challenges' | 'duels'>('challenges');
+  const [rankingView, setRankingView] = useState<RankingView>(() => ({
+    mode: 'week', offset: 0, dates: { from: addDays(getLocalDateString(), -6), to: getLocalDateString() },
+  }));
+  // Rankings between two dates: only on a server that has them
+  const [features, setFeatures] = useState<string[]>([]);
   const insets = useSafeAreaInsets();
   const serverDuels = useServerDuels(api);
   const joinable = joinableCount(serverDuels.duels);
@@ -119,6 +125,7 @@ export default function MultiplayerScreen() {
     try {
       const [info, day] = await Promise.all([api.info(), api.today()]);
       setCompat(checkCompatibility(info, APP_VERSION));
+      setFeatures(info.features ?? []);
       // The admin may have renamed the server in the app
       const current = selectActiveAccount(useMultiStore.getState());
       if (current && info.name && info.name !== current.name) useMultiStore.getState().updateAccount(current.url, { name: info.name });
@@ -176,6 +183,33 @@ export default function MultiplayerScreen() {
   );
 
   const serverNow = now + clockOffset;
+  // The weekly rankings: the dates need a server that has them, all time is for the duels.
+  // Challenges are dated by the challenge being played, duels by the day they end
+  const serverToday = (rankingKind === 'challenges' ? today?.date : null) ?? getLocalDateString();
+  const weeklyModes = rankingKind === 'duels' ? DUEL_MODES : CHALLENGE_MODES;
+  const weeklyView = weeklyModes.includes(rankingView.mode) ? rankingView : { ...rankingView, mode: 'week' as const, offset: 0 };
+  const datesSupported = features.includes('ranking_range');
+  const weeklyQuery = weeklyView.mode === 'dates' && !datesSupported ? null : rankingQuery(weeklyView, serverToday);
+  const weeklyFinal = isPeriodOver(weeklyView, serverToday);
+  const periodPicker = (
+    <RankingPeriodPicker
+      colors={colors}
+      isDark={isDark}
+      today={serverToday}
+      view={weeklyView}
+      onView={setRankingView}
+      datesSupported={datesSupported}
+    />
+  );
+  const modeButton = (
+    <RankingModeButton
+      colors={colors}
+      isDark={isDark}
+      modes={weeklyModes}
+      mode={weeklyView.mode}
+      onMode={mode => setRankingView(v => ({ ...v, mode, offset: 0 }))}
+    />
+  );
   const blocked = (blockedByServer[account.url] ?? []).map(p => p.playerId);
   const me = today?.me;
   const finishedCount = today?.results.filter(r => r.status === 'won').length ?? 0;
@@ -316,13 +350,13 @@ export default function MultiplayerScreen() {
             refreshKey={refreshKey}
             blocked={blocked}
             onRowPress={setSelectedPlayer}
-            periods={DAY}
+            query={DAY}
             title={t('multi.leaderboard_day')}
           />
         )}
         </>}
 
-        {/* The rankings of the week and of the month: challenges or duels */}
+        {/* The rankings of a week, a month or two dates: challenges or duels */}
         {tab === 'weekly' && api && <>
           <View style={[styles.segment, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
             {(['challenges', 'duels'] as const).map(kind => (
@@ -338,15 +372,18 @@ export default function MultiplayerScreen() {
               </Pressable>
             ))}
           </View>
-          {rankingKind === 'challenges' && today && showsWeekRecap(today.date) && (
+          {/* Last week is over: a word on it in the first days, opening its final ranking */}
+          {/* For the challenges, once the server says which one is being played */}
+          {weeklyView.mode === 'week' && weeklyView.offset === 0 && (rankingKind === 'duels' || today) && showsWeekRecap(serverToday) && (
             <WeekRecap
               api={api}
               colors={colors}
               myPlayerId={account.playerId}
               refreshKey={refreshKey}
               blocked={blocked}
-              currentDate={today.date}
-              onRowPress={setSelectedPlayer}
+              kind={rankingKind}
+              currentDate={serverToday}
+              onOpen={() => setRankingView(v => ({ ...v, mode: 'week', offset: -1 }))}
             />
           )}
           {rankingKind === 'challenges' ? (
@@ -357,12 +394,26 @@ export default function MultiplayerScreen() {
               refreshKey={refreshKey}
               blocked={blocked}
               onRowPress={setSelectedPlayer}
-              periods={WEEK_MONTH}
+              query={weeklyQuery}
               title={t('multi.ranking_challenges_title')}
+              header={periodPicker}
+              titleAccessory={modeButton}
+              final={weeklyFinal}
               currentDate={today?.date}
             />
           ) : (
-            <DuelLeaderboard api={api} colors={colors} myPlayerId={account.playerId} refreshKey={refreshKey} blocked={blocked} onRowPress={setSelectedPlayer} />
+            <DuelLeaderboard
+              api={api}
+              colors={colors}
+              myPlayerId={account.playerId}
+              refreshKey={refreshKey}
+              blocked={blocked}
+              onRowPress={setSelectedPlayer}
+              query={weeklyQuery}
+              header={periodPicker}
+              titleAccessory={modeButton}
+              final={weeklyFinal}
+            />
           )}
         </>}
 

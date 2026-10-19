@@ -1,14 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
-import type { DuelLeaderboard as Board, MultiApi, Period } from '@/utils/multi/api';
+import { rankingParams, type DuelLeaderboard as Board, type MultiApi, type RankingQuery } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
 import { multiErrorMessage } from './errors';
-import type { RowPlayer } from './Leaderboard';
-
-type DuelPeriod = Period | 'all';
-const PERIODS: DuelPeriod[] = ['week', 'month', 'all'];
+import { MEDALS, type RowPlayer } from './Leaderboard';
 
 interface Props {
   api: MultiApi;
@@ -18,48 +15,50 @@ interface Props {
   /** Players hidden on this phone */
   blocked: number[];
   onRowPress: (player: RowPlayer) => void;
+  /** The ranking shown: week, month, two dates or all time; null: none */
+  query: RankingQuery | null;
+  /** Under the title: the choice of the period */
+  header?: ReactNode;
+  /** Next to the title: the kind of period */
+  titleAccessory?: ReactNode;
+  /** The period is over: its podium */
+  final?: boolean;
 }
 
-/** Duel rankings of the week, the month or of all time: wins, then fewer losses */
-export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress }: Props) {
+/** Duel rankings of a week, a month, two dates or of all time: wins, then fewer losses */
+export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, blocked, onRowPress, query, header, titleAccessory, final }: Props) {
   const { t } = useTranslation();
-  const [period, setPeriod] = useState<DuelPeriod>('week');
-  const [board, setBoard] = useState<Board | null>(null);
+  const params = query ? rankingParams(query) : null;
+  // The board with the query it answers: an answer to an older query is not shown
+  const [board, setBoard] = useState<{ params: string; data: Board } | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    if (!query) return setLoading(false);
     setLoading(true);
     setError(null);
     try {
-      setBoard(await api.duelLeaderboard(period));
+      setBoard({ params: rankingParams(query), data: await api.duelLeaderboard(query) });
     } catch (e) {
       setError(e);
     } finally {
       setLoading(false);
     }
-  }, [api, period]);
+  }, [api, params]); // params describes the query
 
   useEffect(() => { void load(); }, [load, refreshKey]);
 
-  const rows = board && board.period === period ? board.rows.filter(r => !blocked.includes(r.playerId)) : [];
+  const rows = board && board.params === params ? board.data.rows.filter(r => !blocked.includes(r.playerId)) : [];
+  const me = rows.find(r => r.playerId === myPlayerId);
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('multi.duel.ranking')}</Text>
-      <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
-        {PERIODS.map(p => (
-          <Pressable
-            key={p}
-            onPress={() => setPeriod(p)}
-            style={[styles.tab, p === period && { backgroundColor: colors.primary }]}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: p === period }}
-          >
-            <Text style={[styles.tabText, { color: p === period ? colors.onPrimary : colors.text }]}>{p === 'all' ? t('multi.duel.period_all') : t(`multi.period.${p}`)}</Text>
-          </Pressable>
-        ))}
+      <View style={styles.titleRow}>
+        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header" numberOfLines={1}>{t('multi.duel.ranking')}</Text>
+        {titleAccessory}
       </View>
+      {header}
 
       {rows.length > 0 && (
         <View style={styles.head}>
@@ -78,7 +77,7 @@ export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, b
           <Text style={[styles.retry, { color: colors.primaryText }]}>{t('multi.retry')}</Text>
         </Pressable>
       )}
-      {!loading && !error && rows.length === 0 && (
+      {!loading && !error && !!query && rows.length === 0 && (
         <Text style={[styles.muted, styles.state, { color: colors.textMuted }]}>{t('multi.duel.ranking_empty')}</Text>
       )}
 
@@ -95,7 +94,9 @@ export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, b
               t('multi.duel.record_a11y', { wins: row.wins, losses: row.losses, draws: row.draws }),
             ].filter(Boolean).join(', ')}
           >
-            <Text style={[styles.rank, { color: colors.textMuted }]}>{row.rank}</Text>
+            <Text style={[styles.rank, { color: colors.textMuted }, final && row.rank <= MEDALS.length && styles.medal]}>
+              {final ? MEDALS[row.rank - 1] ?? row.rank : row.rank}
+            </Text>
             <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{row.pseudo}</Text>
             <Text style={[styles.cell, styles.wins, { color: colors.success }]}>{row.wins}</Text>
             <Text style={[styles.cell, { color: colors.danger }]}>{row.losses}</Text>
@@ -103,6 +104,13 @@ export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, b
           </Pressable>
         );
       })}
+      {!loading && !error && final && rows.length > 0 && (
+        <Text style={[styles.me, { color: me ? colors.text : colors.textMuted, borderTopColor: colors.border }]}>
+          {me
+            ? t('multi.duel.ranking_me', { rank: me.rank, count: rows.length })
+            : t('multi.duel.ranking_absent')}
+        </Text>
+      )}
     </View>
   );
 }
@@ -114,26 +122,16 @@ const styles = StyleSheet.create({
     padding: RFValue(14),
     marginTop: RFValue(16),
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(8),
+    marginBottom: RFValue(12),
+  },
   title: {
+    flex: 1,
     fontSize: RFValue(17),
     fontWeight: '800',
-    marginBottom: RFValue(10),
-  },
-  tabs: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    padding: 3,
-    marginBottom: RFValue(10),
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: RFValue(7),
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  tabText: {
-    fontSize: RFValue(13),
-    fontWeight: '700',
   },
   head: {
     flexDirection: 'row',
@@ -172,6 +170,17 @@ const styles = StyleSheet.create({
     paddingVertical: RFValue(9),
     paddingHorizontal: RFValue(8),
     borderRadius: 10,
+  },
+  me: {
+    fontSize: RFValue(14),
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: RFValue(8),
+    paddingTop: RFValue(10),
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  medal: {
+    fontSize: RFValue(17),
   },
   rank: {
     width: RFValue(24),
