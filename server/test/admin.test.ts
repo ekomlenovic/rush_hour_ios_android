@@ -24,9 +24,20 @@ describe('becoming admin', () => {
   it('every admin route is refused to the other players', async () => {
     const { join, request } = open();
     const { token } = await join('Léo');
-    for (const [method, url] of [['GET', '/admin/games'], ['GET', '/admin/players'], ['GET', '/admin/reports'], ['GET', '/admin/settings'], ['POST', '/admin/invite']] as const) {
+    for (const [method, url] of [['GET', '/admin/games'], ['GET', '/admin/players'], ['GET', '/admin/reports'], ['GET', '/admin/settings'], ['GET', '/admin/puzzles'], ['POST', '/admin/invite']] as const) {
       expect((await request(method, url, token)).body).toEqual({ error: 'forbidden' });
     }
+  });
+});
+
+describe('duel puzzles', () => {
+  it('the admin sees the puzzles ready ahead', async () => {
+    const { joinAdmin, request } = open();
+    const admin = await joinAdmin();
+    const body = (await request('GET', '/admin/puzzles', admin.token)).body;
+    expect(body.difficulties.map((d: { difficulty: string }) => d.difficulty)).toEqual(['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER']);
+    expect(Array.isArray(body.puzzles)).toBe(true);
+    expect(body).toHaveProperty('working');
   });
 });
 

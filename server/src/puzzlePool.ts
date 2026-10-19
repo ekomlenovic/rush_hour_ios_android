@@ -25,6 +25,24 @@ export interface PuzzleSource {
   take(difficulty: Difficulty): Promise<Level | null>;
 }
 
+/** What the pool holds and does, for the admin */
+export interface PoolOverview {
+  difficulties: {
+    difficulty: Difficulty;
+    /** Puzzles from scratch kept ready, and how many are */
+    size: number;
+    ready: number;
+    /** Variants of the catalog, and the ones not played yet; null without a catalog */
+    catalog: { total: number; fresh: number } | null;
+    /** Left aside after a generation too long, until then */
+    asideUntil: number | null;
+  }[];
+  /** Being generated now (the pool and the catalog); null when all is ready */
+  working: { difficulty: Difficulty; kind: 'scratch' | 'catalog'; since: number } | null;
+  /** The puzzles from scratch, in the order the duels take them */
+  puzzles: { id: number; difficulty: Difficulty; createdAt: number; level: Level }[];
+}
+
 interface Logger { info: (obj: object, msg: string) => void; error: (obj: object, msg: string) => void }
 
 /** Tries of the generation of one puzzle (a seed may give nothing) */
@@ -71,6 +89,7 @@ export class PuzzlePool implements PuzzleSource {
   private readonly fillTimeoutMs: number;
   /** Difficulties left aside after a generation too long, until then */
   private readonly givenUp = new Map<Difficulty, number>();
+  private working: PoolOverview['working'] = null;
 
   constructor(options: PuzzlePoolOptions) {
     this.db = options.db;
@@ -101,6 +120,39 @@ export class PuzzlePool implements PuzzleSource {
   catalogSize(): Partial<Record<Difficulty, number>> {
     const rows = this.db.prepare('SELECT difficulty, COUNT(*) AS n FROM duel_variants GROUP BY difficulty').all() as { difficulty: Difficulty; n: number }[];
     return Object.fromEntries(rows.map(r => [r.difficulty, Number(r.n)]));
+  }
+
+  /** Everything the pool holds, for the admin panel */
+  overview(): PoolOverview {
+    const scratch = this.scratchCounts();
+    const catalog = Object.fromEntries((this.db.prepare(
+      'SELECT difficulty, COUNT(*) AS n, SUM(used_at IS NULL) AS fresh FROM duel_variants GROUP BY difficulty',
+    ).all() as { difficulty: Difficulty; n: number; fresh: number }[]).map(r => [r.difficulty, { total: Number(r.n), fresh: Number(r.fresh) }]));
+    const rows = this.db.prepare('SELECT id, difficulty, level_json, created_at FROM puzzle_pool ORDER BY id').all() as
+      { id: number; difficulty: Difficulty; level_json: string; created_at: number }[];
+    return {
+      difficulties: DIFFICULTIES.map(difficulty => ({
+        difficulty,
+        size: this.sizes[difficulty],
+        ready: scratch[difficulty],
+        catalog: this.hasCatalog(difficulty) ? catalog[difficulty] ?? { total: 0, fresh: 0 } : null,
+        asideUntil: this.isAside(difficulty) ? this.givenUp.get(difficulty)! : null,
+      })),
+      working: this.working,
+      puzzles: rows.map(r => ({
+        id: Number(r.id), difficulty: r.difficulty, createdAt: Number(r.created_at), level: JSON.parse(r.level_json) as Level,
+      })),
+    };
+  }
+
+  /** Runs a generation, shown to the admin meanwhile */
+  private async work<T>(difficulty: Difficulty, kind: 'scratch' | 'catalog', run: () => Promise<T>): Promise<T> {
+    this.working = { difficulty, kind, since: this.now() };
+    try {
+      return await run();
+    } finally {
+      this.working = null;
+    }
   }
 
   /**
@@ -205,7 +257,7 @@ export class PuzzlePool implements PuzzleSource {
       const counts = this.scratchCounts();
       const next = difficulties.find(d => counts[d] < this.sizes[d] && !this.isAside(d));
       if (!next) return;
-      const level = await this.generateForPool(next);
+      const level = await this.work(next, 'scratch', () => this.generateForPool(next));
       if (this.stopped) return;
       if (level === 'timeout') {
         this.log?.info({ difficulty: next }, 'duel puzzle too long to generate: left aside for now');
@@ -253,7 +305,8 @@ export class PuzzlePool implements PuzzleSource {
       for (const source of sources) {
         if (this.stopped) return;
         if (done.has(source.id)) continue;
-        const variants = await this.fillGenerator.variants(source.id, difficulty, perLevel, randomBytes(8).toString('hex'));
+        const variants = await this.work(difficulty, 'catalog',
+          () => this.fillGenerator.variants(source.id, difficulty, perLevel, randomBytes(8).toString('hex')));
         if (this.stopped) return;
         const insert = this.db.prepare('INSERT INTO duel_variants (difficulty, source_id, level_json) VALUES (?, ?, ?)');
         this.db.exec('BEGIN');
