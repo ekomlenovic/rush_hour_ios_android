@@ -159,3 +159,42 @@ export interface AppOpenInfo {
   /** Streak value lost because there were not enough freezes */
   lostStreak: number;
 }
+
+/**
+ * Counters of a month or a year, for the recap (issue 125). Numbers only, never a list of games:
+ * about 300 bytes per period (see docs/GAME_DESIGN.md, Récap)
+ */
+export interface PeriodStats {
+  /** Every win: map and custom levels, challenges, archives */
+  wins: number;
+  /** Map and custom levels won for the first time */
+  newLevels: number;
+  /** Stars added to the best results of the levels */
+  starsGained: number;
+  /** Wins with 3 stars */
+  perfectWins: number;
+  playTimeMs: number;
+  moves: number;
+  /** Last level of a zone of the campaign won */
+  bossWins: number;
+  /** Highest minMoves of a level won in the period */
+  hardestWinMoves: number;
+  /** Wins between midnight and 5 AM */
+  nightWins: number;
+  /** Daily challenges won between 5 and 7 AM */
+  earlyWins: number;
+  /** Achievements unlocked */
+  achievements: number;
+  /** Results and recaps shared */
+  resultsShared: number;
+  /** Styles of the garage unlocked */
+  cosmetics: number;
+}
+
+/** Latest recaps opened, so that the home screen stops announcing them */
+export interface RecapsSeen {
+  /** YYYY-MM */
+  month?: string;
+  /** YYYY */
+  year?: string;
+}
