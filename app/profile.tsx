@@ -3,11 +3,11 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useGameStore } from '@/store/gameStore';
 import PlayerLevelCard from '@/components/progression/PlayerLevelCard';
 import StreakCard from '@/components/profile/StreakCard';
 import AchievementsSection from '@/components/profile/AchievementsSection';
+import RecapPreviewCard from '@/components/profile/RecapPreviewCard';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { formatDuration, formatPlayTime } from '@/utils/date';
@@ -102,19 +102,7 @@ export default function ProfileScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(125).duration(400)}>
-          <Pressable
-            onPress={() => router.push('/recaps')}
-            style={[styles.recapsRow, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            accessibilityRole="button"
-            accessibilityLabel={`${t('recap.list_title')}, ${t('recap.list_desc')}`}
-          >
-            <Ionicons name="gift" size={22} color={colors.warning} />
-            <View style={styles.recapsTexts}>
-              <Text style={[styles.recapsTitle, { color: colors.text }]}>{t('recap.list_title')}</Text>
-              <Text style={[styles.recapsDesc, { color: colors.textMuted }]}>{t('recap.list_desc')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
+          <RecapPreviewCard colors={colors} />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(150).duration(400)} style={styles.section}>
@@ -199,25 +187,6 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: RFValue(12),
-  },
-  recapsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: RFValue(12),
-    borderRadius: RFValue(16),
-    borderWidth: 1,
-    padding: RFValue(14),
-  },
-  recapsTexts: {
-    flex: 1,
-    gap: 2,
-  },
-  recapsTitle: {
-    fontSize: RFValue(16),
-    fontWeight: '700',
-  },
-  recapsDesc: {
-    fontSize: RFValue(13),
   },
   sectionTitle: {
     fontSize: RFValue(18),

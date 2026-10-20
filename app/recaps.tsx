@@ -53,6 +53,7 @@ export default function RecapsScreen() {
               const recap = buildRecap(source, key);
               const label = periodLabel(key, i18n.language);
               const detail = [
+                t(`recap.profile_${recap.profile}`),
                 t('recap.list_wins', { count: recap.stats.wins }),
                 isInProgress(recap) ? t('recap.in_progress') : null,
               ].filter(Boolean).join(' · ');

@@ -3,7 +3,7 @@ import { DAILY_LEVEL_ID, useGameStore, type ChallengeResult } from '../store/gam
 import { sampleLevels } from '../data/sampleLevels';
 import { addToPeriods, emptyPeriodStats, isBossLevel, RECAP_MONTHS_KEPT } from '../store/periodStats';
 import {
-  availableRecaps, buildRecap, buildRecapShareText, pendingRecap, periodBounds, pickProfile, recapHighlights, type RecapSource,
+  availableRecaps, buildRecap, buildRecapShareText, pendingRecap, periodBounds, pickProfile, recapHighlights, recapSlides, type RecapSource,
 } from '../utils/recap';
 import { planReminders } from '../utils/reminders';
 import { addMonths, getWeekStart } from '../utils/date';
@@ -164,15 +164,55 @@ describe('buildRecap', () => {
     expect(pickProfile(stats({ wins: 10, nightWins: 4 }), 0, 30)).toBe('night');
     expect(pickProfile(stats({ wins: 10, bossWins: 2 }), 0, 30)).toBe('boss');
     expect(pickProfile(stats({ wins: 30, newLevels: 25 }), 0, 30)).toBe('explorer');
+    expect(pickProfile(stats({ wins: 4 }), 2, 30, 2)).toBe('challenger');
     expect(pickProfile(stats({ wins: 3 }), 1, 30)).toBe('driver');
   });
 
   it('has a text for every profile, in both languages', () => {
-    for (const profile of ['loyal', 'perfectionist', 'early', 'night', 'boss', 'explorer', 'driver']) {
+    for (const profile of ['loyal', 'perfectionist', 'early', 'night', 'boss', 'explorer', 'challenger', 'driver']) {
       for (const strings of [en, fr]) {
         expect(strings.recap).toHaveProperty(`profile_${profile}`);
         expect(strings.recap).toHaveProperty(`profile_${profile}_desc`);
       }
+    }
+  });
+});
+
+describe('slides of the recap', () => {
+  it('never show a zero: an empty number is left out, a slide with nothing is skipped', () => {
+    // The month of the update: only the challenges were counted back
+    const recap = buildRecap(source({
+      monthlyStats: { '2026-10': { ...emptyPeriodStats(), wins: 4, perfectWins: 4, hardestWinMoves: 50 } },
+      dailyChallengeProgress: { '2026-10-18': win, '2026-10-19': win },
+      weeklyChallengeProgress: { '2026-W41': win, '2026-W42': win },
+    }), '2026-10');
+    const slides = recapSlides(recap);
+    expect(slides.map(slide => slide.id)).toEqual(['intro', 'levels', 'challenges', 'feats']);
+    expect(slides[1]).toEqual({ id: 'levels', hero: { key: 'wins', value: 4 }, details: [{ key: 'perfect_wins', value: 4 }] });
+    expect(slides[2].hero).toEqual({ key: 'dailies', value: 2 });
+    expect(slides[2].details.map(f => f.key)).toEqual(['weeklies', 'perfect_dailies', 'best_run']);
+    expect(slides[3]).toEqual({ id: 'feats', hero: { key: 'hardest_win', value: 50 }, details: [] });
+  });
+
+  it('the next number takes the big place when the first one is zero', () => {
+    const recap = buildRecap(source({
+      monthlyStats: { '2026-10': { ...emptyPeriodStats(), moves: 30, playTimeMs: 20_000, cosmetics: 2 } },
+      weeklyChallengeProgress: { '2026-W42': win },
+    }), '2026-10');
+    const byId = Object.fromEntries(recapSlides(recap).map(slide => [slide.id, slide]));
+    expect(byId.time.hero).toEqual({ key: 'moves', value: 30 });
+    expect(byId.challenges.hero).toEqual({ key: 'weeklies', value: 1 });
+    expect(byId.unlocks.hero).toEqual({ key: 'styles', value: 2 });
+  });
+
+  it('has a label for every number that can take the big place, in both languages', () => {
+    const keys = ['wins', 'play_time', 'moves', 'dailies', 'weeklies', 'perfect_dailies', 'best_run', 'freezes_used', 'hardest_win', 'achievements', 'styles'];
+    for (const strings of [en, fr]) {
+      for (const key of keys) {
+        expect(Object.keys(strings.recap).some(k => k === `hero_${key}` || k === `hero_${key}_other`)).toBe(true);
+        expect(Object.keys(strings.recap).some(k => k === key || k === `${key}_other`)).toBe(true);
+      }
+      for (const id of ['levels', 'time', 'challenges', 'feats', 'unlocks']) expect(strings.recap).toHaveProperty(`card_${id}`);
     }
   });
 });

@@ -1,48 +1,60 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Share, Alert, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import {
+  View, Text, StyleSheet, Pressable, ScrollView, Share, Alert, useWindowDimensions,
+  type AccessibilityActionEvent, type GestureResponderEvent, type NativeScrollEvent, type NativeSyntheticEvent,
+} from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { StatusBar } from 'expo-status-bar';
 import * as Sharing from 'expo-sharing';
 import { File, Paths } from 'expo-file-system';
-import type Svg from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useGameStore } from '@/store/gameStore';
-import { useTheme, fixedColors, type UiColors } from '@/theme';
+import { recapSlideColors, recapSlideText } from '@/theme';
 import { formatPlayTime, parseLocalDateString } from '@/utils/date';
-import { buildRecap, buildRecapShareText, isInProgress, periodLabel, recapHighlights, type Recap } from '@/utils/recap';
+import {
+  buildRecap, buildRecapShareText, isInProgress, periodLabel, recapHighlights, recapSlides,
+  type Recap, type RecapFigure, type RecapSlide,
+} from '@/utils/recap';
 import { APP_URL } from '@/utils/shareResult';
 import RecapShareImage, { SHARE_IMAGE_HEIGHT, SHARE_IMAGE_WIDTH } from '@/components/recap/RecapShareImage';
 import type { IoniconName } from '@/utils/icons';
 
-/** Width of the shared image in the last card */
-const PREVIEW_WIDTH = 150;
-/** Achievement names listed on their card, the rest counted */
-const MAX_LISTED_ACHIEVEMENTS = 6;
+/** Achievement names listed on their slide, the rest counted */
+const MAX_LISTED_ACHIEVEMENTS = 4;
+/** Room taken by the progress bars at the top of the screen */
+const TOP_BAR_HEIGHT = 56;
+/** Room left under the share image for the title and the buttons */
+const SHARE_CONTROLS_HEIGHT = 230;
 
-interface RecapCardContent {
-  key: string;
-  icon: IoniconName;
-  title: string;
-  /** Big text of the card (the profile on the first one) */
-  headline?: string;
-  lines: string[];
-  rows: [string, string][];
-}
+type PageId = RecapSlide['id'] | 'share';
+
+const SLIDE_ICONS: Record<PageId, IoniconName> = {
+  intro: 'gift',
+  levels: 'flag',
+  time: 'time',
+  challenges: 'calendar',
+  feats: 'trophy',
+  unlocks: 'ribbon',
+  share: 'share-social',
+};
+
+type T = ReturnType<typeof useTranslation>['t'];
 
 /**
- * Monthly or yearly recap (issue 125, see docs/GAME_DESIGN.md, Récap): a few cards swiped one
- * after the other, then sharing as a vertical image or a text. Opened from the home screen
- * when it is ready, or from the profile for the past ones.
+ * Monthly or yearly recap (issue 125, see docs/GAME_DESIGN.md, Récap), shown like stories: full-screen
+ * slides with one big number each, swiped or touched (right: next, left: back), then the sharing one.
+ * Opened from the home screen when it is ready, or from the profile for the past ones.
  */
 export default function RecapScreen() {
   const { period = '' } = useLocalSearchParams<{ period: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
-  const { colors } = useTheme();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   const svgRef = useRef<Svg>(null);
   const [page, setPage] = useState(0);
@@ -71,25 +83,31 @@ export default function RecapScreen() {
 
   if (!recap) {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.text }}>{t('game.load_error')}</Text>
+      <View style={[styles.screen, styles.centered, { backgroundColor: recapSlideColors.intro[0] }]}>
+        <Text style={styles.body}>{t('game.load_error')}</Text>
       </View>
     );
   }
 
   const label = periodLabel(recap.key, i18n.language);
-  const cards = buildCards(t, recap, label, i18n.language);
-  const pageWidth = width;
-  const highlights = recapHighlights(t, recap);
-  const comparison = comparisonLines(t, recap, i18n.language);
+  const slides = recapSlides(recap);
+  const pages: PageId[] = [...slides.map(slide => slide.id), 'share'];
+  const total = pages.length;
 
   const goTo = (index: number) => {
-    const next = Math.max(0, Math.min(cards.length, index));
-    scrollRef.current?.scrollTo({ x: next * pageWidth, animated: true });
+    const next = Math.max(0, Math.min(total - 1, index));
+    scrollRef.current?.scrollTo({ x: next * width, animated: true });
     setPage(next);
   };
   const onScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    setPage(Math.round(event.nativeEvent.contentOffset.x / pageWidth));
+    setPage(Math.round(event.nativeEvent.contentOffset.x / width));
+  };
+  // Like the stories: the left third goes back, the rest goes on
+  const onTap = (event: GestureResponderEvent) => goTo(page + (event.nativeEvent.locationX < width / 3 ? -1 : 1));
+  // Screen reader: the slide is adjustable, swiping up or down changes it
+  const onAccessibilityAction = (event: AccessibilityActionEvent) => {
+    if (event.nativeEvent.actionName === 'increment') goTo(page + 1);
+    if (event.nativeEvent.actionName === 'decrement') goTo(page - 1);
   };
 
   const shareText = async () => {
@@ -120,347 +138,383 @@ export default function RecapScreen() {
     }, { width: SHARE_IMAGE_WIDTH, height: SHARE_IMAGE_HEIGHT });
   };
 
-  const total = cards.length + 1;
+  // The share image as big as the screen allows, under the bars and above the buttons
+  const previewHeight = Math.max(200, height - insets.top - insets.bottom - TOP_BAR_HEIGHT - SHARE_CONTROLS_HEIGHT);
+  const previewWidth = Math.min(width - 64, (previewHeight * SHARE_IMAGE_WIDTH) / SHARE_IMAGE_HEIGHT);
+  const comparison = comparisonLine(t, recap, i18n.language);
+  const pagePosition = (index: number) => t('a11y.recap_page', { page: index + 1, total });
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 12 }]}>
-        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header" numberOfLines={1}>
-          {recap.kind === 'year' ? t('recap.title_year', { period: label }) : t('recap.title_month', { period: label })}
-        </Text>
-        <Pressable onPress={() => router.back()} style={styles.closeButton} accessibilityRole="button" hitSlop={8}>
-          <Text style={[styles.closeText, { color: colors.primaryText }]}>{t('common.close')}</Text>
-        </Pressable>
-      </View>
-
+    <View style={[styles.screen, { backgroundColor: recapSlideColors[pages[page]][0] }]}>
+      {/* Light text on the dark slides, in light mode too */}
+      <StatusBar style="light" />
       <ScrollView
         ref={scrollRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={onScrollEnd}
-        style={styles.pages}
       >
-        {cards.map((card, index) => (
-          <View key={card.key} style={[styles.page, { width: pageWidth }]}>
-            <Animated.View
-              entering={FadeIn.delay(index === 0 ? 150 : 0).duration(400)}
-              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              accessible
-              accessibilityLabel={[card.title, card.headline, ...card.lines, ...card.rows.map(([l, v]) => `${l} : ${v}`)].filter(Boolean).join('. ')}
-            >
-              <CardBody card={card} colors={colors} />
-            </Animated.View>
-          </View>
+        {slides.map((slide, index) => (
+          <Pressable
+            key={slide.id}
+            onPress={onTap}
+            style={{ width, height }}
+            accessible
+            accessibilityRole="adjustable"
+            accessibilityLabel={describeSlide(t, slide, recap, label, i18n.language)}
+            accessibilityValue={{ text: pagePosition(index) }}
+            accessibilityHint={t('a11y.recap_hint')}
+            accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+            onAccessibilityAction={onAccessibilityAction}
+          >
+            <Gradient id={slide.id} />
+            <View style={[styles.slide, { paddingTop: insets.top + TOP_BAR_HEIGHT, paddingBottom: insets.bottom + 32 }]}>
+              <SlideContent t={t} slide={slide} recap={recap} label={label} language={i18n.language} />
+            </View>
+          </Pressable>
         ))}
 
-        {/* Last card: comparison and sharing */}
-        <View style={[styles.page, { width: pageWidth }]}>
-          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.cardTitleRow} accessible accessibilityRole="header">
-              <Ionicons name="share-social" size={22} color={colors.primaryText} />
-              <Text style={[styles.cardTitle, { color: colors.text }]}>{t('recap.card_share')}</Text>
-            </View>
-            {comparison.map(line => (
-              <Text key={line} style={[styles.line, { color: colors.text }]}>{line}</Text>
-            ))}
+        {/* Last page: the image to share, as big as possible */}
+        <Pressable onPress={onTap} style={{ width, height }} accessible={false}>
+          <Gradient id="share" />
+          <View style={[styles.slide, styles.sharePage, { paddingTop: insets.top + TOP_BAR_HEIGHT, paddingBottom: insets.bottom + 20 }]}>
+            <Text style={styles.kicker} accessibilityRole="header">{t('recap.share_heading')}</Text>
+            {comparison ? <Text style={styles.comparison}>{comparison}</Text> : null}
             <View style={styles.preview} accessible accessibilityRole="image" accessibilityLabel={t('a11y.recap_image')}>
               <RecapShareImage
                 svgRef={svgRef}
-                width={PREVIEW_WIDTH}
+                width={previewWidth}
                 title={recap.kind === 'year' ? t('recap.image_title_year') : t('recap.image_title_month')}
                 period={label}
                 profile={t(`recap.profile_${recap.profile}`)}
-                highlights={highlights}
+                highlights={recapHighlights(t, recap)}
                 footer={APP_URL.replace(/^https:\/\//, '')}
               />
             </View>
-            <Pressable style={[styles.shareButton, { backgroundColor: colors.primary }]} onPress={shareImage} accessibilityRole="button">
-              <Ionicons name="image" size={18} color={fixedColors.onPrimary} />
-              <Text style={styles.shareButtonText}>{t('recap.share_image')}</Text>
+            <Pressable style={styles.primaryButton} onPress={shareImage} accessibilityRole="button">
+              <Ionicons name="image" size={20} color={recapSlideColors.share[0]} />
+              <Text style={styles.primaryButtonText}>{t('recap.share_image')}</Text>
             </Pressable>
-            <Pressable style={[styles.shareButton, { backgroundColor: colors.primarySoft }]} onPress={shareText} accessibilityRole="button">
-              <Ionicons name="text" size={18} color={colors.primaryText} />
-              <Text style={[styles.shareButtonText, { color: colors.primaryText }]}>{t('recap.share_text')}</Text>
+            <Pressable style={styles.secondaryButton} onPress={shareText} accessibilityRole="button" hitSlop={8}>
+              <Text style={styles.secondaryButtonText}>{t('recap.share_text')}</Text>
             </Pressable>
           </View>
-        </View>
+        </Pressable>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-        <Pressable
-          onPress={() => goTo(page - 1)}
-          disabled={page === 0}
-          style={[styles.navButton, page === 0 && styles.navDisabled]}
-          accessibilityRole="button"
-          accessibilityLabel={t('a11y.recap_previous')}
-          accessibilityState={{ disabled: page === 0 }}
-          hitSlop={8}
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
-        </Pressable>
-        <View style={styles.dots} accessible accessibilityLabel={t('a11y.recap_page', { page: page + 1, total })}>
-          {Array.from({ length: total }, (_, i) => (
-            <View key={i} style={[styles.dot, { backgroundColor: i === page ? colors.primary : colors.inactive }]} />
+      {/* Story bars and close, over the slides */}
+      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]} pointerEvents="box-none">
+        <View style={styles.bars} accessible accessibilityLabel={pagePosition(page)}>
+          {pages.map((id, i) => (
+            <View key={id} style={[styles.bar, { backgroundColor: i <= page ? recapSlideText.text : recapSlideText.track }]} />
           ))}
         </View>
-        <Pressable
-          onPress={() => goTo(page + 1)}
-          disabled={page === total - 1}
-          style={[styles.navButton, page === total - 1 && styles.navDisabled]}
-          accessibilityRole="button"
-          accessibilityLabel={t('a11y.recap_next')}
-          accessibilityState={{ disabled: page === total - 1 }}
-          hitSlop={8}
-        >
-          <Ionicons name="chevron-forward" size={24} color={colors.primaryText} />
+        <Pressable onPress={() => router.back()} style={styles.close} accessibilityRole="button" accessibilityLabel={t('a11y.close')} hitSlop={12}>
+          <Ionicons name="close" size={28} color={recapSlideText.text} />
         </Pressable>
       </View>
     </View>
   );
 }
 
-function CardBody({ card, colors }: { card: RecapCardContent; colors: UiColors }) {
+/** Background of a page, drawn so that it scrolls with it */
+function Gradient({ id }: { id: PageId }) {
+  const [top, bottom] = recapSlideColors[id];
   return (
-    <>
-      <View style={styles.cardTitleRow}>
-        <Ionicons name={card.icon} size={22} color={colors.primaryText} />
-        <Text style={[styles.cardTitle, { color: colors.text }]}>{card.title}</Text>
-      </View>
-      {card.headline ? <Text style={[styles.headline, { color: colors.primaryText }]}>{card.headline}</Text> : null}
-      {card.lines.map(line => (
-        <Text key={line} style={[styles.line, { color: colors.textMuted }]}>{line}</Text>
-      ))}
-      {card.rows.map(([rowLabel, value], i) => (
-        <View key={rowLabel} style={[styles.row, i < card.rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
-          <Text style={[styles.rowLabel, { color: colors.textMuted }]}>{rowLabel}</Text>
-          <Text style={[styles.rowValue, { color: colors.text }]}>{value}</Text>
-        </View>
-      ))}
-    </>
+    <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
+      <Defs>
+        <LinearGradient id={`recap-${id}`} x1="0" y1="0" x2="0.3" y2="1">
+          <Stop offset="0" stopColor={top} />
+          <Stop offset="1" stopColor={bottom} />
+        </LinearGradient>
+      </Defs>
+      <Rect x={0} y={0} width="100%" height="100%" fill={`url(#recap-${id})`} />
+    </Svg>
   );
 }
 
-type T = ReturnType<typeof useTranslation>['t'];
-
-/** The cards of the recap, before the sharing one */
-function buildCards(t: T, recap: Recap, label: string, language: string): RecapCardContent[] {
-  const { stats } = recap;
-  const intro: string[] = [t(`recap.profile_${recap.profile}_desc`)];
-  if (isInProgress(recap)) intro.push(recap.kind === 'year' ? t('recap.in_progress_year') : t('recap.in_progress_month'));
-  if (recap.partialSince) {
-    const since = parseLocalDateString(recap.partialSince).toLocaleDateString(language, { day: 'numeric', month: 'long' });
-    intro.push(t('recap.partial', { date: since }));
-  }
-
-  // Before the update that added them, the unlocks were not dated: only the count since is known
-  const achievementCount = recap.partialSince ? stats.achievements : recap.achievementIds.length;
-  const listed = recap.partialSince ? [] : recap.achievementIds;
-  const names = listed.slice(0, MAX_LISTED_ACHIEVEMENTS).map(id => `✓ ${t(`achievements.${id}`)}`);
-  if (listed.length > MAX_LISTED_ACHIEVEMENTS) names.push(t('recap.more', { count: listed.length - MAX_LISTED_ACHIEVEMENTS }));
-
-  return [
-    {
-      key: 'intro',
-      icon: 'gift',
-      title: recap.kind === 'year' ? t('recap.title_year', { period: label }) : t('recap.title_month', { period: label }),
-      headline: t(`recap.profile_${recap.profile}`),
-      lines: intro,
-      rows: [],
-    },
-    {
-      key: 'levels',
-      icon: 'flag',
-      title: t('recap.card_levels'),
-      lines: [],
-      rows: [
-        [t('recap.wins'), String(stats.wins)],
-        [t('recap.new_levels'), String(stats.newLevels)],
-        [t('recap.stars_gained'), `+${stats.starsGained}`],
-        [t('recap.perfect_wins'), String(stats.perfectWins)],
-      ],
-    },
-    {
-      key: 'time',
-      icon: 'time',
-      title: t('recap.card_time'),
-      lines: [],
-      rows: [
-        [t('recap.play_time'), formatPlayTime(stats.playTimeMs)],
-        [t('recap.moves'), String(stats.moves)],
-      ],
-    },
-    {
-      key: 'challenges',
-      icon: 'calendar',
-      title: t('recap.card_challenges'),
-      lines: [],
-      rows: [
-        [t('recap.dailies'), String(recap.dailies)],
-        [t('recap.perfect_dailies'), String(recap.perfectDailies)],
-        [t('recap.best_run'), t('recap.days', { count: recap.bestDailyRun })],
-        [t('recap.freezes_used'), String(recap.freezesUsed)],
-        [t('recap.weeklies'), String(recap.weeklies)],
-      ],
-    },
-    {
-      key: 'feats',
-      icon: 'trophy',
-      title: t('recap.card_feats'),
-      lines: [],
-      rows: [
-        [t('recap.hardest_win'), stats.hardestWinMoves > 0 ? t('recap.min_moves', { count: stats.hardestWinMoves }) : '—'],
-        [t('recap.boss_wins'), String(stats.bossWins)],
-      ],
-    },
-    {
-      key: 'unlocks',
-      icon: 'ribbon',
-      title: t('recap.card_unlocks'),
-      lines: names,
-      rows: [
-        [t('recap.achievements'), String(achievementCount)],
-        [t('recap.styles'), String(stats.cosmetics)],
-      ],
-    },
-  ];
+function formatFigure(t: T, figure: RecapFigure): string {
+  if (figure.format === 'time') return formatPlayTime(figure.value);
+  if (figure.format === 'days') return t('recap.days', { count: figure.value });
+  if (figure.format === 'plus') return `+${figure.value}`;
+  return String(figure.value);
 }
 
-/** "+12 levels compared with September": only with a period fully counted */
-function comparisonLines(t: T, recap: Recap, language: string): string[] {
+const slideTitle = (t: T, slide: RecapSlide) => t(`recap.card_${slide.id}`);
+
+/** Short notes of the first slide: the period still going on, the counters started late */
+function introNotes(t: T, recap: Recap, language: string): string[] {
+  const notes: string[] = [];
+  if (isInProgress(recap)) notes.push(t('recap.in_progress'));
+  if (recap.partialSince) {
+    const since = parseLocalDateString(recap.partialSince).toLocaleDateString(language, { day: 'numeric', month: 'short' });
+    notes.push(t('recap.counted_since', { date: since }));
+  }
+  return notes;
+}
+
+function achievementNames(t: T, recap: Recap): string[] {
+  if (recap.partialSince) return [];
+  const names = recap.achievementIds.slice(0, MAX_LISTED_ACHIEVEMENTS).map(id => `✓ ${t(`achievements.${id}`)}`);
+  if (recap.achievementIds.length > MAX_LISTED_ACHIEVEMENTS) names.push(t('recap.more', { count: recap.achievementIds.length - MAX_LISTED_ACHIEVEMENTS }));
+  return names;
+}
+
+/** What the screen reader reads for a slide, in one go */
+function describeSlide(t: T, slide: RecapSlide, recap: Recap, label: string, language: string): string {
+  if (slide.id === 'intro') {
+    return [label, t(`recap.profile_${recap.profile}`), t(`recap.profile_${recap.profile}_desc`), ...introNotes(t, recap, language)].join('. ');
+  }
+  const parts = [slideTitle(t, slide)];
+  if (slide.hero) parts.push(`${formatFigure(t, slide.hero)} ${t(`recap.hero_${slide.hero.key}`, { count: slide.hero.value })}`);
+  for (const figure of slide.details) parts.push(`${t(`recap.${figure.key}`)} : ${formatFigure(t, figure)}`);
+  if (slide.id === 'unlocks') parts.push(...achievementNames(t, recap));
+  return parts.join('. ');
+}
+
+interface SlideProps {
+  t: T;
+  slide: RecapSlide;
+  recap: Recap;
+  label: string;
+  language: string;
+}
+
+function SlideContent({ t, slide, recap, label, language }: SlideProps) {
+  if (slide.id === 'intro') {
+    return (
+      <View style={styles.content}>
+        <Animated.View entering={FadeIn.duration(500)} style={styles.kickerRow}>
+          <Ionicons name={SLIDE_ICONS.intro} size={20} color={recapSlideText.text} />
+          <Text style={styles.kicker}>{recap.kind === 'year' ? t('recap.image_title_year') : t('recap.image_title_month')}</Text>
+        </Animated.View>
+        <Animated.Text entering={FadeInDown.delay(100).duration(500)} style={styles.period}>{label}</Animated.Text>
+        <Animated.View entering={FadeInDown.delay(300).duration(500)} style={styles.profileBlock}>
+          <Text style={styles.profileLabel}>{t('recap.your_profile')}</Text>
+          <Text style={styles.profile} numberOfLines={2} adjustsFontSizeToFit>{t(`recap.profile_${recap.profile}`)}</Text>
+          <Text style={styles.body}>{t(`recap.profile_${recap.profile}_desc`)}</Text>
+        </Animated.View>
+        <View style={styles.chips}>
+          {introNotes(t, recap, language).map(note => (
+            <View key={note} style={styles.noteChip}><Text style={styles.noteText}>{note}</Text></View>
+          ))}
+        </View>
+        <Text style={styles.hint}>{t('recap.tap_hint')}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.content}>
+      <Animated.View entering={FadeIn.duration(400)} style={styles.kickerRow}>
+        <Ionicons name={SLIDE_ICONS[slide.id]} size={20} color={recapSlideText.text} />
+        <Text style={styles.kicker}>{slideTitle(t, slide)}</Text>
+      </Animated.View>
+      {slide.hero ? (
+        <Animated.View entering={FadeInDown.delay(100).duration(500)}>
+          <Text style={styles.hero} numberOfLines={1} adjustsFontSizeToFit>{formatFigure(t, slide.hero)}</Text>
+          <Text style={styles.heroLabel}>{t(`recap.hero_${slide.hero.key}`, { count: slide.hero.value })}</Text>
+        </Animated.View>
+      ) : null}
+      <View style={styles.chips}>
+        {slide.details.map(figure => (
+          <View key={figure.key} style={styles.chip}>
+            <Text style={styles.chipValue}>{formatFigure(t, figure)}</Text>
+            <Text style={styles.chipLabel}>{t(`recap.${figure.key}`)}</Text>
+          </View>
+        ))}
+      </View>
+      {slide.id === 'unlocks' ? achievementNames(t, recap).map(name => (
+        <Text key={name} style={styles.body}>{name}</Text>
+      )) : null}
+    </View>
+  );
+}
+
+/** "Wins: +12 compared with September": only with a period fully counted */
+function comparisonLine(t: T, recap: Recap, language: string): string | null {
   const { previous } = recap;
-  if (!previous) return [t('recap.no_comparison')];
+  if (!previous) return null;
   const period = recap.kind === 'year' ? previous.key : parseLocalDateString(`${previous.key}-01`).toLocaleDateString(language, { month: 'long' });
   const signed = (n: number) => (n > 0 ? `+${n}` : String(n));
-  const lines: string[] = [];
-  if (previous.wins !== null) lines.push(t('recap.compare_wins', { diff: signed(recap.stats.wins - previous.wins), period }));
-  lines.push(t('recap.compare_dailies', { diff: signed(recap.dailies - previous.dailies), period }));
-  return lines;
+  if (previous.wins !== null) return t('recap.compare_wins', { diff: signed(recap.stats.wins - previous.wins), period });
+  return t('recap.compare_dailies', { diff: signed(recap.dailies - previous.dailies), period });
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
   },
   centered: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  header: {
+  slide: {
+    flex: 1,
+    paddingHorizontal: 28,
+    justifyContent: 'center',
+  },
+  content: {
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
+    gap: 14,
+  },
+  kickerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingBottom: 15,
-    paddingHorizontal: 90,
-    borderBottomWidth: 1,
+    gap: 8,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  kicker: {
+    color: recapSlideText.text,
+    fontSize: 17,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-  closeButton: {
-    position: 'absolute',
-    right: 20,
-    bottom: 15,
-    padding: 5,
+  period: {
+    color: recapSlideText.text,
+    fontSize: 44,
+    fontWeight: '900',
+    textTransform: 'capitalize',
   },
-  closeText: {
+  profileBlock: {
+    gap: 6,
+    marginTop: 24,
+  },
+  profileLabel: {
+    color: recapSlideText.muted,
     fontSize: 16,
     fontWeight: '600',
   },
-  pages: {
-    flex: 1,
+  profile: {
+    color: recapSlideText.text,
+    fontSize: 38,
+    fontWeight: '900',
   },
-  page: {
-    padding: 20,
-    justifyContent: 'center',
+  body: {
+    color: recapSlideText.muted,
+    fontSize: 18,
+    lineHeight: 25,
   },
-  card: {
-    width: '100%',
-    maxWidth: 420,
-    alignSelf: 'center',
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 20,
-    gap: 10,
+  hint: {
+    color: recapSlideText.muted,
+    fontSize: 14,
+    marginTop: 32,
   },
-  cardTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  cardTitle: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  headline: {
-    fontSize: 30,
-    fontWeight: '800',
+  hero: {
+    color: recapSlideText.text,
+    fontSize: 104,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
     marginTop: 8,
   },
-  line: {
-    fontSize: 15,
-    lineHeight: 21,
+  heroLabel: {
+    color: recapSlideText.text,
+    fontSize: 24,
+    fontWeight: '700',
   },
-  row: {
+  chips: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 12,
+  },
+  chip: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    backgroundColor: recapSlideText.chip,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 2,
+  },
+  chipValue: {
+    color: recapSlideText.text,
+    fontSize: 26,
+    fontWeight: '800',
+  },
+  chipLabel: {
+    color: recapSlideText.muted,
+    fontSize: 14,
+  },
+  noteChip: {
+    backgroundColor: recapSlideText.chip,
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  noteText: {
+    color: recapSlideText.text,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  sharePage: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 44,
+    justifyContent: 'flex-start',
     gap: 12,
   },
-  rowLabel: {
-    flex: 1,
+  comparison: {
+    color: recapSlideText.muted,
     fontSize: 15,
-  },
-  rowValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
+    textAlign: 'center',
   },
   preview: {
-    alignSelf: 'center',
-    borderRadius: 12,
+    borderRadius: 18,
     overflow: 'hidden',
-    marginVertical: 6,
+    marginVertical: 4,
   },
-  shareButton: {
+  primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    minHeight: 48,
-    borderRadius: 14,
+    alignSelf: 'stretch',
+    maxWidth: 460,
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: recapSlideText.text,
   },
-  shareButtonText: {
-    color: fixedColors.onPrimary,
+  primaryButtonText: {
+    color: recapSlideColors.share[0],
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  secondaryButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    color: recapSlideText.text,
     fontSize: 16,
     fontWeight: '700',
+    textDecorationLine: 'underline',
   },
-  footer: {
+  topBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 8,
+    gap: 12,
+    paddingHorizontal: 16,
   },
-  navButton: {
+  bars: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 4,
+  },
+  bar: {
+    flex: 1,
+    height: 3,
+    borderRadius: 2,
+  },
+  close: {
     width: 44,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  navDisabled: {
-    opacity: 0.3,
-  },
-  dots: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
   },
 });
