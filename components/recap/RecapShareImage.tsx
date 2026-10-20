@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import Svg, { Circle, Defs, G, Line, LinearGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
-import { CLASSIC_VEHICLE_COLORS, TARGET_CAR_COLOR, TRAFFIC_LIGHT, applyPalette, getSkinnedBoard, recapImageColors } from '@/theme';
+import { CLASSIC_VEHICLE_COLORS, PALETTE_ART, TARGET_CAR_COLOR, TRAFFIC_LIGHT, applyPalette, getSkinnedBoard, recapImageColors, type VehicleArt } from '@/theme';
+import { drawVehicle } from '@/theme/art/vehicles';
+import { ArtGroup } from '@/components/art/ArtSvg';
 import type { CosmeticSelection } from '@/data/cosmetics';
 import type { Vehicle } from '@/store/types';
 
@@ -44,6 +46,8 @@ export const MAX_IMAGE_TILES = 6;
 /** The road at the bottom, with a few cars on it */
 const ROAD_Y = 1690;
 const ROAD_H = 150;
+/** Drawn vehicles keep their proportions on the road: a cell is this high */
+const ROAD_CELL = 60;
 
 interface Props {
   /** Only on the copy that is exported */
@@ -75,6 +79,8 @@ export default function RecapShareImage({
   const board = getSkinnedBoard(cosmetics.board, cosmetics.skin, 'dark');
   const palette = useMemo(() => applyPalette(VEHICLES, cosmetics.palette), [cosmetics.palette]);
   const vehicleColors = VEHICLES.filter(v => !v.isTarget).map(v => palette.get(v.id) ?? v.color);
+  // Drawn skin and palette (Mafia, 1800, every car but the red one): the vehicles of the image are drawn too
+  const artOf = (isTarget: boolean): VehicleArt | undefined => (isTarget ? board.targetArt : PALETTE_ART[cosmetics.palette]);
   const profileWidth = Math.min(900, 120 + profile.length * 34);
 
   return (
@@ -143,6 +149,11 @@ export default function RecapShareImage({
           const w = (v.orientation === 'horizontal' ? v.length : 1) * CELL - inset * 2;
           const h = (v.orientation === 'vertical' ? v.length : 1) * CELL - inset * 2;
           const radius = CELL * board.vehicleRadius;
+          const art = artOf(v.isTarget);
+          if (art) {
+            const color = v.isTarget ? board.targetCar : palette.get(v.id) ?? v.color;
+            return <ArtGroup key={v.id} drawing={drawVehicle(art, v.length, color)} x={x} y={y} width={w} height={h} turnUp={v.orientation === 'vertical'} />;
+          }
           return (
             <React.Fragment key={v.id}>
               <Rect x={x} y={y} width={w} height={h} rx={radius} fill={v.isTarget ? board.targetCar : palette.get(v.id) ?? v.color} stroke={board.vehicleBorder} strokeWidth={3} />
@@ -185,10 +196,19 @@ export default function RecapShareImage({
       <Line x1={0} y1={ROAD_Y + ROAD_H - 8} x2={SHARE_IMAGE_WIDTH} y2={ROAD_Y + ROAD_H - 8} stroke={IMAGE_COLORS.roadEdge} strokeWidth={6} />
       <Line x1={0} y1={ROAD_Y + ROAD_H / 2} x2={SHARE_IMAGE_WIDTH} y2={ROAD_Y + ROAD_H / 2} stroke={IMAGE_COLORS.roadLine} strokeWidth={8} strokeDasharray="50 40" />
       {[
-        { x: 110, lane: 0, length: 170, color: vehicleColors[0] },
-        { x: 470, lane: 1, length: 250, color: vehicleColors[3] },
-        { x: 800, lane: 0, length: 170, color: board.targetCar },
-      ].map(car => (
+        { x: 110, lane: 0, length: 170, cells: 2, color: vehicleColors[0], art: artOf(false) },
+        { x: 470, lane: 1, length: 250, cells: 3, color: vehicleColors[3], art: artOf(false) },
+        { x: 800, lane: 0, length: 170, cells: 2, color: board.targetCar, art: artOf(true) },
+      ].map(car => car.art ? (
+        <ArtGroup
+          key={car.x}
+          drawing={drawVehicle(car.art, car.cells, car.color)}
+          x={car.x}
+          y={ROAD_Y + 43 + car.lane * 66 - ROAD_CELL / 2}
+          width={car.cells * ROAD_CELL}
+          height={ROAD_CELL}
+        />
+      ) : (
         <React.Fragment key={car.x}>
           <Rect x={car.x} y={ROAD_Y + 22 + car.lane * 66} width={car.length} height={42} rx={14} fill={car.color} stroke={board.vehicleBorder} strokeWidth={3} />
           <Rect x={car.x + 6} y={ROAD_Y + 26 + car.lane * 66} width={car.length - 12} height={16} rx={8} fill={board.vehicleShine} />
