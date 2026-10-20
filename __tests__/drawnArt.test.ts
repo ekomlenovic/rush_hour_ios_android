@@ -2,6 +2,7 @@ import { mixColor, type ArtDrawing } from '../theme/art/art';
 import { vintageVehicle } from '../theme/art/vintageVehicles';
 import { annoShip } from '../theme/art/annoShips';
 import { drawVehicle } from '../theme/art/vehicles';
+import { DRAWN_SKINS, skinDrawing } from '../theme/art/targetSkins';
 import { BULLET_HOLE, MUZZLE_FLASH, TOMMY_GUN } from '../theme/art/tommyGun';
 import {
   BULLET_FLIGHT, FIRE_END, FIRE_START, HOLES_FADE, SHOTS, buildTommyGunPlan, shotPhase, sprayAngle,
@@ -72,8 +73,8 @@ describe('1800 ships (Anno 1800 style)', () => {
 });
 
 describe('drawn vehicles', () => {
-  it('only the drawn skins and palettes have a drawing, each of an existing palette', () => {
-    expect(Object.entries(CAR_SKINS).filter(([, s]) => s.art).map(([id]) => id).sort()).toEqual(['flagship', 'mafia']);
+  it('every skin is drawn but the red car, and only the drawn palettes have a drawing', () => {
+    expect(Object.entries(CAR_SKINS).filter(([, s]) => !s.art).map(([id]) => id)).toEqual(['classic']);
     expect(Object.keys(PALETTE_ART).sort()).toEqual(['fleet', 'mafia']);
     for (const id of Object.keys(PALETTE_ART)) expect(VEHICLE_PALETTES).toHaveProperty(id);
   });
@@ -81,6 +82,20 @@ describe('drawn vehicles', () => {
   it('each style draws its own vehicles', () => {
     expect(drawVehicle('vintage', 2, '#14532D')).toEqual(vintageVehicle(2, '#14532D'));
     expect(drawVehicle('ship', 3, '#14532D')).toEqual(annoShip(3, '#14532D'));
+    expect(drawVehicle('taxi', 2, '#FACC15')).toEqual(skinDrawing('taxi', '#FACC15'));
+  });
+});
+
+describe('target car skins', () => {
+  it.each(DRAWN_SKINS)('%s is drawn on 2 cells and only refers to its own gradients', skin => {
+    const drawing = skinDrawing(skin, CAR_SKINS[skin].color!);
+    expect(drawing).toMatchObject({ width: 200, height: 100 });
+    expect(drawing.shapes.length).toBeGreaterThan(5);
+    expectGradientsDefined(drawing);
+  });
+
+  it.each(DRAWN_SKINS)('%s is used by its skin, in its color', skin => {
+    expect(CAR_SKINS[skin]).toMatchObject({ art: skin, color: expect.any(String) });
   });
 });
 
