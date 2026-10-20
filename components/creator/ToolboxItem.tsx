@@ -4,7 +4,8 @@ import Animated, { useSharedValue, useAnimatedStyle, SharedValue } from 'react-n
 import { scheduleOnRN } from 'react-native-worklets';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
-import { useTheme, type UiColors } from '@/theme';
+import { useTheme, PALETTE_ART, type UiColors } from '@/theme';
+import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
 import { DIR_LABEL, MINI_CELL, VehicleTemplate } from './constants';
 import { SNAP } from './snap';
 
@@ -25,7 +26,7 @@ type ToolboxItemProps = {
 
 /** A vehicle of the toolbox, dragged onto the board to add it */
 const ToolboxItem = React.memo(function ToolboxItem({ template, displayColor, colors, dragX, dragY, dragVisible, onDragStart, onDragMove, onDrop, onA11yAdd }: ToolboxItemProps) {
-  const { board } = useTheme();
+  const { board, palette } = useTheme();
   const { t } = useTranslation();
   const sc = useSharedValue(1);
 
@@ -61,6 +62,7 @@ const ToolboxItem = React.memo(function ToolboxItem({ template, displayColor, co
   const dir = DIR_LABEL[template.orientation];
   const size = `${template.length}×1`;
   const color = displayColor ?? template.color;
+  const art = PALETTE_ART[palette];
 
   return (
     <GestureDetector gesture={gesture}>
@@ -76,9 +78,15 @@ const ToolboxItem = React.memo(function ToolboxItem({ template, displayColor, co
         borderColor: colors.border,
       }]}>
         <View style={[styles.toolPreviewWrap, { width: pw + 8, height: Math.max(ph + 8, MINI_CELL + 8) }]}>
-          <View style={[styles.toolPreview, { width: pw, height: ph, backgroundColor: color }]}>
-            <View style={[styles.toolPreviewShine, { backgroundColor: board.vehicleShineStrong }]} />
-          </View>
+          {art ? (
+            <View style={{ width: pw, height: ph }}>
+              <DrawnVehicle art={art} length={template.length} orientation={template.orientation} color={color} width={pw} height={ph} />
+            </View>
+          ) : (
+            <View style={[styles.toolPreview, { width: pw, height: ph, backgroundColor: color }]}>
+              <View style={[styles.toolPreviewShine, { backgroundColor: board.vehicleShineStrong }]} />
+            </View>
+          )}
         </View>
 
         <View style={styles.toolLabels}>
