@@ -4,6 +4,7 @@ import { sampleLevels } from '../data/sampleLevels';
 import en from '../locales/en.json';
 import fr from '../locales/fr.json';
 import { resetStore, setToday, winDaily, winMapLevel } from './helpers';
+import { matchSecretCode } from '../store/stats';
 
 const state = () => useGameStore.getState();
 
@@ -126,5 +127,19 @@ describe('achievements in the store', () => {
     setToday('2026-10-31');
     winMapLevel();
     expect(state().achievements).toContain('halloween');
+  });
+
+  it('secret: "mafia" typed in the level import unlocks the Mafia skin and palette', () => {
+    expect(matchSecretCode('  MaFiA ')).toBe('mafia');
+    expect(matchSecretCode('mafia2')).toBeNull();
+    state().recordSecretCode('omerta');
+    expect(state().achievements).not.toContain('mafia');
+    expect(state().selectCosmetic('skin', 'mafia')).toBe(false);
+
+    state().recordSecretCode('mafia');
+    expect(state().achievements).toContain('mafia');
+    expect(state().stats.secretCodes).toEqual({ mafia: 1 });
+    expect(state().selectCosmetic('skin', 'mafia')).toBe(true);
+    expect(state().selectCosmetic('palette', 'mafia')).toBe(true);
   });
 });

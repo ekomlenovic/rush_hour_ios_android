@@ -304,7 +304,7 @@ export function getBoardColors(id: BoardThemeId, scheme: ColorScheme): BoardColo
 
 // ─── Target car skins ─────────────────────────────────────────────────────────
 
-export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold' | 'tractor' | 'ufo';
+export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold' | 'tractor' | 'ufo' | 'mafia';
 
 export interface CarSkin {
   /** Body color, the board's target car color when absent */
@@ -325,12 +325,14 @@ export const CAR_SKINS: Record<CarSkinId, CarSkin> = {
   // Green body: the red tractor emoji stays visible
   tractor: { color: '#16A34A', icon: '🚜' },
   ufo: { color: '#64748B', icon: '🛸' },
+  // 1930s black sedan of Lost Heaven, with the gangster's fedora
+  mafia: { color: '#1C1917', icon: '🎩' },
 };
 
 // ─── Vehicle palettes ─────────────────────────────────────────────────────────
 
 /** 'classic' keeps the colors saved in each level */
-export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy' | 'lava' | 'jungle';
+export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy' | 'lava' | 'jungle' | 'mafia';
 
 export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   classic: null,
@@ -342,6 +344,8 @@ export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   // No red: the target car must stand out
   lava: ['#EA580C', '#F59E0B', '#FACC15', '#78350F', '#FB923C', '#57534E', '#B45309', '#FDE047'],
   jungle: ['#15803D', '#65A30D', '#0D9488', '#CA8A04', '#166534', '#4ADE80', '#A3E635', '#0F766E'],
+  // 1930s cars: black, cream, bottle green, chocolate, navy, chrome grey… no red for the target car
+  mafia: ['#292524', '#E7DCC4', '#14532D', '#5C3A21', '#1E3A5F', '#A8A29E', '#78716C', '#B08D57'],
 };
 
 /** Board colors with the target car skin applied */

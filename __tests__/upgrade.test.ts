@@ -57,7 +57,8 @@ describe('updating from 2.0.0', () => {
     expect(state.bestStreak).toBe(old.bestStreak);
     expect(state.streakFreezes).toBe(old.streakFreezes);
     expect(state.achievements).toEqual(old.achievements);
-    expect(state.stats).toEqual(old.stats);
+    // Statistics added since 2.0.0 take their default
+    expect(state.stats).toEqual({ ...old.stats, secretCodes: {} });
     expect(state.dailyMissions).toEqual(old.dailyMissions);
 
     // And it is written back as the current version, nothing lost on the device either

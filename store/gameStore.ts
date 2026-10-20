@@ -20,7 +20,7 @@ import { isDailyWinnable, isWeeklyWinnable } from '../utils/challengeDates';
 import {
   CosmeticKind, CosmeticSelection, COSMETICS_BY_KEY, DEFAULT_COSMETICS, buildCosmeticContext, isCosmeticUnlocked, sanitizeSelection,
 } from '../data/cosmetics';
-import { emptyAttempt, initialStats, withWinStats, mergeChallengeResult } from './stats';
+import { emptyAttempt, initialStats, withWinStats, mergeChallengeResult, SECRET_CODES } from './stats';
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from './migrations';
 import { compactSavedStates, isWellFormedSave, savedHistory } from './savedStates';
 import { createGuardedStorage } from './guardedStorage';
@@ -160,6 +160,8 @@ interface GameState {
   consumeUnlockQueue: () => string[];
   recordLevelShared: () => void;
   recordResultShared: () => void;
+  /** A secret code typed in the level import (see SECRET_CODES) */
+  recordSecretCode: (code: string) => void;
   addGeneratedLevel: (level: Level) => void;
   /** Adds a checked level (see parseSharedLevel); returns the id to open: the existing one for a board already imported */
   addImportedLevel: (level: Level) => number;
@@ -647,6 +649,13 @@ export const useGameStore = create<GameState>()(
       recordLevelShared: () => {
         const { stats } = get();
         set({ stats: { ...stats, levelsShared: stats.levelsShared + 1 } });
+        get().checkAchievements();
+      },
+
+      recordSecretCode: (code) => {
+        if (!SECRET_CODES.includes(code)) return;
+        const { stats } = get();
+        set({ stats: { ...stats, secretCodes: { ...stats.secretCodes, [code]: (stats.secretCodes[code] || 0) + 1 } } });
         get().checkAchievements();
       },
 

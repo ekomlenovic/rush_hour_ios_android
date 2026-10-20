@@ -7,6 +7,7 @@ import {
   type CosmeticSource,
 } from '../data/cosmetics';
 import { ACHIEVEMENTS_BY_ID } from '../data/achievements';
+import { describeUnlock } from '../components/garage/describeUnlock';
 import { BOARD_THEMES, CAR_SKINS, VEHICLE_PALETTES, applyPalette } from '../theme/board';
 import { useGameStore, MAX_STREAK_FREEZES } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
@@ -178,6 +179,14 @@ describe('cosmetics', () => {
     for (const key of ['skin:rocket', 'board:pixel', 'skin:police']) {
       expect({ key, unlocked: isCosmeticUnlocked(byKey(key), c) }).toEqual({ key, unlocked: false });
     }
+  });
+
+  it('a cosmetic of a secret achievement hides its name until unlocked', () => {
+    const t = ((key: string) => key) as never;
+    const locked = buildCosmeticContext(source());
+    expect(describeUnlock(t, byKey('skin:mafia'), locked)).toBe('cosmetics.unlock.secret');
+    expect(describeUnlock(t, byKey('board:fire'), locked)).toBe('cosmetics.unlock.achievement');
+    expect(describeUnlock(t, byKey('skin:mafia'), buildCosmeticContext(source({ achievements: ['mafia'] })))).toBe('cosmetics.unlock.achievement');
   });
 
   it('a summer daily does not unlock the snow board', () => {
