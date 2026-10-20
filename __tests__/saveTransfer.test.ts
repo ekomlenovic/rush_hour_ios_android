@@ -94,9 +94,10 @@ describe('export then import', () => {
     useGameStore.setState({ savedStates: { ...store().savedStates, [key]: { ...inProgress, moveLog: [{ vehicleId: 'v1', delta: 1, t: 800 }] } } });
     const result = parseSave(exportProgress());
     if (!result.ok) throw new Error(result.error);
-    const saved = (result.state.savedStates as Record<string, { moveCount: number; history: unknown[]; moveLog: unknown[] }>)[sampleLevels[2].id];
+    const saved = (result.state.savedStates as Record<string, { moveCount: number; history: unknown[]; undoSteps: unknown[]; moveLog: unknown[] }>)[sampleLevels[2].id];
     expect(saved.moveCount).toBe(1);
     expect(saved.history).toEqual([]);
+    expect(saved.undoSteps).toEqual([]);
     expect(saved.moveLog).toEqual([]);
   });
 
