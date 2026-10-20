@@ -10,6 +10,8 @@ import { SNAP } from './snap';
 
 type ToolboxItemProps = {
   template: VehicleTemplate;
+  /** Displayed color (vehicle palette), the template's color if undefined */
+  displayColor?: string;
   colors: UiColors;
   dragX: SharedValue<number>;
   dragY: SharedValue<number>;
@@ -22,7 +24,7 @@ type ToolboxItemProps = {
 };
 
 /** A vehicle of the toolbox, dragged onto the board to add it */
-const ToolboxItem = React.memo(function ToolboxItem({ template, colors, dragX, dragY, dragVisible, onDragStart, onDragMove, onDrop, onA11yAdd }: ToolboxItemProps) {
+const ToolboxItem = React.memo(function ToolboxItem({ template, displayColor, colors, dragX, dragY, dragVisible, onDragStart, onDragMove, onDrop, onA11yAdd }: ToolboxItemProps) {
   const { board } = useTheme();
   const { t } = useTranslation();
   const sc = useSharedValue(1);
@@ -58,6 +60,7 @@ const ToolboxItem = React.memo(function ToolboxItem({ template, colors, dragX, d
   const ph = (!isH ? template.length : 1) * MINI_CELL;
   const dir = DIR_LABEL[template.orientation];
   const size = `${template.length}×1`;
+  const color = displayColor ?? template.color;
 
   return (
     <GestureDetector gesture={gesture}>
@@ -73,15 +76,15 @@ const ToolboxItem = React.memo(function ToolboxItem({ template, colors, dragX, d
         borderColor: colors.border,
       }]}>
         <View style={[styles.toolPreviewWrap, { width: pw + 8, height: Math.max(ph + 8, MINI_CELL + 8) }]}>
-          <View style={[styles.toolPreview, { width: pw, height: ph, backgroundColor: template.color }]}>
+          <View style={[styles.toolPreview, { width: pw, height: ph, backgroundColor: color }]}>
             <View style={[styles.toolPreviewShine, { backgroundColor: board.vehicleShineStrong }]} />
           </View>
         </View>
 
         <View style={styles.toolLabels}>
           <Text style={[styles.toolName, { color: colors.text }]}>{t(`creator.${template.label.toLowerCase()}`)}</Text>
-          <View style={[styles.toolBadge, { backgroundColor: template.color + '28', borderColor: template.color + '55' }]}>
-            <Text style={[styles.toolBadgeText, { color: template.color }]}>{dir} {size}</Text>
+          <View style={[styles.toolBadge, { backgroundColor: color + '28', borderColor: color + '55' }]}>
+            <Text style={[styles.toolBadgeText, { color }]}>{dir} {size}</Text>
           </View>
         </View>
       </Animated.View>
