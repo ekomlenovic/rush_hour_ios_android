@@ -3,6 +3,10 @@ import { vintageVehicle } from '../theme/art/vintageVehicles';
 import { annoShip } from '../theme/art/annoShips';
 import { drawVehicle } from '../theme/art/vehicles';
 import { DRAWN_SKINS, skinDrawing } from '../theme/art/targetSkins';
+import { FRIGATE, waves } from '../theme/art/frigate';
+import {
+  BALL_FLIGHT, BURST, FIRE_END as BROADSIDE_FIRE_END, FIRE_START as BROADSIDE_FIRE_START, SEA_IN_END, SEA_OUT_START, ballAt, buildBroadsidePlan, seaLevel, shipLeft,
+} from '../components/effects/broadsidePlan';
 import { BULLET_HOLE, MUZZLE_FLASH, TOMMY_GUN } from '../theme/art/tommyGun';
 import {
   BULLET_FLIGHT, FIRE_END, FIRE_START, HOLES_FADE, SHOTS, buildTommyGunPlan, shotPhase, sprayAngle,
@@ -133,5 +137,53 @@ describe('Tommy gun win effect', () => {
 
   it('plays the same on every replay', () => {
     expect(buildTommyGunPlan(300, 300)).toEqual(buildTommyGunPlan(300, 300));
+  });
+});
+
+describe('Broadside win effect', () => {
+  it.each([FRIGATE, waves(false), waves(true)])('its drawings only refer to their own gradients', drawing => {
+    expectGradientsDefined(drawing);
+  });
+
+  it.each([[340, 420], [390, 844], [140, 140]])('in an area of %i × %i, the frigate crosses it and every ball bursts inside it', (width, height) => {
+    const plan = buildBroadsidePlan(width, height);
+    expect(shipLeft(plan, 0) + plan.shipWidth).toBeLessThanOrEqual(0);
+    expect(shipLeft(plan, 1)).toBeGreaterThanOrEqual(width);
+    expect(plan.shots).toHaveLength(8);
+    for (const shot of plan.shots) {
+      expect(shot.to.x).toBeGreaterThanOrEqual(0);
+      expect(shot.to.x).toBeLessThanOrEqual(width);
+      expect(shot.to.y).toBeGreaterThanOrEqual(0);
+      expect(shot.to.y).toBeLessThan(shot.from.y);
+      expect(ballAt(shot, 0)).toEqual(shot.from);
+      expect(ballAt(shot, 1).x).toBeCloseTo(shot.to.x);
+      expect(ballAt(shot, 1).y).toBeCloseTo(shot.to.y);
+    }
+  });
+
+  it('fires stern to bow while the ship is on screen, every burst over before the sea sinks', () => {
+    const { shots } = buildBroadsidePlan(340, 420);
+    shots.forEach((shot, i) => {
+      expect(shot.t0).toBeGreaterThanOrEqual(BROADSIDE_FIRE_START);
+      expect(shot.t0).toBeLessThan(BROADSIDE_FIRE_END);
+      if (i > 0) expect(shot.t0).toBeGreaterThan(shots[i - 1].t0);
+      expect(shot.t0 + BALL_FLIGHT + BURST).toBeLessThan(SEA_OUT_START);
+    });
+  });
+
+  it('the sea rises, stays, then sinks', () => {
+    expect(seaLevel(0)).toBe(0);
+    expect(seaLevel(SEA_IN_END)).toBe(1);
+    expect(seaLevel(0.5)).toBe(1);
+    expect(seaLevel(1)).toBe(0);
+  });
+
+  it('plays the same on every replay', () => {
+    expect(buildBroadsidePlan(340, 420)).toEqual(buildBroadsidePlan(340, 420));
+  });
+
+  it('is unlocked with the 1800 fleet, by 30 weekly challenges won', () => {
+    const def = COSMETICS.find(c => cosmeticKey(c) === 'effect:broadside')!;
+    expect(def.unlock).toEqual(COSMETICS.find(c => cosmeticKey(c) === 'palette:fleet')!.unlock);
   });
 });
