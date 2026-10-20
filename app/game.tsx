@@ -20,6 +20,8 @@ import { calculateScore, getStars } from '@/utils/scoring';
 import { importSharedLevel, resolveLevel, GameRouteParams } from '@/utils/levelResolver';
 import { isArchiveDateAvailable } from '@/utils/archives';
 import { isDailyOpen, isWeeklyOpen } from '@/utils/challengeDates';
+import { nextMapLevel } from '@/utils/mapFocus';
+import { sampleLevels } from '@/data/sampleLevels';
 import { useActivePlayTime } from '@/hooks/useActivePlayTime';
 import { describeVehicle, getVehicleLetters, getMoveDirection } from '@/utils/accessibility';
 import { useTheme } from '@/theme';
@@ -54,6 +56,7 @@ export default function GameScreen() {
   const completeLevel = useGameStore(s => s.completeLevel);
   const createdLevels = useGameStore(s => s.createdLevels);
   const importedLevels = useGameStore(s => s.importedLevels);
+  const generatedLevels = useGameStore(s => s.generatedLevels);
   const cancelGeneration = useGameStore(s => s.cancelGeneration);
   const dailyChallengeProgress = useGameStore(s => s.dailyChallengeProgress);
   const weeklyChallengeProgress = useGameStore(s => s.weeklyChallengeProgress);
@@ -141,6 +144,11 @@ export default function GameScreen() {
         },
       ]);
     }, 400);
+  };
+
+  /** From the win screen straight into the following level of the map: back from it still leads to the map */
+  const handleNextLevel = (levelId: number) => {
+    router.replace(`/game?levelId=${levelId}`);
   };
 
   /** From the win screen to the garage, to pick what the win unlocked; back from it leads where Continue goes */
@@ -357,6 +365,10 @@ export default function GameScreen() {
   const levelTitle = !currentLevel ? ''
     : customKind ? customLevelTitle(t, customLevels.find(l => l.id === currentLevel.id) ?? currentLevel, customKind, customLevels)
     : t('game.level_count', { id: currentLevel.id });
+  // A level of the map (campaign or generated) has a next one, until the last one
+  const nextLevelId = currentLevel && !customKind && !challengeKind && !isArchive
+    ? nextMapLevel(currentLevel.id, sampleLevels.length + generatedLevels.length)
+    : null;
 
   if (isLoading || !currentLevel) {
     const isMondayDaily = (params.levelId === 'daily' || isArchive) && !!params.date && parseLocalDateString(params.date).getDay() === 1;
@@ -431,6 +443,7 @@ export default function GameScreen() {
         onShareResult={handleShareResult}
         onShowSolution={() => showSolution(playerMoves ? 'mine' : 'optimal')}
         onRetry={challengeKind ? undefined : handleRetry}
+        onNextLevel={nextLevelId !== null ? () => handleNextLevel(nextLevelId) : undefined}
         onContinue={handleWinContinue}
         onRequestClose={goBack}
       />
