@@ -65,8 +65,7 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'skin', id: 'tractor', icon: '🚜', unlock: { type: 'achievement', id: 'zone_perfect_1' } },
   { kind: 'skin', id: 'ufo', icon: '🛸', unlock: { type: 'stars', count: 2000 } },
   { kind: 'skin', id: 'mafia', icon: '🎩', unlock: { type: 'achievement', id: 'mafia' } },
-  // Unlock to be decided: stars for now (computed, nothing saved, can change freely)
-  { kind: 'skin', id: 'flagship', icon: '⛵', unlock: { type: 'stars', count: 2500 } },
+  { kind: 'skin', id: 'flagship', icon: '⛵', unlock: { type: 'weeklies', count: 30 } },
 
   // Vehicle palettes
   { kind: 'palette', id: 'classic', icon: '🎨', unlock: { type: 'default' } },
@@ -78,7 +77,7 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'palette', id: 'lava', icon: '🌋', unlock: { type: 'achievement', id: 'optimal_hard_50' } },
   { kind: 'palette', id: 'jungle', icon: '🌴', unlock: { type: 'stars', count: 1600 } },
   { kind: 'palette', id: 'mafia', icon: '🎩', unlock: { type: 'achievement', id: 'mafia' } },
-  { kind: 'palette', id: 'fleet', icon: '🚢', unlock: { type: 'stars', count: 2500 } },
+  { kind: 'palette', id: 'fleet', icon: '🚢', unlock: { type: 'weeklies', count: 30 } },
 
   // Win effects
   { kind: 'effect', id: 'none', icon: '⏹️', unlock: { type: 'default' } },
