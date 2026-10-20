@@ -6,7 +6,7 @@ import Block, { BlockA11yStrings } from './Block';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getVehicleLetters, describeVehicle, describePosition, describeExit } from '@/utils/accessibility';
-import { useTheme, applyPalette } from '@/theme';
+import { useTheme, applyPalette, PALETTE_ART } from '@/theme';
 
 
 interface BoardProps {
@@ -134,6 +134,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
             a11yValue={describePosition(t, v)}
             a11yStrings={a11yStrings}
             letter={showVehicleLetters ? (v.isTarget ? '★' : letters[v.id]) : undefined}
+            art={v.isTarget ? board.targetArt : PALETTE_ART[palette]}
           />
         );
       })}

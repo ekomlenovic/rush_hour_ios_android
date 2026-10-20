@@ -8,4 +8,6 @@ export const vehicleStyles = StyleSheet.create({
   vehicleShineV: { height: undefined, top: 0, bottom: undefined, right: 0, left: 0, width: '38%' },
   vehicleGrip: { flexDirection: 'row', gap: 5, opacity: 0.55 },
   gripDot: { width: 5, height: 5, borderRadius: 3 },
+  /** A drawn vehicle has its own body, chrome and shadow */
+  drawnBlock: { backgroundColor: 'transparent', borderWidth: 0, shadowOpacity: 0, overflow: 'visible' },
 });

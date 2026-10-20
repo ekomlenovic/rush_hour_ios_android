@@ -1,5 +1,4 @@
 import type { TFunction } from 'i18next';
-import { describeUnlockShort } from '../components/garage/describeUnlock';
 import {
   ACHIEVEMENT_XP, BASE_FREEZE_SLOTS, BOSS_WIN_XP, MISSIONS_XP, REPLAY_XP_FACTOR, dailyWinXp, getFreezeCapacity, getLevelInfo,
   getPlayerLevel, getPlayerTitle, levelWinXp, totalXpForLevel, weeklyWinXp, xpToNextLevel,
@@ -9,6 +8,7 @@ import {
   type CosmeticSource,
 } from '../data/cosmetics';
 import { ACHIEVEMENTS_BY_ID } from '../data/achievements';
+import { describeUnlock, describeUnlockShort } from '../components/garage/describeUnlock';
 import { BOARD_THEMES, CAR_SKINS, VEHICLE_PALETTES, applyPalette } from '../theme/board';
 import { useGameStore, MAX_STREAK_FREEZES } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
@@ -212,6 +212,16 @@ describe('cosmetics', () => {
     for (const key of ['skin:rocket', 'board:pixel', 'skin:police']) {
       expect({ key, unlocked: isCosmeticUnlocked(byKey(key), c) }).toEqual({ key, unlocked: false });
     }
+  });
+
+  it('a cosmetic of a secret achievement hides its name until unlocked', () => {
+    const t = ((key: string) => key) as never;
+    const locked = buildCosmeticContext(source());
+    expect(describeUnlock(t, byKey('skin:mafia'), locked)).toBe('cosmetics.unlock.secret');
+    expect(describeUnlock(t, byKey('board:fire'), locked)).toBe('cosmetics.unlock.achievement');
+    expect(describeUnlock(t, byKey('skin:mafia'), buildCosmeticContext(source({ achievements: ['mafia'] })))).toBe('cosmetics.unlock.achievement');
+    expect(describeUnlockShort(t, byKey('skin:mafia'), locked)).toBe('cosmetics.unlock.secret');
+    expect(describeUnlockShort(t, byKey('skin:mafia'), buildCosmeticContext(source({ achievements: ['mafia'] })))).toBe('achievements.mafia');
   });
 
   it('the green light effect unlocks after 3 map levels won, custom levels and challenges aside', () => {

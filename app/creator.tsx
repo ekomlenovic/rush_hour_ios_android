@@ -24,7 +24,8 @@ import ExitMarker from '@/components/creator/ExitMarker';
 import PillSelector from '@/components/creator/PillSelector';
 import LevelNameSheet from '@/components/share/LevelNameSheet';
 import { vehicleStyles } from '@/components/creator/vehicleStyles';
-import { useTheme, fixedColors, applyPalette, VEHICLE_PALETTES, TARGET_CAR_COLOR } from '@/theme';
+import { useTheme, fixedColors, applyPalette, PALETTE_ART, VEHICLE_PALETTES, TARGET_CAR_COLOR } from '@/theme';
+import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
 
 const BOARD_BORDER = 1.5;
 const EXIT_SIDES = ['Right', 'Left', 'Top', 'Bottom'] as const;
@@ -498,10 +499,22 @@ export default function LevelCreatorScreen() {
                 backgroundColor: nextPaletteColor ?? floatingTemplate.color,
                 borderColor: board.dragBorder,
               },
+              PALETTE_ART[palette] && vehicleStyles.drawnBlock,
               floatAnimStyle,
             ]}
           >
-            <View style={[vehicleStyles.vehicleShine, { backgroundColor: board.vehicleShine }, floatingTemplate.orientation === 'vertical' && vehicleStyles.vehicleShineV]} />
+            {PALETTE_ART[palette] ? (
+              <DrawnVehicle
+                art={PALETTE_ART[palette]!}
+                length={floatingTemplate.length}
+                orientation={floatingTemplate.orientation}
+                color={nextPaletteColor ?? floatingTemplate.color}
+                width={floatW}
+                height={floatH}
+              />
+            ) : (
+              <View style={[vehicleStyles.vehicleShine, { backgroundColor: board.vehicleShine }, floatingTemplate.orientation === 'vertical' && vehicleStyles.vehicleShineV]} />
+            )}
           </Animated.View>
         )}
 

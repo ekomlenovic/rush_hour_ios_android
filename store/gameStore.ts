@@ -22,7 +22,7 @@ import { isDailyWinnable, isWeeklyWinnable } from '../utils/challengeDates';
 import {
   CosmeticKind, CosmeticSelection, COSMETICS_BY_KEY, DEFAULT_COSMETICS, buildCosmeticContext, getUnlockedCosmetics, isCosmeticUnlocked, sanitizeSelection,
 } from '../data/cosmetics';
-import { emptyAttempt, initialStats, withWinStats, mergeChallengeResult } from './stats';
+import { emptyAttempt, initialStats, withWinStats, mergeChallengeResult, SECRET_CODES } from './stats';
 import { addToPeriods, monthKeyOf, winIncrements } from './periodStats';
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from './migrations';
 import { compactSavedStates, dropOldUndoStacks, isWellFormedSave, savedUndoSteps, undoStackOf } from './savedStates';
@@ -175,6 +175,8 @@ interface GameState {
   consumeUnlockQueue: () => string[];
   recordLevelShared: () => void;
   recordResultShared: () => void;
+  /** A secret code typed in the level import (see SECRET_CODES) */
+  recordSecretCode: (code: string) => void;
   /** The recap of a month (YYYY-MM) or a year (YYYY) was opened */
   markRecapSeen: (key: string) => void;
   addGeneratedLevel: (level: Level) => void;
@@ -734,6 +736,13 @@ export const useGameStore = create<GameState>()(
       recordLevelShared: () => {
         const { stats } = get();
         set({ stats: { ...stats, levelsShared: stats.levelsShared + 1 } });
+        get().checkAchievements();
+      },
+
+      recordSecretCode: (code) => {
+        if (!SECRET_CODES.includes(code)) return;
+        const { stats } = get();
+        set({ stats: { ...stats, secretCodes: { ...stats.secretCodes, [code]: (stats.secretCodes[code] || 0) + 1 } } });
         get().checkAchievements();
       },
 

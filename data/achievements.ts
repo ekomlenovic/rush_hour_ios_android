@@ -238,6 +238,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'christmas', icon: 'gift', category: 'secret', hidden: true, target: 1, value: c => c.stats.specialDayWins['12-25'] || 0 },
   { id: 'halloween', icon: 'bug', category: 'secret', hidden: true, target: 1, value: c => c.stats.specialDayWins['10-31'] || 0 },
   { id: 'pi_day', icon: 'pie-chart', category: 'secret', hidden: true, target: 1, value: c => c.stats.specialDayWins['03-14'] || 0 },
+  // "mafia" typed in the level import: unlocks the Mafia skin and palette
+  { id: 'mafia', icon: 'briefcase', category: 'secret', hidden: true, target: 1, value: c => c.stats.secretCodes['mafia'] || 0 },
 ];
 
 export const ACHIEVEMENTS_BY_ID: Record<string, AchievementDef> = Object.fromEntries(
