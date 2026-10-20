@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { getLocalDateString, getWeekKey, getDaysLeftInWeek, formatTimeLeft } from '@/utils/date';
 import { getMissionsForDay, countMissionsDone } from '@/data/missions';
 import { getFreezeCapacity, getPlayerLevel, dailyWinXp, weeklyWinXp } from '@/data/progression';
+import { lockedEventCosmetics, seasonalEventOf } from '@/data/cosmetics';
 import { sampleLevels } from '@/data/sampleLevels';
 import { useAppOpenAlert } from '@/hooks/useAppOpenAlert';
 import { useNow } from '@/hooks/useNow';
@@ -71,10 +72,13 @@ export default function HomeScreen() {
   const now = useNow();
   const dateStr = getLocalDateString(now);
   useAppOpenAlert(dateStr);
-  const { unseen: newCosmetics } = useCosmetics();
+  const { unseen: newCosmetics, context: cosmeticContext } = useCosmetics();
   const newAchievements = useNewAchievements();
 
   const dailyStatus = dailyChallengeProgress[dateStr];
+  // During a seasonal event, the daily challenge tells what it unlocks while there is something left to unlock
+  const seasonalEvent = seasonalEventOf(dateStr);
+  const eventCosmetics = seasonalEvent ? lockedEventCosmetics(seasonalEvent, cosmeticContext).length : 0;
 
   const todayMissions = getMissionsForDay(dailyMissions, dateStr);
   const missionsDone = countMissionsDone(todayMissions);
@@ -177,7 +181,9 @@ export default function HomeScreen() {
               done={!!dailyStatus?.completed}
               subtitle={dailyStatus?.completed
                 ? `${t('home.won_stars', { count: dailyStatus.stars })} · ${t('home.daily_next', { time: timeUntilTomorrow(now) })}`
-                : t('home.daily_desc')}
+                : seasonalEvent && eventCosmetics > 0
+                  ? t(`home.daily_event.${seasonalEvent}`, { count: eventCosmetics })
+                  : t('home.daily_desc')}
               reward={t('home.reward_xp', { xp: dailyWinXp(MAX_STARS) })}
               enteringDelay={450}
               onPress={() => router.push(`/game?levelId=daily&date=${dateStr}`)}
