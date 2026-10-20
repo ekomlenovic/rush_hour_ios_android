@@ -313,7 +313,9 @@
     "new_achievements_one": "{{count}} new achievement",
     "new_achievements_other": "{{count}} new achievements",
     "achievement_a11y_unlocked": "{{name}}, unlocked. {{desc}}",
-    "achievement_a11y_locked": "{{name}}, locked. {{desc}}"
+    "achievement_a11y_locked": "{{name}}, locked. {{desc}}",
+    "achievement_unlocked": "Unlocked",
+    "achievement_locked": "Not unlocked yet"
   },
   "achievements": {
     "novice": "Novice",

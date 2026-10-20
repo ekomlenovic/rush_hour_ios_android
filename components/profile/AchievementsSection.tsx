@@ -14,10 +14,13 @@ const CLOSEST_COUNT = 3;
 interface Props {
   colors: UiColors;
   context: AchievementContext;
+  /** Achievement whose detail is shown (see AchievementSheet) */
+  selected: string | null;
+  onSelect: (id: string | null) => void;
 }
 
 /** Achievements of the profile: the closest ones, then a grid of badges per category */
-export default function AchievementsSection({ colors, context }: Props) {
+export default function AchievementsSection({ colors, context, selected, onSelect }: Props) {
   const { t } = useTranslation();
   const unlocked = useGameStore((state) => state.achievements || []);
   const unlockedSet = useMemo(() => new Set(unlocked), [unlocked]);
@@ -29,7 +32,6 @@ export default function AchievementsSection({ colors, context }: Props) {
     ACHIEVEMENT_CATEGORIES[0],
     ...ACHIEVEMENTS.filter(a => newSet.has(a.id)).map(a => a.category),
   ]));
-  const [selected, setSelected] = useState<string | null>(null);
 
   const progressOf = (ach: AchievementDef) => Math.min(ach.value(context), ach.target);
   const closest = useMemo(() => ACHIEVEMENTS
@@ -67,7 +69,6 @@ export default function AchievementsSection({ colors, context }: Props) {
         const done = list.filter(a => unlockedSet.has(a.id)).length;
         const newCount = list.filter(a => newSet.has(a.id)).length;
         const open = openCategories.has(category);
-        const detail = open ? list.find(a => a.id === selected) : undefined;
         return (
           <View key={category} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Pressable
@@ -103,7 +104,7 @@ export default function AchievementsSection({ colors, context }: Props) {
                       key={ach.id}
                       onPress={() => {
                         if (isNew) markAchievementSeen(ach.id);
-                        setSelected(id => id === ach.id ? null : ach.id);
+                        onSelect(selected === ach.id ? null : ach.id);
                       }}
                       style={styles.badge}
                       accessibilityRole="button"
@@ -127,15 +128,6 @@ export default function AchievementsSection({ colors, context }: Props) {
               </View>
             )}
 
-            {detail && (
-              <View style={[styles.detail, { backgroundColor: colors.card }]}>
-                {!detail.hidden || unlockedSet.has(detail.id) ? (
-                  <ProgressRow colors={colors} ach={detail} current={progressOf(detail)} unlocked={unlockedSet.has(detail.id)} />
-                ) : (
-                  <Text style={[styles.rowDesc, { color: colors.textMuted }]}>{t('achievements.secret_desc')}</Text>
-                )}
-              </View>
-            )}
           </View>
         );
       })}
@@ -264,10 +256,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     paddingHorizontal: 2,
-  },
-  detail: {
-    borderRadius: RFValue(12),
-    padding: RFValue(12),
   },
   row: {
     flexDirection: 'row',
