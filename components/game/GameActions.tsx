@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { Text, StyleSheet, Pressable, ActivityIndicator, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -15,6 +15,12 @@ interface Props {
   onReset: () => void;
 }
 
+const ICON_SIZE = 20;
+
+/**
+ * Undo, hint and reset under the board. The label is under its icon and the buttons share
+ * the width: "Réinitialiser" and its neighbours went past the edges of a 390 pt screen.
+ */
 export default function GameActions({ colors, showUndoAndHint, isHintLoading, onUndo, onHint, onReset }: Props) {
   const { t } = useTranslation();
   return (
@@ -22,8 +28,8 @@ export default function GameActions({ colors, showUndoAndHint, isHintLoading, on
       {showUndoAndHint && (
         <>
           <Pressable onPress={onUndo} style={[styles.actionBtn, { backgroundColor: colors.card }]} accessibilityRole="button" accessibilityLabel={t('game.undo')}>
-            <Ionicons name="arrow-undo" size={18} color={colors.text} />
-            <Text style={[styles.actionText, { color: colors.text }]}>{t('game.undo')}</Text>
+            <Ionicons name="arrow-undo" size={ICON_SIZE} color={colors.text} />
+            <Text style={[styles.actionText, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('game.undo')}</Text>
           </Pressable>
           <Pressable
             onPress={onHint}
@@ -33,20 +39,21 @@ export default function GameActions({ colors, showUndoAndHint, isHintLoading, on
             accessibilityLabel={isHintLoading ? t('game.analyzing') : t('game.hint')}
             accessibilityState={{ disabled: isHintLoading, busy: isHintLoading }}
           >
-            {isHintLoading ? (
-              <ActivityIndicator size="small" color={colors.warning} />
-            ) : (
-              <>
-                <Ionicons name="bulb" size={18} color={colors.warning} />
-                <Text style={[styles.actionText, { color: colors.warning }]}>{t('game.hint')}</Text>
-              </>
-            )}
+            {/* Same height while the hint is computed: the row does not jump */}
+            <View style={styles.iconBox}>
+              {isHintLoading ? (
+                <ActivityIndicator size="small" color={colors.warning} />
+              ) : (
+                <Ionicons name="bulb" size={ICON_SIZE} color={colors.warning} />
+              )}
+            </View>
+            <Text style={[styles.actionText, { color: colors.warning }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('game.hint')}</Text>
           </Pressable>
         </>
       )}
       <Pressable onPress={onReset} style={[styles.actionBtn, { backgroundColor: colors.card }]} accessibilityRole="button" accessibilityLabel={t('common.reset')}>
-        <Ionicons name="refresh" size={18} color={colors.text} />
-        <Text style={[styles.actionText, { color: colors.text }]}>{t('common.reset')}</Text>
+        <Ionicons name="refresh" size={ICON_SIZE} color={colors.text} />
+        <Text style={[styles.actionText, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('common.reset')}</Text>
       </Pressable>
     </Animated.View>
   );
@@ -56,20 +63,24 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 12,
+    gap: 10,
   },
   actionBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    minWidth: 100,
-    flexDirection: 'row',
-    gap: 6,
+    flex: 1,
+    maxWidth: 130,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    gap: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  iconBox: {
+    height: ICON_SIZE,
+    justifyContent: 'center',
+  },
   actionText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
   },
 });
