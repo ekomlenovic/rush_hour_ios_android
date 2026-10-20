@@ -235,18 +235,52 @@ export function periodLabel(key: string, language: string): string {
 /** Whether the period is still going on */
 export const isInProgress = (recap: Recap, now: Date = new Date()): boolean => recap.end >= getLocalDateString(now);
 
-/** The 3 or 4 strong numbers of the recap, for the share image and text */
-export function recapHighlights(t: TFunction, recap: Recap): { value: string; label: string; emoji: string }[] {
+/**
+ * The strong numbers of the recap, the most telling first, none at zero: the tiles of the share
+ * image (6 at most) and the lines of the shared text. Each one is a number shown on the slides
+ */
+export function recapHighlights(t: TFunction, recap: Recap, max = 6): { key: string; value: string; label: string; emoji: string }[] {
   const { stats } = recap;
-  const items = [
-    { value: String(stats.wins), label: t('recap.highlight_wins', { count: stats.wins }), emoji: '🏁', show: stats.wins > 0 },
-    { value: `+${stats.starsGained}`, label: t('recap.highlight_stars', { count: stats.starsGained }), emoji: '⭐', show: stats.starsGained > 0 },
-    { value: String(recap.dailies), label: t('recap.highlight_dailies', { count: recap.dailies }), emoji: '🧩', show: recap.dailies > 0 },
-    { value: formatPlayTime(stats.playTimeMs), label: t('recap.highlight_time'), emoji: '⏱️', show: stats.playTimeMs >= 60_000 },
-    { value: String(recap.bestDailyRun), label: t('recap.highlight_run', { count: recap.bestDailyRun }), emoji: '🔥', show: recap.bestDailyRun > 1 },
-    { value: String(recap.weeklies), label: t('recap.highlight_weeklies', { count: recap.weeklies }), emoji: '⚔️', show: recap.weeklies > 0 },
+  const achievements = recapAchievementCount(recap);
+  const items: { key: string; amount: number; value?: string; emoji: string }[] = [
+    { key: 'wins', amount: stats.wins, emoji: '🏁' },
+    { key: 'dailies', amount: recap.dailies, emoji: '🧩' },
+    { key: 'hardest_win', amount: stats.hardestWinMoves, emoji: '🧠' },
+    { key: 'stars_gained', amount: stats.starsGained, value: `+${stats.starsGained}`, emoji: '⭐' },
+    { key: 'best_run', amount: recap.bestDailyRun > 1 ? recap.bestDailyRun : 0, emoji: '🔥' },
+    { key: 'play_time', amount: stats.playTimeMs >= 60_000 ? stats.playTimeMs : 0, value: formatPlayTime(stats.playTimeMs), emoji: '⏱️' },
+    { key: 'achievements', amount: achievements, emoji: '🏆' },
+    { key: 'weeklies', amount: recap.weeklies, emoji: '⚔️' },
+    { key: 'perfect_wins', amount: stats.perfectWins, emoji: '🎯' },
+    { key: 'new_levels', amount: stats.newLevels, emoji: '🗺️' },
+    { key: 'boss_wins', amount: stats.bossWins, emoji: '👑' },
+    { key: 'styles', amount: stats.cosmetics, emoji: '🎨' },
+    { key: 'moves', amount: stats.moves, emoji: '🚗' },
+    { key: 'perfect_dailies', amount: recap.perfectDailies, emoji: '🌟' },
+    { key: 'freezes_used', amount: recap.freezesUsed, emoji: '❄️' },
   ];
-  return items.filter(item => item.show).slice(0, 4).map(({ value, label, emoji }) => ({ value, label, emoji }));
+  return items
+    .filter(item => item.amount > 0)
+    .slice(0, max)
+    .map(item => ({
+      key: item.key,
+      value: item.value ?? String(item.amount),
+      label: t(`recap.tile_${item.key}`, { count: item.amount }),
+      emoji: item.emoji,
+    }));
+}
+
+/**
+ * Progress since the period before, for the sticker of the share image: only when it went up
+ * (a recap is shared to show off). Wins when the period before was fully counted, dailies otherwise
+ */
+export function recapProgress(recap: Recap): { key: 'wins' | 'dailies'; diff: number; previousKey: string } | null {
+  const { previous } = recap;
+  if (!previous) return null;
+  const progress = previous.wins !== null
+    ? { key: 'wins' as const, diff: recap.stats.wins - previous.wins }
+    : { key: 'dailies' as const, diff: recap.dailies - previous.dailies };
+  return progress.diff > 0 ? { ...progress, previousKey: previous.key } : null;
 }
 
 /** Wordle-like text of the recap: emojis in the shared text only (see docs/GAME_DESIGN.md, Icônes) */
@@ -255,6 +289,6 @@ export function buildRecapShareText(t: TFunction, recap: Recap, language: string
   const title = recap.kind === 'year'
     ? t('recap.share_title_year', { period: periodLabel(recap.key, language), ...plain })
     : t('recap.share_title_month', { period: periodLabel(recap.key, language), ...plain });
-  const lines = recapHighlights(t, recap).map(h => `${h.emoji} ${h.value} ${h.label}`);
+  const lines = recapHighlights(t, recap, 5).map(h => `${h.emoji} ${h.value} ${h.label}`);
   return [`Rush Hours — ${title} 🎁`, ...lines, t(`recap.profile_${recap.profile}`), APP_URL].join('\n');
 }

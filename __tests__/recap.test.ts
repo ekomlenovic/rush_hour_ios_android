@@ -4,7 +4,7 @@ import { sampleLevels } from '../data/sampleLevels';
 import { addToPeriods, emptyPeriodStats, RECAP_MONTHS_KEPT } from '../store/periodStats';
 import { isBossLevel } from '../data/bosses';
 import {
-  availableRecaps, buildRecap, buildRecapShareText, pendingRecap, periodBounds, pickProfile, recapHighlights, recapSlides, type RecapSource,
+  availableRecaps, buildRecap, buildRecapShareText, pendingRecap, periodBounds, pickProfile, recapHighlights, recapProgress, recapSlides, type RecapSource,
 } from '../utils/recap';
 import { planReminders } from '../utils/reminders';
 import { addMonths, getWeekStart } from '../utils/date';
@@ -270,9 +270,38 @@ describe('sharing the recap', () => {
     dailyChallengeProgress: { '2026-10-01': win, '2026-10-02': win },
   }), '2026-10');
 
-  it('keeps 3 or 4 strong numbers', () => {
+  it('the image shows up to 6 numbers, the most telling first, never a zero', () => {
     const highlights = recapHighlights(t, recap);
-    expect(highlights.map(h => h.value)).toEqual(['12', '+20', '2', '1 h 00']);
+    expect(highlights.map(h => [h.key, h.value])).toEqual([
+      ['wins', '12'], ['dailies', '2'], ['stars_gained', '+20'], ['best_run', '2'], ['play_time', '1 h 00'], ['perfect_dailies', '2'],
+    ]);
+    expect(recapHighlights(t, recap, 3)).toHaveLength(3);
+  });
+
+  it('brings back what the slides show: the record level, the achievements, the bosses', () => {
+    const full = buildRecap(source({
+      monthlyStats: { '2026-10': { ...emptyPeriodStats(), hardestWinMoves: 50, bossWins: 1, perfectWins: 3, wins: 3 } },
+      achievementMonths: { first_win: '2026-10' },
+    }), '2026-10');
+    expect(recapHighlights(t, full).map(h => h.key)).toEqual(['wins', 'hardest_win', 'achievements', 'perfect_wins', 'boss_wins']);
+  });
+
+  it('a sticker for the progress since the period before, only when it went up', () => {
+    const month = (wins: number) => ({ ...emptyPeriodStats(), wins });
+    const better = source({ monthlyStats: { '2026-09': month(5), '2026-10': month(17) } });
+    expect(recapProgress(buildRecap(better, '2026-10'))).toEqual({ key: 'wins', diff: 12, previousKey: '2026-09' });
+    const worse = source({ monthlyStats: { '2026-09': month(20), '2026-10': month(17) } });
+    expect(recapProgress(buildRecap(worse, '2026-10'))).toBeNull();
+    // September only partly counted: the dailies compare
+    const partial = source({ recapSince: '2026-09-20', monthlyStats: { '2026-09': month(1), '2026-10': month(2) }, dailyChallengeProgress: { '2026-10-01': win } });
+    expect(recapProgress(buildRecap(partial, '2026-10'))).toEqual({ key: 'dailies', diff: 1, previousKey: '2026-09' });
+  });
+
+  it('has a label for every number of the image, in both languages', () => {
+    const keys = ['wins', 'dailies', 'hardest_win', 'stars_gained', 'best_run', 'play_time', 'achievements', 'weeklies', 'perfect_wins', 'new_levels', 'boss_wins', 'styles', 'moves', 'perfect_dailies', 'freezes_used'];
+    for (const strings of [en, fr]) {
+      for (const key of keys) expect(Object.keys(strings.recap).some(k => k === `tile_${key}` || k === `tile_${key}_other`)).toBe(true);
+    }
   });
 
   it('a Wordle-like text with emojis and the link of the game', () => {

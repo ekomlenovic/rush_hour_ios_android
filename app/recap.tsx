@@ -16,11 +16,11 @@ import { useGameStore } from '@/store/gameStore';
 import { recapSlideColors, recapSlideText } from '@/theme';
 import { formatPlayTime, parseLocalDateString } from '@/utils/date';
 import {
-  buildRecap, buildRecapShareText, isInProgress, periodLabel, recapHighlights, recapSlides,
+  buildRecap, buildRecapShareText, isInProgress, periodLabel, recapHighlights, recapProgress, recapSlides,
   type Recap, type RecapFigure, type RecapSlide,
 } from '@/utils/recap';
 import { APP_URL } from '@/utils/shareResult';
-import RecapShareImage, { SHARE_IMAGE_HEIGHT, SHARE_IMAGE_WIDTH } from '@/components/recap/RecapShareImage';
+import RecapShareImage, { MAX_IMAGE_TILES, SHARE_IMAGE_HEIGHT, SHARE_IMAGE_WIDTH } from '@/components/recap/RecapShareImage';
 import type { IoniconName } from '@/utils/icons';
 
 /** Achievement names listed on their slide, the rest counted */
@@ -189,7 +189,9 @@ export default function RecapScreen() {
                 title={recap.kind === 'year' ? t('recap.image_title_year') : t('recap.image_title_month')}
                 period={label}
                 profile={t(`recap.profile_${recap.profile}`)}
-                highlights={recapHighlights(t, recap)}
+                profileDescription={t(`recap.profile_${recap.profile}_desc`)}
+                highlights={recapHighlights(t, recap, MAX_IMAGE_TILES)}
+                sticker={imageSticker(t, recap, i18n.language)}
                 footer={APP_URL.replace(/^https:\/\//, '')}
                 cosmetics={cosmetics}
               />
@@ -332,6 +334,18 @@ function SlideContent({ t, slide, recap, label, language }: SlideProps) {
       )) : null}
     </View>
   );
+}
+
+/** "+12 wins vs September", stuck on the share image when the player did better than the period before */
+function imageSticker(t: T, recap: Recap, language: string) {
+  const progress = recapProgress(recap);
+  if (!progress) return null;
+  const period = recap.kind === 'year' ? progress.previousKey : parseLocalDateString(`${progress.previousKey}-01`).toLocaleDateString(language, { month: 'long' });
+  return {
+    value: `+${progress.diff}`,
+    label: t(`recap.sticker_${progress.key}`, { count: progress.diff }),
+    period: t('recap.sticker_vs', { period, interpolation: { escapeValue: false } }),
+  };
 }
 
 /** "Wins: +12 compared with September": only with a period fully counted */
