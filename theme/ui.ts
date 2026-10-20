@@ -150,6 +150,16 @@ export const recapImageColors = {
   muted: '#C7D2FE',
   box: 'rgba(255,255,255,0.12)',
   accent: '#FACC15',
+  /** Text on the accent fill (profile pill) */
+  onAccent: '#1E1B4B',
+  /** Faint cells of a board behind everything */
+  gridLine: 'rgba(255,255,255,0.05)',
+  shadow: 'rgba(0,0,0,0.35)',
+  /** Speed lines of the car getting out */
+  speed: 'rgba(255,255,255,0.55)',
+  road: '#1F2937',
+  roadEdge: 'rgba(255,255,255,0.7)',
+  roadLine: '#FACC15',
 };
 
 export const darkColors: UiColors = {
