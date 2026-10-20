@@ -36,9 +36,17 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
     onClose();
   };
 
+  // Deletes the generated levels with their stars: never at a single touch
   const handleResetLevels = () => {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    purgeCustomLevels(sampleLevels.length);
+    Alert.alert(
+      t('map.reset_custom'),
+      t('map.reset_custom_confirm', { count: generatedLevels.length }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.delete'), style: 'destructive', onPress: () => purgeCustomLevels(sampleLevels.length) },
+      ],
+    );
   };
 
   const handleUnlockAll = () => {

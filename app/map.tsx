@@ -148,6 +148,12 @@ export default function MapScreen() {
       router.push('/tutorial');
       return;
     }
+    // The padlock after the last level: no level there (it opened a game that could not load), the generator is in the options
+    if (levelId > levels.length) {
+      haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setSettingsVisible(true);
+      return;
+    }
     // Custom generated levels are ALWAYS accessible regardless of progression lock
     if (!isUnlocked && !isCustom) {
       haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -155,7 +161,7 @@ export default function MapScreen() {
     }
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push(`/game?levelId=${levelId}`);
-  }, [router]);
+  }, [router, levels.length]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
