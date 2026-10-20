@@ -2,20 +2,30 @@ import { useGameStore, Level } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
 import { resetStore, setToday } from './helpers';
 import { calculateScore } from '../utils/scoring';
-import { MAX_SAVED_UNDOS } from '../store/savedStates';
-import { ACHIEVEMENT_XP, MISSIONS_XP, dailyWinXp, levelWinXp, weeklyWinXp } from '../data/progression';
+import { MAX_SAVED_UNDOS, MAX_UNDO_STEPS, RECENT_SAVES_WITH_UNDOS, undoStackOf } from '../store/savedStates';
+import { ACHIEVEMENT_XP, BOSS_WIN_XP, MISSIONS_XP, dailyWinXp, levelWinXp, weeklyWinXp } from '../data/progression';
 
 const options = useGameStore.persist.getOptions();
 const migrate = (state: Record<string, unknown>, version: number) =>
   options.migrate!(structuredClone(state), version) as unknown as Record<string, unknown>;
 /** Id a level of the pack had before the 5 levels inserted after level 5 in v5 */
 const idBeforeV5 = (id: number) => (id > 10 ? id - 5 : id);
+/** The state without the recap fields that v12 adds to every save, to check the steps before it */
+const withoutRecap = (state: Record<string, unknown>) => {
+  const { monthlyStats: _m, yearlyStats: _y, achievementMonths: _a, recapSince: _r, ...rest } = state;
+  return rest;
+};
 const merge = (persisted: Record<string, unknown>) =>
   options.merge!(persisted, useGameStore.getInitialState());
+/** A save as it reads back, its undo stack as whole boards (compact since v11) */
+const withBoards = (save: any) => {
+  const { undoSteps: _steps, ...game } = save;
+  return { ...game, history: undoStackOf(save) };
+};
 
 describe('persisted state', () => {
-  it('is at version 8', () => {
-    expect(options.version).toBe(8);
+  it('is at version 12', () => {
+    expect(options.version).toBe(12);
   });
 
   it('keeps the player data and leaves the in-game state out', () => {
@@ -88,7 +98,7 @@ describe('migrate', () => {
 
   it('v3 is up to date: nothing changes', () => {
     const saved = { currentStreak: 3, bestStreak: 5, lastStreakDate: '2026-10-14', dailyChallengeProgress: {}, xp: 1234 };
-    expect(migrate(saved, 3)).toEqual(saved);
+    expect(withoutRecap(migrate(saved, 3))).toEqual(saved);
   });
 });
 
@@ -110,7 +120,8 @@ describe('migrate v3 → v4', () => {
     }, 3);
     expect((state.progress as { stars: number }[]).map(p => p.stars)).toEqual([2, 1, 2]);
     expect(state.dailyChallengeProgress).toMatchObject({ '2026-10-13': { stars: 2 }, '2026-10-12': { stars: 1 } });
-    expect(state.xp).toBe(1234);
+    // The XP already earned stays, v9 adds the boss bonus of the hard level (a jump of the campaign)
+    expect(state.xp).toBe(1234 + BOSS_WIN_XP);
   });
 });
 
@@ -171,11 +182,10 @@ describe('migrate v5 → v6', () => {
     const v5 = { progress: [{ levelId: 3, completed: true, bestScore: 300, stars: 3 }], xp: 1200, savedStates: { 12: save(300), 40: save(10) } };
     const state = migrate(v5, 5);
     const saved = state.savedStates as Record<string, ReturnType<typeof save>>;
-    expect(saved[12].history).toHaveLength(MAX_SAVED_UNDOS);
-    expect(saved[12].history).toEqual(save(300).history.slice(-MAX_SAVED_UNDOS));
+    expect(undoStackOf(saved[12] as never)).toEqual(save(300).history.slice(-MAX_SAVED_UNDOS));
     // The game itself carries on where it was
     expect(saved[12]).toMatchObject({ vehicles: save(300).vehicles, moveCount: 300, attempt: save(300).attempt });
-    expect(saved[40]).toEqual(save(10));
+    expect(withBoards(saved[40])).toEqual(save(10));
     expect(state.progress).toEqual(v5.progress);
     expect(state.xp).toBe(1200);
   });
@@ -191,9 +201,9 @@ describe('migrate v5 → v6', () => {
     const state = migrate({ savedStates: { 'daily-2026-11-15': save(20), 'daily-2026-11-10': save(5), 'archive-2026-11-10': save(7) } }, 5);
     const saved = state.savedStates as Record<string, ReturnType<typeof save>>;
     expect(Object.keys(saved).sort()).toEqual(['archive-2026-11-10', 'archive-2026-11-15']);
-    expect(saved['archive-2026-11-15']).toEqual(save(20));
+    expect(withBoards(saved['archive-2026-11-15'])).toEqual(save(20));
     // An archive already started keeps its own game
-    expect(saved['archive-2026-11-10']).toEqual(save(7));
+    expect(withBoards(saved['archive-2026-11-10'])).toEqual(save(7));
   });
 
   it('drops the saves that can never be opened again', () => {
@@ -204,7 +214,7 @@ describe('migrate v5 → v6', () => {
   it('a save of the previous version still loads in the store', () => {
     const merged = merge(migrate({ maxUnlockedLevel: 14, savedStates: { 12: save(120) } }, 5));
     expect(merged.maxUnlockedLevel).toBe(14);
-    expect(merged.savedStates[12].history).toHaveLength(MAX_SAVED_UNDOS);
+    expect(undoStackOf(merged.savedStates[12])).toHaveLength(MAX_SAVED_UNDOS);
   });
 });
 
@@ -247,7 +257,7 @@ describe('migrate v6 → v7', () => {
 
   it('leaves a save without challenge to come untouched', () => {
     const v6 = { dailyChallengeProgress: { '2026-10-19': win }, currentStreak: 1, bestStreak: 5, lastStreakDate: '2026-10-19', streakFreezes: 1 };
-    expect(migrate(v6, 6)).toEqual(v6);
+    expect(withoutRecap(migrate(v6, 6))).toEqual(v6);
   });
 
   it('a daily of a day to come is never won again', () => {
@@ -297,7 +307,169 @@ describe('migrate v7 → v8', () => {
 
   it('leaves a player without generated levels untouched', () => {
     const v7 = { progress: [{ levelId: 2, completed: true, bestScore: 300, stars: 3 }], maxUnlockedLevel: 3, generatedLevels: [] };
-    expect(migrate(v7, 7)).toEqual(v7);
+    expect(withoutRecap(migrate(v7, 7))).toEqual(v7);
+  });
+});
+
+describe('migrate v11 → v12', () => {
+  const win = (stars: number, minMoves = 12) => ({ completed: true, score: minMoves * 100, stars, moves: minMoves, minMoves });
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    setToday('2026-10-20');
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('counts the dated challenges back in their month and year, the rest from the update (issue 125)', () => {
+    // Saved before the recap: no recap counters yet
+    const v11 = {
+      dailyChallengeProgress: {
+        '2025-06-01': win(3),
+        '2025-12-30': win(2, 20),
+        '2026-09-29': win(3),
+        '2026-10-01': win(1),
+        '2026-10-02': { completed: false, score: 0, stars: 0 },
+      },
+      // Monday September 28th: September
+      weeklyChallengeProgress: { '2026-W40': win(3, 30) },
+      archiveProgress: { '2026-10-05': win(3) },
+      achievements: ['first_win', 'daily_winner'],
+      stats: { totalWins: 40 },
+      xp: 5000,
+    };
+    const state = migrate(v11, 11);
+    expect(Object.keys(state.monthlyStats as object).sort()).toEqual(['2025-12', '2026-09', '2026-10']);
+    expect(state.monthlyStats).toMatchObject({
+      '2025-12': { wins: 1, perfectWins: 0, hardestWinMoves: 20 },
+      '2026-09': { wins: 2, perfectWins: 2, hardestWinMoves: 30, moves: 0, playTimeMs: 0 },
+      '2026-10': { wins: 1, perfectWins: 0, hardestWinMoves: 12, achievements: 0 },
+    });
+    // June 2025 left the 13 months, its year keeps it
+    expect(state.yearlyStats).toMatchObject({ 2025: { wins: 2, perfectWins: 1 }, 2026: { wins: 3, perfectWins: 2, hardestWinMoves: 30 } });
+    expect(state.achievementMonths).toEqual({ first_win: '2026-10', daily_winner: '2026-10' });
+    expect(state.recapSince).toBe('2026-10-20');
+    // Nothing else changes
+    expect(withoutRecap(state)).toEqual(v11);
+  });
+
+  it('a player without anything starts with empty counters', () => {
+    const state = migrate({ progress: [] }, 11);
+    expect(state).toEqual({ progress: [], monthlyStats: {}, yearlyStats: {}, achievementMonths: {}, recapSince: '2026-10-20' });
+  });
+
+  it('a save of the previous version still loads in the store', () => {
+    const merged = merge(migrate({ dailyChallengeProgress: { '2026-10-01': win(3) }, achievements: ['first_win'] }, 11));
+    expect(merged.monthlyStats['2026-10'].wins).toBe(1);
+    expect(merged.recapsSeen).toEqual({});
+    expect(merged.recapSince).toBe('2026-10-20');
+  });
+
+  it('a new player counts from the start', () => {
+    expect(useGameStore.getInitialState().recapSince).toBeNull();
+  });
+});
+
+describe('migrate v9: boss levels (#19)', () => {
+  it('credits the extra XP of the bosses already won, once each', () => {
+    // Saved by v8: levels 29 to 31 won (30 is a boss), 46 (a boss) started but not won
+    const v8 = {
+      xp: 1234,
+      progress: [
+        { levelId: 29, completed: true, bestScore: 300, stars: 3 },
+        { levelId: 30, completed: true, bestScore: 100, stars: 1 },
+        { levelId: 31, completed: true, bestScore: 300, stars: 3 },
+        { levelId: 46, completed: false, bestScore: 0, stars: 0 },
+      ],
+      maxUnlockedLevel: 32,
+    };
+    const state = migrate(v8, 8);
+    expect(state.xp).toBe(1234 + BOSS_WIN_XP);
+    expect(state.progress).toEqual(v8.progress);
+    expect(state.maxUnlockedLevel).toBe(32);
+  });
+
+  it('leaves a player without a boss won untouched', () => {
+    const v8 = { xp: 80, progress: [{ levelId: 2, completed: true, bestScore: 300, stars: 3 }], maxUnlockedLevel: 3 };
+    expect(withoutRecap(migrate(v8, 8))).toEqual(v8);
+  });
+});
+
+describe('migrate v10: new achievements (#19)', () => {
+  it('counts the achievements unlocked before as seen', () => {
+    const v9 = { achievements: ['first_win', 'streak_3'], progress: [] };
+    expect(withoutRecap(migrate(v9, 9))).toEqual({ ...v9, seenAchievements: ['first_win', 'streak_3'] });
+  });
+
+  it('leaves a save without achievements untouched', () => {
+    const v9 = { progress: [] };
+    expect(withoutRecap(migrate(v9, 9))).toEqual(v9);
+  });
+});
+
+describe('migrate v11: undo stacks of the levels played long ago (save size)', () => {
+  const board = (col: number) => [
+    { id: 'X', row: 2, col, length: 2, orientation: 'horizontal' as const, isTarget: true, color: '#f00' },
+    { id: 'A', row: 0, col: 5, length: 3, orientation: 'vertical' as const, isTarget: false, color: '#0f0' },
+  ];
+  // Written by v10: undo stack as whole boards, no time of the last move, only the start of the attempt (missing before 1.2)
+  const save = (startedAt: number | undefined, undos = 50) => ({
+    vehicles: board(1),
+    moveCount: undos + 3,
+    history: Array.from({ length: undos }, (_, i) => board(i % 4)),
+    attempt: { hints: 0, undos: 2, resets: 1, elapsedMs: 90000 },
+    moveLog: [{ vehicleId: 'X', delta: 1, t: 1000 }, { vehicleId: 'X', delta: -1, t: 2500 }],
+    ...(startedAt === undefined ? {} : { startedAt }),
+  });
+  type Save = ReturnType<typeof save> & { undoSteps?: number[][] };
+  const gameOf = ({ history: _h, ...game }: Save) => game;
+
+  it('keeps the undo stack of the 10 levels played last, in a compact form, none for the older ones', () => {
+    // 14 levels left unfinished, started on days 1 to 14; level 20 has no start (before 1.2)
+    const savedStates: Record<string, Save> = { 20: save(undefined) };
+    for (let i = 1; i <= 14; i++) savedStates[100 + i] = save(i * 86400000);
+    const v10 = { progress: [{ levelId: 3, completed: true, bestScore: 300, stars: 3 }], xp: 1200, savedStates };
+
+    const state = migrate(v10, 10);
+    const saved = state.savedStates as Record<string, Save>;
+    expect(Object.keys(saved).sort()).toEqual(Object.keys(savedStates).sort());
+    for (let i = 5; i <= 14; i++) {
+      const key = 100 + i;
+      expect(saved[key].history).toEqual([]);
+      expect(saved[key].undoSteps![0]).toEqual([2, 0, 0, 5]);
+      expect(undoStackOf(saved[key] as never)).toEqual(savedStates[key].history);
+      expect(saved[key]).toMatchObject(gameOf(savedStates[key]));
+    }
+    for (const key of ['20', '101', '102', '103', '104']) {
+      expect(saved[key]).toEqual({ ...savedStates[key], history: [], undoSteps: [] });
+    }
+    expect(state.progress).toEqual(v10.progress);
+    expect(state.xp).toBe(1200);
+  });
+
+  it('weighs a few bytes a step instead of a whole board', () => {
+    const state = migrate({ savedStates: { 12: save(1) } }, 10);
+    const saved = (state.savedStates as Record<string, Save>)[12];
+    expect(JSON.stringify(saved).length).toBeLessThan(JSON.stringify(save(1)).length / 4);
+  });
+
+  it('leaves the challenges and the saves without undo stack untouched', () => {
+    const savedStates: Record<string, Save> = { 'daily-2026-10-19': save(1, 0), 'archive-2026-10-15': save(2, 0) };
+    for (let i = 1; i <= RECENT_SAVES_WITH_UNDOS + 5; i++) savedStates[100 + i] = save(i, 0);
+    const v10 = { savedStates };
+    expect(withoutRecap(migrate(v10, 10))).toEqual(v10);
+  });
+
+  it('a save of the previous version still loads in the store, and resumes with its undo stack', () => {
+    const savedStates: Record<string, Save> = {};
+    for (let i = 1; i <= 12; i++) savedStates[100 + i] = save(i);
+    const merged = merge(migrate({ maxUnlockedLevel: 120, savedStates }, 10));
+    expect(merged.maxUnlockedLevel).toBe(120);
+    expect(undoStackOf(merged.savedStates[112])).toEqual(savedStates[112].history);
+    expect(undoStackOf(merged.savedStates[101])).toEqual([]);
+    expect(merged.savedStates[101].moveCount).toBe(53);
   });
 });
 

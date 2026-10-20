@@ -252,9 +252,11 @@ export function validateLevel(
   gridSize: number,
   exitRow: number,
   exitCol: number,
-  maxStates: number = MAX_VALIDATE_STATES
+  maxStates?: number
 ): number {
   'worklet';
-  const result = solvePuzzle(vehicles, gridSize, exitRow, exitCol, 200, maxStates);
+  // Default read in the body, not in the signature: the worklet plugin only carries over
+  // to the solver thread the variables the body uses, so a default value there is undefined.
+  const result = solvePuzzle(vehicles, gridSize, exitRow, exitCol, 200, maxStates ?? MAX_VALIDATE_STATES);
   return result.tooComplex ? -2 : result.minMoves;
 }

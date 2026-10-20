@@ -9,7 +9,7 @@ import { getPlayerLevel } from './progression';
  */
 
 export type CosmeticKind = 'board' | 'skin' | 'palette' | 'effect';
-export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed' | 'bubbles' | 'tommy';
+export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed' | 'bubbles' | 'greenlight' | 'tommy';
 
 export interface CosmeticSelection {
   board: BoardThemeId;
@@ -29,6 +29,8 @@ export type UnlockRule =
   | { type: 'default' }
   | { type: 'level'; level: number }
   | { type: 'stars'; count: number }
+  /** Levels of the map won (campaign and generated) */
+  | { type: 'levels'; count: number }
   | { type: 'weeklies'; count: number }
   | { type: 'achievement'; id: string }
   /** A daily challenge won in December, January or February */
@@ -81,6 +83,7 @@ export const COSMETICS: CosmeticDef[] = [
 
   // Win effects
   { kind: 'effect', id: 'none', icon: '⏹️', unlock: { type: 'default' } },
+  { kind: 'effect', id: 'greenlight', icon: '🚦', unlock: { type: 'levels', count: 3 } },
   { kind: 'effect', id: 'confetti', icon: '🎊', unlock: { type: 'stars', count: 100 } },
   { kind: 'effect', id: 'fireworks', icon: '🎆', unlock: { type: 'level', level: 20 } },
   { kind: 'effect', id: 'speed', icon: '💨', unlock: { type: 'weeklies', count: 10 } },
@@ -104,18 +107,22 @@ export interface CosmeticSource {
 export interface CosmeticContext {
   playerLevel: number;
   totalStars: number;
+  levelsWon: number;
   weeklies: number;
   achievements: Set<string>;
   winterDaily: boolean;
 }
 
 const WINTER_MONTHS = ['12', '01', '02'];
+/** Ids from this one up are challenges or custom levels (timestamps), not levels of the map */
+const MAP_ID_END = 900000;
 
 export function buildCosmeticContext(s: CosmeticSource): CosmeticContext {
   const dailyKeys = Object.entries(s.dailyChallengeProgress).filter(([, r]) => r?.completed).map(([k]) => k);
   return {
     playerLevel: getPlayerLevel(s.xp),
     totalStars: s.progress.reduce((sum, p) => sum + (p.completed ? p.stars || 0 : 0), 0),
+    levelsWon: s.progress.filter(p => p.completed && p.levelId < MAP_ID_END).length,
     weeklies: Object.values(s.weeklyChallengeProgress).filter(r => r?.completed).length,
     achievements: new Set(s.achievements),
     // Date keys are local YYYY-MM-DD: the month is read from the key, never with new Date()
@@ -129,6 +136,7 @@ export function isCosmeticUnlocked(def: CosmeticDef, c: CosmeticContext): boolea
     case 'default': return true;
     case 'level': return c.playerLevel >= rule.level;
     case 'stars': return c.totalStars >= rule.count;
+    case 'levels': return c.levelsWon >= rule.count;
     case 'weeklies': return c.weeklies >= rule.count;
     case 'achievement': return c.achievements.has(rule.id);
     case 'winter': return c.winterDaily;
@@ -141,6 +149,7 @@ export function unlockProgress(def: CosmeticDef, c: CosmeticContext): number {
   switch (rule.type) {
     case 'level': return Math.min(1, c.playerLevel / rule.level);
     case 'stars': return Math.min(1, c.totalStars / rule.count);
+    case 'levels': return Math.min(1, c.levelsWon / rule.count);
     case 'weeklies': return Math.min(1, c.weeklies / rule.count);
     default: return isCosmeticUnlocked(def, c) ? 1 : 0;
   }
@@ -148,6 +157,12 @@ export function unlockProgress(def: CosmeticDef, c: CosmeticContext): number {
 
 export function getUnlockedCosmetics(c: CosmeticContext): string[] {
   return COSMETICS.filter(def => isCosmeticUnlocked(def, c)).map(cosmeticKey);
+}
+
+/** Cosmetics unlocked between two states of the progress, e.g. by a win ('kind:id', in garage order) */
+export function newlyUnlockedCosmetics(before: CosmeticSource, after: CosmeticSource): string[] {
+  const known = new Set(getUnlockedCosmetics(buildCosmeticContext(before)));
+  return getUnlockedCosmetics(buildCosmeticContext(after)).filter(key => !known.has(key));
 }
 
 /** Cosmetics given as the reward of reaching a player level */

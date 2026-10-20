@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, type AppStateStatus } from 'react-native';
 import type { useGameStore as UseGameStore } from '../store/gameStore';
-import { MAX_SAVED_UNDOS } from '../store/savedStates';
+import { MAX_SAVED_UNDOS, MAX_UNDO_STEPS, RECENT_SAVES_WITH_UNDOS, undoStackOf } from '../store/savedStates';
 import { createGuardedStorage } from '../store/guardedStorage';
 
 const KEY = 'rush-hour-storage';
@@ -100,8 +100,9 @@ describe('the save on the device', () => {
     await flush();
     await settle();
     const { state, version } = await stored();
-    expect(version).toBe(8);
-    expect(state.savedStates[12].history).toHaveLength(MAX_SAVED_UNDOS);
+    expect(version).toBe(12);
+    expect(state.savedStates[12].history).toEqual([]);
+    expect(state.savedStates[12].undoSteps).toHaveLength(MAX_SAVED_UNDOS);
   });
 });
 
@@ -149,18 +150,56 @@ describe('the multiplayer accounts on the device', () => {
 });
 
 describe('a level in progress', () => {
-  it('keeps its whole undo stack in game, the last steps only in the save', async () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+  });
+
+  it('keeps its whole undo stack in game, the last steps only in the save, in a compact form', async () => {
     const store = launch();
     await flush();
     const { sampleLevels } = require('../data/sampleLevels');
     const level = sampleLevels[20];
     const v = level.vehicles.find((x: { isTarget: boolean }) => !x.isTarget);
     store.getState().loadLevel(level);
-    for (let i = 0; i < MAX_SAVED_UNDOS + 10; i++) store.getState().moveVehicle(v.id, v.row, v.col);
+    for (let i = 0; i < MAX_UNDO_STEPS + 10; i++) store.getState().moveVehicle(v.id, v.row, v.col);
 
-    expect(store.getState().history).toHaveLength(MAX_SAVED_UNDOS + 10);
-    expect(store.getState().savedStates[level.id].history).toHaveLength(MAX_SAVED_UNDOS);
-    expect(store.getState().savedStates[level.id].moveCount).toBe(MAX_SAVED_UNDOS + 10);
+    const history = store.getState().history;
+    expect(history).toHaveLength(MAX_UNDO_STEPS + 10);
+    const saved = store.getState().savedStates[level.id];
+    expect(saved.history).toEqual([]);
+    expect(saved.undoSteps).toHaveLength(MAX_UNDO_STEPS);
+    expect(saved.moveCount).toBe(MAX_UNDO_STEPS + 10);
+    expect(undoStackOf(saved)).toEqual(history.slice(-MAX_UNDO_STEPS));
+
+    // Resumed with the same undo stack
+    store.getState().loadLevel(level);
+    expect(store.getState().history).toEqual(history.slice(-MAX_UNDO_STEPS));
+  });
+
+  it('keeps its undo stack among the 10 played last, none once older', async () => {
+    const store = launch();
+    await flush();
+    const { sampleLevels } = require('../data/sampleLevels');
+    const levels = sampleLevels.slice(20, 20 + RECENT_SAVES_WITH_UNDOS + 1);
+    // Played one after the other, left unfinished; the first one is played again last
+    for (const [i, level] of [...levels, levels[0]].entries()) {
+      jest.setSystemTime(new Date(2026, 9, 1, 12, i));
+      const v = level.vehicles.find((x: { isTarget: boolean }) => !x.isTarget);
+      store.getState().loadLevel(level);
+      for (let j = 0; j < 20; j++) store.getState().moveVehicle(v.id, v.row, v.col);
+    }
+    const before = store.getState().savedStates[levels[1].id];
+    store.getState().recordAppOpen();
+
+    const saved = store.getState().savedStates;
+    expect(saved[levels[0].id].undoSteps).toHaveLength(40);
+    expect(saved[levels[1].id].undoSteps).toEqual([]);
+    for (const level of levels.slice(2)) expect(saved[level.id].undoSteps).toHaveLength(20);
+    // The game itself is kept, and resumes without undo
+    expect(saved[levels[1].id]).toEqual({ ...before, undoSteps: [] });
+    store.getState().loadLevel(levels[1]);
+    expect(store.getState().moveCount).toBe(20);
+    expect(store.getState().history).toEqual([]);
   });
 });
 
@@ -294,9 +333,11 @@ describe('the grouped device storage', () => {
   });
 });
 
-describe('the map and the archive days, in their own entries', () => {
+describe('the map, the archive days and the challenge results, in their own entries', () => {
   const GENERATED_KEY = `${KEY}:generatedLevels`;
   const ARCHIVES_KEY = `${KEY}:archiveLevels`;
+  const RESULTS_KEYS = ['dailyChallengeProgress', 'weeklyChallengeProgress', 'archiveProgress'].map(field => `${KEY}:${field}`);
+  const [DAILIES_KEY, , ARCHIVE_RESULTS_KEY] = RESULTS_KEYS;
   const { sampleLevels } = require('../data/sampleLevels');
   const generatedLevels = [0, 1].map(i => ({ ...sampleLevels[30 + i], id: sampleLevels.length + 1 + i }));
   const archiveLevels = { '2026-10-09': { ...sampleLevels[3], id: 900003 } };
@@ -309,6 +350,8 @@ describe('the map and the archive days, in their own entries', () => {
       generatedLevels,
       archiveLevels,
       archiveProgress: { '2026-10-09': { completed: true, score: 1200, stars: 3, moves: 12, minMoves: 12 } },
+      dailyChallengeProgress: { '2026-10-08': { completed: true, score: 1100, stars: 3, moves: 11, minMoves: 11 } },
+      weeklyChallengeProgress: {},
     },
     version: 6,
   };
@@ -336,15 +379,54 @@ describe('the map and the archive days, in their own entries', () => {
     const main = await entry(KEY);
     expect(main.state).not.toHaveProperty('generatedLevels');
     expect(main.state).not.toHaveProperty('archiveLevels');
+    for (const field of ['dailyChallengeProgress', 'weeklyChallengeProgress', 'archiveProgress']) expect(main.state).not.toHaveProperty(field);
     expect(main.state.progress).toEqual(oneEntry.state.progress);
     expect(await entry(GENERATED_KEY)).toEqual(generatedLevels);
     expect(await entry(ARCHIVES_KEY)).toEqual(archiveLevels);
+    expect(await entry(DAILIES_KEY)).toEqual(oneEntry.state.dailyChallengeProgress);
+    expect(await entry(ARCHIVE_RESULTS_KEY)).toEqual(oneEntry.state.archiveProgress);
 
     store = await launched();
     expect(store.getState().generatedLevels).toEqual(generatedLevels);
     expect(store.getState().archiveLevels).toEqual(archiveLevels);
+    expect(store.getState().dailyChallengeProgress).toEqual(oneEntry.state.dailyChallengeProgress);
+    expect(store.getState().archiveProgress).toEqual(oneEntry.state.archiveProgress);
     expect(store.getState().progress).toEqual(oneEntry.state.progress);
     expect(store.getState().xp).toBeGreaterThanOrEqual(500);
+  });
+
+  it('a challenge won writes its results entry, a move does not', async () => {
+    const store = await launched();
+    (AsyncStorage.multiSet as jest.Mock).mockClear();
+    jest.setSystemTime(new Date(2026, 9, 20, 12));
+    store.getState().completeDailyChallenge('2026-10-20', 900, 3, 40000, { moves: 9, minMoves: 9 });
+    await settle();
+    expect(writtenKeys()[0]).toEqual([DAILIES_KEY, KEY]);
+    expect(Object.keys(await entry(DAILIES_KEY)).sort()).toEqual(['2026-10-08', '2026-10-20']);
+
+    const level = sampleLevels[20];
+    const v = level.vehicles.find((x: { isTarget: boolean }) => !x.isTarget);
+    store.getState().loadLevel(level);
+    await settle();
+    (AsyncStorage.multiSet as jest.Mock).mockClear();
+    for (let i = 0; i < 5; i++) store.getState().moveVehicle(v.id, v.row, v.col);
+    await settle();
+    expect(writtenKeys()).toEqual([[KEY]]);
+  });
+
+  it('an older version installed back, which saw no challenge results, never makes them lost', async () => {
+    await launched();
+    // It wrote everything in one entry, with only the daily it won meanwhile
+    const won = { completed: true, score: 1300, stars: 3, moves: 13, minMoves: 13 };
+    const older = { ...oneEntry, state: { ...oneEntry.state, dailyChallengeProgress: { '2026-10-12': won }, archiveProgress: {} } };
+    await AsyncStorage.setItem(KEY, JSON.stringify(older));
+
+    const store = await launched();
+    const dailies = { ...oneEntry.state.dailyChallengeProgress, '2026-10-12': won };
+    expect(store.getState().dailyChallengeProgress).toEqual(dailies);
+    expect(store.getState().archiveProgress).toEqual(oneEntry.state.archiveProgress);
+    expect(await entry(DAILIES_KEY)).toEqual(dailies);
+    expect((await entry(KEY)).state).not.toHaveProperty('dailyChallengeProgress');
   });
 
   it('are not written again by moves', async () => {
@@ -411,10 +493,12 @@ describe('the map and the archive days, in their own entries', () => {
     const exported = decodeSave(exportProgress()) as { state: Record<string, unknown> };
     expect(exported.state.generatedLevels).toEqual(generatedLevels);
     expect(exported.state.archiveLevels).toEqual(archiveLevels);
+    expect(exported.state.dailyChallengeProgress).toEqual(oneEntry.state.dailyChallengeProgress);
 
     store.getState().hardReset();
     await settle();
     expect(await entry(GENERATED_KEY)).toEqual([]);
     expect(await entry(ARCHIVES_KEY)).toEqual({});
+    for (const key of RESULTS_KEYS) expect(await entry(key)).toEqual({});
   });
 });

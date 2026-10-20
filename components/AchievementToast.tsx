@@ -9,20 +9,76 @@ import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
 import type { MissionReward } from '@/data/missions';
 import { missionRewardText } from '@/components/progression/rewards';
 import { fixedColors, useTheme } from '@/theme';
+import type { IoniconName } from '@/utils/icons';
 
 const DISPLAY_MS = 3000;
 
 type ToastItem = { kind: 'achievement'; id: string } | ({ kind: 'missions' } & MissionReward) | { kind: 'levelUp'; level: number };
 
-/**
- * Shows unlocked achievements and completed daily missions one at a time at the top of the screen.
- * The win screen consumes both queues itself, so this covers what happens elsewhere
- * (comeback, level creation, sharing, import, moves or play time missions...).
- */
-export default function AchievementToast() {
+/** Achievements shown one after the other at the top of the win screen, a modal the global toast can't cover */
+export function WinAchievementToasts({ ids }: { ids: string[] }) {
+  const { t } = useTranslation();
+  const [index, setIndex] = useState(0);
+  const known = ids.filter(id => ACHIEVEMENTS_BY_ID[id]);
+  const id = known[index];
+
+  useEffect(() => setIndex(0), [ids]);
+  useEffect(() => {
+    if (!id) return;
+    AccessibilityInfo.announceForAccessibility(`${t('achievements.unlocked')} ${t(`achievements.${id}`)}`);
+    const timer = setTimeout(() => setIndex(i => i + 1), DISPLAY_MS);
+    return () => clearTimeout(timer);
+  }, [id]);
+
+  if (!id) return null;
+  const achievement = ACHIEVEMENTS_BY_ID[id];
+  return (
+    <ToastCard
+      itemKey={id}
+      icon={achievement.icon}
+      iconCount={achievement.iconCount}
+      label={t('achievements.unlocked')}
+      name={t(`achievements.${id}`)}
+      onPress={() => setIndex(i => i + 1)}
+    />
+  );
+}
+
+/** One toast at the top of the screen */
+function ToastCard({ itemKey, icon, iconCount, label, name, onPress }: {
+  itemKey: string; icon: IoniconName; iconCount?: 1 | 2 | 3; label: string; name: string; onPress: () => void;
+}) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.container, { top: insets.top + 8 }]} pointerEvents="box-none">
+      <Animated.View key={itemKey} entering={FadeInUp.springify()} exiting={FadeOutUp.duration(250)}>
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={`${label} ${name}`}
+          accessibilityHint={t('a11y.close')}
+          style={[styles.toast, { backgroundColor: colors.surface, borderColor: colors.warning }]}
+        >
+          <AchievementIcon icon={icon} count={iconCount} size={30} color={colors.warning} style={styles.icon} />
+          <View style={styles.textContainer}>
+            <Text style={[styles.label, { color: colors.warning }]}>{label}</Text>
+            <Text style={[styles.name, { color: colors.text }]}>{name}</Text>
+          </View>
+        </Pressable>
+      </Animated.View>
+    </View>
+  );
+}
+
+/**
+ * Shows unlocked achievements and completed daily missions one at a time at the top of the screen.
+ * The win screen consumes both queues itself (its achievements as toasts over it, WinAchievementToasts),
+ * so this covers what happens elsewhere (comeback, level creation, sharing, import, moves or play time missions...).
+ */
+export default function AchievementToast() {
+  const { t } = useTranslation();
   const unlockQueue = useGameStore(s => s.unlockQueue);
   const pendingMissionReward = useGameStore(s => s.pendingMissionReward);
   const levelUpQueue = useGameStore(s => s.levelUpQueue);
@@ -75,27 +131,14 @@ export default function AchievementToast() {
     : current.kind === 'missions' ? missionRewardText(t, current) : '';
 
   return (
-    <View style={[styles.container, { top: insets.top + 8 }]} pointerEvents="box-none">
-      <Animated.View
-        key={achievement ? achievement.id : current.kind === 'levelUp' ? `level-${current.level}` : 'missions'}
-        entering={FadeInUp.springify()}
-        exiting={FadeOutUp.duration(250)}
-      >
-        <Pressable
-          onPress={() => setCurrent(null)}
-          accessibilityRole="button"
-          accessibilityLabel={`${label} ${name}`}
-          accessibilityHint={t('a11y.close')}
-          style={[styles.toast, { backgroundColor: colors.surface, borderColor: colors.warning }]}
-        >
-          <AchievementIcon icon={icon} count={achievement?.iconCount} size={30} color={colors.warning} style={styles.icon} />
-          <View style={styles.textContainer}>
-            <Text style={[styles.label, { color: colors.warning }]}>{label}</Text>
-            <Text style={[styles.name, { color: colors.text }]}>{name}</Text>
-          </View>
-        </Pressable>
-      </Animated.View>
-    </View>
+    <ToastCard
+      itemKey={achievement ? achievement.id : current.kind === 'levelUp' ? `level-${current.level}` : 'missions'}
+      icon={icon}
+      iconCount={achievement?.iconCount}
+      label={label}
+      name={name}
+      onPress={() => setCurrent(null)}
+    />
   );
 }
 

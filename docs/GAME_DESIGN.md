@@ -57,6 +57,9 @@ Les défis du jour **passés** se rejouent depuis les archives : toucher un jour
 | On garde le meilleur score et les meilleures étoiles | `completeLevel` |
 | Après une victoire, on peut **revoir la solution optimale** : elle se joue toute seule depuis la position de départ, et on avance ou recule coup par coup | `SolutionPlayer`, `vehiclesAtStep` (`utils/solutionReplay.ts`) |
 | Si la victoire n'est pas optimale, l'écran de victoire affiche l'écart et propose **« Réessayer pour 3 ⭐ »** : une nouvelle tentative depuis le départ (compteurs remis à zéro, ce n'est pas un recommencer) | `handleRetry` (`app/game.tsx`) |
+| **3 niveaux jouables d'avance** : le prochain niveau et les **2 suivants**. Un joueur bloqué sur un niveau dur continue et y revient plus tard ; gagner un niveau plus loin fait avancer la fenêtre. Calculé à partir de `maxUnlockedLevel` (sa signification ne change pas), rien de sauvegardé en plus | `MAP_LOOKAHEAD`, `isMapLevelUnlocked` (`utils/mapFocus.ts`) |
+| **Boss** : un niveau de la campagne qui demande **au moins 8 coups de plus** que la médiane des 5 niveaux avant lui. Repéré dans la courbe, jamais choisi à la main ; la campagne ne grandissant qu'à la fin, un boss le reste | `findBossLevels`, `isBossLevel` (`data/bosses.ts`) |
+| Un boss est **annoncé** : badge sur son nœud de la carte (même verrouillé), « Niveau N · Boss » en titre de partie, « boss » dans l'annonce du lecteur d'écran. Sa **première victoire** rapporte **50 XP de plus** | `LevelNode`, `app/game.tsx`, `BOSS_WIN_XP` |
 
 ## Campagne — on n'ajoute qu'à la fin
 
@@ -131,6 +134,7 @@ Le streak compte les jours consécutifs avec le défi du jour réussi.
 | Rappel du défi du jour à l'heure choisie (**19 h** par défaut, réglable dans les options), seulement s'il n'est pas déjà fait | `planReminders` (`utils/reminders.ts`) |
 | « Streak en danger » **2 h plus tard** (23 h au plus tard), le premier jour où le défi reste à faire | |
 | « Nouveau défi hebdo » le **lundi à 10 h** | |
+| « Ton récap est prêt » le **1er du mois à 11 h** (si on a joué le mois écoulé) et le **26 décembre à 11 h** (si on a joué dans l'année) | `planReminders`, voir « Récap mensuel et annuel » |
 | Rien n'est envoyé quand l'app est ouverte ; tout est replanifié à chaque retour dans l'app et à chaque progrès | `useReminderSync` |
 
 ## Défi hebdomadaire — un essai unique, plus difficile
@@ -156,6 +160,7 @@ Chaque victoire fait avancer une barre d'XP : la progression se voit même sur u
 | XP pour passer du niveau `n` au niveau `n + 1` : `150 × n^1,6` | `xpToNextLevel` (`data/progression.ts`) |
 | Niveau de la carte ou personnalisé : `10 + 2 × coups minimum` (plafonné à 60 coups), × 0,5 / 0,75 / 1 selon les étoiles | `levelWinXp` |
 | Un niveau **déjà réussi** ne rapporte que **25 %** : rejouer fait progresser, sans permettre de farmer | `REPLAY_XP_FACTOR` |
+| Première victoire d'un **boss** de la carte : **50 XP** en plus ; les boss déjà gagnés ont été crédités (migration v9) | `BOSS_WIN_XP`, `isBossLevel` (`data/bosses.ts`) |
 | Défi du jour : `60 + 20 × étoiles` ; défi hebdo : `150 + 50 × étoiles`, **une seule fois** par défi | `dailyWinXp`, `weeklyWinXp` |
 | 3 missions du jour terminées : **100 XP** (**150 XP** si le stock de gels est plein) ; chaque succès débloqué : **50 XP** | `MISSIONS_XP`, `ACHIEVEMENT_XP` |
 | Le tutoriel ne rapporte rien | `completeLevel` (niveau non chargé) |
@@ -174,7 +179,7 @@ Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dan
 | Règle | Implémentation |
 |---|---|
 | 4 types : **thème de plateau**, **skin de la voiture cible**, **palette des autres véhicules**, **effet de victoire** | `COSMETICS` (`data/cosmetics.ts`), `theme/board.ts` |
-| Déblocage **en jouant uniquement**, jamais par achat : paliers d'étoiles, niveau joueur, défis hebdo réussis, succès, défi du jour réussi en hiver (déc. à fév.) pour la Neige | `isCosmeticUnlocked` |
+| Déblocage **en jouant uniquement**, jamais par achat : niveaux de la carte réussis (**Feu vert** dès 3, pour découvrir le Garage dès la première partie), paliers d'étoiles, niveau joueur, défis hebdo réussis, succès, défi du jour réussi en hiver (déc. à fév.) pour la Neige | `isCosmeticUnlocked` |
 | Le déblocage est calculé à partir de la progression : rien n'est perdu, rien ne se « dépense » | `buildCosmeticContext` |
 | Un style choisi mais plus débloqué (réinitialisation) revient au style par défaut | `sanitizeSelection` |
 | La palette recolore les véhicules dans l'ordre du niveau ; la voiture cible garde sa skin. Le lecteur d'écran annonce la couleur affichée | `applyPalette`, `components/Board.tsx` |
@@ -186,7 +191,8 @@ Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dan
 | Les identifiants des cosmétiques sont sauvegardés : ne jamais en renommer, seulement en ajouter | |
 | Un cosmétique lié à un **succès secret** ne dévoile pas son nom tant qu'il est verrouillé (« Succès secret ») | `describeUnlock` (`components/garage/describeUnlock.ts`) |
 | **Codes secrets** : taper un mot dans le champ d'import de niveaux (Mes niveaux → Importés) débloque un succès secret. « mafia » → succès *Omertà*, qui donne la voiture cible, la palette et l'effet de victoire **Mafia**. Le code est compté dans `stats.secretCodes`, le champ est vidé et le toast du succès s'affiche | `SECRET_CODES`, `matchSecretCode` (`store/stats.ts`), `recordSecretCode` |
-| Les nouveautés sont signalées sur le lien Garage jusqu'à la prochaine visite | `seenCosmetics` |
+| L'écran de victoire liste les styles que la victoire vient de débloquer (« Nouveau dans le Garage », vignette, nom, onglet) avec un bouton secondaire **« Équiper »** : le style est sélectionné sur place (un effet de victoire se joue aussitôt) et n'est plus « Nouveau ». Un lien « Voir au Garage » y mène ; depuis un niveau de la carte, le retour du Garage ramène à la carte, depuis un défi à son écran | `newlyUnlockedCosmetics` (`data/cosmetics.ts`), `WinModal`, `handleOpenGarage` (`app/game.tsx`) |
+| Chaque nouveauté garde sa mention verte **« Nouveau »** dans le Garage jusqu'à ce qu'on la **touche** (ce qui la sélectionne) ; chaque onglet compte les siennes, le lien Garage de l'accueil compte le total. Quitter le Garage n'acquitte rien | `seenCosmetics`, `markCosmeticsSeen` (`app/garage.tsx`) |
 
 ## Sauvegarde (export / import)
 
@@ -201,9 +207,9 @@ Pour changer de téléphone sans perdre sa progression, **sans serveur ni compte
 | Une sauvegarde d'une ancienne version passe par les **migrations** ; une sauvegarde d'une version **plus récente** que l'app est refusée | `migrateState`, `relocateGeneratedLevels` |
 | Les jours manqués depuis l'export sont appliqués à l'import (gels, streak perdu) | `recordAppOpen` |
 | **Rien n'est écrit avant que la sauvegarde soit relue** : une mise à jour faite avant (ouverture de l'app, lien) ou après une lecture ratée écraserait la progression par un état vide. Si la lecture échoue, le jeu le dit et n'écrit plus rien jusqu'au prochain lancement ; l'ouverture de l'app (streak, missions) attend le chargement | `guardedStorage`, `saveLoadFailed`, `whenSaveLoaded` (`store/gameStore.ts`), `useAppOpenAlert` |
-| La sauvegarde reste **petite** : Android ne relit pas une entrée de plus de 2 Mo. Une partie en cours ne garde que les **50 derniers coups** d'annulation (tout l'historique reste disponible tant que le niveau est ouvert), aucun sur les défis (pas d'annuler). Le défi d'un jour passé en cours continue dans l'**archive** de ce jour ; les semaines passées et les archives hors de portée sont oubliées (v6) | `MAX_SAVED_UNDOS`, `compactSavedStates` (`store/savedStates.ts`), à chaque ouverture (`recordAppOpen`) |
+| La sauvegarde reste **petite** : Android ne relit pas une entrée de plus de 2 Mo. Une partie en cours ne gardait que les **50 derniers coups** d'annulation jusqu'à v11 (tout l'historique reste disponible tant que le niveau est ouvert), aucun sur les défis (pas d'annuler). Le défi d'un jour passé en cours continue dans l'**archive** de ce jour ; les semaines passées et les archives hors de portée sont oubliées (v6). Les niveaux laissés en cours s'additionnent sans fin : seuls les **10 joués en dernier** gardent leur pile d'annulation, jusqu'aux **150 derniers coups** (il y a des niveaux durs), les plus anciens n'en gardent **aucune** ; la partie elle-même (plateau, coups, journal de coups, tentative) est toujours gardée telle quelle. La pile est enregistrée en **forme compacte** (`undoSteps` : ligne et colonne de chaque véhicule, ~50 octets par coup au lieu de 1,4 Ko pour un plateau entier) ; `history` reste vide pour les anciennes versions, qui reprennent la partie sans annuler (v11, « joué en dernier » : le dernier coup, `savedAt`, ou à défaut le début de la tentative) | `MAX_SAVED_UNDOS`, `compactSavedStates`, `MAX_UNDO_STEPS`, `RECENT_SAVES_WITH_UNDOS`, `savedUndoSteps`, `undoStackOf`, `dropOldUndoStacks`, `compactUndoStacks` (`store/savedStates.ts`), à chaque ouverture (`recordAppOpen`) |
 | Les **coups sont écrits regroupés** : un coup modifie le store une seule fois, et les mises à jour fréquentes et sans enjeu (coups, annuler, recommencer, indice, temps de jeu, avancement de la génération) ne sont sérialisées et écrites qu'une fois par seconde au plus. Tout le reste (victoire, récompense, succès, import, réglage…) est écrit **aussitôt**, avec ce qui attendait. Quand l'app quitte le premier plan (où elle peut être tuée sans prévenir), ce qui attend est écrit aussitôt, puis chaque écriture est immédiate jusqu'à son retour | `deferNextWrite`, `createGuardedStorage({ delayMs })` (`store/guardedStorage.ts`), `SAVE_WRITE_DELAY_MS`, `bumpMissions(…, withSnapshot(…))` (`store/gameStore.ts`) |
-| La **carte infinie** (`generatedLevels`) et les **niveaux d'archive** (`archiveLevels`), gros et rarement modifiés, ont chacun **leur propre entrée** sur l'appareil (`rush-hour-storage:generatedLevels`, `rush-hour-storage:archiveLevels`) : un coup ne réécrit que l'entrée principale. Une entrée séparée n'est écrite que quand elle change, dans le même appel que l'entrée principale et avant elle. L'état relu, l'export et les migrations ne voient aucune différence. Une sauvegarde en une seule entrée (2.0.2 et avant) est relue telle quelle et découpée à l'écriture suivante. Si une version plus ancienne réinstallée a réécrit l'entrée principale (elle n'a pas vu les entrées séparées), on ne perd rien : la carte la plus longue est gardée, et les niveaux d'archive des deux sont réunis | `SEPARATE_SAVE_FIELDS` (`store/gameStore.ts`), `separateFields` (`store/guardedStorage.ts`) |
+| La **carte infinie** (`generatedLevels`), les **niveaux d'archive** (`archiveLevels`) et les **résultats des défis** (`dailyChallengeProgress`, `weeklyChallengeProgress`, `archiveProgress` : un de plus chaque jour, avec son journal de coups, jamais oublié), gros et rarement modifiés, ont chacun **leur propre entrée** sur l'appareil (`rush-hour-storage:<champ>`, par ex. `rush-hour-storage:generatedLevels`) : chaque entrée a sa propre limite de 2 Mo, et un coup ne réécrit que l'entrée principale. Une entrée séparée n'est écrite que quand elle change, dans le même appel que l'entrée principale et avant elle. L'état relu, l'export et les migrations ne voient aucune différence. Une sauvegarde en une seule entrée (2.0.2 et avant) est relue telle quelle et découpée à l'écriture suivante. Si une version plus ancienne réinstallée a réécrit l'entrée principale (elle n'a pas vu les entrées séparées), on ne perd rien : la carte la plus longue est gardée, et les niveaux d'archive et les résultats des défis des deux sont réunis | `SEPARATE_SAVE_FIELDS` (`store/gameStore.ts`), `separateFields` (`store/guardedStorage.ts`) |
 
 **Triche** : sans serveur, on ne peut pas l'empêcher (tout ce que l'app vérifie, quelqu'un qui lit son code peut le refaire). L'enjeu est faible : pas de classement, pas de monnaie, un tricheur ne lèse que lui-même. On bloque la triche facile et les fichiers abîmés, sans jamais refuser la sauvegarde d'un vrai joueur :
 - format non lisible (`RHSAVE1.<somme de contrôle>.<base64>`) et **somme de contrôle** : un code modifié à la main ou tronqué est refusé ;
@@ -335,17 +341,37 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 
 - Définis à un seul endroit : `data/achievements.ts`. Les **identifiants sont persistés** : ne jamais renommer un succès, seulement en ajouter.
 - Un succès ne doit jamais contredire les règles ci-dessus : aucun succès « sans indice » ou « sans annuler » sur les défis, puisqu'ils n'en ont jamais.
+- Un succès débloqué est **nouveau** jusqu'à ce qu'on le **touche** dans le profil : pastille bleue sur sa médaille, nombre de nouveautés sur sa catégorie (ouverte d'office) et sur le bouton profil de l'accueil (`seenAchievements`, `useNewAchievements`). Ceux débloqués avant cette règle comptent comme vus (migration v10).
 
 ## Dates
 
 - Les dates des défis sont des clés `YYYY-MM-DD` en **heure locale**. Ne jamais les relire avec `new Date('YYYY-MM-DD')`, que JavaScript interprète en UTC (décalage d'un jour à l'ouest de l'heure UTC) : utiliser `parseLocalDateString`.
 - Les succès « sans aide » ne comptent que les niveaux distincts (impossible de les farmer en rejouant le même niveau).
-- Le déblocage est **visible** : dans l'écran de victoire, ou par un toast ailleurs dans l'app. Après une mise à jour, les succès déjà mérités sont débloqués silencieusement.
+- Le déblocage est **visible** : toujours par un **toast en haut de l'écran**, l'un après l'autre, y compris par-dessus l'écran de victoire (`WinAchievementToasts`, `components/AchievementToast.tsx`). Après une mise à jour, les succès déjà mérités sont débloqués silencieusement.
 
 ## Statistiques
 
 - Le **temps de jeu** ne compte que le temps actif : écran de jeu ouvert, app au premier plan, niveau non résolu.
 - Indices, annulations, recommencements et temps sont suivis **par tentative** et survivent à la fermeture de l'écran (`savedStates[…].attempt`).
+
+## Récap mensuel et annuel
+
+Un récap de fin de mois et de fin d'année, façon Spotify Wrapped (#125) : une raison de revenir, et une fois partagé, il fait connaître le jeu.
+
+| Règle | Implémentation |
+|---|---|
+| Des **cartes plein écran façon story** (un dégradé chacune, barres de progression en haut, croix pour fermer) : on glisse, ou on touche à droite pour avancer et sur le tiers gauche pour revenir. Dans l'ordre : profil de joueur, victoires (nouveaux niveaux, étoiles gagnées, « Parfait ! »), temps de jeu et coups, défis (du jour, hebdo, à 3 étoiles, meilleure série de la période, gels utilisés), exploit (niveau le plus dur battu, boss vaincus), succès et styles débloqués, puis le partage avec la comparaison avec la période d'avant | `app/recap.tsx`, `buildRecap`, `recapSlides` (`utils/recap.ts`), `recapSlideColors` (`theme/ui.ts`) |
+| **Une idée par carte, un gros chiffre** et quelques chiffres sous lui. **Jamais de zéro** : un chiffre nul n'est pas montré, le suivant prend la grande place, et une carte sans rien à dire est sautée | `recapSlides` |
+| **Profil de joueur** : le premier qui va, dans l'ordre : Fidèle au poste (défi du jour réussi ≥ 80 % des jours, 7 au moins), Perfectionniste (≥ 60 % de victoires à 3 étoiles, 5 victoires au moins), Lève-tôt (3 défis du jour réussis entre 5 h et 7 h), Oiseau de nuit (3 victoires entre minuit et 5 h), Chasseur de boss (2 boss), Explorateur (20 nouveaux niveaux), Pilote des défis (3 défis du jour ou hebdo), sinon Conducteur | `pickProfile` |
+| « Boss vaincus » compte les **boss de la carte** (ceux qu'elle annonce) | `isBossLevel` (`data/bosses.ts`) |
+| **Mensuel** annoncé sur l'accueil du **1er au 7** du mois, **annuel** du **26 décembre au 1er janvier**, jusqu'à ce qu'on l'ouvre ; rien pour une période où l'on n'a pas joué. L'annuel passe avant le mensuel | `pendingRecap`, `recapsSeen`, `RecapCard` |
+| Profil : une carte montre le **dernier récap** (celui annoncé sur l'accueil, marqué « Nouveau », sinon le dernier mois joué) avec son profil et quelques chiffres, puis **Voir tous mes récaps** : les 12 derniers mois et le mois en cours, puis toutes les années | `RecapPreviewCard`, `availableRecaps`, `app/recaps.tsx` |
+| **Partage** (dernière carte, l'image aussi grande que l'écran le permet) en **image verticale 9:16** (1080 × 1920) dessinée sur le téléphone (SVG exporté en PNG, aucun service en ligne, comme le QR code), sans emoji : le feu vert du jeu, le **plateau équipé au Garage** (thème, voiture, palette) avec la voiture cible qui sort, le profil et sa phrase, jusqu'à **6 chiffres** en tuiles aux couleurs des véhicules (les plus parlants des cartes, jamais de zéro), un autocollant « +12 victoires vs septembre » seulement si on a progressé, et une route, et en **texte** façon Wordle, avec emojis. Chaque partage compte pour le succès « Crieur public » | `RecapShareImage`, `recapHighlights`, `recapProgress`, `buildRecapShareText`, `recordResultShared` |
+| **Stockage minimal** : des compteurs et des maxima par période, **jamais de liste de parties** (~300 octets par période). 13 mois glissants (`monthlyStats`), une entrée par année gardée pour toujours (`yearlyStats`, comptée en même temps que ses mois), le mois de déblocage de chaque succès (`achievementMonths`). Moins de 10 Ko même après 10 ans | `addToPeriods`, `RECAP_MONTHS_KEPT` (`store/periodStats.ts`) |
+| Rien de ce qui est **déjà daté** n'est recopié : défis du jour et hebdo (une semaine compte dans le mois de son lundi), série, gels utilisés se lisent dans leurs données | `buildRecap` |
+| Les joueurs d'avant la mise à jour : seuls les défis sont datés, ils sont **recomptés** dans leur mois et leur année ; le reste se compte à partir de la mise à jour (`recapSince`), et les succès déjà débloqués sont datés du mois de la mise à jour. Le récap de cette période **le dit** (« Compté depuis le 20 oct. », et ne liste pas les succès) plutôt que d'afficher des zéros trompeurs ; on ne compare les victoires qu'avec une période comptée en entier | migration v12 (`store/migrations.ts`), `partialSince` |
+| Import : compteurs **plafonnés par les totaux à vie** (une période ne contient jamais plus que tout le jeu), périodes dans le futur ou hors des 13 mois retirées ; un champ du récap abîmé prend sa valeur par défaut, la sauvegarde n'est pas refusée pour ça | `wellFormedRecap` (`utils/saveTransfer.ts`) |
+| Accessible au lecteur d'écran : chaque carte est lue d'un bloc, avec sa position (« Carte 2 sur 6 ») ; elle est « ajustable », balayer vers le haut ou le bas change de carte. Pas d'avance automatique. Les animations suivent « Réduire les animations » | `app/recap.tsx` |
 
 ## Accessibilité
 
