@@ -6,6 +6,8 @@ import { haptics, Haptics } from '@/utils/haptics';
 import Board from '@/components/Board';
 import { useGameStore } from '@/store/gameStore';
 import type { MissionReward } from '@/data/missions';
+import { isBossLevel } from '@/data/bosses';
+import { newlyUnlockedCosmetics } from '@/data/cosmetics';
 import { checkWin } from '@/utils/collision';
 import { solvePuzzleAsync } from '@/utils/solver.background';
 import { customLevelKind, customLevelTitle } from '@/utils/customLevels';
@@ -63,6 +65,7 @@ export default function GameScreen() {
   const [isHintLoading, setIsHintLoading] = useState(false);
   const [winTimeMs, setWinTimeMs] = useState<number | null>(null);
   const [winUnlocks, setWinUnlocks] = useState<string[]>([]);
+  const [winCosmetics, setWinCosmetics] = useState<string[]>([]);
   const [winMissionReward, setWinMissionReward] = useState<MissionReward | null>(null);
   const [winXpGain, setWinXpGain] = useState<{ from: number; to: number } | null>(null);
   const [winLevelUps, setWinLevelUps] = useState<number[]>([]);
@@ -130,6 +133,16 @@ export default function GameScreen() {
         },
       ]);
     }, 400);
+  };
+
+  /** From the win screen to the garage, to pick what the win unlocked; back from it leads where Continue goes */
+  const handleOpenGarage = () => {
+    if (challengeKind) {
+      setWon(false);
+      router.push('/garage');
+    } else {
+      router.replace('/garage');
+    }
   };
 
   /** A route to a level that can't be played (a broken or outdated link) */
@@ -212,6 +225,7 @@ export default function GameScreen() {
       const stars = getStars(updatedMoveCount, minMoves);
 
       const details = { moves: updatedMoveCount, minMoves, moveLog: useGameStore.getState().moveLog };
+      const before = useGameStore.getState();
       if (challengeKind === 'daily') {
         useGameStore.getState().completeDailyChallenge(params.date!, score, stars, timeMs, details);
       } else if (challengeKind === 'weekly') {
@@ -224,6 +238,7 @@ export default function GameScreen() {
 
       // Unlocked achievements are shown in the win modal instead of the global toast
       setWinUnlocks(useGameStore.getState().consumeUnlockQueue());
+      setWinCosmetics(newlyUnlockedCosmetics(before, useGameStore.getState()));
       setWinMissionReward(useGameStore.getState().consumeMissionReward());
       setWinXpGain(useGameStore.getState().lastXpGain);
       setWinLevelUps(useGameStore.getState().consumeLevelUps());
@@ -355,6 +370,7 @@ export default function GameScreen() {
             : isArchive ? t('game.archive_title', {
                 date: parseLocalDateString(params.date!).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' }),
               })
+            : !customKind && isBossLevel(currentLevel.id) ? t('game.level_boss', { id: currentLevel.id })
             : levelTitle}
         </Text>
         <Pressable onPress={() => setShareVisible(true)} style={styles.shareHeaderBtn} accessibilityRole="button" accessibilityLabel={t('a11y.share_level')}>
@@ -397,6 +413,8 @@ export default function GameScreen() {
         score={score}
         timeMs={winTimeMs}
         unlocks={winUnlocks}
+        cosmeticUnlocks={winCosmetics}
+        onOpenGarage={handleOpenGarage}
         missionReward={winMissionReward}
         xpGain={winXpGain}
         levelUps={winLevelUps}

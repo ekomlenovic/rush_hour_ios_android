@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import * as Haptics from 'expo-haptics';
 import { sampleLevels } from '../data/sampleLevels';
+import { isBossLevel } from '../data/bosses';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
 import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
 import { DailyMissionsState, FAST_WIN_MS, MissionCounter, MissionReward, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
@@ -14,7 +15,7 @@ import type {
 } from './types';
 import { MAX_STREAK_FREEZES, settleStreak, advanceStreak } from './streak';
 import {
-  ACHIEVEMENT_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp,
+  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp,
 } from '../data/progression';
 import { isArchiveDateAvailable } from '../utils/archives';
 import { isDailyWinnable, isWeeklyWinnable } from '../utils/challengeDates';
@@ -24,7 +25,7 @@ import {
 import { emptyAttempt, initialStats, withWinStats, mergeChallengeResult } from './stats';
 import { addToPeriods, monthKeyOf, winIncrements } from './periodStats';
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from './migrations';
-import { compactSavedStates, isWellFormedSave, savedHistory } from './savedStates';
+import { compactSavedStates, dropOldUndoStacks, isWellFormedSave, savedUndoSteps, undoStackOf } from './savedStates';
 import { createGuardedStorage } from './guardedStorage';
 import { DAILY_LEVEL_ID, WEEKLY_LEVEL_ID, ARCHIVE_LEVEL_ID } from './levelIds';
 
@@ -153,8 +154,10 @@ interface GameState {
   lastXpGain: { from: number; to: number } | null;
   /** Selected board theme, car skin, palette and win effect */
   cosmetics: CosmeticSelection;
-  /** Unlocked cosmetics already seen in the garage ('kind:id') */
+  /** Unlocked cosmetics already seen in the garage ('kind:id'): touched once, the "new" badge goes */
   seenCosmetics: string[];
+  /** Unlocked achievements already seen in the profile: touched once, the "new" badge goes */
+  seenAchievements: string[];
 
   // Actions
   loadLevel: (level: Level, savedState?: LevelSaveState) => void;
@@ -203,6 +206,7 @@ interface GameState {
   consumeLevelUps: () => number[];
   selectCosmetic: (kind: CosmeticKind, id: string) => boolean;
   markCosmeticsSeen: (keys: string[]) => void;
+  markAchievementSeen: (id: string) => void;
 }
 
 /** Key under which a level's in-progress state is saved */
@@ -230,8 +234,13 @@ export function isSaveForLevel(level: Pick<Level, 'vehicles'>, saved: Pick<Level
 
 /** Moves, undos, hints and play time are written grouped, at most this long after (see guardedStorage) */
 const SAVE_WRITE_DELAY_MS = 1000;
-/** The infinite map and the archive days played: big, rarely changed, each in its own entry */
-export const SEPARATE_SAVE_FIELDS: readonly (keyof GameState)[] = ['generatedLevels', 'archiveLevels'];
+/**
+ * Big, rarely changed, each in its own entry: the infinite map, the archive days played, and the
+ * challenge results (one more each day, with its move log, never dropped)
+ */
+export const SEPARATE_SAVE_FIELDS: readonly (keyof GameState)[] = [
+  'generatedLevels', 'archiveLevels', 'dailyChallengeProgress', 'weeklyChallengeProgress', 'archiveProgress',
+];
 const saveStorage = createGuardedStorage<Partial<GameState>>({ delayMs: SAVE_WRITE_DELAY_MS, separateFields: SEPARATE_SAVE_FIELDS });
 
 export const useGameStore = create<GameState>()(
@@ -251,10 +260,13 @@ export const useGameStore = create<GameState>()(
             [levelKey]: {
               vehicles: next.vehicles.map(v => ({ ...v })),
               moveCount: next.moveCount,
-              history: savedHistory(levelKey, next.history).map(h => h.map(v => ({ ...v }))),
+              // Kept empty for the older versions, which read the undo stack there: they resume without it
+              history: [],
+              undoSteps: savedUndoSteps(levelKey, next.vehicles, next.history),
               attempt: { ...next.currentAttempt },
               moveLog: next.moveLog.map(m => ({ ...m })),
               startedAt: next.attemptStartedAt,
+              savedAt: Date.now(),
             }
           }
         };
@@ -380,6 +392,7 @@ export const useGameStore = create<GameState>()(
       lastXpGain: null,
       cosmetics: { ...DEFAULT_COSMETICS },
       seenCosmetics: [],
+      seenAchievements: [],
       generationState: { isRunning: false, current: 0, total: 0, shouldCancel: false, estimatedRemainingSeconds: 0 },
 
       loadLevel: (level, savedState) => {
@@ -398,7 +411,7 @@ export const useGameStore = create<GameState>()(
           currentLevel: level,
           vehicles: resolvedSavedState ? resolvedSavedState.vehicles.map(v => ({...v})) : level.vehicles.map((v) => ({ ...v })),
           moveCount: resolvedSavedState ? resolvedSavedState.moveCount : 0,
-          history: resolvedSavedState ? resolvedSavedState.history.map(h => h.map(v => ({...v}))) : [],
+          history: resolvedSavedState ? undoStackOf(resolvedSavedState) : [],
           moveLog: resolvedSavedState?.moveLog ? resolvedSavedState.moveLog.map(m => ({ ...m })) : [],
           attemptStartedAt: resolvedSavedState?.startedAt ?? Date.now(),
           currentAttempt: resolvedSavedState?.attempt ? { ...resolvedSavedState.attempt } : emptyAttempt(),
@@ -533,7 +546,8 @@ export const useGameStore = create<GameState>()(
           }),
         });
         if (isCurrentLevel && currentLevel) {
-          addXp(levelWinXp(currentLevel.minMoves, stars, !existing?.completed));
+          const isFirstWin = !existing?.completed;
+          addXp(levelWinXp(currentLevel.minMoves, stars, isFirstWin) + (isFirstWin && isBossLevel(levelId) ? BOSS_WIN_XP : 0));
           bumpMissions({
             levelWins: 1,
             perfectWins: stars === 3 ? 1 : 0,
@@ -692,6 +706,11 @@ export const useGameStore = create<GameState>()(
         set({ seenCosmetics: [...seen] });
       },
 
+      markAchievementSeen: (id) => {
+        const { seenAchievements } = get();
+        if (!seenAchievements.includes(id)) set({ seenAchievements: [...seenAchievements, id] });
+      },
+
       consumeUnlockQueue: () => {
         const { unlockQueue } = get();
         if (unlockQueue.length > 0) set({ unlockQueue: [] });
@@ -747,8 +766,8 @@ export const useGameStore = create<GameState>()(
         set({
           lastOpenDate: today,
           stats: { ...stats, longestAbsenceDays: Math.max(stats.longestAbsenceDays, missedDays) },
-          // Keeps the save small: capped undo stacks, past challenges cleared
-          savedStates: compactSavedStates(get().savedStates),
+          // Keeps the save small: past challenges cleared, no undo stack for the levels played long ago
+          savedStates: dropOldUndoStacks(compactSavedStates(get().savedStates)),
         });
         const { patch, frozenDays, lostStreak } = settleStreak(get(), today);
         set(patch);
@@ -919,6 +938,7 @@ export const useGameStore = create<GameState>()(
           lastXpGain: null,
           cosmetics: { ...DEFAULT_COSMETICS },
           seenCosmetics: [],
+          seenAchievements: [],
         });
       },
 
@@ -1008,6 +1028,7 @@ export const useGameStore = create<GameState>()(
         xp: state.xp,
         cosmetics: state.cosmetics,
         seenCosmetics: state.seenCosmetics,
+        seenAchievements: state.seenAchievements,
       }),
     }
   )

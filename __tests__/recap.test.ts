@@ -1,7 +1,8 @@
 import type { TFunction } from 'i18next';
 import { DAILY_LEVEL_ID, useGameStore, type ChallengeResult } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
-import { addToPeriods, emptyPeriodStats, isBossLevel, RECAP_MONTHS_KEPT } from '../store/periodStats';
+import { addToPeriods, emptyPeriodStats, RECAP_MONTHS_KEPT } from '../store/periodStats';
+import { isBossLevel } from '../data/bosses';
 import {
   availableRecaps, buildRecap, buildRecapShareText, pendingRecap, periodBounds, pickProfile, recapHighlights, recapSlides, type RecapSource,
 } from '../utils/recap';
@@ -54,9 +55,10 @@ describe('recap counters in the store (issue 125)', () => {
   });
 
   it('counts the moves, the play time and a boss', () => {
-    const boss = sampleLevels[19];
+    // The bosses of the map (data/bosses.ts): level 30 is one, 29 is not
+    const boss = sampleLevels[29];
     expect(isBossLevel(boss.id)).toBe(true);
-    expect(isBossLevel(sampleLevels[18].id)).toBe(false);
+    expect(isBossLevel(sampleLevels[28].id)).toBe(false);
     store().loadLevel(boss);
     const v = boss.vehicles.find(x => !x.isTarget)!;
     store().moveVehicle(v.id, v.row, v.col);
