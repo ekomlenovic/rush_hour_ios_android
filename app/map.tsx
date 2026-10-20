@@ -240,7 +240,7 @@ export default function MapScreen() {
       </ScrollView>
 
       {isReady && (nextAbove || nextBelow) && !isGenerating && (
-        <JumpButton levelId={nextNode.id} below={nextBelow} colors={colors} onPress={jumpToNext} />
+        <JumpButton levelId={nextNode.id} isEnd={nextNode.id > levels.length} below={nextBelow} colors={colors} onPress={jumpToNext} />
       )}
 
       <OptionsSheet

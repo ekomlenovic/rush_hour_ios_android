@@ -100,6 +100,7 @@
     "zone": "Zone {{number}}",
     "zone_generated": "Niveaux générés",
     "jump_to": "Niveau {{id}}",
+    "jump_end": "Fin de la carte",
     "zones": {
       "downtown": "Centre-ville",
       "suburbs": "Banlieue",
@@ -132,6 +133,7 @@
     "grid_size_label": "Taille de la grille :",
     "generator_warning": "Note : générer des niveaux complexes (Expert, Maître) peut être gourmand pour un téléphone.",
     "grid_size": "Taille de la grille : {{size}}x{{size}}",
+    "difficulty_label": "Difficulté : {{level}}",
     "amount_to_create": "Nombre à créer : {{amount}}",
     "generating": "Génération en cours...",
     "generating_levels": "Générations de niveaux",
@@ -641,6 +643,7 @@
     "map_zone": "Zone {{number}}, {{name}}, {{stars}} étoiles sur {{total}}",
     "map_progress": "{{stars}} étoiles gagnées sur {{total}} sur la carte",
     "map_jump": "Revenir au niveau {{id}}",
+    "map_jump_end": "Revenir à la fin de la carte",
     "hour_less": "Une heure plus tôt",
     "hour_more": "Une heure plus tard",
     "missions_progress": "Missions du jour, {{done}} sur {{total}}",
