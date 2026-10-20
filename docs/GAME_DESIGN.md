@@ -180,6 +180,8 @@ Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dan
 | La palette recolore les véhicules dans l'ordre du niveau ; la voiture cible garde sa skin. Le lecteur d'écran annonce la couleur affichée | `applyPalette`, `components/Board.tsx` |
 | Les effets de victoire ne se jouent pas avec « Réduire les animations » | `WinEffect` (`components/effects/WinEffect.tsx`) |
 | Les identifiants des cosmétiques sont sauvegardés : ne jamais en renommer, seulement en ajouter | |
+| Un cosmétique lié à un **succès secret** ne dévoile pas son nom tant qu'il est verrouillé (« Succès secret ») | `describeUnlock` (`components/garage/describeUnlock.ts`) |
+| **Codes secrets** : taper un mot dans le champ d'import de niveaux (Mes niveaux → Importés) débloque un succès secret. « mafia » → succès *Omertà*, qui donne la voiture cible et la palette **Mafia** (berlines des années 30). Le code est compté dans `stats.secretCodes`, le champ est vidé et le toast du succès s'affiche | `SECRET_CODES`, `matchSecretCode` (`store/stats.ts`), `recordSecretCode` |
 | Les nouveautés sont signalées sur le lien Garage jusqu'à la prochaine visite | `seenCosmetics` |
 
 ## Sauvegarde (export / import)

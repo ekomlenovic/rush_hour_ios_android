@@ -148,6 +148,8 @@ export interface PlayerStats {
   missionDaysCompleted: number;
   /** Longest absence between two app opens, in days */
   longestAbsenceDays: number;
+  /** Secret codes typed in the level import, keyed by code (see SECRET_CODES) */
+  secretCodes: Record<string, number>;
 }
 
 /** What happened since the last app open */

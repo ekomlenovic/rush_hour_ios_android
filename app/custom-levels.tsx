@@ -18,6 +18,7 @@ import ShareLevelSheet from '@/components/share/ShareLevelSheet';
 import LevelNameSheet from '@/components/share/LevelNameSheet';
 import KeyboardScreen from '@/components/KeyboardScreen';
 import { useTheme, type UiColors } from '@/theme';
+import { matchSecretCode } from '@/store/stats';
 
 type Tab = CustomLevelKind | 'favorites';
 
@@ -42,7 +43,7 @@ export default function CustomLevelsScreen() {
     const importedLevels = useGameStore(s => s.importedLevels);
     const progress = useGameStore(s => s.progress);
     const cosmetics = useGameStore(s => s.cosmetics);
-    const { addImportedLevel, deleteCustomLevel, toggleFavorite, renameCustomLevel } = useGameStore.getState();
+    const { addImportedLevel, deleteCustomLevel, toggleFavorite, renameCustomLevel, recordSecretCode } = useGameStore.getState();
     const [activeTab, setActiveTab] = useState<Tab>('created');
     const [importText, setImportText] = useState('');
     const [importName, setImportName] = useState('');
@@ -60,6 +61,15 @@ export default function CustomLevelsScreen() {
     }, [createdLevels, importedLevels, t]);
 
     const data = entries[activeTab];
+
+    // A secret code typed instead of a link (e.g. "mafia"): the achievement toast says the rest
+    useEffect(() => {
+        const code = matchSecretCode(importText);
+        if (!code) return;
+        setImportText('');
+        recordSecretCode(code);
+        haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }, [importText, recordSecretCode]);
 
     // Checked as it is typed or pasted: the board and the name of the link show before importing.
     // Decoding is instant; solving waits for the typing to pause and runs in the background

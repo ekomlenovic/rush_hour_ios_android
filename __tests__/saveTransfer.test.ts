@@ -312,6 +312,18 @@ describe('import drops what it cannot read', () => {
     expect(stats).not.toHaveProperty('cheat');
     expect(maxPlausibleXp(result.state)).not.toBeNaN();
   });
+
+  it('a save from before the secret codes, which gets none, and keeps the codes of a newer one', () => {
+    const old = parseSave(forge(s => { delete s.stats.secretCodes; }));
+    if (!old.ok) throw new Error(old.error);
+    store().importProgress(old.state);
+    expect(store().stats.secretCodes).toEqual({});
+
+    const withCode = parseSave(forge(s => { s.stats.secretCodes = { mafia: 1, broken: 'x' }; }));
+    if (!withCode.ok) throw new Error(withCode.error);
+    store().importProgress(withCode.state);
+    expect(store().stats.secretCodes).toEqual({ mafia: 1 });
+  });
 });
 
 describe('a level in progress broken on the phone', () => {
