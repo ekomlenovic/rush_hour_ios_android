@@ -745,7 +745,8 @@
       "gold": "Voiture dorée",
       "tractor": "Tracteur",
       "ufo": "Soucoupe volante",
-      "mafia": "Berline de Lost Heaven"
+      "mafia": "Berline de Lost Heaven",
+      "flagship": "Goélette amirale"
     },
     "palette": {
       "classic": "Classique",
@@ -756,7 +757,8 @@
       "candy": "Bonbon",
       "lava": "Lave",
       "jungle": "Jungle",
-      "mafia": "Mafia"
+      "mafia": "Mafia",
+      "fleet": "Flotte de 1800"
     },
     "effect": {
       "none": "Aucun",

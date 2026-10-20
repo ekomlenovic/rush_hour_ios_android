@@ -14,7 +14,7 @@ import { haptics, Haptics } from '@/utils/haptics';
 import { Vehicle } from '@/store/gameStore';
 import { stepVehicle } from '@/utils/accessibility';
 import { useTheme, type VehicleArt } from '@/theme';
-import VintageVehicle from '@/components/vehicles/VintageVehicle';
+import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
 
 interface BlockProps {
   vehicle: Vehicle;
@@ -35,7 +35,7 @@ interface BlockProps {
   letter?: string;
   /** Displayed color (vehicle palette), the level's color if undefined */
   color?: string;
-  /** Drawn vehicle (Mafia skin or palette) instead of a colored block */
+  /** Drawn vehicle (Mafia or 1800 skin or palette) instead of a colored block */
   art?: VehicleArt;
 }
 
@@ -280,8 +280,8 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
           animatedStyle,
         ]}
       >
-        {art === 'vintage' && (
-          <VintageVehicle length={vehicle.length} orientation={vehicle.orientation} color={fillColor} width={width - 4} height={height - 4} />
+        {art && (
+          <DrawnVehicle art={art} length={vehicle.length} orientation={vehicle.orientation} color={fillColor} width={width - 4} height={height - 4} />
         )}
         {isHinted && (
           <Animated.View

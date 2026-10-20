@@ -1,5 +1,7 @@
 import { mixColor, type ArtDrawing } from '../theme/art/art';
 import { vintageVehicle } from '../theme/art/vintageVehicles';
+import { annoShip } from '../theme/art/annoShips';
+import { drawVehicle } from '../theme/art/vehicles';
 import { BULLET_HOLE, MUZZLE_FLASH, TOMMY_GUN } from '../theme/art/tommyGun';
 import {
   BULLET_FLIGHT, FIRE_END, FIRE_START, HOLES_FADE, SHOTS, buildTommyGunPlan, shotPhase, sprayAngle,
@@ -34,10 +36,38 @@ describe('Mafia vehicles', () => {
     expect(mixColor('not a color', '#000000', 0.5)).toBe('not a color');
   });
 
-  it('are used by the Mafia skin and palette only', () => {
-    expect(Object.entries(CAR_SKINS).filter(([, s]) => s.art).map(([id]) => id)).toEqual(['mafia']);
-    expect(PALETTE_ART).toEqual({ mafia: 'vintage' });
-    expect(VEHICLE_PALETTES).toHaveProperty('mafia');
+  it('are used by the Mafia skin and palette', () => {
+    expect(CAR_SKINS.mafia.art).toBe('vintage');
+    expect(PALETTE_ART.mafia).toBe('vintage');
+  });
+});
+
+describe('1800 ships (Anno 1800 style)', () => {
+  it('a schooner for 2 cells, a paddle steamer for 3, 100 units per cell', () => {
+    expect(annoShip(2, '#9B1B30')).toMatchObject({ width: 200, height: 100 });
+    expect(annoShip(3, '#23395B')).toMatchObject({ width: 300, height: 100 });
+  });
+
+  it.each([2, 3])('the drawing of %i cells only refers to its own gradients', length => {
+    expectGradientsDefined(annoShip(length, '#1F4D3A'));
+  });
+
+  it('are used by the flagship skin and the fleet palette', () => {
+    expect(CAR_SKINS.flagship.art).toBe('ship');
+    expect(PALETTE_ART.fleet).toBe('ship');
+  });
+});
+
+describe('drawn vehicles', () => {
+  it('only the drawn skins and palettes have a drawing, each of an existing palette', () => {
+    expect(Object.entries(CAR_SKINS).filter(([, s]) => s.art).map(([id]) => id).sort()).toEqual(['flagship', 'mafia']);
+    expect(Object.keys(PALETTE_ART).sort()).toEqual(['fleet', 'mafia']);
+    for (const id of Object.keys(PALETTE_ART)) expect(VEHICLE_PALETTES).toHaveProperty(id);
+  });
+
+  it('each style draws its own vehicles', () => {
+    expect(drawVehicle('vintage', 2, '#14532D')).toEqual(vintageVehicle(2, '#14532D'));
+    expect(drawVehicle('ship', 3, '#14532D')).toEqual(annoShip(3, '#14532D'));
   });
 });
 
