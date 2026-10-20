@@ -53,8 +53,11 @@ export interface BoardColors {
   targetArt?: VehicleArt;
 }
 
-/** Vehicles drawn instead of colored blocks: 'vintage' for the 1930s cars of the Mafia skin and palette */
-export type VehicleArt = 'vintage';
+/**
+ * Vehicles drawn instead of colored blocks: 'vintage' for the 1930s cars of the Mafia skin and palette,
+ * 'ship' for the schooners and paddle steamers of the 1800 ones (Anno 1800 style)
+ */
+export type VehicleArt = 'vintage' | 'ship';
 
 /** Board themes, persisted in the cosmetics selection: never rename one, only add */
 export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire' | 'beach' | 'space';
@@ -309,7 +312,7 @@ export function getBoardColors(id: BoardThemeId, scheme: ColorScheme): BoardColo
 
 // ─── Target car skins ─────────────────────────────────────────────────────────
 
-export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold' | 'tractor' | 'ufo' | 'mafia';
+export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold' | 'tractor' | 'ufo' | 'mafia' | 'flagship';
 
 export interface CarSkin {
   /** Body color, the board's target car color when absent */
@@ -334,12 +337,14 @@ export const CAR_SKINS: Record<CarSkinId, CarSkin> = {
   ufo: { color: '#64748B', icon: '🛸' },
   // 1930s sedan of Lost Heaven, burgundy: still the red car to get out, among the black cars of the Mafia palette
   mafia: { color: '#7A1424', icon: '🎩', art: 'vintage' },
+  // Schooner of the industrial age (Anno 1800 style), crimson hull: the red one to get out
+  flagship: { color: '#9B1B30', icon: '⛵', art: 'ship' },
 };
 
 // ─── Vehicle palettes ─────────────────────────────────────────────────────────
 
 /** 'classic' keeps the colors saved in each level */
-export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy' | 'lava' | 'jungle' | 'mafia';
+export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy' | 'lava' | 'jungle' | 'mafia' | 'fleet';
 
 export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   classic: null,
@@ -353,11 +358,14 @@ export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   jungle: ['#15803D', '#65A30D', '#0D9488', '#CA8A04', '#166534', '#4ADE80', '#A3E635', '#0F766E'],
   // 1930s cars: black, cream, bottle green, chocolate, navy, chrome grey… no red for the target car
   mafia: ['#292524', '#E7DCC4', '#14532D', '#5C3A21', '#1E3A5F', '#A8A29E', '#78716C', '#B08D57'],
+  // Hulls of the industrial age: bottle green, navy, ochre, brick, slate, cream, teal, coal… no red for the target ship
+  fleet: ['#1F4D3A', '#23395B', '#B8862B', '#7A3E1D', '#5B6770', '#E8DCC0', '#2E6F6A', '#2B2B2B'],
 };
 
 /** Palettes whose vehicles are drawn rather than colored blocks */
 export const PALETTE_ART: Partial<Record<VehiclePaletteId, VehicleArt>> = {
   mafia: 'vintage',
+  fleet: 'ship',
 };
 
 /** Board colors with the target car skin applied */

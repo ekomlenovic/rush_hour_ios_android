@@ -745,7 +745,8 @@
       "gold": "Golden car",
       "tractor": "Tractor",
       "ufo": "Flying saucer",
-      "mafia": "Lost Heaven sedan"
+      "mafia": "Lost Heaven sedan",
+      "flagship": "Flagship schooner"
     },
     "palette": {
       "classic": "Classic",
@@ -756,7 +757,8 @@
       "candy": "Candy",
       "lava": "Lava",
       "jungle": "Jungle",
-      "mafia": "Mafia"
+      "mafia": "Mafia",
+      "fleet": "1800 fleet"
     },
     "effect": {
       "none": "None",

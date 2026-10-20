@@ -4,7 +4,7 @@ import {
   applyPalette, getSkinnedBoard, CLASSIC_VEHICLE_COLORS, PALETTE_ART, TARGET_CAR_COLOR,
   type ColorScheme,
 } from '@/theme';
-import VintageVehicle from '@/components/vehicles/VintageVehicle';
+import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
 import type { CosmeticSelection } from '@/data/cosmetics';
 import type { Level, Vehicle } from '@/store/types';
 import { getExitSide } from '@/utils/creatorGeometry';
@@ -61,10 +61,10 @@ export default function BoardPreview({ selection, scheme, size, level }: Props) 
         const h = (v.orientation === 'vertical' ? v.length : 1) * cell - inset * 2;
         const color = v.isTarget ? board.targetCar : colors.get(v.id) ?? v.color;
         const art = v.isTarget ? board.targetArt : PALETTE_ART[selection.palette];
-        if (art === 'vintage') {
+        if (art) {
           return (
             <View key={v.id} style={[styles.drawn, { left: v.col * cell + inset, top: v.row * cell + inset, width: w, height: h }]}>
-              <VintageVehicle length={v.length} orientation={v.orientation} color={color} width={w} height={h} />
+              <DrawnVehicle art={art} length={v.length} orientation={v.orientation} color={color} width={w} height={h} />
             </View>
           );
         }
