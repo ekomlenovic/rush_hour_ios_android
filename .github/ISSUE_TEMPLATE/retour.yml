@@ -1,0 +1,58 @@
+name: Retour (français)
+description: Un bug, une idée, un avis sur le jeu ? Dis-le-moi ici.
+labels: ["retour"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de me faire un retour !
+        Pour le titre, si tu peux : `fix: …` pour un bug, `feat: …` pour une idée (par ex. `fix(daily): le défi ne se valide pas`).
+        *Prefer English? Use the "Feedback (English)" template.*
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type de retour
+      options:
+        - Bug
+        - Idée / suggestion
+        - Niveau trop dur, trop facile ou cassé
+        - Avis général
+        - Autre
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Ton retour
+      description: Ce qui se passe, ce que tu aimerais, ce que tu en penses…
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pour reproduire (si c'est un bug)
+      description: Les étapes pour retomber sur le problème, et ce que tu attendais à la place.
+      placeholder: |
+        1. Ouvre le niveau 42
+        2. Bouge la voiture rouge
+        3. …
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Appareil
+      options:
+        - Android (Google Play)
+        - iPhone / iPad (SideStore)
+        - iPhone / iPad (SideStore + LiveContainer)
+        - Autre
+  - type: input
+    id: version
+    attributes:
+      label: Version du jeu
+      description: Visible dans les options du jeu ou dans le nom de la release.
+      placeholder: "2.0.2"
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Captures d'écran ou vidéo
+      description: Glisse-les ici si tu en as.
