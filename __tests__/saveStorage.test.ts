@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, type AppStateStatus } from 'react-native';
 import type { useGameStore as UseGameStore } from '../store/gameStore';
-import { MAX_SAVED_UNDOS, OLD_SAVED_UNDOS, RECENT_SAVES_WITH_UNDOS } from '../store/savedStates';
+import { MAX_SAVED_UNDOS, MAX_UNDO_STEPS, RECENT_SAVES_WITH_UNDOS, undoStackOf } from '../store/savedStates';
 import { createGuardedStorage } from '../store/guardedStorage';
 
 const KEY = 'rush-hour-storage';
@@ -101,7 +101,8 @@ describe('the save on the device', () => {
     await settle();
     const { state, version } = await stored();
     expect(version).toBe(11);
-    expect(state.savedStates[12].history).toHaveLength(MAX_SAVED_UNDOS);
+    expect(state.savedStates[12].history).toEqual([]);
+    expect(state.savedStates[12].undoSteps).toHaveLength(MAX_SAVED_UNDOS);
   });
 });
 
@@ -149,21 +150,33 @@ describe('the multiplayer accounts on the device', () => {
 });
 
 describe('a level in progress', () => {
-  it('keeps its whole undo stack in game, the last steps only in the save', async () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+  });
+
+  it('keeps its whole undo stack in game, the last steps only in the save, in a compact form', async () => {
     const store = launch();
     await flush();
     const { sampleLevels } = require('../data/sampleLevels');
     const level = sampleLevels[20];
     const v = level.vehicles.find((x: { isTarget: boolean }) => !x.isTarget);
     store.getState().loadLevel(level);
-    for (let i = 0; i < MAX_SAVED_UNDOS + 10; i++) store.getState().moveVehicle(v.id, v.row, v.col);
+    for (let i = 0; i < MAX_UNDO_STEPS + 10; i++) store.getState().moveVehicle(v.id, v.row, v.col);
 
-    expect(store.getState().history).toHaveLength(MAX_SAVED_UNDOS + 10);
-    expect(store.getState().savedStates[level.id].history).toHaveLength(MAX_SAVED_UNDOS);
-    expect(store.getState().savedStates[level.id].moveCount).toBe(MAX_SAVED_UNDOS + 10);
+    const history = store.getState().history;
+    expect(history).toHaveLength(MAX_UNDO_STEPS + 10);
+    const saved = store.getState().savedStates[level.id];
+    expect(saved.history).toEqual([]);
+    expect(saved.undoSteps).toHaveLength(MAX_UNDO_STEPS);
+    expect(saved.moveCount).toBe(MAX_UNDO_STEPS + 10);
+    expect(undoStackOf(saved)).toEqual(history.slice(-MAX_UNDO_STEPS));
+
+    // Resumed with the same undo stack
+    store.getState().loadLevel(level);
+    expect(store.getState().history).toEqual(history.slice(-MAX_UNDO_STEPS));
   });
 
-  it('keeps its undo stack among the 10 played last, its last steps only once older', async () => {
+  it('keeps its undo stack among the 10 played last, none once older', async () => {
     const store = launch();
     await flush();
     const { sampleLevels } = require('../data/sampleLevels');
@@ -175,14 +188,18 @@ describe('a level in progress', () => {
       store.getState().loadLevel(level);
       for (let j = 0; j < 20; j++) store.getState().moveVehicle(v.id, v.row, v.col);
     }
+    const before = store.getState().savedStates[levels[1].id];
     store.getState().recordAppOpen();
 
     const saved = store.getState().savedStates;
-    expect(saved[levels[0].id].history).toHaveLength(40);
-    expect(saved[levels[1].id].history).toHaveLength(OLD_SAVED_UNDOS);
-    for (const level of levels.slice(2)) expect(saved[level.id].history).toHaveLength(20);
-    // The game itself is kept
-    expect(saved[levels[1].id].moveCount).toBe(20);
+    expect(saved[levels[0].id].undoSteps).toHaveLength(40);
+    expect(saved[levels[1].id].undoSteps).toEqual([]);
+    for (const level of levels.slice(2)) expect(saved[level.id].undoSteps).toHaveLength(20);
+    // The game itself is kept, and resumes without undo
+    expect(saved[levels[1].id]).toEqual({ ...before, undoSteps: [] });
+    store.getState().loadLevel(levels[1]);
+    expect(store.getState().moveCount).toBe(20);
+    expect(store.getState().history).toEqual([]);
   });
 });
 

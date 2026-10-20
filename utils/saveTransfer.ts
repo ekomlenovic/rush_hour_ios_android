@@ -154,8 +154,8 @@ export function exportProgress(now: Date = new Date()): string {
   for (const field of DEVICE_FIELDS) delete state[field];
 
   // Undo stacks are the bulk of a save: the level in progress is kept, its undo history and move log are not
-  const savedStates = (state.savedStates ?? {}) as Record<string, { history?: unknown[]; moveLog?: unknown[] }>;
-  state.savedStates = Object.fromEntries(Object.entries(savedStates).map(([key, saved]) => [key, { ...saved, history: [], moveLog: [] }]));
+  const savedStates = (state.savedStates ?? {}) as Record<string, { history?: unknown[]; undoSteps?: unknown[]; moveLog?: unknown[] }>;
+  state.savedStates = Object.fromEntries(Object.entries(savedStates).map(([key, saved]) => [key, { ...saved, history: [], undoSteps: [], moveLog: [] }]));
 
   return encodeSave({ version: STORE_VERSION, exportedAt: getLocalDateString(now), state });
 }

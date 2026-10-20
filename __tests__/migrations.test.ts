@@ -2,7 +2,7 @@ import { useGameStore, Level } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
 import { resetStore, setToday } from './helpers';
 import { calculateScore } from '../utils/scoring';
-import { MAX_SAVED_UNDOS, OLD_SAVED_UNDOS, RECENT_SAVES_WITH_UNDOS } from '../store/savedStates';
+import { MAX_SAVED_UNDOS, MAX_UNDO_STEPS, RECENT_SAVES_WITH_UNDOS, undoStackOf } from '../store/savedStates';
 import { ACHIEVEMENT_XP, BOSS_WIN_XP, MISSIONS_XP, dailyWinXp, levelWinXp, weeklyWinXp } from '../data/progression';
 
 const options = useGameStore.persist.getOptions();
@@ -12,6 +12,11 @@ const migrate = (state: Record<string, unknown>, version: number) =>
 const idBeforeV5 = (id: number) => (id > 10 ? id - 5 : id);
 const merge = (persisted: Record<string, unknown>) =>
   options.merge!(persisted, useGameStore.getInitialState());
+/** A save as it reads back, its undo stack as whole boards (compact since v11) */
+const withBoards = (save: any) => {
+  const { undoSteps: _steps, ...game } = save;
+  return { ...game, history: undoStackOf(save) };
+};
 
 describe('persisted state', () => {
   it('is at version 11', () => {
@@ -172,11 +177,10 @@ describe('migrate v5 → v6', () => {
     const v5 = { progress: [{ levelId: 3, completed: true, bestScore: 300, stars: 3 }], xp: 1200, savedStates: { 12: save(300), 40: save(10) } };
     const state = migrate(v5, 5);
     const saved = state.savedStates as Record<string, ReturnType<typeof save>>;
-    expect(saved[12].history).toHaveLength(MAX_SAVED_UNDOS);
-    expect(saved[12].history).toEqual(save(300).history.slice(-MAX_SAVED_UNDOS));
+    expect(undoStackOf(saved[12] as never)).toEqual(save(300).history.slice(-MAX_SAVED_UNDOS));
     // The game itself carries on where it was
     expect(saved[12]).toMatchObject({ vehicles: save(300).vehicles, moveCount: 300, attempt: save(300).attempt });
-    expect(saved[40]).toEqual(save(10));
+    expect(withBoards(saved[40])).toEqual(save(10));
     expect(state.progress).toEqual(v5.progress);
     expect(state.xp).toBe(1200);
   });
@@ -192,9 +196,9 @@ describe('migrate v5 → v6', () => {
     const state = migrate({ savedStates: { 'daily-2026-11-15': save(20), 'daily-2026-11-10': save(5), 'archive-2026-11-10': save(7) } }, 5);
     const saved = state.savedStates as Record<string, ReturnType<typeof save>>;
     expect(Object.keys(saved).sort()).toEqual(['archive-2026-11-10', 'archive-2026-11-15']);
-    expect(saved['archive-2026-11-15']).toEqual(save(20));
+    expect(withBoards(saved['archive-2026-11-15'])).toEqual(save(20));
     // An archive already started keeps its own game
-    expect(saved['archive-2026-11-10']).toEqual(save(7));
+    expect(withBoards(saved['archive-2026-11-10'])).toEqual(save(7));
   });
 
   it('drops the saves that can never be opened again', () => {
@@ -205,7 +209,7 @@ describe('migrate v5 → v6', () => {
   it('a save of the previous version still loads in the store', () => {
     const merged = merge(migrate({ maxUnlockedLevel: 14, savedStates: { 12: save(120) } }, 5));
     expect(merged.maxUnlockedLevel).toBe(14);
-    expect(merged.savedStates[12].history).toHaveLength(MAX_SAVED_UNDOS);
+    expect(undoStackOf(merged.savedStates[12])).toHaveLength(MAX_SAVED_UNDOS);
   });
 });
 
@@ -340,8 +344,11 @@ describe('migrate v10: new achievements (#19)', () => {
 });
 
 describe('migrate v11: undo stacks of the levels played long ago (save size)', () => {
-  const board = (col: number) => [{ id: 'X', row: 2, col, length: 2, orientation: 'horizontal' as const, isTarget: true, color: '#f00' }];
-  // Written by v10: no time of the last move, only the start of the attempt (missing before 1.2)
+  const board = (col: number) => [
+    { id: 'X', row: 2, col, length: 2, orientation: 'horizontal' as const, isTarget: true, color: '#f00' },
+    { id: 'A', row: 0, col: 5, length: 3, orientation: 'vertical' as const, isTarget: false, color: '#0f0' },
+  ];
+  // Written by v10: undo stack as whole boards, no time of the last move, only the start of the attempt (missing before 1.2)
   const save = (startedAt: number | undefined, undos = 50) => ({
     vehicles: board(1),
     moveCount: undos + 3,
@@ -350,41 +357,53 @@ describe('migrate v11: undo stacks of the levels played long ago (save size)', (
     moveLog: [{ vehicleId: 'X', delta: 1, t: 1000 }, { vehicleId: 'X', delta: -1, t: 2500 }],
     ...(startedAt === undefined ? {} : { startedAt }),
   });
+  type Save = ReturnType<typeof save> & { undoSteps?: number[][] };
+  const gameOf = ({ history: _h, ...game }: Save) => game;
 
-  it('keeps the whole undo stack of the 10 levels played last, the last 5 steps of the older ones', () => {
+  it('keeps the undo stack of the 10 levels played last, in a compact form, none for the older ones', () => {
     // 14 levels left unfinished, started on days 1 to 14; level 20 has no start (before 1.2)
-    const savedStates: Record<string, ReturnType<typeof save>> = { 20: save(undefined) };
+    const savedStates: Record<string, Save> = { 20: save(undefined) };
     for (let i = 1; i <= 14; i++) savedStates[100 + i] = save(i * 86400000);
     const v10 = { progress: [{ levelId: 3, completed: true, bestScore: 300, stars: 3 }], xp: 1200, savedStates };
 
     const state = migrate(v10, 10);
-    const saved = state.savedStates as Record<string, ReturnType<typeof save>>;
+    const saved = state.savedStates as Record<string, Save>;
     expect(Object.keys(saved).sort()).toEqual(Object.keys(savedStates).sort());
-    for (let i = 5; i <= 14; i++) expect(saved[100 + i]).toEqual(savedStates[100 + i]);
+    for (let i = 5; i <= 14; i++) {
+      const key = 100 + i;
+      expect(saved[key].history).toEqual([]);
+      expect(saved[key].undoSteps![0]).toEqual([2, 0, 0, 5]);
+      expect(undoStackOf(saved[key] as never)).toEqual(savedStates[key].history);
+      expect(saved[key]).toMatchObject(gameOf(savedStates[key]));
+    }
     for (const key of ['20', '101', '102', '103', '104']) {
-      expect(saved[key].history).toEqual(savedStates[key].history.slice(-OLD_SAVED_UNDOS));
-      // The game itself carries on where it was
-      const { history: _h, ...game } = savedStates[key];
-      expect(saved[key]).toMatchObject(game);
+      expect(saved[key]).toEqual({ ...savedStates[key], history: [], undoSteps: [] });
     }
     expect(state.progress).toEqual(v10.progress);
     expect(state.xp).toBe(1200);
   });
 
-  it('leaves the short stacks and the challenges untouched', () => {
-    const savedStates: Record<string, ReturnType<typeof save>> = { 'daily-2026-10-19': save(1, 0), 'archive-2026-10-15': save(2, 0) };
-    for (let i = 1; i <= RECENT_SAVES_WITH_UNDOS + 5; i++) savedStates[100 + i] = save(i, OLD_SAVED_UNDOS);
+  it('weighs a few bytes a step instead of a whole board', () => {
+    const state = migrate({ savedStates: { 12: save(1) } }, 10);
+    const saved = (state.savedStates as Record<string, Save>)[12];
+    expect(JSON.stringify(saved).length).toBeLessThan(JSON.stringify(save(1)).length / 4);
+  });
+
+  it('leaves the challenges and the saves without undo stack untouched', () => {
+    const savedStates: Record<string, Save> = { 'daily-2026-10-19': save(1, 0), 'archive-2026-10-15': save(2, 0) };
+    for (let i = 1; i <= RECENT_SAVES_WITH_UNDOS + 5; i++) savedStates[100 + i] = save(i, 0);
     const v10 = { savedStates };
     expect(migrate(v10, 10)).toEqual(v10);
   });
 
-  it('a save of the previous version still loads in the store', () => {
-    const savedStates: Record<string, ReturnType<typeof save>> = {};
+  it('a save of the previous version still loads in the store, and resumes with its undo stack', () => {
+    const savedStates: Record<string, Save> = {};
     for (let i = 1; i <= 12; i++) savedStates[100 + i] = save(i);
     const merged = merge(migrate({ maxUnlockedLevel: 120, savedStates }, 10));
     expect(merged.maxUnlockedLevel).toBe(120);
-    expect(merged.savedStates[112].history).toHaveLength(MAX_SAVED_UNDOS);
-    expect(merged.savedStates[101].history).toHaveLength(OLD_SAVED_UNDOS);
+    expect(undoStackOf(merged.savedStates[112])).toEqual(savedStates[112].history);
+    expect(undoStackOf(merged.savedStates[101])).toEqual([]);
+    expect(merged.savedStates[101].moveCount).toBe(53);
   });
 });
 

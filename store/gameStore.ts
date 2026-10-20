@@ -23,7 +23,7 @@ import {
 } from '../data/cosmetics';
 import { emptyAttempt, initialStats, withWinStats, mergeChallengeResult } from './stats';
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from './migrations';
-import { compactSavedStates, isWellFormedSave, savedHistory, trimOldUndoStacks } from './savedStates';
+import { compactSavedStates, dropOldUndoStacks, isWellFormedSave, savedUndoSteps, undoStackOf } from './savedStates';
 import { createGuardedStorage } from './guardedStorage';
 import { DAILY_LEVEL_ID, WEEKLY_LEVEL_ID, ARCHIVE_LEVEL_ID } from './levelIds';
 
@@ -246,7 +246,9 @@ export const useGameStore = create<GameState>()(
             [levelKey]: {
               vehicles: next.vehicles.map(v => ({ ...v })),
               moveCount: next.moveCount,
-              history: savedHistory(levelKey, next.history).map(h => h.map(v => ({ ...v }))),
+              // Kept empty for the older versions, which read the undo stack there: they resume without it
+              history: [],
+              undoSteps: savedUndoSteps(levelKey, next.vehicles, next.history),
               attempt: { ...next.currentAttempt },
               moveLog: next.moveLog.map(m => ({ ...m })),
               startedAt: next.attemptStartedAt,
@@ -378,7 +380,7 @@ export const useGameStore = create<GameState>()(
           currentLevel: level,
           vehicles: resolvedSavedState ? resolvedSavedState.vehicles.map(v => ({...v})) : level.vehicles.map((v) => ({ ...v })),
           moveCount: resolvedSavedState ? resolvedSavedState.moveCount : 0,
-          history: resolvedSavedState ? resolvedSavedState.history.map(h => h.map(v => ({...v}))) : [],
+          history: resolvedSavedState ? undoStackOf(resolvedSavedState) : [],
           moveLog: resolvedSavedState?.moveLog ? resolvedSavedState.moveLog.map(m => ({ ...m })) : [],
           attemptStartedAt: resolvedSavedState?.startedAt ?? Date.now(),
           currentAttempt: resolvedSavedState?.attempt ? { ...resolvedSavedState.attempt } : emptyAttempt(),
@@ -696,8 +698,8 @@ export const useGameStore = create<GameState>()(
         set({
           lastOpenDate: today,
           stats: { ...stats, longestAbsenceDays: Math.max(stats.longestAbsenceDays, missedDays) },
-          // Keeps the save small: capped undo stacks, shortened for the levels played long ago, past challenges cleared
-          savedStates: trimOldUndoStacks(compactSavedStates(get().savedStates)),
+          // Keeps the save small: past challenges cleared, no undo stack for the levels played long ago
+          savedStates: dropOldUndoStacks(compactSavedStates(get().savedStates)),
         });
         const { patch, frozenDays, lostStreak } = settleStreak(get(), today);
         set(patch);
