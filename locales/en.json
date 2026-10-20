@@ -44,6 +44,12 @@
     "play_tutorial": "Start with the tutorial",
     "play_all_done": "All levels cleared",
     "daily_desc": "A new puzzle every day",
+    "daily_event": {
+      "halloween_one": "Halloween: win it to unlock {{count}} Garage style",
+      "halloween_other": "Halloween: win it to unlock {{count}} Garage styles",
+      "christmas_one": "Christmas: win it to unlock {{count}} Garage style",
+      "christmas_other": "Christmas: win it to unlock {{count}} Garage styles"
+    },
     "daily_next": "Next in {{time}}",
     "weekly_next_one": "Next in {{count}} day",
     "weekly_next_other": "Next in {{count}} days",
@@ -752,7 +758,11 @@
       "level": "Level {{level}}",
       "levels": "{{current}}/{{count}} levels",
       "weeklies": "Weekly {{current}}/{{count}}",
-      "winter": "Winter daily"
+      "winter": "Winter daily",
+      "event": {
+        "halloween": "Halloween daily",
+        "christmas": "Christmas daily"
+      }
     },
     "kinds": {
       "board": "Board",
@@ -770,6 +780,10 @@
       "weeklies_other": "Win {{count}} weekly challenges ({{current}}/{{count}})",
       "achievement": "Achievement: {{name}}",
       "winter": "Win a daily challenge in winter (Dec. to Feb.)",
+      "event": {
+        "halloween": "Win a daily challenge during Halloween (October 25 to 31)",
+        "christmas": "Win a daily challenge during Christmas (December 19 to 25)"
+      },
       "secret": "Secret achievement"
     },
     "board": {
@@ -781,7 +795,9 @@
       "snow": "Snow",
       "fire": "On fire",
       "beach": "Sandy beach",
-      "space": "Outer space"
+      "space": "Outer space",
+      "pumpkin": "Pumpkins",
+      "christmas": "Christmas"
     },
     "skin": {
       "classic": "Red car",
@@ -816,7 +832,9 @@
       "bubbles": "Bubbles",
       "greenlight": "Green light",
       "tommy": "Tommy gun",
-      "broadside": "Broadside"
+      "broadside": "Broadside",
+      "bats": "Bats",
+      "gifts": "Gift shower"
     },
     "equip": "Equip",
     "equipped": "Equipped"

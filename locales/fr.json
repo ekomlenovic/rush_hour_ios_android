@@ -44,6 +44,12 @@
     "play_tutorial": "Commence par le tutoriel",
     "play_all_done": "Tous les niveaux terminés",
     "daily_desc": "Un nouveau puzzle chaque jour",
+    "daily_event": {
+      "halloween_one": "Halloween : réussis-le pour débloquer {{count}} style du Garage",
+      "halloween_other": "Halloween : réussis-le pour débloquer {{count}} styles du Garage",
+      "christmas_one": "Noël : réussis-le pour débloquer {{count}} style du Garage",
+      "christmas_other": "Noël : réussis-le pour débloquer {{count}} styles du Garage"
+    },
     "daily_next": "Prochain dans {{time}}",
     "weekly_next_one": "Prochain dans {{count}} jour",
     "weekly_next_other": "Prochain dans {{count}} jours",
@@ -752,7 +758,11 @@
       "level": "Niveau {{level}}",
       "levels": "{{current}}/{{count}} niveaux",
       "weeklies": "Hebdo {{current}}/{{count}}",
-      "winter": "Défi en hiver"
+      "winter": "Défi en hiver",
+      "event": {
+        "halloween": "Défi d'Halloween",
+        "christmas": "Défi de Noël"
+      }
     },
     "kinds": {
       "board": "Plateau",
@@ -770,6 +780,10 @@
       "weeklies_other": "Réussis {{count}} défis hebdo ({{current}}/{{count}})",
       "achievement": "Succès : {{name}}",
       "winter": "Réussis un défi du jour en hiver (déc. à fév.)",
+      "event": {
+        "halloween": "Réussis un défi du jour d'Halloween (du 25 au 31 octobre)",
+        "christmas": "Réussis un défi du jour de Noël (du 19 au 25 décembre)"
+      },
       "secret": "Succès secret"
     },
     "board": {
@@ -781,7 +795,9 @@
       "snow": "Neige",
       "fire": "En feu",
       "beach": "Plage de sable",
-      "space": "Espace"
+      "space": "Espace",
+      "pumpkin": "Citrouilles",
+      "christmas": "Noël"
     },
     "skin": {
       "classic": "Voiture rouge",
@@ -816,7 +832,9 @@
       "bubbles": "Bulles",
       "greenlight": "Feu vert",
       "tommy": "Sulfateuse",
-      "broadside": "Bordée"
+      "broadside": "Bordée",
+      "bats": "Chauves-souris",
+      "gifts": "Pluie de cadeaux"
     },
     "equip": "Équiper",
     "equipped": "Équipé"
