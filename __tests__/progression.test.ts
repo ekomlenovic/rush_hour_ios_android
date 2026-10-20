@@ -4,9 +4,11 @@ import {
   getPlayerLevel, getPlayerTitle, levelWinXp, totalXpForLevel, weeklyWinXp, xpToNextLevel,
 } from '../data/progression';
 import {
-  COSMETICS, DEFAULT_COSMETICS, buildCosmeticContext, newlyUnlockedCosmetics, cosmeticKey, getLevelCosmetics, isCosmeticUnlocked, sanitizeSelection,
-  type CosmeticSource,
+  COSMETICS, DEFAULT_COSMETICS, SEASONAL_EVENTS, buildCosmeticContext, newlyUnlockedCosmetics, cosmeticKey, getLevelCosmetics, isCosmeticUnlocked,
+  lockedEventCosmetics, sanitizeSelection, seasonalEventOf, type CosmeticSource, type SeasonalEventId,
 } from '../data/cosmetics';
+import en from '../locales/en.json';
+import fr from '../locales/fr.json';
 import { ACHIEVEMENTS_BY_ID } from '../data/achievements';
 import { describeUnlock, describeUnlockShort } from '../components/garage/describeUnlock';
 import { BOARD_THEMES, CAR_SKINS, VEHICLE_PALETTES, applyPalette } from '../theme/board';
@@ -281,6 +283,95 @@ describe('win screen: cosmetics unlocked by the win', () => {
     const beforeThird = state();
     winMapLevel(sampleLevels[2]);
     expect(newlyUnlockedCosmetics(beforeThird, state())).toContain('effect:greenlight');
+  });
+});
+
+describe('seasonal events', () => {
+  const won = { completed: true, score: 300, stars: 3 };
+  const context = (dailyChallengeProgress: CosmeticSource['dailyChallengeProgress']) => buildCosmeticContext({
+    xp: 0, progress: [], dailyChallengeProgress, weeklyChallengeProgress: {}, achievements: [],
+  });
+  const unlocked = (keys: string[], dailies: CosmeticSource['dailyChallengeProgress']) => {
+    const c = context(dailies);
+    return keys.filter(key => isCosmeticUnlocked(COSMETICS.find(d => cosmeticKey(d) === key)!, c));
+  };
+  const HALLOWEEN = ['board:pumpkin', 'effect:bats'];
+  const CHRISTMAS = ['board:christmas', 'effect:gifts'];
+
+  it('Halloween from October 25 to 31, Christmas from December 19 to 25, every year', () => {
+    expect(['2026-10-24', '2026-10-25', '2026-10-31', '2026-11-01'].map(seasonalEventOf)).toEqual([null, 'halloween', 'halloween', null]);
+    expect(['2026-12-18', '2026-12-19', '2026-12-25', '2026-12-26'].map(seasonalEventOf)).toEqual([null, 'christmas', 'christmas', null]);
+    expect(seasonalEventOf('2031-10-28')).toBe('halloween');
+    expect(seasonalEventOf('2027-07-14')).toBeNull();
+  });
+
+  it('a daily won during the event unlocks its board and its win effect, for good', () => {
+    expect(unlocked([...HALLOWEEN, ...CHRISTMAS], { '2026-10-28': won })).toEqual(HALLOWEEN);
+    expect(unlocked([...HALLOWEEN, ...CHRISTMAS], { '2026-12-25': won, '2027-03-01': won })).toEqual(CHRISTMAS);
+    expect(unlocked([...HALLOWEEN, ...CHRISTMAS], { '2026-10-24': won, '2026-11-01': won, '2026-12-26': won })).toEqual([]);
+    // Started but not won
+    expect(unlocked(HALLOWEEN, { '2026-10-28': { completed: false, score: 0, stars: 0 } })).toEqual([]);
+  });
+
+  it('a Christmas daily also unlocks the winter board', () => {
+    expect(unlocked(['board:snow'], { '2026-12-24': won })).toEqual(['board:snow']);
+  });
+
+  it('the home screen counts what is left to unlock', () => {
+    expect(lockedEventCosmetics('halloween', context({})).map(cosmeticKey)).toEqual(HALLOWEEN);
+    expect(lockedEventCosmetics('halloween', context({ '2025-10-31': won }))).toEqual([]);
+    expect(lockedEventCosmetics('christmas', context({ '2025-10-31': won })).map(cosmeticKey)).toEqual(CHRISTMAS);
+  });
+
+  it('each event has its texts and cosmetics, each cosmetic its name', () => {
+    const lookup = (strings: unknown, key: string) => key.split('.').reduce<unknown>(
+      (node, part) => (node && typeof node === 'object' ? (node as Record<string, unknown>)[part] : undefined), strings);
+    for (const strings of [en, fr]) {
+      for (const event of Object.keys(SEASONAL_EVENTS) as SeasonalEventId[]) {
+        expect(COSMETICS.some(def => def.unlock.type === 'event' && def.unlock.event === event)).toBe(true);
+        for (const key of [`cosmetics.unlock.event.${event}`, `cosmetics.unlock_short.event.${event}`, `home.daily_event.${event}_one`, `home.daily_event.${event}_other`]) {
+          expect({ key, text: typeof lookup(strings, key) }).toEqual({ key, text: 'string' });
+        }
+      }
+      for (const def of COSMETICS) {
+        const key = `cosmetics.${def.kind}.${def.id}`;
+        expect({ key, text: typeof lookup(strings, key) }).toEqual({ key, text: 'string' });
+      }
+    }
+  });
+
+  it('describes the unlock with the days of the event', () => {
+    const t = ((key: string) => key) as never;
+    const pumpkin = COSMETICS.find(d => cosmeticKey(d) === 'board:pumpkin')!;
+    expect(describeUnlock(t, pumpkin, context({}))).toBe('cosmetics.unlock.event.halloween');
+    expect(describeUnlockShort(t, pumpkin, context({}))).toBe('cosmetics.unlock_short.event.halloween');
+  });
+
+  describe('in the store', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+      resetStore();
+    });
+    afterEach(() => jest.useRealTimers());
+
+    it('the win screen lists them on the daily of the event', () => {
+      winDaily('2026-10-27');
+      const before = state();
+      winDaily('2026-10-28');
+      expect(newlyUnlockedCosmetics(before, state())).toEqual([]);
+      resetStore();
+      winDaily('2026-10-24');
+      const beforeEvent = state();
+      winDaily('2026-10-25');
+      expect(newlyUnlockedCosmetics(beforeEvent, state())).toEqual(HALLOWEEN);
+    });
+
+    it('an archive of an event day, won later, unlocks nothing', () => {
+      setToday('2026-11-03');
+      state().completeArchiveChallenge('2026-10-28', 300, 3, 30_000, { moves: 12, minMoves: 12 });
+      expect(state().archiveProgress['2026-10-28']?.completed).toBe(true);
+      expect(unlocked(HALLOWEEN, state().dailyChallengeProgress)).toEqual([]);
+    });
   });
 });
 

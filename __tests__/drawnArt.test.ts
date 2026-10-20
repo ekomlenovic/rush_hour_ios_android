@@ -11,6 +11,12 @@ import { BULLET_HOLE, MUZZLE_FLASH, TOMMY_GUN } from '../theme/art/tommyGun';
 import {
   BULLET_FLIGHT, FIRE_END, FIRE_START, HOLES_FADE, SHOTS, buildTommyGunPlan, shotPhase, sprayAngle,
 } from '../components/effects/tommyGunPlan';
+import { BAT_DOWN, BAT_UP, JACK_O_LANTERN, LANTERN_GLOW } from '../theme/art/halloween';
+import { GIFT_COLORS, giftBox } from '../theme/art/christmas';
+import {
+  BATS, BAT_FLIGHT, LANTERN_OUT_START, batAt, buildBatsPlan, lanternScale, wingsUp,
+} from '../components/effects/batsPlan';
+import { BOUNCE, DROP_END, FADE_START, GIFTS, buildGiftsPlan, giftAt, landsAt } from '../components/effects/giftsPlan';
 import { CAR_SKINS, PALETTE_ART, VEHICLE_PALETTES } from '../theme/board';
 import { COSMETICS, buildCosmeticContext, cosmeticKey, isCosmeticUnlocked } from '../data/cosmetics';
 
@@ -185,5 +191,99 @@ describe('Broadside win effect', () => {
   it('is unlocked with the 1800 fleet, by 30 weekly challenges won', () => {
     const def = COSMETICS.find(c => cosmeticKey(c) === 'effect:broadside')!;
     expect(def.unlock).toEqual(COSMETICS.find(c => cosmeticKey(c) === 'palette:fleet')!.unlock);
+  });
+});
+
+describe('Bats win effect (Halloween)', () => {
+  it.each([BAT_UP, BAT_DOWN, JACK_O_LANTERN, LANTERN_GLOW])('its drawings only refer to their own gradients', drawing => {
+    expectGradientsDefined(drawing);
+  });
+
+  it.each([[300, 300], [390, 844], [120, 120]])('in an area of %i × %i, every bat leaves the lantern and flies out by the top', (width, height) => {
+    const plan = buildBatsPlan(width, height);
+    expect(plan.lantern.x).toBeGreaterThanOrEqual(0);
+    expect(plan.lantern.x + plan.lanternWidth).toBeLessThanOrEqual(width);
+    expect(plan.lantern.y + plan.lanternHeight).toBeLessThanOrEqual(height);
+    expect(plan.bats).toHaveLength(BATS);
+    for (const bat of plan.bats) {
+      expect(bat.from.y).toBeGreaterThan(plan.lantern.y);
+      expect(bat.from.y).toBeLessThan(plan.lantern.y + plan.lanternHeight);
+      expect(bat.to.y + bat.width / 2).toBeLessThanOrEqual(0);
+      expect(bat.to.x).toBeGreaterThanOrEqual(0);
+      expect(bat.to.x).toBeLessThanOrEqual(width);
+      expect(batAt(bat, bat.t0 + 1e-6).y).toBeCloseTo(bat.from.y, 1);
+    }
+  });
+
+  it('every bat is gone before the lantern shrinks away, and they flap', () => {
+    const { bats } = buildBatsPlan(300, 300);
+    for (const bat of bats) {
+      expect(bat.t0 + BAT_FLIGHT).toBeLessThan(1);
+      expect(batAt(bat, bat.t0 - 0.01).opacity).toBe(0);
+      expect(batAt(bat, bat.t0 + BAT_FLIGHT / 2).opacity).toBe(1);
+      expect(batAt(bat, bat.t0 + BAT_FLIGHT + 0.001).opacity).toBe(0);
+    }
+    expect(bats[0].t0).toBeLessThan(LANTERN_OUT_START);
+    const beats = Array.from({ length: 50 }, (_, i) => wingsUp(bats[0], i / 50));
+    expect(beats).toContain(true);
+    expect(beats).toContain(false);
+  });
+
+  it('the lantern pops up, stays, then shrinks away', () => {
+    expect(lanternScale(0)).toBe(0);
+    expect(lanternScale(0.5)).toBe(1);
+    expect(lanternScale(1)).toBe(0);
+  });
+
+  it('plays the same on every replay', () => {
+    expect(buildBatsPlan(300, 300)).toEqual(buildBatsPlan(300, 300));
+  });
+
+  it('is unlocked with the Pumpkins board, by a Halloween daily', () => {
+    const unlock = (key: string) => COSMETICS.find(c => cosmeticKey(c) === key)!.unlock;
+    expect(unlock('effect:bats')).toEqual({ type: 'event', event: 'halloween' });
+    expect(unlock('board:pumpkin')).toEqual(unlock('effect:bats'));
+  });
+});
+
+describe('Gift shower win effect (Christmas)', () => {
+  it.each(GIFT_COLORS.map(c => [c.wrap, c.ribbon]))('the %s present only refers to its own gradients', (wrap, ribbon) => {
+    expectGradientsDefined(giftBox(wrap, ribbon));
+  });
+
+  it.each([[300, 300], [390, 844], [120, 120]])('in an area of %i × %i, every present falls from above the top and lands inside', (width, height) => {
+    const { gifts, sparkles } = buildGiftsPlan(width, height);
+    expect(gifts).toHaveLength(GIFTS);
+    for (const gift of gifts) {
+      expect(gift.fromY + gift.size / 2).toBeLessThanOrEqual(0);
+      expect(gift.x - gift.size / 2).toBeGreaterThanOrEqual(0);
+      expect(gift.x + gift.size / 2).toBeLessThanOrEqual(width);
+      expect(gift.landY + gift.size / 2).toBeLessThanOrEqual(height);
+      expect(GIFT_COLORS[gift.color]).toBeDefined();
+      expect(giftAt(gift, landsAt(gift) + BOUNCE).y).toBeCloseTo(gift.landY);
+    }
+    expect(sparkles.length).toBeGreaterThan(0);
+    for (const sparkle of sparkles) expect(sparkle.dy).toBeLessThan(0);
+  });
+
+  it('every present has landed and bounced before they fade out', () => {
+    const { gifts } = buildGiftsPlan(300, 300);
+    for (const gift of gifts) {
+      expect(gift.t0).toBeLessThan(DROP_END);
+      expect(landsAt(gift) + BOUNCE).toBeLessThan(FADE_START);
+      expect(giftAt(gift, gift.t0 - 0.01).opacity).toBe(0);
+      expect(giftAt(gift, landsAt(gift)).opacity).toBe(1);
+      expect(giftAt(gift, 1).opacity).toBe(0);
+    }
+  });
+
+  it('plays the same on every replay', () => {
+    expect(buildGiftsPlan(300, 300)).toEqual(buildGiftsPlan(300, 300));
+  });
+
+  it('is unlocked with the Christmas board, by a Christmas daily', () => {
+    const unlock = (key: string) => COSMETICS.find(c => cosmeticKey(c) === key)!.unlock;
+    expect(unlock('effect:gifts')).toEqual({ type: 'event', event: 'christmas' });
+    expect(unlock('board:christmas')).toEqual(unlock('effect:gifts'));
   });
 });

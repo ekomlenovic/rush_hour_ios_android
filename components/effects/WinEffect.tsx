@@ -7,6 +7,8 @@ import type { WinEffectId } from '@/data/cosmetics';
 import { TRAFFIC_LIGHT } from '@/theme';
 import TommyGunEffect from './TommyGunEffect';
 import BroadsideEffect from './BroadsideEffect';
+import BatsEffect from './BatsEffect';
+import GiftsEffect from './GiftsEffect';
 
 interface Props {
   effect: WinEffectId;
@@ -235,7 +237,7 @@ export default function WinEffect({ effect, width, height, colors, playKey = 0 }
   const reduceMotion = useReducedMotion();
   const particles = useMemo(() => buildParticles(effect, width, height, colors), [effect, width, height, colors]);
   const lights = useMemo(() => (effect === 'greenlight' ? buildLights(width, height) : []), [effect, width, height]);
-  const drawn = effect === 'tommy' || effect === 'broadside';
+  const drawn = effect === 'tommy' || effect === 'broadside' || effect === 'bats' || effect === 'gifts';
   if (reduceMotion || (particles.length === 0 && !drawn)) return null;
 
   return (
@@ -243,6 +245,8 @@ export default function WinEffect({ effect, width, height, colors, playKey = 0 }
       {lights.map((light, i) => <TrafficLight key={`light-${i}`} light={light} playKey={playKey} />)}
       {effect === 'tommy' && <TommyGunEffect width={width} height={height} playKey={playKey} />}
       {effect === 'broadside' && <BroadsideEffect width={width} height={height} playKey={playKey} />}
+      {effect === 'bats' && <BatsEffect width={width} height={height} playKey={playKey} />}
+      {effect === 'gifts' && <GiftsEffect width={width} height={height} playKey={playKey} />}
       {!drawn && particles.map((p, i) => <AnimatedParticle key={`${effect}-${i}`} p={p} playKey={playKey} />)}
     </View>
   );
