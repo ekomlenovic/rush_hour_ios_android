@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import type { UiColors } from '@/theme';
@@ -21,12 +22,13 @@ interface Props {
 /** Blurred header of the world map: back, the zone being browsed with the stars won, options */
 export default function MapHeader({ colors, isDark, zone, stars, maxStars, onBack, onSettings }: Props) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const progress = maxStars > 0 ? Math.min(1, stars / maxStars) : 0;
 
   return (
     <Animated.View
       entering={FadeInUp.delay(100).springify()}
-      style={[styles.header, { backgroundColor: colors.backgroundTranslucent, borderBottomColor: colors.divider }]}
+      style={[styles.header, { backgroundColor: colors.backgroundTranslucent, borderBottomColor: colors.divider, paddingTop: insets.top + 8 }]}
     >
       <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
       <View style={styles.row}>
@@ -82,7 +84,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 100,
-    paddingTop: 56,
     paddingBottom: 12,
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,

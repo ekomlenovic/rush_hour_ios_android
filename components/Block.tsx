@@ -21,7 +21,7 @@ interface BlockProps {
   allVehicles: Vehicle[];
   gridSize: number;
   cellSize: number;
-  onMoveEnd: (vehicleId: string, newRow: number, newCol: number) => void;
+  onMoveEnd: (vehicleId: string, newRow: number, newCol: number) => boolean | void;
   isHinted?: boolean;
   min: number;
   max: number;
@@ -122,9 +122,14 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
 
   const handleMoveEndSync = useCallback(
     (newRow: number, newCol: number) => {
-      onMoveEnd(vehicle.id, newRow, newCol);
+      // Refused (another vehicle dragged at the same time took the room): back to its cell
+      if (onMoveEnd(vehicle.id, newRow, newCol) === false) {
+        translateX.value = withSpring(vehicle.col * cellSize, BOUNCE_SPRING);
+        translateY.value = withSpring(vehicle.row * cellSize, BOUNCE_SPRING);
+        triggerCollisionHaptic();
+      }
     },
-    [onMoveEnd, vehicle.id]
+    [onMoveEnd, vehicle.id, vehicle.row, vehicle.col, cellSize, triggerCollisionHaptic]
   );
 
   const hasHitMin = useSharedValue(false);
@@ -219,7 +224,11 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
       triggerCollisionHaptic();
       return;
     }
-    onMoveEnd(vehicle.id, next.row, next.col);
+    if (onMoveEnd(vehicle.id, next.row, next.col) === false) {
+      AccessibilityInfo.announceForAccessibility(a11yStrings.blocked);
+      triggerCollisionHaptic();
+      return;
+    }
     triggerMoveHaptic();
   }, [vehicle, min, max, onMoveEnd, a11yStrings, triggerCollisionHaptic, triggerMoveHaptic]);
 

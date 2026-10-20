@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useGameStore } from '@/store/gameStore';
 import { useTheme } from '@/theme';
+import ScreenHeader from '@/components/ScreenHeader';
 import { availableRecaps, buildRecap, isInProgress, periodLabel, recapKind } from '@/utils/recap';
 
 /** Past recaps, from the profile: the last 12 months and every year (issue 125) */
@@ -35,12 +36,7 @@ export default function RecapsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 12 }]}>
-        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('recap.list_title')}</Text>
-        <Pressable onPress={() => router.back()} style={styles.closeButton} accessibilityRole="button" hitSlop={8}>
-          <Text style={[styles.closeText, { color: colors.primaryText }]}>{t('common.close')}</Text>
-        </Pressable>
-      </View>
+      <ScreenHeader colors={colors} title={t('recap.list_title')} backLabel={t('profile.title')} divider />
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}>
         {groups.length === 0 ? (
@@ -54,7 +50,8 @@ export default function RecapsScreen() {
               const label = periodLabel(key, i18n.language);
               const detail = [
                 t(`recap.profile_${recap.profile}`),
-                t('recap.list_wins', { count: recap.stats.wins }),
+                // Never a zero in a recap (see docs/GAME_DESIGN.md)
+                recap.stats.wins > 0 ? t('recap.list_wins', { count: recap.stats.wins }) : null,
                 isInProgress(recap) ? t('recap.in_progress') : null,
               ].filter(Boolean).join(' · ');
               return (
@@ -83,27 +80,6 @@ export default function RecapsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    position: 'absolute',
-    right: 20,
-    bottom: 15,
-    padding: 5,
-  },
-  closeText: {
-    fontSize: 16,
-    fontWeight: '600',
   },
   content: {
     padding: 20,

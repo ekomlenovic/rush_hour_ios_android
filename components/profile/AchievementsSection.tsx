@@ -10,6 +10,9 @@ import type { UiColors } from '@/theme';
 
 /** Locked achievements shown first, by share of their target already done */
 const CLOSEST_COUNT = 3;
+/** Longest word that fits the width of a medal on a small phone: a longer one ("Perfectionniste") was cut in two, it gets a smaller font */
+const LONGEST_FITTING_WORD = 12;
+const hasLongWord = (name: string) => name.split(/\s+/).some(word => word.length > LONGEST_FITTING_WORD);
 
 interface Props {
   colors: UiColors;
@@ -124,7 +127,7 @@ export default function AchievementsSection({ colors, context, selected, onSelec
                         <AchievementIcon icon={isSecret ? 'lock-closed' : ach.icon} count={isSecret ? 1 : ach.iconCount} size={RFValue(24)} color={isUnlocked ? colors.primaryText : colors.textMuted} style={!isUnlocked && styles.locked} />
                         {isNew && <View style={[styles.newDot, { backgroundColor: colors.primary, borderColor: colors.surface }]} />}
                       </View>
-                      <Text style={[styles.badgeName, { color: isUnlocked ? colors.text : colors.textMuted }]} numberOfLines={2}>{name}</Text>
+                      <Text style={[styles.badgeName, hasLongWord(name) && styles.badgeNameLong, { color: isUnlocked ? colors.text : colors.textMuted }]} numberOfLines={2}>{name}</Text>
                     </Pressable>
                   );
                 })}
@@ -259,6 +262,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     paddingHorizontal: 2,
+  },
+  badgeNameLong: {
+    fontSize: RFValue(9.5),
   },
   row: {
     flexDirection: 'row',

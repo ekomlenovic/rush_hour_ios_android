@@ -17,6 +17,7 @@ import ShareIcon from '@/components/share/ShareIcon';
 import ShareLevelSheet from '@/components/share/ShareLevelSheet';
 import LevelNameSheet from '@/components/share/LevelNameSheet';
 import KeyboardScreen from '@/components/KeyboardScreen';
+import ScreenHeader from '@/components/ScreenHeader';
 import { useTheme, type UiColors } from '@/theme';
 import { matchSecretCode } from '@/store/stats';
 
@@ -152,12 +153,11 @@ export default function CustomLevelsScreen() {
 
     return (
         <KeyboardScreen style={{ backgroundColor: colors.background }}>
-            <View style={styles.header}>
-                <Pressable onPress={() => router.back()} style={styles.headerSide} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
-                    <Text style={[styles.backText, { color: colors.textMuted }]}>← {t('common.home')}</Text>
-                </Pressable>
-                <Text style={[styles.headerTitle, { color: colors.text }]} accessibilityRole="header" numberOfLines={1}>{t('home.my_levels')}</Text>
-                <View style={[styles.headerSide, styles.headerRight]}>
+            <ScreenHeader
+                colors={colors}
+                title={t('home.my_levels')}
+                backLabel={t('common.home')}
+                right={(
                     <Pressable
                         onPress={() => router.push('/creator')}
                         style={[styles.newBtn, { backgroundColor: colors.primarySoft, borderColor: colors.primaryBorder }]}
@@ -167,8 +167,8 @@ export default function CustomLevelsScreen() {
                     >
                         <Ionicons name="add" size={22} color={colors.primaryText} />
                     </Pressable>
-                </View>
-            </View>
+                )}
+            />
 
             <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
                 {tabs.map(tab => {
@@ -442,19 +442,6 @@ function MenuRow({ icon, label, color, colors, onPress }: MenuRowProps) {
 }
 
 const styles = StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingTop: 60,
-        paddingHorizontal: 20,
-        marginBottom: 16,
-    },
-    // Same width on both sides: the title stays centered
-    headerSide: { width: 90, height: 44, justifyContent: 'center' },
-    headerRight: { alignItems: 'flex-end' },
-    backText: { fontSize: 16, fontWeight: '700' },
-    headerTitle: { flex: 1, textAlign: 'center', fontSize: 24, fontWeight: '800' },
     newBtn: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
     tabs: { flexDirection: 'row', marginHorizontal: 20, marginBottom: 16, padding: 4, borderRadius: 14 },
     tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 9, borderRadius: 10 },

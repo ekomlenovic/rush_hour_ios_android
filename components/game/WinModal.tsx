@@ -43,13 +43,15 @@ interface Props {
   onShowSolution: () => void;
   /** Map and custom levels only, when not optimal: replay the level for 3 stars */
   onRetry?: () => void;
+  /** Map levels with a level after them: plays it at once; Continue then reads "Back to the map" */
+  onNextLevel?: () => void;
   onContinue: () => void;
   onRequestClose: () => void;
 }
 
 export default function WinModal({
   visible, colors, stars, moveCount, minMoves, score, timeMs, unlocks, cosmeticUnlocks, onOpenGarage, missionReward, xpGain, levelUps, effect, effectColors,
-  canShareResult, onShareResult, onShowSolution, onRetry, onContinue, onRequestClose,
+  canShareResult, onShareResult, onShowSolution, onRetry, onNextLevel, onContinue, onRequestClose,
 }: Props) {
   const isOptimal = moveCount <= minMoves;
   const { t } = useTranslation();
@@ -205,13 +207,33 @@ export default function WinModal({
               <Text style={[styles.winButtonText, { color: colors.primaryText }]}>{t('share.share_result')}</Text>
             </Pressable>
           )}
-          <Pressable
-            style={[styles.winButton, { backgroundColor: colors.primary }]}
-            onPress={onContinue}
-            accessibilityRole="button"
-          >
-           <Text style={styles.winButtonText}>{t('common.continue')}</Text>
-          </Pressable>
+          {onNextLevel ? (
+            <>
+              <Pressable
+                style={[styles.winButton, styles.winShareButton, styles.winButtonWide, { borderColor: colors.primary }]}
+                onPress={onContinue}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.winButtonText, { color: colors.primaryText }]}>{t('game.back_to_map')}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.winButton, styles.withIcon, styles.winButtonWide, { backgroundColor: colors.primary }]}
+                onPress={onNextLevel}
+                accessibilityRole="button"
+              >
+                <Text style={styles.winButtonText}>{t('game.next_level')}</Text>
+                <Ionicons name="arrow-forward" size={20} color={fixedColors.onPrimary} />
+              </Pressable>
+            </>
+          ) : (
+            <Pressable
+              style={[styles.winButton, { backgroundColor: colors.primary }]}
+              onPress={onContinue}
+              accessibilityRole="button"
+            >
+             <Text style={styles.winButtonText}>{t('common.continue')}</Text>
+            </Pressable>
+          )}
           </ScrollView>
         </View>
         {visible && <WinEffect effect={effect} width={width} height={height} colors={effectColors} />}
@@ -357,6 +379,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 48,
     borderRadius: 14,
+  },
+  // The two buttons of a map level share the width of the card
+  winButtonWide: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    paddingHorizontal: 16,
   },
   winButtonText: {
     color: fixedColors.onPrimary,

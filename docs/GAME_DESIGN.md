@@ -15,7 +15,8 @@ Le défi du jour est un **one-shot**. C'est voulu : le score du jour doit reflé
 | Une fois réussi, le plateau est **verrouillé** jusqu'au lendemain | `isDailyCompleted` désactive le plateau |
 | La **solution optimale** n'est visible **qu'une fois le défi réussi** (écran de victoire, puis bandeau « déjà réussi ») : jamais avant, pour ne pas gâcher l'essai unique | `SolutionPlayer` (`components/game/SolutionPlayer.tsx`) |
 | Défi réussi : le bandeau « déjà réussi » montre **les coups joués** et l'optimum, et on peut revoir **sa propre solution** comme la solution optimale (le journal de coups du meilleur résultat est gardé) | `ChallengeDoneBanner`, `ChallengeResult.moveLog`, `movesFromLog` (`utils/solutionReplay.ts`) |
-| « Continuer » après la victoire d'un défi **reste sur l'écran du défi**, avec ce bandeau ; on revient à la carte par « ← Carte » | `handleWinContinue` (`app/game.tsx`) |
+| « Continuer » après la victoire d'un défi **reste sur l'écran du défi**, avec ce bandeau ; « ← Retour » ramène là d'où on l'a ouvert (l'accueil). « ← Carte » n'est écrit que sur un niveau de la carte | `handleWinContinue`, `goBack` (`app/game.tsx`) |
+| Tant qu'il n'est pas réussi, l'écran du défi **rappelle l'essai unique** sous le plateau (ni indice, ni annuler, ni recommencer ; partie gardée si on quitte) : l'absence des boutons ne passe pas pour un bug | `game.daily_rules` (`app/game.tsx`) |
 | Même puzzle pour tout le monde à une date donnée | `generateDailyLevel(dateStr)` est déterministe |
 | Le **lundi**, le puzzle est plus difficile | `isMondayDaily` |
 | La réussite fait avancer le **streak** | `completeDailyChallenge` → `updateStreak` |
@@ -30,7 +31,7 @@ Les défis du jour **passés** se rejouent depuis les archives : toucher un jour
 
 | Règle | Implémentation |
 |---|---|
-| **Uniquement les jours passés** : jamais aujourd'hui (le vrai défi) ni le futur, les **90 derniers jours** au plus | `isArchiveDateAvailable` (`utils/archives.ts`), vérifié à l'ouverture (`resolveArchiveLevel`) et à la victoire (`completeArchiveChallenge`) |
+| **Uniquement les jours passés** : jamais aujourd'hui (le vrai défi) ni le futur, les **90 derniers jours** au plus. Toucher aujourd'hui dans le calendrier ouvre le défi du jour lui-même | `isArchiveDateAvailable` (`utils/archives.ts`), vérifié à l'ouverture (`resolveArchiveLevel`) et à la victoire (`completeArchiveChallenge`), `StreakCalendar` |
 | Pas avant le **14/10/2026** : dernière modification du générateur du défi du jour, un jour plus ancien pourrait donner un autre puzzle que celui vraiment joué. **Modifier le générateur du défi du jour oblige à avancer cette date** (le générateur est figé par un test) | `ARCHIVE_FIRST_DATE`, `__tests__/archives.test.ts` |
 | Le puzzle d'un jour est généré une fois puis **mis en cache** ; si c'est le défi d'hier encore en cache, c'est ce puzzle-là | `archiveLevels` (`utils/levelResolver.ts`) |
 | Indices, annuler, recommencer et « Réessayer pour 3 ⭐ » **autorisés** | comme un niveau de la carte (`app/game.tsx`) |
@@ -50,12 +51,17 @@ Les défis du jour **passés** se rejouent depuis les archives : toucher un jour
 |---|---|
 | **Indices illimités**, sans jetons ni monnaie, et ce n'est pas amené à changer | `handleHint` ; seul `totalHintsUsed` est compté (stats) |
 | **Annuler compte comme un coup** | `undo` incrémente `moveCount` : annuler n'est pas gratuit pour le score |
+| Un coup qui **traverserait un véhicule** est refusé et le véhicule revient à sa place : deux véhicules glissés en même temps (deux doigts) vers la même case ne se chevauchent plus. Même règle que le serveur (`applyMoves`), appliquée aussi au multijoueur, dont le serveur refusait sinon la victoire | `isLegalMove` (`utils/collision.ts`), `moveVehicle`, `Block`, `playMove`, `useDuel` |
 | **Recommencer** remet le compteur à zéro | `resetLevel` |
 | Progression sauvegardée par niveau | `savedStates[levelId]` |
 | Les niveaux **générés** sont numérotés à la suite de la campagne, **sans trou** : un niveau que le générateur n'a pas réussi à produire ne prend pas de numéro (sinon le suivant ne se débloquait jamais). Une seule génération à la fois | `startLevelGeneration` (`hooks/useLevelGenerator.ts`), migration v8 |
+| **Supprimer les niveaux générés** (options de la carte) emporte leurs étoiles et leurs parties en cours : jamais d'un seul toucher, une confirmation dit ce qui part. Le cadenas après le dernier niveau ouvre ces options (générateur) | `MapLevelsSection`, `purgeCustomLevels`, `handleLevelPress` (`app/map.tsx`) |
+| La carte s'ouvre sur le **dernier niveau joué tant qu'il n'est pas réussi** (une partie à finir), sinon sur le **prochain niveau** (celui marqué « Suivant ») ; « Jouer » sur l'accueil nomme ce niveau. Choisi une fois à l'ouverture : une victoire ne déplace pas la carte sous le joueur | `getMapFocusLevel` (`utils/mapFocus.ts`), `app/map.tsx`, `app/index.tsx` |
+| Tutoriel : « Passer » mène un **nouveau joueur à la carte** (de retour à l'accueil, « Jouer » relançait le tutoriel) ; rouvert depuis les options ou son nœud, il revient en arrière, et sa fin revient à la carte déjà ouverte | `skip`, `startPlaying` (`app/tutorial.tsx`) |
 | Étoiles **proportionnelles au niveau** : 3 ⭐ = solution optimale, 2 ⭐ ≤ optimal + 50 % (arrondi au-dessus : +6 à 12 coups, +10 à 20, +20 à 40), sinon 1 ⭐. Les victoires déjà enregistrées ont été recomptées avec cette règle (l'XP déjà gagnée ne change pas) | `getStars`, `twoStarTolerance` (`utils/scoring.ts`), migration v4 (`store/migrations.ts`) |
 | On garde le meilleur score et les meilleures étoiles | `completeLevel` |
 | Après une victoire, on peut **revoir la solution optimale** : elle se joue toute seule depuis la position de départ, et on avance ou recule coup par coup | `SolutionPlayer`, `vehiclesAtStep` (`utils/solutionReplay.ts`) |
+| Après la victoire d'un niveau de la carte (campagne ou généré), l'écran de victoire propose **« Niveau suivant »** (bouton principal), qui ouvre le niveau d'après à la place de celui-ci (le retour mène toujours à la carte), et **« Retour à la carte »**. Après le dernier niveau de la carte, et pour les niveaux personnalisés, les défis et les archives : « Continuer » seul | `nextMapLevel` (`utils/mapFocus.ts`), `handleNextLevel` (`app/game.tsx`), `WinModal` |
 | Si la victoire n'est pas optimale, l'écran de victoire affiche l'écart et propose **« Réessayer pour 3 ⭐ »** : une nouvelle tentative depuis le départ (compteurs remis à zéro, ce n'est pas un recommencer) | `handleRetry` (`app/game.tsx`) |
 | **3 niveaux jouables d'avance** : le prochain niveau et les **2 suivants**. Un joueur bloqué sur un niveau dur continue et y revient plus tard ; gagner un niveau plus loin fait avancer la fenêtre. Calculé à partir de `maxUnlockedLevel` (sa signification ne change pas), rien de sauvegardé en plus | `MAP_LOOKAHEAD`, `isMapLevelUnlocked` (`utils/mapFocus.ts`) |
 | **Boss** : un niveau de la campagne qui demande **au moins 8 coups de plus** que la médiane des 5 niveaux avant lui. Repéré dans la courbe, jamais choisi à la main ; la campagne ne grandissant qu'à la fin, un boss le reste | `findBossLevels`, `isBossLevel` (`data/bosses.ts`) |
@@ -89,6 +95,7 @@ Accueil → **Mes niveaux** : onglets Créés, Importés, Favoris.
 | Règle | Implémentation |
 |---|---|
 | **Modifier, c'est créer** : un niveau importé modifié est enregistré comme **nouveau niveau dans « Créés »** (il compte pour les succès du créateur), l'importé reste intact | `saveLevel` (`app/creator.tsx`) |
+| Créateur : changer la **taille de la grille garde les véhicules qui tiennent** (la sortie garde son côté) et demande avant d'en retirer ; **quitter avec des modifications non sauvegardées** demande confirmation | `resizeBoard` (`utils/creatorGeometry.ts`), `beforeRemove` (`app/creator.tsx`) |
 | **Nom facultatif**, demandé à l'enregistrement dans le créateur et à l'import (prérempli avec celui du lien), modifiable ensuite (« ⋯ » → Renommer). Sans nom : « Niveau 3 » / « Niveau importé 3 » (rang dans la liste), **jamais l'id** (un horodatage) | `LevelNameSheet`, `customLevelTitle` (`utils/customLevels.ts`) |
 | Le nom voyage dans le lien (section en plus, ignorée par les anciennes versions de l'app) | `serializeLevel` (`utils/sharing.ts`) |
 | Un lien reçu est **vérifié et résolu à nouveau** : grille, véhicules dans la grille sans chevauchement, une seule voiture cible, une sortie, une solution. Le minimum de coups du lien **n'est jamais repris** (il donne les étoiles et l'XP). La résolution tourne **en arrière-plan** (jamais sur le thread de l'écran) et s'arrête au-delà d'**un million de positions** : un lien forgé ne peut ni figer ni faire planter l'app. Dans « Importer », le plateau est décodé à la frappe, résolu quand la saisie fait une pause ; le créateur a la même limite (« trop de positions ») | `parseSharedLevelAsync`, `MAX_VALIDATE_STATES` (`utils/solver.ts`) |
@@ -148,7 +155,7 @@ Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler
 | Le niveau est **déguisé** : une des 7 symétries non triviales (rotation / miroir) et couleurs remélangées. Le nombre minimum de coups est inchangé | `transformLevel` |
 | **Diversité** : tout le pool est parcouru avant qu'un niveau revienne, deux semaines de suite ne se ressemblent pas | pas de 23 dans le pool, symétrie qui change chaque semaine |
 | Ajouter des niveaux à la campagne agrandit le pool et **change le tirage des semaines suivantes**. La semaine en cours ne bouge pas : son niveau est en cache pour sa clé de semaine | `currentWeeklyLevel` / `weeklyLevelKey` |
-| **Recommencer** est le seul bouton d'action ; il remet les coups à zéro | `resetLevel`, `components/game/GameActions.tsx` |
+| **Recommencer** est le seul bouton d'action ; il remet les coups à zéro. Une ligne sous le bouton le rappelle (ni indice ni annuler) | `resetLevel`, `components/game/GameActions.tsx`, `game.weekly_rules` |
 | N'affecte **ni le streak ni la carte** | ID réservé `999998`, `weeklyChallengeProgress` |
 
 ## Niveau joueur et XP
@@ -408,6 +415,11 @@ Les emojis ne restent que là où une icône ne peut pas s'afficher ou n'a pas d
 
 - les **textes qui sortent de l'app** : résultat partagé (`utils/shareResult.ts`), titres des notifications, alertes système ;
 - les **illustrations** : décor et panneaux des zones de la carte (`components/map/zones.ts`), icône des skins sur la voiture cible et vignettes des effets (`theme/board.ts`, `data/cosmetics.ts`).
+
+## Navigation
+
+- Un écran a le même en-tête que l'écran de jeu : **« ← destination »** à gauche (« Accueil », « Profil », « Carte », ou « Retour » quand elle dépend d'où on vient), le **titre centré**, une action éventuelle à droite. Sans écran dessous (ouvert par un lien au lancement), le retour mène à l'accueil (`ScreenHeader`, `components/ScreenHeader.tsx`).
+- Exceptions voulues : la carte (en-tête flouté avec la zone), le créateur (Test et Sauver à droite), les plein-écrans qui se referment par une croix (solution, récap), le tutoriel (« Passer ») et le multijoueur, qui a son en-tête (`MultiHeader`).
 
 ## Retour du joueur
 

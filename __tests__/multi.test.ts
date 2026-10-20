@@ -249,6 +249,15 @@ describe('a multiplayer game on the phone', () => {
     expect(playMove(game, 'nope', 0, 0, 1_001_000)).toBeNull();
   });
 
+  it('a move through a vehicle is never played: the server would refuse the win', () => {
+    const { getMoveBounds } = require('../utils/collision') as typeof import('../utils/collision');
+    const game = gameFromStart(URL, start, undefined, 1_000_500);
+    const blocked = level.vehicles.find(v => getMoveBounds(v, level.vehicles, level.gridSize).max < level.gridSize - v.length)!;
+    const { max } = getMoveBounds(blocked, level.vehicles, level.gridSize);
+    const horizontal = blocked.orientation === 'horizontal';
+    expect(playMove(game, blocked.id, horizontal ? blocked.row : max + 1, horizontal ? max + 1 : blocked.col, 1_001_000)).toBeNull();
+  });
+
   it('times never go back, even if the phone clock does', () => {
     const v = level.vehicles.find(x => !x.isTarget && x.orientation === 'horizontal')!;
     let game = gameFromStart(URL, start, undefined, 1_000_500);
