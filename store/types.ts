@@ -84,6 +84,8 @@ export interface LevelSaveState {
   moveLog?: MoveRecord[];
   /** Wall-clock start of the attempt (ms since epoch), the origin of the move times */
   startedAt?: number;
+  /** Wall-clock time of the last change (ms since epoch); missing in saves from before v11 */
+  savedAt?: number;
 }
 
 /** Result of a daily or weekly challenge */

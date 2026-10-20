@@ -2,7 +2,7 @@ import { useGameStore, Level } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
 import { resetStore, setToday } from './helpers';
 import { calculateScore } from '../utils/scoring';
-import { MAX_SAVED_UNDOS } from '../store/savedStates';
+import { MAX_SAVED_UNDOS, OLD_SAVED_UNDOS, RECENT_SAVES_WITH_UNDOS } from '../store/savedStates';
 import { ACHIEVEMENT_XP, BOSS_WIN_XP, MISSIONS_XP, dailyWinXp, levelWinXp, weeklyWinXp } from '../data/progression';
 
 const options = useGameStore.persist.getOptions();
@@ -14,8 +14,8 @@ const merge = (persisted: Record<string, unknown>) =>
   options.merge!(persisted, useGameStore.getInitialState());
 
 describe('persisted state', () => {
-  it('is at version 10', () => {
-    expect(options.version).toBe(10);
+  it('is at version 11', () => {
+    expect(options.version).toBe(11);
   });
 
   it('keeps the player data and leaves the in-game state out', () => {
@@ -336,6 +336,55 @@ describe('migrate v10: new achievements (#19)', () => {
   it('leaves a save without achievements untouched', () => {
     const v9 = { progress: [] };
     expect(migrate(v9, 9)).toEqual(v9);
+  });
+});
+
+describe('migrate v11: undo stacks of the levels played long ago (save size)', () => {
+  const board = (col: number) => [{ id: 'X', row: 2, col, length: 2, orientation: 'horizontal' as const, isTarget: true, color: '#f00' }];
+  // Written by v10: no time of the last move, only the start of the attempt (missing before 1.2)
+  const save = (startedAt: number | undefined, undos = 50) => ({
+    vehicles: board(1),
+    moveCount: undos + 3,
+    history: Array.from({ length: undos }, (_, i) => board(i % 4)),
+    attempt: { hints: 0, undos: 2, resets: 1, elapsedMs: 90000 },
+    moveLog: [{ vehicleId: 'X', delta: 1, t: 1000 }, { vehicleId: 'X', delta: -1, t: 2500 }],
+    ...(startedAt === undefined ? {} : { startedAt }),
+  });
+
+  it('keeps the whole undo stack of the 10 levels played last, the last 5 steps of the older ones', () => {
+    // 14 levels left unfinished, started on days 1 to 14; level 20 has no start (before 1.2)
+    const savedStates: Record<string, ReturnType<typeof save>> = { 20: save(undefined) };
+    for (let i = 1; i <= 14; i++) savedStates[100 + i] = save(i * 86400000);
+    const v10 = { progress: [{ levelId: 3, completed: true, bestScore: 300, stars: 3 }], xp: 1200, savedStates };
+
+    const state = migrate(v10, 10);
+    const saved = state.savedStates as Record<string, ReturnType<typeof save>>;
+    expect(Object.keys(saved).sort()).toEqual(Object.keys(savedStates).sort());
+    for (let i = 5; i <= 14; i++) expect(saved[100 + i]).toEqual(savedStates[100 + i]);
+    for (const key of ['20', '101', '102', '103', '104']) {
+      expect(saved[key].history).toEqual(savedStates[key].history.slice(-OLD_SAVED_UNDOS));
+      // The game itself carries on where it was
+      const { history: _h, ...game } = savedStates[key];
+      expect(saved[key]).toMatchObject(game);
+    }
+    expect(state.progress).toEqual(v10.progress);
+    expect(state.xp).toBe(1200);
+  });
+
+  it('leaves the short stacks and the challenges untouched', () => {
+    const savedStates: Record<string, ReturnType<typeof save>> = { 'daily-2026-10-19': save(1, 0), 'archive-2026-10-15': save(2, 0) };
+    for (let i = 1; i <= RECENT_SAVES_WITH_UNDOS + 5; i++) savedStates[100 + i] = save(i, OLD_SAVED_UNDOS);
+    const v10 = { savedStates };
+    expect(migrate(v10, 10)).toEqual(v10);
+  });
+
+  it('a save of the previous version still loads in the store', () => {
+    const savedStates: Record<string, ReturnType<typeof save>> = {};
+    for (let i = 1; i <= 12; i++) savedStates[100 + i] = save(i);
+    const merged = merge(migrate({ maxUnlockedLevel: 120, savedStates }, 10));
+    expect(merged.maxUnlockedLevel).toBe(120);
+    expect(merged.savedStates[112].history).toHaveLength(MAX_SAVED_UNDOS);
+    expect(merged.savedStates[101].history).toHaveLength(OLD_SAVED_UNDOS);
   });
 });
 

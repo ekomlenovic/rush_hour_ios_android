@@ -80,3 +80,29 @@ function withHistory(key: string, save: LevelSaveState): LevelSaveState {
   return { ...save, history: savedHistory(key, Array.isArray(save.history) ? save.history : []) };
 }
 
+/**
+ * Levels in progress that keep their whole saved undo stack (MAX_SAVED_UNDOS): the ones
+ * played last. Each such save weighs up to about 60 KB, and the levels left unfinished
+ * add up with no end: the older ones keep only their last OLD_SAVED_UNDOS steps.
+ */
+export const RECENT_SAVES_WITH_UNDOS = 10;
+export const OLD_SAVED_UNDOS = 5;
+
+/** When a save was last played: its last move, else the start of its attempt (saves from before v11) */
+const playedAt = (save: LevelSaveState) => save.savedAt ?? save.startedAt ?? 0;
+
+/**
+ * Saves with the undo stacks of the levels played long ago shortened to their last steps:
+ * the game itself (board, moves, move log, attempt) is kept as is. The same object when
+ * nothing is shortened.
+ */
+export function trimOldUndoStacks(savedStates: SavedStates): SavedStates {
+  const withUndos = Object.entries(savedStates ?? {})
+    .filter(([key, save]) => !isChallengeKey(key) && isRecord(save) && Array.isArray(save.history) && save.history.length > OLD_SAVED_UNDOS)
+    .sort(([, a], [, b]) => playedAt(b) - playedAt(a));
+  const old = withUndos.slice(RECENT_SAVES_WITH_UNDOS);
+  if (old.length === 0) return savedStates;
+  const trimmed: SavedStates = { ...savedStates };
+  for (const [key, save] of old) trimmed[key] = { ...save, history: save.history.slice(-OLD_SAVED_UNDOS) };
+  return trimmed;
+}
