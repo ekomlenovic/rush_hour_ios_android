@@ -89,7 +89,7 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
       </IconText>
 
       <View style={{ marginBottom: 20 }}>
-        <Text style={[styles.settingLabel, { color: colors.text }]}>{t('creator.difficulty')}: {t(`difficulty.${genDifficulty}`)}</Text>
+        <Text style={[styles.settingLabel, { color: colors.text }]}>{t('map.difficulty_label', { level: t(`difficulty.${genDifficulty}`) })}</Text>
         <View style={styles.segmentGroup}>
           {(['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER'] as const).map(diff =>
             segment(diff, genDifficulty, t(`difficulty.${diff}`), () => {

@@ -100,6 +100,7 @@
     "zone": "Zone {{number}}",
     "zone_generated": "Generated levels",
     "jump_to": "Level {{id}}",
+    "jump_end": "End of the map",
     "zones": {
       "downtown": "Downtown",
       "suburbs": "Suburbs",
@@ -132,6 +133,7 @@
     "grid_size_label": "Grid Size:",
     "generator_warning": "Note: generating complex levels (Expert, Master) can be heavy for a phone.",
     "grid_size": "Grid Size: {{size}}x{{size}}",
+    "difficulty_label": "Difficulty: {{level}}",
     "amount_to_create": "Amount to create: {{amount}}",
     "generating": "Generation in Progress...",
     "generating_levels": "Generating Levels",
@@ -641,6 +643,7 @@
     "map_zone": "Zone {{number}}, {{name}}, {{stars}} of {{total}} stars",
     "map_progress": "{{stars}} of {{total}} stars won on the map",
     "map_jump": "Go back to level {{id}}",
+    "map_jump_end": "Go back to the end of the map",
     "hour_less": "One hour earlier",
     "hour_more": "One hour later",
     "missions_progress": "Daily missions, {{done}} of {{total}}",
