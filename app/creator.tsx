@@ -24,7 +24,7 @@ import ExitMarker from '@/components/creator/ExitMarker';
 import PillSelector from '@/components/creator/PillSelector';
 import LevelNameSheet from '@/components/share/LevelNameSheet';
 import { vehicleStyles } from '@/components/creator/vehicleStyles';
-import { useTheme, fixedColors, TARGET_CAR_COLOR } from '@/theme';
+import { useTheme, fixedColors, applyPalette, VEHICLE_PALETTES, TARGET_CAR_COLOR } from '@/theme';
 
 const BOARD_BORDER = 1.5;
 const EXIT_SIDES = ['Right', 'Left', 'Top', 'Bottom'] as const;
@@ -33,7 +33,7 @@ const EXIT_SIDES = ['Right', 'Left', 'Top', 'Bottom'] as const;
 
 export default function LevelCreatorScreen() {
   const { t } = useTranslation();
-  const { colors: C, board, isDark } = useTheme();
+  const { colors: C, board, palette, isDark } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ levelId: string }>();
   const saveCreatedLevel = useGameStore(s => s.saveCreatedLevel);
@@ -289,12 +289,14 @@ export default function LevelCreatorScreen() {
     };
     setVehicles(prev => [...prev, added]);
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const letter = getVehicleLetters([...vehiclesRef.current, added])[added.id];
+    const withAdded = [...vehiclesRef.current, added];
+    const letter = getVehicleLetters(withAdded)[added.id];
+    const color = applyPalette(withAdded, palette).get(added.id) ?? added.color;
     AccessibilityInfo.announceForAccessibility(t('a11y.added', {
-      vehicle: describeVehicle(t, added, letter),
+      vehicle: describeVehicle(t, { ...added, color }, letter),
       position: describePosition(t, added),
     }));
-  }, [gridSize, t]);
+  }, [gridSize, palette, t]);
 
   const removeVehicle = useCallback((id: string) => {
     if (id === 'target') return;
@@ -349,6 +351,11 @@ export default function LevelCreatorScreen() {
 
   // ── Couleurs Dynamiques ──
   const usedColors = vehicles.map(v => v.color);
+  // Selected palette (cosmetic), as on the game board: the level keeps its own colors
+  const displayColors = useMemo(() => applyPalette(vehicles, palette), [vehicles, palette]);
+  const paletteColors = VEHICLE_PALETTES[palette];
+  /** Palette color the next added vehicle will get, the template's own one with the classic palette */
+  const nextPaletteColor = paletteColors ? paletteColors[vehicles.filter(v => !v.isTarget).length % paletteColors.length] : undefined;
 
   // ── Rendering Data ──
   const ghostCells = useMemo(() => {
@@ -437,7 +444,7 @@ export default function LevelCreatorScreen() {
 
             {vehicles.map(v => (
               <BoardVehicle
-                key={v.id} vehicle={v} cellSize={cellSize} isGhost={activeDrag?.id === v.id}
+                key={v.id} vehicle={v} color={displayColors.get(v.id)} cellSize={cellSize} isGhost={activeDrag?.id === v.id}
                 onDragStart={() => {
                   const { cx, cy } = getVehicleVisualCenter(v, 0, 0);
                   updateDrag(v.id, v.orientation, v.length, v.color, cx, cy, v.id);
@@ -455,7 +462,7 @@ export default function LevelCreatorScreen() {
                 }}
                 onRemove={() => removeVehicle(v.id)}
                 onPress={() => pivotVehicle(v.id)}
-                a11yLabel={describeVehicle(t, v, letters[v.id])}
+                a11yLabel={describeVehicle(t, { ...v, color: displayColors.get(v.id) ?? v.color }, letters[v.id])}
                 a11yValue={describePosition(t, v)}
                 a11yStrings={vehicleA11yStrings}
               />
@@ -488,7 +495,7 @@ export default function LevelCreatorScreen() {
               {
                 width: floatW,
                 height: floatH,
-                backgroundColor: floatingTemplate.color,
+                backgroundColor: nextPaletteColor ?? floatingTemplate.color,
                 borderColor: board.dragBorder,
               },
               floatAnimStyle,
@@ -510,6 +517,7 @@ export default function LevelCreatorScreen() {
                 <ToolboxItem
                   key={idx}
                   template={templateWithColor}
+                  displayColor={nextPaletteColor}
                   colors={C}
                   dragX={dragX}
                   dragY={dragY}

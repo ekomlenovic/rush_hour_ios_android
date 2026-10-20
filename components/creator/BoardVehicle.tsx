@@ -10,6 +10,8 @@ import { useTheme } from '@/theme';
 
 type BoardVehicleProps = {
   vehicle: Vehicle;
+  /** Displayed color (vehicle palette), the vehicle's color if undefined */
+  color?: string;
   cellSize: number;
   isGhost: boolean;
   onDragStart: () => void;
@@ -24,7 +26,7 @@ type BoardVehicleProps = {
 };
 
 /** A vehicle on the creator board: drag to move, tap to pivot, long press to remove */
-const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, cellSize, isGhost, onDragStart, onDragMove, onDragEnd, onRemove, onPress, a11yLabel, a11yValue, a11yStrings }: BoardVehicleProps) {
+const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, color, cellSize, isGhost, onDragStart, onDragMove, onDragEnd, onRemove, onPress, a11yLabel, a11yValue, a11yStrings }: BoardVehicleProps) {
   const { board } = useTheme();
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
@@ -78,6 +80,7 @@ const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, cellSize, is
     elevation: sc.value > 1 ? 10 : 4,
   }));
 
+  const radius = cellSize * board.vehicleRadius;
   const w = (v.orientation === 'horizontal' ? v.length : 1) * cellSize - 4;
   const h = (v.orientation === 'vertical' ? v.length : 1) * cellSize - 4;
 
@@ -96,11 +99,14 @@ const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, cellSize, is
         onAccessibilityAction={e => (e.nativeEvent.actionName === 'activate' ? onPress() : onRemove())}
         style={[
         styles.vehicleBlock, animStyle,
-        { top: v.row * cellSize + 2, left: v.col * cellSize + 2, width: w, height: h, backgroundColor: v.isTarget ? board.targetCar : v.color },
+        {
+          top: v.row * cellSize + 2, left: v.col * cellSize + 2, width: w, height: h, borderRadius: radius,
+          backgroundColor: v.isTarget ? board.targetCar : color ?? v.color, borderColor: board.vehicleBorder,
+        },
       ]}>
-        <View style={[styles.vehicleShine, { backgroundColor: board.vehicleShine }, v.orientation === 'vertical' && styles.vehicleShineV]} />
+        <View style={[styles.vehicleShine, { borderRadius: radius, backgroundColor: board.vehicleShine }, v.orientation === 'vertical' && styles.vehicleShineV]} />
         {v.isTarget
-          ? <Text style={styles.targetIcon}>🚗</Text>
+          ? (board.targetIcon ? <Text style={{ fontSize: cellSize * 0.5 }}>{board.targetIcon}</Text> : null)
           : <View style={[styles.vehicleGrip, v.orientation === 'vertical' && { flexDirection: 'column' }]}>
             <View style={[styles.gripDot, { backgroundColor: board.vehicleGrip }]} /><View style={[styles.gripDot, { backgroundColor: board.vehicleGrip }]} />
           </View>
