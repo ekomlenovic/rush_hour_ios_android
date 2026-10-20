@@ -22,6 +22,7 @@ import MissionsSheet from '@/components/home/MissionsSheet';
 import OptionsSheet from '@/components/settings/OptionsSheet';
 import PlayerLevelBadge from '@/components/progression/PlayerLevelBadge';
 import BoardPreview from '@/components/garage/BoardPreview';
+import { useNewAchievements } from '@/hooks/useNewAchievements';
 import { useCosmetics } from '@/hooks/useCosmetics';
 import { getMapFocusLevel } from '@/utils/mapFocus';
 
@@ -71,6 +72,7 @@ export default function HomeScreen() {
   const dateStr = getLocalDateString(now);
   useAppOpenAlert(dateStr);
   const { unseen: newCosmetics } = useCosmetics();
+  const newAchievements = useNewAchievements();
 
   const dailyStatus = dailyChallengeProgress[dateStr];
 
@@ -110,6 +112,7 @@ export default function HomeScreen() {
             missionsDone={missionsDone}
             missionsTotal={todayMissions.ids.length}
             missionsRewarded={todayMissions.rewarded}
+            newAchievements={newAchievements.length}
             onProfile={() => router.push('/profile')}
             onMissions={() => setMissionsVisible(true)}
             onSettings={() => setSettingsVisible(true)}

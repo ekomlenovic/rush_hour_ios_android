@@ -1,7 +1,6 @@
 import type { Level, PeriodStats } from './types';
 import type { WinKind } from './stats';
-import { sampleLevels } from '../data/sampleLevels';
-import { ZONE_SIZE } from '../components/map/zones';
+import { isBossLevel } from '../data/bosses';
 import { addMonths, getLocalDateString } from '../utils/date';
 
 /**
@@ -70,9 +69,6 @@ export function addToPeriods(state: PeriodState, increments: Partial<PeriodStats
     yearlyStats: { ...state.yearlyStats, [year]: addToPeriod(state.yearlyStats[year], increments) },
   };
 }
-
-/** Last level of a zone of the campaign: the boss, the hardest of its zone */
-export const isBossLevel = (levelId: number): boolean => levelId % ZONE_SIZE === 0 && levelId <= sampleLevels.length;
 
 /** What a win adds to the recap */
 export function winIncrements(level: Pick<Level, 'id' | 'minMoves'>, stars: number, kind: WinKind, now: Date = new Date()): Partial<PeriodStats> {

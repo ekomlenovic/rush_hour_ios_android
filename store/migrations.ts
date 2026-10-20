@@ -1,15 +1,16 @@
 import type { ChallengeResult, Level, LevelProgress, LevelSaveState, PeriodStats } from './types';
 import { sampleLevels } from '../data/sampleLevels';
 import { recomputeStreak } from './streak';
-import { computeRetroactiveXp } from '../data/progression';
+import { BOSS_WIN_XP, computeRetroactiveXp } from '../data/progression';
+import { isBossLevel } from '../data/bosses';
 import { getStars, starsFromScore } from '../utils/scoring';
-import { compactSavedStates } from './savedStates';
+import { compactSavedStates, compactUndoStacks, dropOldUndoStacks } from './savedStates';
 import { latestSavedDate, latestSavedWeek } from '../utils/challengeDates';
 import { addToPeriod, keptMonths, monthKeyOf } from './periodStats';
 import { getLocalDateString, getWeekStart } from '../utils/date';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 9;
+export const STORE_VERSION = 12;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
@@ -58,7 +59,28 @@ export function migrateState(persistedState: unknown, version: number): Record<s
     state = renumberGeneratedLevels(state);
   }
   if (version < 9) {
-    // v9: monthly and yearly recap (issue 125). Only the challenges are dated: their wins are counted
+    // v9: the first win of a boss level gives extra XP, credited for the bosses already won
+    const bossWins = Array.isArray(state.progress)
+      ? (state.progress as LevelProgress[]).filter(p => p?.completed && isBossLevel(p.levelId)).length
+      : 0;
+    if (bossWins > 0) state.xp = (typeof state.xp === 'number' ? state.xp : 0) + bossWins * BOSS_WIN_XP;
+  }
+  if (version < 10) {
+    // v10: a "new" badge on each achievement until it is touched in the profile. Those unlocked
+    // before were already shown by their toast: they start seen
+    if (Array.isArray(state.achievements)) state.seenAchievements = [...state.achievements];
+  }
+  if (version < 11) {
+    // v11: the levels left unfinished added up, each with its undo stack of whole boards (up to about
+    // 70 KB), until the save was too big to be read back. Only the 10 played last keep their undo stack,
+    // in a compact form (positions only, undoSteps); the older ones keep their game without it.
+    // Played last: the start of their attempt, saves have no time of their last move before v11
+    if (state.savedStates && typeof state.savedStates === 'object') {
+      state.savedStates = compactUndoStacks(dropOldUndoStacks(state.savedStates as Record<string, LevelSaveState>));
+    }
+  }
+  if (version < 12) {
+    // v12: monthly and yearly recap (issue 125). Only the challenges are dated: their wins are counted
     // back in their month and year, the rest starts to count now (recapSince). The month an achievement
     // was unlocked is unknown: it is set to the month of the update
     Object.assign(state, seedRecap(state));

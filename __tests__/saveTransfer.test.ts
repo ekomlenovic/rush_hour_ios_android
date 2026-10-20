@@ -94,9 +94,10 @@ describe('export then import', () => {
     useGameStore.setState({ savedStates: { ...store().savedStates, [key]: { ...inProgress, moveLog: [{ vehicleId: 'v1', delta: 1, t: 800 }] } } });
     const result = parseSave(exportProgress());
     if (!result.ok) throw new Error(result.error);
-    const saved = (result.state.savedStates as Record<string, { moveCount: number; history: unknown[]; moveLog: unknown[] }>)[sampleLevels[2].id];
+    const saved = (result.state.savedStates as Record<string, { moveCount: number; history: unknown[]; undoSteps: unknown[]; moveLog: unknown[] }>)[sampleLevels[2].id];
     expect(saved.moveCount).toBe(1);
     expect(saved.history).toEqual([]);
+    expect(saved.undoSteps).toEqual([]);
     expect(saved.moveLog).toEqual([]);
   });
 
@@ -173,6 +174,37 @@ describe('export then import', () => {
     });
     const result = parseSave(code);
     expect(result.ok && result.state.xp).toBeGreaterThan(0);
+  });
+
+  it('counts the achievements of a save made before the "new" badges as seen', () => {
+    const code = encodeSave({
+      version: 9,
+      exportedAt: '2026-10-01',
+      state: { progress: [{ levelId: 1, completed: true, bestScore: sampleLevels[0].minMoves * 100, stars: 3 }], achievements: ['first_win'] },
+    });
+    const result = parseSave(code);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state.seenAchievements).toEqual(['first_win']);
+  });
+
+  it('imports a save made before the challenge results had their own entry, with its levels in progress', () => {
+    const board = [{ id: 'X', row: 2, col: 1, length: 2, orientation: 'horizontal', isTarget: true, color: '#f00' }];
+    const inProgress = { vehicles: board, moveCount: 4, history: [], moveLog: [], attempt: { hints: 0, undos: 0, resets: 0, elapsedMs: 3000 }, startedAt: 1760000000000 };
+    const daily = { completed: true, score: 1200, stars: 3, moves: 12, minMoves: 12 };
+    const code = encodeSave({
+      version: 10,
+      exportedAt: '2026-10-12',
+      state: {
+        progress: [{ levelId: 1, completed: true, bestScore: sampleLevels[0].minMoves * 100, stars: 3 }],
+        maxUnlockedLevel: 3,
+        dailyChallengeProgress: { '2026-10-11': daily },
+        savedStates: { [sampleLevels[2].id]: inProgress },
+      },
+    });
+    const result = parseSave(code);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state.dailyChallengeProgress).toEqual({ '2026-10-11': daily });
+    expect((result.state.savedStates as Record<string, unknown>)[sampleLevels[2].id]).toEqual(inProgress);
   });
 });
 
@@ -252,6 +284,14 @@ describe('import recomputes rather than trusts', () => {
     expect(result.ok && result.state.xp).toBe(xp);
   });
 
+  it('keeps the extra XP of a boss won', () => {
+    winLevel(sampleLevels[29], 0);
+    const xp = store().xp;
+    const result = parseSave(exportProgress());
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state.xp).toBe(xp);
+  });
+
   it('caps the freezes to the stock allowed at the player level', () => {
     const result = parseSave(forge(s => { s.streakFreezes = 50; }));
     if (!result.ok) throw new Error(result.error);
@@ -326,10 +366,10 @@ describe('recap counters (issue 125)', () => {
     expect(result.state).toMatchObject({ monthlyStats: {}, yearlyStats: {}, achievementMonths: {} });
   });
 
-  it('a save of 2.0.2 (v8) gets its challenges counted back, the rest from the import', () => {
-    const v8 = decodeSave(exportProgress()) as Exclude<ReturnType<typeof decodeSave>, string>;
-    for (const field of ['monthlyStats', 'yearlyStats', 'achievementMonths', 'recapSince', 'recapsSeen']) delete v8.state[field];
-    const result = parseSave(encodeSave({ ...v8, version: 8 }));
+  it('a save from before the recap (v11) gets its challenges counted back, the rest from the import', () => {
+    const v11 = decodeSave(exportProgress()) as Exclude<ReturnType<typeof decodeSave>, string>;
+    for (const field of ['monthlyStats', 'yearlyStats', 'achievementMonths', 'recapSince', 'recapsSeen']) delete v11.state[field];
+    const result = parseSave(encodeSave({ ...v11, version: 11 }));
     if (!result.ok) throw new Error(result.error);
     // The 3 dailies of October, no more than the lifetime wins (the dailies here are won without being played)
     const totalWins = (result.state.stats as { totalWins: number }).totalWins;
