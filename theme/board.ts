@@ -1,4 +1,5 @@
 import type { ColorScheme } from './ui';
+import type { DrawnSkin } from './art/targetSkins';
 
 /**
  * Board theme: colors of the grid and the vehicles (Board, Block, creator board),
@@ -55,9 +56,10 @@ export interface BoardColors {
 
 /**
  * Vehicles drawn instead of colored blocks: 'vintage' for the 1930s cars of the Mafia skin and palette,
- * 'ship' for the schooners and paddle steamers of the 1800 ones (Anno 1800 style)
+ * 'ship' for the schooners and paddle steamers of the 1800 ones (Anno 1800 style),
+ * and each target car skin with its own drawing (taxi, bus…)
  */
-export type VehicleArt = 'vintage' | 'ship';
+export type VehicleArt = 'vintage' | 'ship' | DrawnSkin;
 
 /** Board themes, persisted in the cosmetics selection: never rename one, only add */
 export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire' | 'beach' | 'space';
@@ -324,17 +326,18 @@ export interface CarSkin {
 }
 
 export const CAR_SKINS: Record<CarSkinId, CarSkin> = {
+  // The red car stays a block: the classic look of the game
   classic: { icon: '🚗' },
-  taxi: { color: '#FACC15', icon: '🚕' },
-  bus: { color: '#F59E0B', icon: '🚌' },
-  police: { color: '#1E3A8A', icon: '🚓' },
-  // British racing green, the red emoji disappeared on a red body
-  sport: { color: '#15803D', icon: '🏎️' },
-  rocket: { color: '#7C3AED', icon: '🚀' },
-  gold: { color: '#EAB308', icon: '👑' },
-  // Green body: the red tractor emoji stays visible
-  tractor: { color: '#16A34A', icon: '🚜' },
-  ufo: { color: '#64748B', icon: '🛸' },
+  // Every other skin is drawn from above (theme/art/targetSkins.ts); the icon is shown in the garage
+  taxi: { color: '#FACC15', icon: '🚕', art: 'taxi' },
+  bus: { color: '#F59E0B', icon: '🚌', art: 'bus' },
+  police: { color: '#1E3A8A', icon: '🚓', art: 'police' },
+  // British racing green
+  sport: { color: '#15803D', icon: '🏎️', art: 'sport' },
+  rocket: { color: '#7C3AED', icon: '🚀', art: 'rocket' },
+  gold: { color: '#EAB308', icon: '👑', art: 'gold' },
+  tractor: { color: '#16A34A', icon: '🚜', art: 'tractor' },
+  ufo: { color: '#64748B', icon: '🛸', art: 'ufo' },
   // 1930s sedan of Lost Heaven, burgundy: still the red car to get out, among the black cars of the Mafia palette
   mafia: { color: '#7A1424', icon: '🎩', art: 'vintage' },
   // Schooner of the industrial age (Anno 1800 style), crimson hull: the red one to get out

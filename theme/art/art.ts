@@ -15,6 +15,8 @@ export interface ArtGradient {
   id: string;
   /** Vertical (top to bottom) unless set */
   horizontal?: boolean;
+  /** From the center to the edge, instead of along a line */
+  radial?: boolean;
   stops: { offset: number; color: string; opacity?: number }[];
 }
 

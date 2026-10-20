@@ -1,6 +1,6 @@
 import React, { useId } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
-import Svg, { Circle, Defs, Ellipse, G, Line, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, Ellipse, G, Line, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import type { ArtDrawing } from '@/theme/art/art';
 
 interface Props {
@@ -29,11 +29,12 @@ export default function ArtSvg({ drawing, width, height, turnUp = false, style }
       style={style}
     >
       <Defs>
-        {drawing.gradients.map(g => (
-          <LinearGradient key={g.id} id={`${prefix}-${g.id}`} x1="0" y1="0" x2={g.horizontal ? '1' : '0'} y2={g.horizontal ? '0' : '1'}>
-            {g.stops.map((s, i) => <Stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={s.opacity ?? 1} />)}
-          </LinearGradient>
-        ))}
+        {drawing.gradients.map(g => {
+          const stops = g.stops.map((s, i) => <Stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={s.opacity ?? 1} />);
+          return g.radial
+            ? <RadialGradient key={g.id} id={`${prefix}-${g.id}`} cx="50%" cy="50%" r="50%">{stops}</RadialGradient>
+            : <LinearGradient key={g.id} id={`${prefix}-${g.id}`} x1="0" y1="0" x2={g.horizontal ? '1' : '0'} y2={g.horizontal ? '0' : '1'}>{stops}</LinearGradient>;
+        })}
       </Defs>
       <G transform={turnUp ? `rotate(-90) translate(-${drawing.width} 0)` : undefined}>
         {drawing.shapes.map((shape, i) => {
