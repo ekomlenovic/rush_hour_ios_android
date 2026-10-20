@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
+import { usePreventRemove } from 'expo-router/react-navigation';
 import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
@@ -324,22 +325,21 @@ export default function LevelCreatorScreen() {
   };
 
   // The board as loaded or last saved: leaving with another one asks first
-  const savedBoard = useRef<string | null>(null);
+  const [savedBoard, setSavedBoard] = useState<string | null>(null);
   const boardKey = JSON.stringify({ gridSize, exitRow, exitCol, vehicles });
   useEffect(() => {
     // The first board shown is the starting point (the loaded level, or the target car alone)
-    if (savedBoard.current === null && vehicles.length > 0) savedBoard.current = boardKey;
-  }, [boardKey, vehicles.length]);
-  const boardKeyRef = useRef(boardKey);
-  boardKeyRef.current = boardKey;
-  useEffect(() => navigation.addListener('beforeRemove', (event) => {
-    if (savedBoard.current === null || savedBoard.current === boardKeyRef.current) return;
-    event.preventDefault();
+    if (savedBoard === null && vehicles.length > 0) setSavedBoard(boardKey);
+  }, [boardKey, vehicles.length, savedBoard]);
+  const hasUnsavedChanges = savedBoard !== null && savedBoard !== boardKey;
+  // usePreventRemove, not a 'beforeRemove' listener: the native stack removed the screen anyway
+  // on a swipe back or the Android back button, and "Cancel" left the player off the creator
+  usePreventRemove(hasUnsavedChanges, ({ data }) => {
     Alert.alert(t('creator.exit_title'), t('creator.exit_confirm'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('creator.exit'), style: 'destructive', onPress: () => navigation.dispatch(event.data.action) },
+      { text: t('creator.exit'), style: 'destructive', onPress: () => navigation.dispatch(data.action) },
     ]);
-  }), [navigation, t]);
+  });
 
   // Checked first, then named: the name sheet only opens for a level that can be saved
   const checkedMinMoves = useRef(0);
@@ -366,7 +366,7 @@ export default function LevelCreatorScreen() {
       ...(existing?.isFavorite ? { isFavorite: true } : {}),
     };
     saveCreatedLevel(newLevel);
-    savedBoard.current = boardKey;
+    setSavedBoard(boardKey);
     haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     // After the name sheet has slid away: iOS drops an alert shown during it
     setTimeout(() => Alert.alert(t('common.saved'), isImported ? t('creator.saved_new') : t('creator.level_updated'), [
