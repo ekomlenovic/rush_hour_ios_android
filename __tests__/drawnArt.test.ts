@@ -7,6 +7,7 @@ import {
   BULLET_FLIGHT, FIRE_END, FIRE_START, HOLES_FADE, SHOTS, buildTommyGunPlan, shotPhase, sprayAngle,
 } from '../components/effects/tommyGunPlan';
 import { CAR_SKINS, PALETTE_ART, VEHICLE_PALETTES } from '../theme/board';
+import { COSMETICS, buildCosmeticContext, cosmeticKey, isCosmeticUnlocked } from '../data/cosmetics';
 
 /** Every `url(#id)` of a drawing names one of its gradients */
 function expectGradientsDefined(drawing: ArtDrawing) {
@@ -50,6 +51,18 @@ describe('1800 ships (Anno 1800 style)', () => {
 
   it.each([2, 3])('the drawing of %i cells only refers to its own gradients', length => {
     expectGradientsDefined(annoShip(length, '#1F4D3A'));
+  });
+
+  it('are unlocked by 30 weekly challenges won', () => {
+    const unlock = (key: string) => COSMETICS.find(c => cosmeticKey(c) === key)!;
+    const context = (weeklies: number) => buildCosmeticContext({
+      xp: 0, progress: [], dailyChallengeProgress: {}, achievements: [],
+      weeklyChallengeProgress: Object.fromEntries(Array.from({ length: weeklies }, (_, i) => [`2026-W${i + 1}`, { completed: true, score: 300, stars: 3 }])),
+    });
+    for (const key of ['skin:flagship', 'palette:fleet']) {
+      expect(isCosmeticUnlocked(unlock(key), context(29))).toBe(false);
+      expect(isCosmeticUnlocked(unlock(key), context(30))).toBe(true);
+    }
   });
 
   it('are used by the flagship skin and the fleet palette', () => {
