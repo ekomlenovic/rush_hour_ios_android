@@ -13,9 +13,9 @@ const IMAGE_COLORS = recapImageColors;
 
 /** The board of the image, tilted a little: the puzzle just solved, the target car getting out */
 const GRID = 6;
-const BOARD_SIZE = 540;
+const BOARD_SIZE = 440;
 const BOARD_X = (SHARE_IMAGE_WIDTH - BOARD_SIZE) / 2;
-const BOARD_Y = 600;
+const BOARD_Y = 620;
 const BOARD_TILT = -5;
 const CELL = BOARD_SIZE / GRID;
 /** Row of the target car and of the exit */
@@ -33,11 +33,13 @@ const VEHICLES: Vehicle[] = [
   { id: 'g', row: 0, col: 2, length: 2, orientation: 'vertical', isTarget: false, color: CLASSIC_VEHICLE_COLORS[6] },
 ];
 
-/** Numbers as tiles, two per row */
-const TILES_Y = 1230;
+/** Numbers as tiles, two per row, three rows at most */
+const TILES_Y = 1125;
 const TILE_W = 420;
-const TILE_H = 200;
+const TILE_H = 160;
 const TILE_GAP = 40;
+const TILE_ROW_GAP = 22;
+export const MAX_IMAGE_TILES = 6;
 
 /** The road at the bottom, with a few cars on it */
 const ROAD_Y = 1690;
@@ -50,7 +52,11 @@ interface Props {
   title: string;
   period: string;
   profile: string;
+  /** The sentence that explains the profile */
+  profileDescription: string;
   highlights: { value: string; label: string }[];
+  /** Progress since the period before, stuck on the board: shown only when it went up */
+  sticker: { value: string; label: string; period: string } | null;
   footer: string;
   /** Styles equipped in the garage: the board of the image is the player's own */
   cosmetics: CosmeticSelection;
@@ -61,7 +67,9 @@ interface Props {
  * player's board with the target car getting out, the green light of the game, the strong numbers
  * and a road. No emoji: they only go in the shared text
  */
-export default function RecapShareImage({ svgRef, width, title, period, profile, highlights, footer, cosmetics }: Props) {
+export default function RecapShareImage({
+  svgRef, width, title, period, profile, profileDescription, highlights, sticker, footer, cosmetics,
+}: Props) {
   const height = (width * SHARE_IMAGE_HEIGHT) / SHARE_IMAGE_WIDTH;
   const board = getSkinnedBoard(cosmetics.board, cosmetics.skin, 'dark');
   const palette = useMemo(() => applyPalette(VEHICLES, cosmetics.palette), [cosmetics.palette]);
@@ -91,14 +99,15 @@ export default function RecapShareImage({ svgRef, width, title, period, profile,
       <Circle cx={480} cy={105} r={22} fill={TRAFFIC_LIGHT.off} />
       <Circle cx={540} cy={105} r={22} fill={TRAFFIC_LIGHT.off} />
       <Circle cx={600} cy={105} r={22} fill={TRAFFIC_LIGHT.green} />
-      <SvgText x={540} y={225} fill={IMAGE_COLORS.accent} fontSize={64} fontWeight="bold" textAnchor="middle" letterSpacing={10}>
+      <SvgText x={540} y={210} fill={IMAGE_COLORS.accent} fontSize={60} fontWeight="bold" textAnchor="middle" letterSpacing={10}>
         RUSH HOURS
       </SvgText>
 
-      <SvgText x={540} y={330} fill={IMAGE_COLORS.muted} fontSize={50} textAnchor="middle">{title}</SvgText>
-      <SvgText x={540} y={430} fill={IMAGE_COLORS.text} fontSize={96} fontWeight="bold" textAnchor="middle">{period}</SvgText>
-      <Rect x={540 - profileWidth / 2} y={470} width={profileWidth} height={84} rx={42} fill={IMAGE_COLORS.accent} />
-      <SvgText x={540} y={527} fill={IMAGE_COLORS.onAccent} fontSize={48} fontWeight="bold" textAnchor="middle">{profile}</SvgText>
+      <SvgText x={540} y={295} fill={IMAGE_COLORS.muted} fontSize={46} textAnchor="middle">{title}</SvgText>
+      <SvgText x={540} y={390} fill={IMAGE_COLORS.text} fontSize={92} fontWeight="bold" textAnchor="middle">{period}</SvgText>
+      <Rect x={540 - profileWidth / 2} y={425} width={profileWidth} height={80} rx={40} fill={IMAGE_COLORS.accent} />
+      <SvgText x={540} y={480} fill={IMAGE_COLORS.onAccent} fontSize={46} fontWeight="bold" textAnchor="middle">{profile}</SvgText>
+      <SvgText x={540} y={560} fill={IMAGE_COLORS.muted} fontSize={34} textAnchor="middle">{profileDescription}</SvgText>
 
       {/* The player's board, the target car on its way out */}
       <G transform={`rotate(${BOARD_TILT} ${SHARE_IMAGE_WIDTH / 2} ${BOARD_Y + BOARD_SIZE / 2})`}>
@@ -142,17 +151,29 @@ export default function RecapShareImage({ svgRef, width, title, period, profile,
         })}
       </G>
 
+      {/* Progress since the period before, like a sticker on the board */}
+      {sticker ? (
+        <G transform="rotate(8 905 690)">
+          <Rect x={790} y={610} width={230} height={160} rx={30} fill={IMAGE_COLORS.accent} />
+          <SvgText x={905} y={685} fill={IMAGE_COLORS.onAccent} fontSize={70} fontWeight="bold" textAnchor="middle">{sticker.value}</SvgText>
+          <SvgText x={905} y={724} fill={IMAGE_COLORS.onAccent} fontSize={28} fontWeight="bold" textAnchor="middle">{sticker.label}</SvgText>
+          <SvgText x={905} y={756} fill={IMAGE_COLORS.onAccent} fontSize={26} textAnchor="middle">{sticker.period}</SvgText>
+        </G>
+      ) : null}
+
       {/* The strong numbers, as tiles with the colors of the vehicles */}
-      {highlights.map((item, i) => {
-        const alone = highlights.length % 2 === 1 && i === highlights.length - 1;
+      {highlights.slice(0, MAX_IMAGE_TILES).map((item, i, shown) => {
+        const alone = shown.length % 2 === 1 && i === shown.length - 1;
         const x = alone ? (SHARE_IMAGE_WIDTH - TILE_W) / 2 : i % 2 === 0 ? 100 : 100 + TILE_W + TILE_GAP;
-        const y = TILES_Y + Math.floor(i / 2) * (TILE_H + TILE_GAP / 2);
+        // Fewer rows are centered in the room left for the three
+        const missingRows = MAX_IMAGE_TILES / 2 - Math.ceil(shown.length / 2);
+        const y = TILES_Y + (missingRows / 2 + Math.floor(i / 2)) * (TILE_H + TILE_ROW_GAP);
         return (
           <React.Fragment key={item.label}>
-            <Rect x={x} y={y} width={TILE_W} height={TILE_H} rx={36} fill={IMAGE_COLORS.box} />
-            <Rect x={x} y={y + 30} width={14} height={TILE_H - 60} rx={7} fill={vehicleColors[i % vehicleColors.length]} />
-            <SvgText x={x + 50} y={y + 110} fill={IMAGE_COLORS.text} fontSize={88} fontWeight="bold">{item.value}</SvgText>
-            <SvgText x={x + 50} y={y + 165} fill={IMAGE_COLORS.muted} fontSize={40}>{item.label}</SvgText>
+            <Rect x={x} y={y} width={TILE_W} height={TILE_H} rx={32} fill={IMAGE_COLORS.box} />
+            <Rect x={x} y={y + 26} width={14} height={TILE_H - 52} rx={7} fill={vehicleColors[i % vehicleColors.length]} />
+            <SvgText x={x + 46} y={y + 88} fill={IMAGE_COLORS.text} fontSize={76} fontWeight="bold">{item.value}</SvgText>
+            <SvgText x={x + 46} y={y + 132} fill={IMAGE_COLORS.muted} fontSize={34}>{item.label}</SvgText>
           </React.Fragment>
         );
       })}
