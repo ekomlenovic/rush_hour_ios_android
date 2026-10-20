@@ -129,7 +129,7 @@ describe('achievements in the store', () => {
     expect(state().achievements).toContain('halloween');
   });
 
-  it('secret: "mafia" typed in the level import unlocks the Mafia skin and palette', () => {
+  it('secret: "mafia" typed in the level import unlocks the Mafia skin, palette and win effect', () => {
     expect(matchSecretCode('  MaFiA ')).toBe('mafia');
     expect(matchSecretCode('mafia2')).toBeNull();
     state().recordSecretCode('omerta');
@@ -141,5 +141,6 @@ describe('achievements in the store', () => {
     expect(state().stats.secretCodes).toEqual({ mafia: 1 });
     expect(state().selectCosmetic('skin', 'mafia')).toBe(true);
     expect(state().selectCosmetic('palette', 'mafia')).toBe(true);
+    expect(state().selectCosmetic('effect', 'tommy')).toBe(true);
   });
 });

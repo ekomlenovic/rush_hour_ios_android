@@ -179,9 +179,11 @@ Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dan
 | Un style choisi mais plus débloqué (réinitialisation) revient au style par défaut | `sanitizeSelection` |
 | La palette recolore les véhicules dans l'ordre du niveau ; la voiture cible garde sa skin. Le lecteur d'écran annonce la couleur affichée | `applyPalette`, `components/Board.tsx` |
 | Les effets de victoire ne se jouent pas avec « Réduire les animations » | `WinEffect` (`components/effects/WinEffect.tsx`) |
+| Skin et palette **Mafia** : les véhicules sont **dessinés** en vue de dessus et en pseudo-3D (carrosserie ombrée, ailes, chromes, ombre portée) au lieu de blocs de couleur : berlines des années 30 pour 2 cases, camion plateau (tonneaux de whisky, caisses) pour 3. La voiture cible reste bordeaux (« la voiture rouge » à sortir), un véhicule vertical regarde vers le haut. Le reste ne change pas : lettres, indice, lecteur d'écran. Le créateur garde les blocs | `PALETTE_ART`, `CarSkin.art` (`theme/board.ts`), `theme/art/vintageVehicles.ts`, `VintageVehicle` |
+| Effet **Sulfateuse** : une Thompson à chargeur camembert entre par la gauche, tire une rafale en balayant (flammes, traçantes, douilles éjectées), laisse des impacts sur le plateau puis repart | `TommyGunEffect`, `tommyGunPlan.ts` (`components/effects/`), `theme/art/tommyGun.ts` |
 | Les identifiants des cosmétiques sont sauvegardés : ne jamais en renommer, seulement en ajouter | |
 | Un cosmétique lié à un **succès secret** ne dévoile pas son nom tant qu'il est verrouillé (« Succès secret ») | `describeUnlock` (`components/garage/describeUnlock.ts`) |
-| **Codes secrets** : taper un mot dans le champ d'import de niveaux (Mes niveaux → Importés) débloque un succès secret. « mafia » → succès *Omertà*, qui donne la voiture cible et la palette **Mafia** (berlines des années 30). Le code est compté dans `stats.secretCodes`, le champ est vidé et le toast du succès s'affiche | `SECRET_CODES`, `matchSecretCode` (`store/stats.ts`), `recordSecretCode` |
+| **Codes secrets** : taper un mot dans le champ d'import de niveaux (Mes niveaux → Importés) débloque un succès secret. « mafia » → succès *Omertà*, qui donne la voiture cible, la palette et l'effet de victoire **Mafia**. Le code est compté dans `stats.secretCodes`, le champ est vidé et le toast du succès s'affiche | `SECRET_CODES`, `matchSecretCode` (`store/stats.ts`), `recordSecretCode` |
 | Les nouveautés sont signalées sur le lien Garage jusqu'à la prochaine visite | `seenCosmetics` |
 
 ## Sauvegarde (export / import)
