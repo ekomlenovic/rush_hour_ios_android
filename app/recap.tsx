@@ -67,6 +67,7 @@ export default function RecapScreen() {
   const weeklyChallengeProgress = useGameStore(s => s.weeklyChallengeProgress);
   const frozenDates = useGameStore(s => s.frozenDates);
   const markRecapSeen = useGameStore(s => s.markRecapSeen);
+  const cosmetics = useGameStore(s => s.cosmetics);
 
   const isValidKey = /^\d{4}(-\d{2})?$/.test(period);
   const recap = useMemo(
@@ -192,6 +193,7 @@ export default function RecapScreen() {
                 highlights={recapHighlights(t, recap, MAX_IMAGE_TILES)}
                 sticker={imageSticker(t, recap, i18n.language)}
                 footer={APP_URL.replace(/^https:\/\//, '')}
+                cosmetics={cosmetics}
               />
             </View>
             <Pressable style={styles.primaryButton} onPress={shareImage} accessibilityRole="button">
