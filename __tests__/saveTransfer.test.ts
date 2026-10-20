@@ -94,9 +94,10 @@ describe('export then import', () => {
     useGameStore.setState({ savedStates: { ...store().savedStates, [key]: { ...inProgress, moveLog: [{ vehicleId: 'v1', delta: 1, t: 800 }] } } });
     const result = parseSave(exportProgress());
     if (!result.ok) throw new Error(result.error);
-    const saved = (result.state.savedStates as Record<string, { moveCount: number; history: unknown[]; moveLog: unknown[] }>)[sampleLevels[2].id];
+    const saved = (result.state.savedStates as Record<string, { moveCount: number; history: unknown[]; undoSteps: unknown[]; moveLog: unknown[] }>)[sampleLevels[2].id];
     expect(saved.moveCount).toBe(1);
     expect(saved.history).toEqual([]);
+    expect(saved.undoSteps).toEqual([]);
     expect(saved.moveLog).toEqual([]);
   });
 
@@ -184,6 +185,26 @@ describe('export then import', () => {
     const result = parseSave(code);
     if (!result.ok) throw new Error(result.error);
     expect(result.state.seenAchievements).toEqual(['first_win']);
+  });
+
+  it('imports a save made before the challenge results had their own entry, with its levels in progress', () => {
+    const board = [{ id: 'X', row: 2, col: 1, length: 2, orientation: 'horizontal', isTarget: true, color: '#f00' }];
+    const inProgress = { vehicles: board, moveCount: 4, history: [], moveLog: [], attempt: { hints: 0, undos: 0, resets: 0, elapsedMs: 3000 }, startedAt: 1760000000000 };
+    const daily = { completed: true, score: 1200, stars: 3, moves: 12, minMoves: 12 };
+    const code = encodeSave({
+      version: 10,
+      exportedAt: '2026-10-12',
+      state: {
+        progress: [{ levelId: 1, completed: true, bestScore: sampleLevels[0].minMoves * 100, stars: 3 }],
+        maxUnlockedLevel: 3,
+        dailyChallengeProgress: { '2026-10-11': daily },
+        savedStates: { [sampleLevels[2].id]: inProgress },
+      },
+    });
+    const result = parseSave(code);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state.dailyChallengeProgress).toEqual({ '2026-10-11': daily });
+    expect((result.state.savedStates as Record<string, unknown>)[sampleLevels[2].id]).toEqual(inProgress);
   });
 });
 

@@ -78,12 +78,17 @@ export interface MoveRecord {
 export interface LevelSaveState {
   vehicles: Vehicle[];
   moveCount: number;
+  /** Undo stack as whole boards: saves from before v11 only, empty since (see undoSteps) */
   history: Vehicle[][];
+  /** Undo stack since v11, oldest first: each step is [row, col] of every vehicle, in the order of `vehicles` */
+  undoSteps?: number[][];
   attempt?: AttemptStats;
   /** Moves since the start or the last reset (undo adds the opposite move); missing in saves from before 1.2 */
   moveLog?: MoveRecord[];
   /** Wall-clock start of the attempt (ms since epoch), the origin of the move times */
   startedAt?: number;
+  /** Wall-clock time of the last change (ms since epoch); missing in saves from before v11 */
+  savedAt?: number;
 }
 
 /** Result of a daily or weekly challenge */

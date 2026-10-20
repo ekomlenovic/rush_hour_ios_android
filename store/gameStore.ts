@@ -23,7 +23,7 @@ import {
 } from '../data/cosmetics';
 import { emptyAttempt, initialStats, withWinStats, mergeChallengeResult } from './stats';
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from './migrations';
-import { compactSavedStates, isWellFormedSave, savedHistory } from './savedStates';
+import { compactSavedStates, dropOldUndoStacks, isWellFormedSave, savedUndoSteps, undoStackOf } from './savedStates';
 import { createGuardedStorage } from './guardedStorage';
 import { DAILY_LEVEL_ID, WEEKLY_LEVEL_ID, ARCHIVE_LEVEL_ID } from './levelIds';
 
@@ -220,8 +220,13 @@ export function isSaveForLevel(level: Pick<Level, 'vehicles'>, saved: Pick<Level
 
 /** Moves, undos, hints and play time are written grouped, at most this long after (see guardedStorage) */
 const SAVE_WRITE_DELAY_MS = 1000;
-/** The infinite map and the archive days played: big, rarely changed, each in its own entry */
-export const SEPARATE_SAVE_FIELDS: readonly (keyof GameState)[] = ['generatedLevels', 'archiveLevels'];
+/**
+ * Big, rarely changed, each in its own entry: the infinite map, the archive days played, and the
+ * challenge results (one more each day, with its move log, never dropped)
+ */
+export const SEPARATE_SAVE_FIELDS: readonly (keyof GameState)[] = [
+  'generatedLevels', 'archiveLevels', 'dailyChallengeProgress', 'weeklyChallengeProgress', 'archiveProgress',
+];
 const saveStorage = createGuardedStorage<Partial<GameState>>({ delayMs: SAVE_WRITE_DELAY_MS, separateFields: SEPARATE_SAVE_FIELDS });
 
 export const useGameStore = create<GameState>()(
@@ -241,10 +246,13 @@ export const useGameStore = create<GameState>()(
             [levelKey]: {
               vehicles: next.vehicles.map(v => ({ ...v })),
               moveCount: next.moveCount,
-              history: savedHistory(levelKey, next.history).map(h => h.map(v => ({ ...v }))),
+              // Kept empty for the older versions, which read the undo stack there: they resume without it
+              history: [],
+              undoSteps: savedUndoSteps(levelKey, next.vehicles, next.history),
               attempt: { ...next.currentAttempt },
               moveLog: next.moveLog.map(m => ({ ...m })),
               startedAt: next.attemptStartedAt,
+              savedAt: Date.now(),
             }
           }
         };
@@ -372,7 +380,7 @@ export const useGameStore = create<GameState>()(
           currentLevel: level,
           vehicles: resolvedSavedState ? resolvedSavedState.vehicles.map(v => ({...v})) : level.vehicles.map((v) => ({ ...v })),
           moveCount: resolvedSavedState ? resolvedSavedState.moveCount : 0,
-          history: resolvedSavedState ? resolvedSavedState.history.map(h => h.map(v => ({...v}))) : [],
+          history: resolvedSavedState ? undoStackOf(resolvedSavedState) : [],
           moveLog: resolvedSavedState?.moveLog ? resolvedSavedState.moveLog.map(m => ({ ...m })) : [],
           attemptStartedAt: resolvedSavedState?.startedAt ?? Date.now(),
           currentAttempt: resolvedSavedState?.attempt ? { ...resolvedSavedState.attempt } : emptyAttempt(),
@@ -690,8 +698,8 @@ export const useGameStore = create<GameState>()(
         set({
           lastOpenDate: today,
           stats: { ...stats, longestAbsenceDays: Math.max(stats.longestAbsenceDays, missedDays) },
-          // Keeps the save small: capped undo stacks, past challenges cleared
-          savedStates: compactSavedStates(get().savedStates),
+          // Keeps the save small: past challenges cleared, no undo stack for the levels played long ago
+          savedStates: dropOldUndoStacks(compactSavedStates(get().savedStates)),
         });
         const { patch, frozenDays, lostStreak } = settleStreak(get(), today);
         set(patch);
