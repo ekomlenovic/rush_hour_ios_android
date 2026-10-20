@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Share, Alert, useWindowDimensions,
+  View, Text, StyleSheet, Pressable, ScrollView, Share, Alert, PixelRatio, Platform, useWindowDimensions,
   type AccessibilityActionEvent, type GestureResponderEvent, type NativeScrollEvent, type NativeSyntheticEvent,
 } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -27,6 +27,14 @@ import type { IoniconName } from '@/utils/icons';
 const MAX_LISTED_ACHIEVEMENTS = 4;
 /** Room taken by the progress bars at the top of the screen */
 const TOP_BAR_HEIGHT = 56;
+/**
+ * Size given to the export: iOS draws the image at the size of the view, in points, then multiplies
+ * by the screen scale; Android draws it on a bitmap of exactly this size, in pixels. Either way the
+ * file is SHARE_IMAGE_WIDTH × SHARE_IMAGE_HEIGHT pixels
+ */
+const EXPORT_SCALE = Platform.OS === 'ios' ? PixelRatio.get() : 1;
+const EXPORT_WIDTH = SHARE_IMAGE_WIDTH / EXPORT_SCALE;
+const EXPORT_HEIGHT = SHARE_IMAGE_HEIGHT / EXPORT_SCALE;
 /** Room left under the share image for the title and the buttons */
 const SHARE_CONTROLS_HEIGHT = 230;
 
@@ -136,13 +144,23 @@ export default function RecapScreen() {
         console.error('Sharing failed', error);
         Alert.alert(t('common.error'), t('recap.share_image_error'));
       }
-    }, { width: SHARE_IMAGE_WIDTH, height: SHARE_IMAGE_HEIGHT });
+    }, { width: EXPORT_WIDTH, height: EXPORT_HEIGHT });
   };
 
   // The share image as big as the screen allows, under the bars and above the buttons
   const previewHeight = Math.max(200, height - insets.top - insets.bottom - TOP_BAR_HEIGHT - SHARE_CONTROLS_HEIGHT);
   const previewWidth = Math.min(width - 64, (previewHeight * SHARE_IMAGE_WIDTH) / SHARE_IMAGE_HEIGHT);
   const comparison = comparisonLine(t, recap, i18n.language);
+  const imageProps = {
+    title: recap.kind === 'year' ? t('recap.image_title_year') : t('recap.image_title_month'),
+    period: label,
+    profile: t(`recap.profile_${recap.profile}`),
+    profileDescription: t(`recap.profile_${recap.profile}_desc`),
+    highlights: recapHighlights(t, recap, MAX_IMAGE_TILES),
+    sticker: imageSticker(t, recap, i18n.language),
+    footer: APP_URL.replace(/^https:\/\//, ''),
+    cosmetics,
+  };
   const pagePosition = (index: number) => t('a11y.recap_page', { page: index + 1, total });
 
   return (
@@ -183,18 +201,11 @@ export default function RecapScreen() {
             <Text style={styles.kicker} accessibilityRole="header">{t('recap.share_heading')}</Text>
             {comparison ? <Text style={styles.comparison}>{comparison}</Text> : null}
             <View style={styles.preview} accessible accessibilityRole="image" accessibilityLabel={t('a11y.recap_image')}>
-              <RecapShareImage
-                svgRef={svgRef}
-                width={previewWidth}
-                title={recap.kind === 'year' ? t('recap.image_title_year') : t('recap.image_title_month')}
-                period={label}
-                profile={t(`recap.profile_${recap.profile}`)}
-                profileDescription={t(`recap.profile_${recap.profile}_desc`)}
-                highlights={recapHighlights(t, recap, MAX_IMAGE_TILES)}
-                sticker={imageSticker(t, recap, i18n.language)}
-                footer={APP_URL.replace(/^https:\/\//, '')}
-                cosmetics={cosmetics}
-              />
+              <RecapShareImage width={previewWidth} {...imageProps} />
+            </View>
+            {/* The copy that is exported, laid out at the size of the image: iOS draws it at its size on screen */}
+            <View style={styles.exportImage} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              <RecapShareImage svgRef={svgRef} width={EXPORT_WIDTH} {...imageProps} />
             </View>
             <Pressable style={styles.primaryButton} onPress={shareImage} accessibilityRole="button">
               <Ionicons name="image" size={20} color={recapSlideColors.share[0]} />
@@ -465,6 +476,13 @@ const styles = StyleSheet.create({
     color: recapSlideText.text,
     fontSize: 14,
     fontWeight: '600',
+  },
+  // Invisible behind the page, but laid out: only used to draw the shared file
+  exportImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    opacity: 0,
   },
   sharePage: {
     alignItems: 'center',
