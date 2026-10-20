@@ -44,15 +44,15 @@ export default function RecapShareImage({ svgRef, width, title, period, profile,
       </SvgText>
       <SvgText x={540} y={330} fill={IMAGE_COLORS.muted} fontSize={52} textAnchor="middle">{title}</SvgText>
       <SvgText x={540} y={440} fill={IMAGE_COLORS.text} fontSize={92} fontWeight="bold" textAnchor="middle">{period}</SvgText>
-      <SvgText x={540} y={540} fill={IMAGE_COLORS.accent} fontSize={48} fontWeight="bold" textAnchor="middle">{profile}</SvgText>
+      <SvgText x={540} y={545} fill={IMAGE_COLORS.accent} fontSize={60} fontWeight="bold" textAnchor="middle">{profile}</SvgText>
 
       {highlights.map((item, i) => {
         const y = boxTop + i * (boxHeight + boxGap);
         return (
           <React.Fragment key={item.label}>
             <Rect x={100} y={y} width={880} height={boxHeight} rx={40} fill={IMAGE_COLORS.box} />
-            <SvgText x={160} y={y + 125} fill={IMAGE_COLORS.text} fontSize={100} fontWeight="bold">{item.value}</SvgText>
-            <SvgText x={160} y={y + 190} fill={IMAGE_COLORS.muted} fontSize={42}>{item.label}</SvgText>
+            <SvgText x={160} y={y + 122} fill={IMAGE_COLORS.text} fontSize={110} fontWeight="bold">{item.value}</SvgText>
+            <SvgText x={160} y={y + 192} fill={IMAGE_COLORS.muted} fontSize={50}>{item.label}</SvgText>
           </React.Fragment>
         );
       })}

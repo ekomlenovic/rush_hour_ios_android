@@ -123,6 +123,25 @@ export const fixedColors = {
   neutralSoft: 'rgba(128,128,128,0.1)',
 } satisfies Partial<UiColors>;
 
+/** Full-screen slides of the recap (issue 125): a gradient each, white text, same in light and dark */
+export const recapSlideColors = {
+  intro: ['#1E1B4B', '#4338CA'],
+  levels: ['#431407', '#C2410C'],
+  time: ['#042F2E', '#0F766E'],
+  challenges: ['#052E16', '#15803D'],
+  feats: ['#4C0519', '#BE123C'],
+  unlocks: ['#422006', '#A16207'],
+  share: ['#0F0F1A', '#312E81'],
+} as const;
+
+/** Text and chips on the recap slides */
+export const recapSlideText = {
+  text: '#FFFFFF',
+  muted: 'rgba(255,255,255,0.8)',
+  chip: 'rgba(255,255,255,0.14)',
+  track: 'rgba(255,255,255,0.3)',
+};
+
 /** The recap image shared (issue 125): it leaves the app, same colors in light and dark */
 export const recapImageColors = {
   top: '#1E1B4B',

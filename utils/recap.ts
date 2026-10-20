@@ -13,7 +13,7 @@ import { APP_URL } from './shareResult';
 export type RecapKind = 'month' | 'year';
 
 /** The player's profile over the period, one short sentence on the first card */
-export type RecapProfile = 'loyal' | 'perfectionist' | 'early' | 'night' | 'boss' | 'explorer' | 'driver';
+export type RecapProfile = 'loyal' | 'perfectionist' | 'early' | 'night' | 'boss' | 'explorer' | 'challenger' | 'driver';
 
 /** Store fields a recap is built from */
 export interface RecapSource {
@@ -72,13 +72,14 @@ function wonKeys(results: Record<string, ChallengeResult>, start: string, end: s
 const isWeekKey = (key: string) => /^\d{4}-W\d{2}$/.test(key);
 
 /** Profile of the period: the first one that fits, the plain driver otherwise */
-export function pickProfile(stats: PeriodStats, dailies: number, days: number): RecapProfile {
+export function pickProfile(stats: PeriodStats, dailies: number, days: number, weeklies = 0): RecapProfile {
   if (dailies >= 7 && dailies >= days * 0.8) return 'loyal';
   if (stats.wins >= 5 && stats.perfectWins / stats.wins >= 0.6) return 'perfectionist';
   if (stats.earlyWins >= 3) return 'early';
   if (stats.nightWins >= 3) return 'night';
   if (stats.bossWins >= 2) return 'boss';
   if (stats.newLevels >= 20) return 'explorer';
+  if (dailies + weeklies >= 3) return 'challenger';
   return 'driver';
 }
 
@@ -125,8 +126,66 @@ export function buildRecap(source: RecapSource, key: string, now: Date = new Dat
     achievementIds,
     partialSince,
     previous,
-    profile: pickProfile(stats, dailies.length, days),
+    profile: pickProfile(stats, dailies.length, days, weeklies.length),
   };
+}
+
+export type RecapSlideId = 'intro' | 'levels' | 'time' | 'challenges' | 'feats' | 'unlocks';
+
+/** A number of a slide; `key` names its label (recap.hero_<key> for the big one, recap.<key> for the others) */
+export interface RecapFigure {
+  key: string;
+  value: number;
+  format?: 'time' | 'days' | 'plus';
+}
+
+/** One idea per slide: a big number, and a few others under it */
+export interface RecapSlide {
+  id: RecapSlideId;
+  hero: RecapFigure | null;
+  details: RecapFigure[];
+}
+
+/** Achievements unlocked in the period: before the update that dated them, only the count since is known */
+export const recapAchievementCount = (recap: Recap): number =>
+  (recap.partialSince ? recap.stats.achievements : recap.achievementIds.length);
+
+/**
+ * The slides of the recap, before the sharing one. A number at zero is left out, and a slide with
+ * nothing to tell is skipped: a recap never shows a row of zeros
+ */
+export function recapSlides(recap: Recap): RecapSlide[] {
+  const { stats } = recap;
+  const fig = (key: string, value: number, format?: RecapFigure['format']): RecapFigure => ({ key, value, ...(format && { format }) });
+  const nonZero = (figures: RecapFigure[]) => figures.filter(f => f.value > 0);
+  const first = (figures: RecapFigure[]) => nonZero(figures)[0] ?? null;
+  const rest = (figures: RecapFigure[], hero: RecapFigure | null) => nonZero(figures).filter(f => f !== hero);
+
+  const time = [fig('play_time', stats.playTimeMs >= 60_000 ? stats.playTimeMs : 0, 'time'), fig('moves', stats.moves)];
+  const challenges = [
+    fig('dailies', recap.dailies),
+    fig('weeklies', recap.weeklies),
+    fig('perfect_dailies', recap.perfectDailies),
+    fig('best_run', recap.bestDailyRun > 1 ? recap.bestDailyRun : 0, 'days'),
+    fig('freezes_used', recap.freezesUsed),
+  ];
+  const unlocks = [fig('achievements', recapAchievementCount(recap)), fig('styles', stats.cosmetics)];
+  const slides: RecapSlide[] = [
+    { id: 'intro', hero: null, details: [] },
+    {
+      id: 'levels',
+      hero: first([fig('wins', stats.wins)]),
+      details: nonZero([fig('new_levels', stats.newLevels), fig('stars_gained', stats.starsGained, 'plus'), fig('perfect_wins', stats.perfectWins)]),
+    },
+    { id: 'time', hero: first(time), details: [] },
+    { id: 'challenges', hero: first(challenges), details: [] },
+    { id: 'feats', hero: first([fig('hardest_win', stats.hardestWinMoves)]), details: nonZero([fig('boss_wins', stats.bossWins)]) },
+    { id: 'unlocks', hero: first(unlocks), details: [] },
+  ];
+  for (const [slide, figures] of [[slides[2], time], [slides[3], challenges], [slides[5], unlocks]] as const) {
+    slide.details = rest(figures, slide.hero);
+  }
+  return slides.filter(slide => slide.id === 'intro' || slide.hero);
 }
 
 /** Whether there is anything to tell about the period */
