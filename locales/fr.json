@@ -135,12 +135,12 @@
     "amount_to_create": "Nombre à créer : {{amount}}",
     "generating": "Génération en cours...",
     "generating_levels": "Générations de niveaux",
-    "generate_btn": "Générer {{amount}} niveaux (~{{time}}s)",
+    "generate_btn": "Générer {{amount}} niveaux (~{{time}})",
     "community_levels": "Communauté et niveaux",
     "scroll_hint": "Fais défiler pour voir la suite ↓",
     "canceling": "Annulation...",
     "generation_progress": "{{current}} sur {{total}} niveaux prêts !",
-    "time_left": "{{seconds}}s restantes"
+    "time_left": "encore ~{{time}}"
   },
   "game": {
     "best": "Meilleur",
