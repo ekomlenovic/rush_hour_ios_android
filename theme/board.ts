@@ -49,7 +49,12 @@ export interface BoardColors {
   boardRadius: number;
   /** Drawn on the target car (car skin) */
   targetIcon?: string;
+  /** Drawing of the target car instead of a colored block (car skin) */
+  targetArt?: VehicleArt;
 }
+
+/** Vehicles drawn instead of colored blocks: 'vintage' for the 1930s cars of the Mafia skin and palette */
+export type VehicleArt = 'vintage';
 
 /** Board themes, persisted in the cosmetics selection: never rename one, only add */
 export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire' | 'beach' | 'space';
@@ -309,8 +314,10 @@ export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocke
 export interface CarSkin {
   /** Body color, the board's target car color when absent */
   color?: string;
-  /** Drawn on the car */
+  /** Drawn on the car (and the icon of the skin in the garage) */
   icon?: string;
+  /** The car is drawn rather than a block with an icon */
+  art?: VehicleArt;
 }
 
 export const CAR_SKINS: Record<CarSkinId, CarSkin> = {
@@ -325,8 +332,8 @@ export const CAR_SKINS: Record<CarSkinId, CarSkin> = {
   // Green body: the red tractor emoji stays visible
   tractor: { color: '#16A34A', icon: '🚜' },
   ufo: { color: '#64748B', icon: '🛸' },
-  // 1930s black sedan of Lost Heaven, with the gangster's fedora
-  mafia: { color: '#1C1917', icon: '🎩' },
+  // 1930s sedan of Lost Heaven, burgundy: still the red car to get out, among the black cars of the Mafia palette
+  mafia: { color: '#7A1424', icon: '🎩', art: 'vintage' },
 };
 
 // ─── Vehicle palettes ─────────────────────────────────────────────────────────
@@ -348,11 +355,16 @@ export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   mafia: ['#292524', '#E7DCC4', '#14532D', '#5C3A21', '#1E3A5F', '#A8A29E', '#78716C', '#B08D57'],
 };
 
+/** Palettes whose vehicles are drawn rather than colored blocks */
+export const PALETTE_ART: Partial<Record<VehiclePaletteId, VehicleArt>> = {
+  mafia: 'vintage',
+};
+
 /** Board colors with the target car skin applied */
 export function getSkinnedBoard(id: BoardThemeId, skin: CarSkinId, scheme: ColorScheme): BoardColors {
   const board = getBoardColors(id, scheme);
   const carSkin = CAR_SKINS[skin] ?? CAR_SKINS.classic;
-  return { ...board, targetCar: carSkin.color ?? board.targetCar, targetIcon: carSkin.icon };
+  return { ...board, targetCar: carSkin.color ?? board.targetCar, targetIcon: carSkin.icon, targetArt: carSkin.art };
 }
 
 /** Color of each non-target vehicle in the order of the level, for a palette */

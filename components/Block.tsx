@@ -13,7 +13,8 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { haptics, Haptics } from '@/utils/haptics';
 import { Vehicle } from '@/store/gameStore';
 import { stepVehicle } from '@/utils/accessibility';
-import { useTheme } from '@/theme';
+import { useTheme, type VehicleArt } from '@/theme';
+import VintageVehicle from '@/components/vehicles/VintageVehicle';
 
 interface BlockProps {
   vehicle: Vehicle;
@@ -34,6 +35,8 @@ interface BlockProps {
   letter?: string;
   /** Displayed color (vehicle palette), the level's color if undefined */
   color?: string;
+  /** Drawn vehicle (Mafia skin or palette) instead of a colored block */
+  art?: VehicleArt;
 }
 
 export interface BlockA11yStrings {
@@ -58,7 +61,7 @@ const BOUNCE_SPRING = {
   mass: 0.5,
 };
 
-function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, disabled = false, a11yLabel, a11yValue, a11yStrings, letter, color }: BlockProps) {
+function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, disabled = false, a11yLabel, a11yValue, a11yStrings, letter, color, art }: BlockProps) {
 
   const { board } = useTheme();
   const fillColor = vehicle.isTarget ? board.targetCar : color ?? vehicle.color;
@@ -272,9 +275,14 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
             borderColor: board.vehicleBorder,
           },
           vehicle.isTarget && styles.targetBlock,
+          // A drawn vehicle has its own body, chrome and shadow
+          art && styles.drawnBlock,
           animatedStyle,
         ]}
       >
+        {art === 'vintage' && (
+          <VintageVehicle length={vehicle.length} orientation={vehicle.orientation} color={fillColor} width={width - 4} height={height - 4} />
+        )}
         {isHinted && (
           <Animated.View
             style={[
@@ -304,13 +312,15 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
             />
           </Animated.View>
         )}
-        <View
-          style={[
-            styles.shine,
-            { borderRadius: radius * 0.78, backgroundColor: board.vehicleShine },
-          ]}
-        />
-        {letter === undefined && vehicle.isTarget && board.targetIcon && (
+        {!art && (
+          <View
+            style={[
+              styles.shine,
+              { borderRadius: radius * 0.78, backgroundColor: board.vehicleShine },
+            ]}
+          />
+        )}
+        {letter === undefined && vehicle.isTarget && !art && board.targetIcon && (
           <Text style={{ fontSize: cellSize * 0.5 }} importantForAccessibility="no" accessibilityElementsHidden>{board.targetIcon}</Text>
         )}
         {letter !== undefined && (
@@ -340,6 +350,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 10,
     elevation: 10,
+  },
+  drawnBlock: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   letter: {
     fontWeight: '900',
@@ -375,7 +391,8 @@ function areBlocksEqual(prevProps: BlockProps, nextProps: BlockProps) {
     prevProps.a11yValue === nextProps.a11yValue &&
     prevProps.a11yStrings === nextProps.a11yStrings &&
     prevProps.letter === nextProps.letter &&
-    prevProps.color === nextProps.color
+    prevProps.color === nextProps.color &&
+    prevProps.art === nextProps.art
   );
 }
 

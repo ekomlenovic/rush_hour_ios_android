@@ -4,6 +4,7 @@ import Animated, {
   Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming, type SharedValue,
 } from 'react-native-reanimated';
 import type { WinEffectId } from '@/data/cosmetics';
+import TommyGunEffect from './TommyGunEffect';
 
 interface Props {
   effect: WinEffectId;
@@ -141,11 +142,13 @@ function AnimatedParticle({ p, playKey }: { p: Particle; playKey: number }) {
 export default function WinEffect({ effect, width, height, colors, playKey = 0 }: Props) {
   const reduceMotion = useReducedMotion();
   const particles = useMemo(() => buildParticles(effect, width, height, colors), [effect, width, height, colors]);
-  if (reduceMotion || particles.length === 0) return null;
+  if (reduceMotion || (particles.length === 0 && effect !== 'tommy')) return null;
 
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.container]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-      {particles.map((p, i) => <AnimatedParticle key={`${effect}-${i}`} p={p} playKey={playKey} />)}
+      {effect === 'tommy'
+        ? <TommyGunEffect width={width} height={height} playKey={playKey} />
+        : particles.map((p, i) => <AnimatedParticle key={`${effect}-${i}`} p={p} playKey={playKey} />)}
     </View>
   );
 }

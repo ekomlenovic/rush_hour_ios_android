@@ -9,7 +9,7 @@ import { getPlayerLevel } from './progression';
  */
 
 export type CosmeticKind = 'board' | 'skin' | 'palette' | 'effect';
-export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed' | 'bubbles';
+export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed' | 'bubbles' | 'tommy';
 
 export interface CosmeticSelection {
   board: BoardThemeId;
@@ -83,6 +83,7 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'effect', id: 'fireworks', icon: '🎆', unlock: { type: 'level', level: 20 } },
   { kind: 'effect', id: 'speed', icon: '💨', unlock: { type: 'weeklies', count: 10 } },
   { kind: 'effect', id: 'bubbles', icon: '💧', unlock: { type: 'achievement', id: 'perfect_250' } },
+  { kind: 'effect', id: 'tommy', icon: '💥', unlock: { type: 'achievement', id: 'mafia' } },
 ];
 
 export const cosmeticKey = (def: Pick<CosmeticDef, 'kind' | 'id'>): string => `${def.kind}:${def.id}`;
