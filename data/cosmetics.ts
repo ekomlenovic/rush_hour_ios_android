@@ -9,7 +9,7 @@ import { getPlayerLevel } from './progression';
  */
 
 export type CosmeticKind = 'board' | 'skin' | 'palette' | 'effect';
-export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed' | 'bubbles' | 'greenlight' | 'tommy' | 'broadside';
+export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed' | 'bubbles' | 'greenlight' | 'tommy' | 'broadside' | 'bats' | 'gifts';
 
 export interface CosmeticSelection {
   board: BoardThemeId;
@@ -34,7 +34,25 @@ export type UnlockRule =
   | { type: 'weeklies'; count: number }
   | { type: 'achievement'; id: string }
   /** A daily challenge won in December, January or February */
-  | { type: 'winter' };
+  | { type: 'winter' }
+  /** A daily challenge won during a seasonal event (SEASONAL_EVENTS) */
+  | { type: 'event'; event: SeasonalEventId };
+
+/** Seasonal events, persisted nowhere: computed from the dates of the daily challenges won */
+export type SeasonalEventId = 'halloween' | 'christmas';
+
+/** Days of each event, MM-DD, both included, every year */
+export const SEASONAL_EVENTS: Record<SeasonalEventId, { from: string; to: string }> = {
+  halloween: { from: '10-25', to: '10-31' },
+  christmas: { from: '12-19', to: '12-25' },
+};
+
+/** The event of a local date key YYYY-MM-DD, if any (read from the key, never with new Date()) */
+export function seasonalEventOf(dateKey: string): SeasonalEventId | null {
+  const day = dateKey.slice(5, 10);
+  const ids = Object.keys(SEASONAL_EVENTS) as SeasonalEventId[];
+  return ids.find(id => day >= SEASONAL_EVENTS[id].from && day <= SEASONAL_EVENTS[id].to) ?? null;
+}
 
 export interface CosmeticDef {
   kind: CosmeticKind;
@@ -52,6 +70,8 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'board', id: 'neon', icon: '🌃', unlock: { type: 'level', level: 10 } },
   { kind: 'board', id: 'pixel', icon: '👾', unlock: { type: 'stars', count: 500 } },
   { kind: 'board', id: 'snow', icon: '❄️', unlock: { type: 'winter' } },
+  { kind: 'board', id: 'pumpkin', icon: '🎃', unlock: { type: 'event', event: 'halloween' } },
+  { kind: 'board', id: 'christmas', icon: '🎄', unlock: { type: 'event', event: 'christmas' } },
   { kind: 'board', id: 'fire', icon: '🔥', unlock: { type: 'achievement', id: 'streak_30' } },
   { kind: 'board', id: 'beach', icon: '🏖️', unlock: { type: 'stars', count: 1200 } },
   { kind: 'board', id: 'space', icon: '🌌', unlock: { type: 'achievement', id: 'zone_perfect_10' } },
@@ -90,6 +110,8 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'effect', id: 'bubbles', icon: '💧', unlock: { type: 'achievement', id: 'perfect_250' } },
   { kind: 'effect', id: 'tommy', icon: '💥', unlock: { type: 'achievement', id: 'mafia' } },
   { kind: 'effect', id: 'broadside', icon: '⚓', unlock: { type: 'weeklies', count: 30 } },
+  { kind: 'effect', id: 'bats', icon: '🦇', unlock: { type: 'event', event: 'halloween' } },
+  { kind: 'effect', id: 'gifts', icon: '🎁', unlock: { type: 'event', event: 'christmas' } },
 ];
 
 export const cosmeticKey = (def: Pick<CosmeticDef, 'kind' | 'id'>): string => `${def.kind}:${def.id}`;
@@ -112,6 +134,8 @@ export interface CosmeticContext {
   weeklies: number;
   achievements: Set<string>;
   winterDaily: boolean;
+  /** Events during which a daily challenge was won */
+  events: Set<SeasonalEventId>;
 }
 
 const WINTER_MONTHS = ['12', '01', '02'];
@@ -128,6 +152,8 @@ export function buildCosmeticContext(s: CosmeticSource): CosmeticContext {
     achievements: new Set(s.achievements),
     // Date keys are local YYYY-MM-DD: the month is read from the key, never with new Date()
     winterDaily: dailyKeys.some(k => WINTER_MONTHS.includes(k.slice(5, 7))),
+    // Only the daily of the day itself: an archive won later is kept apart (archiveProgress)
+    events: new Set(dailyKeys.map(seasonalEventOf).filter((id): id is SeasonalEventId => id !== null)),
   };
 }
 
@@ -141,6 +167,7 @@ export function isCosmeticUnlocked(def: CosmeticDef, c: CosmeticContext): boolea
     case 'weeklies': return c.weeklies >= rule.count;
     case 'achievement': return c.achievements.has(rule.id);
     case 'winter': return c.winterDaily;
+    case 'event': return c.events.has(rule.event);
   }
 }
 
@@ -164,6 +191,11 @@ export function getUnlockedCosmetics(c: CosmeticContext): string[] {
 export function newlyUnlockedCosmetics(before: CosmeticSource, after: CosmeticSource): string[] {
   const known = new Set(getUnlockedCosmetics(buildCosmeticContext(before)));
   return getUnlockedCosmetics(buildCosmeticContext(after)).filter(key => !known.has(key));
+}
+
+/** Cosmetics of an event still to unlock (the home screen calls for the daily challenge during the event) */
+export function lockedEventCosmetics(event: SeasonalEventId, c: CosmeticContext): CosmeticDef[] {
+  return COSMETICS.filter(def => def.unlock.type === 'event' && def.unlock.event === event && !isCosmeticUnlocked(def, c));
 }
 
 /** Cosmetics given as the reward of reaching a player level */

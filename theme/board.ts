@@ -62,7 +62,7 @@ export interface BoardColors {
 export type VehicleArt = 'vintage' | 'ship' | DrawnSkin;
 
 /** Board themes, persisted in the cosmetics selection: never rename one, only add */
-export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire' | 'beach' | 'space';
+export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire' | 'beach' | 'space' | 'pumpkin' | 'christmas';
 
 /** Vehicle colors of the classic board (also the creator palette) */
 export const CLASSIC_VEHICLE_COLORS = [
@@ -313,8 +313,74 @@ const space = both({
   winBadgeBorder: 'rgba(168,85,247,0.6)',
 });
 
+/** Halloween: pumpkin orange on a night purple, slime green hint */
+const pumpkin: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#FDE8D0',
+    frame: '#6D28D9',
+    grid: 'rgba(109,40,217,0.2)',
+    exit: '#EA580C',
+    exitOutline: '#2E1065',
+    vehicleBorder: 'rgba(46,16,101,0.35)',
+    hint: '#84CC16',
+    hintOutline: '#2E1065',
+    winVeil: 'rgba(253,232,208,0.6)',
+    winBadge: 'rgba(255,247,237,0.95)',
+    winBadgeBorder: 'rgba(109,40,217,0.5)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#1C1027',
+    frame: '#F97316',
+    grid: 'rgba(249,115,22,0.22)',
+    exit: '#F97316',
+    exitOutline: '#000000',
+    vehicleBorder: 'rgba(251,146,60,0.45)',
+    hint: '#A3E635',
+    hintOutline: '#4C1D95',
+    winVeil: 'rgba(28,16,39,0.72)',
+    winBadge: 'rgba(46,22,64,0.92)',
+    winBadgeBorder: 'rgba(249,115,22,0.55)',
+  },
+};
+
+/** Christmas: fir green, red frame and gold garlands */
+const christmas: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#E6F2E6',
+    frame: '#B91C1C',
+    grid: 'rgba(21,128,61,0.22)',
+    exit: '#CA8A04',
+    exitOutline: '#14532D',
+    vehicleBorder: 'rgba(255,255,255,0.85)',
+    vehicleShine: 'rgba(255,255,255,0.3)',
+    hint: '#FACC15',
+    hintOutline: '#14532D',
+    winVeil: 'rgba(230,242,230,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(202,138,4,0.6)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#0F2A1C',
+    frame: '#DC2626',
+    grid: 'rgba(250,204,21,0.16)',
+    exit: '#FACC15',
+    exitOutline: '#FFFFFF',
+    vehicleBorder: 'rgba(255,255,255,0.35)',
+    vehicleShine: 'rgba(255,255,255,0.25)',
+    hint: '#FACC15',
+    hintOutline: '#DC2626',
+    winVeil: 'rgba(15,42,28,0.72)',
+    winBadge: 'rgba(20,60,38,0.92)',
+    winBadgeBorder: 'rgba(250,204,21,0.55)',
+  },
+};
+
 export const BOARD_THEMES: Record<BoardThemeId, Record<ColorScheme, BoardColors>> = {
-  classic, paper, wood, neon, pixel, snow, fire, beach, space,
+  classic, paper, wood, neon, pixel, snow, fire, beach, space, pumpkin, christmas,
 };
 
 export function getBoardColors(id: BoardThemeId, scheme: ColorScheme): BoardColors {

@@ -16,6 +16,7 @@ export function describeUnlock(t: TFunction, def: CosmeticDef, c: CosmeticContex
       if (ACHIEVEMENTS_BY_ID[rule.id]?.hidden && !c.achievements.has(rule.id)) return t('cosmetics.unlock.secret');
       return t('cosmetics.unlock.achievement', { name: t(`achievements.${rule.id}`) });
     case 'winter': return t('cosmetics.unlock.winter');
+    case 'event': return t(`cosmetics.unlock.event.${rule.event}`);
   }
 }
 
@@ -38,5 +39,6 @@ export function describeUnlockShort(t: TFunction, def: CosmeticDef, c: CosmeticC
         : `${t(`achievements.${rule.id}`)} : ${t(`achievements.${rule.id}_desc`)}`;
     }
     case 'winter': return t('cosmetics.unlock_short.winter');
+    case 'event': return t(`cosmetics.unlock_short.event.${rule.event}`);
   }
 }
