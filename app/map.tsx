@@ -75,16 +75,18 @@ export default function MapScreen() {
     return { starsById: byId, zoneStars: perZone, totalStars: total };
   }, [progress, zones]);
 
+  // Level the map opens on, chosen once: a win or a level replayed further down does not move the map under the player
+  const [focusLevel] = useState(() => getMapFocusLevel(lastPlayedLevelId, maxUnlockedLevel, id => progress.some(p => p.levelId === id && p.completed)));
+
   // Synchronously calculate initial scroll position to avoid "teleportation"
   const initialY = useMemo(() => {
-    const targetId = getMapFocusLevel(lastPlayedLevelId, maxUnlockedLevel);
-    const targetNode = pathPoints.find(p => p.id === targetId);
+    const targetNode = pathPoints.find(p => p.id === focusLevel);
     if (targetNode) {
       return Math.max(0, targetNode.y - screenHeight / 2 + 50);
     }
     // Fallback to BOTTOM of map (where level 1 is) if target not found
     return Math.max(0, totalHeight - screenHeight);
-  }, [pathPoints, lastPlayedLevelId, maxUnlockedLevel, screenHeight]);
+  }, [pathPoints, focusLevel, screenHeight, totalHeight]);
 
   // Set initial scroll state
   useEffect(() => {
