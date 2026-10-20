@@ -90,7 +90,7 @@ const ToolboxItem = React.memo(function ToolboxItem({ template, displayColor, co
         </View>
 
         <View style={styles.toolLabels}>
-          <Text style={[styles.toolName, { color: colors.text }]}>{t(`creator.${template.label.toLowerCase()}`)}</Text>
+          <Text style={[styles.toolName, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t(`creator.${template.label.toLowerCase()}`)}</Text>
           <View style={[styles.toolBadge, { backgroundColor: color + '28', borderColor: color + '55' }]}>
             <Text style={[styles.toolBadgeText, { color }]}>{dir} {size}</Text>
           </View>
@@ -103,11 +103,12 @@ const ToolboxItem = React.memo(function ToolboxItem({ template, displayColor, co
 export default ToolboxItem;
 
 const styles = StyleSheet.create({
-  toolCard: { borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10, flexBasis: '48%' },
+  // The truck lying down left too little room to its name: smaller previews, and the labels shrink rather than overflow the card
+  toolCard: { borderRadius: 14, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, flexBasis: '48%' },
   toolPreviewWrap: { justifyContent: 'center', alignItems: 'center', width: 52, height: 38 },
   toolPreview: { borderRadius: 5, overflow: 'hidden', justifyContent: 'flex-start' },
   toolPreviewShine: { position: 'absolute', top: 0, left: 0, right: 0, height: '40%' },
-  toolLabels: { alignItems: 'flex-start', gap: 3 },
+  toolLabels: { alignItems: 'flex-start', gap: 3, flexShrink: 1 },
   toolName: { fontSize: 12, fontWeight: '700' },
   toolBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5, borderWidth: 1 },
   toolBadgeText: { fontSize: 10, fontWeight: '700' },

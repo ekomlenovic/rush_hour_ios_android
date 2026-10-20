@@ -4,7 +4,7 @@ import {
   useWindowDimensions, Alert, AccessibilityInfo,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +12,7 @@ import { useGameStore, Vehicle, Level } from '@/store/gameStore';
 import { validateLevelAsync } from '@/utils/solver.background';
 import { haptics, Haptics } from '@/utils/haptics';
 import {
-  ExitSide, hasCollision as collides, vehicleCells, getExitSide, moveExitToSide, getNextAvailableColor, findFreeCell,
+  ExitSide, hasCollision as collides, vehicleCells, getExitSide, moveExitToSide, getNextAvailableColor, findFreeCell, resizeBoard,
 } from '@/utils/creatorGeometry';
 import { describeVehicle, describePosition, getVehicleLetters } from '@/utils/accessibility';
 import {
@@ -36,6 +36,7 @@ export default function LevelCreatorScreen() {
   const { t } = useTranslation();
   const { colors: C, board, palette, isDark } = useTheme();
   const router = useRouter();
+  const navigation = useNavigation();
   const params = useLocalSearchParams<{ levelId: string }>();
   const saveCreatedLevel = useGameStore(s => s.saveCreatedLevel);
   const createdLevels = useGameStore(s => s.createdLevels);
@@ -128,20 +129,23 @@ export default function LevelCreatorScreen() {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
-  // When grid size changes, ensure target car is correctly positioned
+  // Another size keeps the vehicles that still fit: it used to clear the board without a word
   const handleGridSizeChange = (newSize: number) => {
-    setGridSize(newSize);
-    const newTargetRow = Math.floor(newSize / 2) - (newSize % 2 === 0 ? 1 : 0);
-    setExitRow(newTargetRow);
-    setExitCol(newSize);
-    setVehicles(prev => {
-      const target = prev.find(v => v.id === 'target');
-      if (target) {
-        return [{ ...target, row: newTargetRow, col: Math.min(target.col, newSize - target.length), orientation: 'horizontal' }];
-      }
-      return [];
-    });
-    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (newSize === gridSize) return;
+    const resized = resizeBoard(vehicles, exitRow, exitCol, gridSize, newSize);
+    const apply = () => {
+      setGridSize(newSize);
+      setVehicles(resized.vehicles);
+      setExitRow(resized.exitRow);
+      setExitCol(resized.exitCol);
+      haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    };
+    if (resized.removed === 0) return apply();
+    haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(t('creator.resize_title'), t('creator.resize_desc', { count: resized.removed }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('creator.resize_confirm'), style: 'destructive', onPress: apply },
+    ]);
   };
 
   /** Convertit la position centrale du véhicule en ligne/colonne de grille (avec gestion du vrai offset) */
@@ -219,7 +223,8 @@ export default function LevelCreatorScreen() {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [exitCol, exitRow, gridSize]);
 
-  const pivotVehicle = useCallback((id: string) => {
+  // Not memoized: it pivots the target car through handleExitSideChange, which reads the board of this render
+  const pivotVehicle = (id: string) => {
     if (id === 'target') {
       // Toggle orientation by switching exit side
       const currentIsHorizontal = vehicles.find(v => v.id === 'target')?.orientation === 'horizontal';
@@ -252,7 +257,7 @@ export default function LevelCreatorScreen() {
         return prev;
       }
     });
-  }, [gridSize, hasCollision]);
+  };
 
   const placeFromToolbox = useCallback((template: VehicleTemplate, screenX: number, screenY: number) => {
     const lx = screenX - boardPos.current.x;
@@ -318,6 +323,24 @@ export default function LevelCreatorScreen() {
     }
   };
 
+  // The board as loaded or last saved: leaving with another one asks first
+  const savedBoard = useRef<string | null>(null);
+  const boardKey = JSON.stringify({ gridSize, exitRow, exitCol, vehicles });
+  useEffect(() => {
+    // The first board shown is the starting point (the loaded level, or the target car alone)
+    if (savedBoard.current === null && vehicles.length > 0) savedBoard.current = boardKey;
+  }, [boardKey, vehicles.length]);
+  const boardKeyRef = useRef(boardKey);
+  boardKeyRef.current = boardKey;
+  useEffect(() => navigation.addListener('beforeRemove', (event) => {
+    if (savedBoard.current === null || savedBoard.current === boardKeyRef.current) return;
+    event.preventDefault();
+    Alert.alert(t('creator.exit_title'), t('creator.exit_confirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('creator.exit'), style: 'destructive', onPress: () => navigation.dispatch(event.data.action) },
+    ]);
+  }), [navigation, t]);
+
   // Checked first, then named: the name sheet only opens for a level that can be saved
   const checkedMinMoves = useRef(0);
   const handleSave = async () => {
@@ -343,6 +366,7 @@ export default function LevelCreatorScreen() {
       ...(existing?.isFavorite ? { isFavorite: true } : {}),
     };
     saveCreatedLevel(newLevel);
+    savedBoard.current = boardKey;
     haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     // After the name sheet has slid away: iOS drops an alert shown during it
     setTimeout(() => Alert.alert(t('common.saved'), isImported ? t('creator.saved_new') : t('creator.level_updated'), [
@@ -390,7 +414,7 @@ export default function LevelCreatorScreen() {
       <View style={[styles.container, { backgroundColor: C.background }]}>
 
         {/* ── Header ── */}
-        <View style={[styles.header, { backgroundColor: C.background }]}>
+        <View style={[styles.header, { backgroundColor: C.background, paddingTop: insets.top + 8 }]}>
           <Pressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('a11y.back')}>
             <Text style={[styles.backArrow, { color: C.textMuted }]}>←</Text>
           </Pressable>
@@ -576,7 +600,7 @@ export default function LevelCreatorScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
 
-  header: { flexDirection: 'row', alignItems: 'center', paddingTop: 56, paddingHorizontal: 12, paddingBottom: 10, gap: 6 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 10, gap: 6 },
   backBtn: { width: 44, height: 44, justifyContent: 'center' },
   backArrow: { fontSize: 26, fontWeight: '600' },
   title: { flex: 1, fontSize: 16, fontWeight: '800', letterSpacing: 0.1 },
