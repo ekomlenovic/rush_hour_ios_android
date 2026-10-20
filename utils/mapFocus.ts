@@ -8,3 +8,11 @@ const CHALLENGE_ID_START = 900000;
 export function getMapFocusLevel(lastPlayedLevelId: number | null, maxUnlockedLevel: number): number {
   return lastPlayedLevelId && lastPlayedLevelId < CHALLENGE_ID_START ? lastPlayedLevelId : maxUnlockedLevel;
 }
+
+/** Levels playable past the next one: a player stuck on a hard level can go on and come back to it */
+export const MAP_LOOKAHEAD = 2;
+
+/** Whether a level of the map can be played: every level up to the next one, and MAP_LOOKAHEAD more */
+export function isMapLevelUnlocked(levelId: number, maxUnlockedLevel: number): boolean {
+  return levelId <= maxUnlockedLevel + MAP_LOOKAHEAD;
+}
