@@ -4,7 +4,7 @@
   "private": true,
   "description": "Self-hosted multiplayer server of Rush Hours: a daily challenge between friends",
   "type": "module",
-  "license": "GPL-3.0-or-later",
+  "license": "SEE LICENSE IN ../LICENSE",
   "engines": {
     "node": ">=22.13"
   },
