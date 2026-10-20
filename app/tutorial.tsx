@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Board from '@/components/Board';
 import { Vehicle, useGameStore } from '@/store/gameStore';
-import { checkWin } from '@/utils/collision';
+import { checkWin, isLegalMove } from '@/utils/collision';
 import { fixedColors, useTheme, CLASSIC_VEHICLE_COLORS, TARGET_CAR_COLOR } from '@/theme';
 
 const TUTORIAL_STEPS = [
@@ -74,15 +74,19 @@ export default function TutorialScreen() {
     }
   };
 
+  // The board as moved so far: two drags ending at once both check against the latest one
+  const vehiclesRef = useRef(vehicles);
   const handleMoveEnd = useCallback((vehicleId: string, newRow: number, newCol: number) => {
-    const updatedVehicles = vehicles.map(v => v.id === vehicleId ? { ...v, row: newRow, col: newCol } : v);
+    if (!isLegalMove(vehiclesRef.current, vehicleId, newRow, newCol, 6)) return false;
+    const updatedVehicles = vehiclesRef.current.map(v => v.id === vehicleId ? { ...v, row: newRow, col: newCol } : v);
+    vehiclesRef.current = updatedVehicles;
     setVehicles(updatedVehicles);
     
     // Always check if the target car reached the exit
     if (checkWin(updatedVehicles, 2, 6, 6)) {
       setCompleted(true);
       useGameStore.getState().completeLevel(0, 300, 3);
-      return;
+      return true;
     }
 
     // Step 1: v1 (green bus) must move down enough to clear row 2
@@ -91,7 +95,8 @@ export default function TutorialScreen() {
       setStep(2);
       setDialogDismissed(false); // Lock board again for step 2 dialog
     }
-  }, [step, vehicles]);
+    return true;
+  }, [step]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]}>

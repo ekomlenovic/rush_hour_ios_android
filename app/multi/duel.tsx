@@ -273,7 +273,7 @@ interface ArenaProps {
   now: number;
   colors: UiColors;
   offline: boolean;
-  onMove: (vehicleId: string, row: number, col: number) => void;
+  onMove: (vehicleId: string, row: number, col: number) => boolean | void;
 }
 
 /** The game: the opponent at the top (small, read only), me at the bottom; for a spectator, both the same size */

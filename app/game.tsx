@@ -215,11 +215,12 @@ export default function GameScreen() {
   const playTime = useActivePlayTime(!isLoading && !!currentLevel && !won && !isChallengeCompleted);
 
   const handleMoveEnd = useCallback((vehicleId: string, newRow: number, newCol: number) => {
-    if (won || isChallengeCompleted) return;
+    if (won || isChallengeCompleted) return false;
+    // Refused when another vehicle took the room meanwhile (two fingers): the block goes back
+    if (!moveVehicle(vehicleId, newRow, newCol)) return false;
 
     setHintVehicleId(null); // Clear hint highlight on any move
     setHintRemainingMoves(null);
-    moveVehicle(vehicleId, newRow, newCol);
 
     // Check win after store update
     const updatedVehicles = useGameStore.getState().vehicles;
@@ -256,6 +257,7 @@ export default function GameScreen() {
       setWon(true);
       haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
+    return true;
   }, [won, isChallengeCompleted, moveVehicle, currentLevel, computedMinMoves, completeLevel, challengeKind, isArchive, params.date, params.week, playTime.stop]);
 
   const handleUndo = useCallback(() => {

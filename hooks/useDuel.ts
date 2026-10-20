@@ -18,7 +18,8 @@ export interface DuelControls {
   join: (code: string) => void;
   /** Watch a duel without playing it */
   watch: (code: string) => void;
-  move: (vehicleId: string, row: number, col: number) => void;
+  /** Plays a move of mine; false if refused (through a vehicle, not playing) */
+  move: (vehicleId: string, row: number, col: number) => boolean;
   leave: () => void;
   rematch: () => void;
   clearError: () => void;
@@ -113,11 +114,18 @@ export function useDuel(account: ServerAccount | null): DuelControls {
 
   const move = useCallback((vehicleId: string, row: number, col: number) => {
     const duel = stateRef.current.duel;
-    if (!duel || duel.status !== 'playing' || duel.spectating) return;
+    if (!duel || duel.status !== 'playing' || duel.spectating) return false;
     const record = myMove(duel, vehicleId, row, col, Date.now());
-    if (!record) return;
-    dispatch({ type: 'local_move', move: record });
+    if (!record) return false;
+    // Checked like the server does, on the board with the moves not rendered yet (two vehicles
+    // dragged at once): a move through a vehicle is never sent, the server would refuse it
+    const action = { type: 'local_move' as const, move: record };
+    const next = duelReducer(stateRef.current, action);
+    if (next === stateRef.current) return false;
+    stateRef.current = next;
+    dispatch(action);
     send({ type: 'move', vehicleId: record.vehicleId, delta: record.delta });
+    return true;
   }, [send]);
 
   return {

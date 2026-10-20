@@ -112,6 +112,21 @@ export function getMoveBounds(
 }
 
 /**
+ * Whether a vehicle can slide to that position along its axis, every cell on the way free:
+ * the rule of applyMoves (multiplayer server). Two vehicles dragged at once with two fingers
+ * both had their room computed before either moved, and could end on the same cell.
+ */
+export function isLegalMove(vehicles: Vehicle[], vehicleId: string, newRow: number, newCol: number, gridSize: number): boolean {
+  const vehicle = vehicles.find(v => v.id === vehicleId);
+  if (!vehicle) return false;
+  const horizontal = vehicle.orientation === 'horizontal';
+  if (horizontal ? newRow !== vehicle.row : newCol !== vehicle.col) return false;
+  const { min, max } = getMoveBounds(vehicle, vehicles, gridSize);
+  const position = horizontal ? newCol : newRow;
+  return position >= min && position <= max;
+}
+
+/**
  * Check if the target vehicle has reached the exit.
  * exitRow/exitCol can be:
  * - Right: exitCol = gridSize
