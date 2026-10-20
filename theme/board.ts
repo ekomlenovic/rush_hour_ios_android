@@ -1,4 +1,5 @@
 import type { ColorScheme } from './ui';
+import type { DrawnSkin } from './art/targetSkins';
 
 /**
  * Board theme: colors of the grid and the vehicles (Board, Block, creator board),
@@ -49,7 +50,16 @@ export interface BoardColors {
   boardRadius: number;
   /** Drawn on the target car (car skin) */
   targetIcon?: string;
+  /** Drawing of the target car instead of a colored block (car skin) */
+  targetArt?: VehicleArt;
 }
+
+/**
+ * Vehicles drawn instead of colored blocks: 'vintage' for the 1930s cars of the Mafia skin and palette,
+ * 'ship' for the schooners and paddle steamers of the 1800 ones (Anno 1800 style),
+ * and each target car skin with its own drawing (taxi, bus…)
+ */
+export type VehicleArt = 'vintage' | 'ship' | DrawnSkin;
 
 /** Board themes, persisted in the cosmetics selection: never rename one, only add */
 export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire' | 'beach' | 'space';
@@ -313,33 +323,40 @@ export function getBoardColors(id: BoardThemeId, scheme: ColorScheme): BoardColo
 
 // ─── Target car skins ─────────────────────────────────────────────────────────
 
-export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold' | 'tractor' | 'ufo';
+export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold' | 'tractor' | 'ufo' | 'mafia' | 'flagship';
 
 export interface CarSkin {
   /** Body color, the board's target car color when absent */
   color?: string;
-  /** Drawn on the car */
+  /** Drawn on the car (and the icon of the skin in the garage) */
   icon?: string;
+  /** The car is drawn rather than a block with an icon */
+  art?: VehicleArt;
 }
 
 export const CAR_SKINS: Record<CarSkinId, CarSkin> = {
+  // The red car stays a block: the classic look of the game
   classic: { icon: '🚗' },
-  taxi: { color: '#FACC15', icon: '🚕' },
-  bus: { color: '#F59E0B', icon: '🚌' },
-  police: { color: '#1E3A8A', icon: '🚓' },
-  // British racing green, the red emoji disappeared on a red body
-  sport: { color: '#15803D', icon: '🏎️' },
-  rocket: { color: '#7C3AED', icon: '🚀' },
-  gold: { color: '#EAB308', icon: '👑' },
-  // Green body: the red tractor emoji stays visible
-  tractor: { color: '#16A34A', icon: '🚜' },
-  ufo: { color: '#64748B', icon: '🛸' },
+  // Every other skin is drawn from above (theme/art/targetSkins.ts); the icon is shown in the garage
+  taxi: { color: '#FACC15', icon: '🚕', art: 'taxi' },
+  bus: { color: '#F59E0B', icon: '🚌', art: 'bus' },
+  police: { color: '#1E3A8A', icon: '🚓', art: 'police' },
+  // British racing green
+  sport: { color: '#15803D', icon: '🏎️', art: 'sport' },
+  rocket: { color: '#7C3AED', icon: '🚀', art: 'rocket' },
+  gold: { color: '#EAB308', icon: '👑', art: 'gold' },
+  tractor: { color: '#16A34A', icon: '🚜', art: 'tractor' },
+  ufo: { color: '#64748B', icon: '🛸', art: 'ufo' },
+  // 1930s sedan of Lost Heaven, burgundy: still the red car to get out, among the black cars of the Mafia palette
+  mafia: { color: '#7A1424', icon: '🎩', art: 'vintage' },
+  // Schooner of the industrial age (Anno 1800 style), crimson hull: the red one to get out
+  flagship: { color: '#9B1B30', icon: '⛵', art: 'ship' },
 };
 
 // ─── Vehicle palettes ─────────────────────────────────────────────────────────
 
 /** 'classic' keeps the colors saved in each level */
-export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy' | 'lava' | 'jungle';
+export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy' | 'lava' | 'jungle' | 'mafia' | 'fleet';
 
 export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   classic: null,
@@ -351,13 +368,23 @@ export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   // No red: the target car must stand out
   lava: ['#EA580C', '#F59E0B', '#FACC15', '#78350F', '#FB923C', '#57534E', '#B45309', '#FDE047'],
   jungle: ['#15803D', '#65A30D', '#0D9488', '#CA8A04', '#166534', '#4ADE80', '#A3E635', '#0F766E'],
+  // 1930s cars: black, cream, bottle green, chocolate, navy, chrome grey… no red for the target car
+  mafia: ['#292524', '#E7DCC4', '#14532D', '#5C3A21', '#1E3A5F', '#A8A29E', '#78716C', '#B08D57'],
+  // Hulls of the industrial age: bottle green, navy, ochre, brick, slate, cream, teal, coal… no red for the target ship
+  fleet: ['#1F4D3A', '#23395B', '#B8862B', '#7A3E1D', '#5B6770', '#E8DCC0', '#2E6F6A', '#2B2B2B'],
+};
+
+/** Palettes whose vehicles are drawn rather than colored blocks */
+export const PALETTE_ART: Partial<Record<VehiclePaletteId, VehicleArt>> = {
+  mafia: 'vintage',
+  fleet: 'ship',
 };
 
 /** Board colors with the target car skin applied */
 export function getSkinnedBoard(id: BoardThemeId, skin: CarSkinId, scheme: ColorScheme): BoardColors {
   const board = getBoardColors(id, scheme);
   const carSkin = CAR_SKINS[skin] ?? CAR_SKINS.classic;
-  return { ...board, targetCar: carSkin.color ?? board.targetCar, targetIcon: carSkin.icon };
+  return { ...board, targetCar: carSkin.color ?? board.targetCar, targetIcon: carSkin.icon, targetArt: carSkin.art };
 }
 
 /** Color of each non-target vehicle in the order of the level, for a palette */

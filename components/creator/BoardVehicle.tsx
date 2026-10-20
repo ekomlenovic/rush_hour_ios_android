@@ -6,7 +6,8 @@ import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { Vehicle } from '@/store/gameStore';
 import { SNAP } from './snap';
 import { vehicleStyles as styles } from './vehicleStyles';
-import { useTheme } from '@/theme';
+import { useTheme, PALETTE_ART } from '@/theme';
+import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
 
 type BoardVehicleProps = {
   vehicle: Vehicle;
@@ -27,7 +28,7 @@ type BoardVehicleProps = {
 
 /** A vehicle on the creator board: drag to move, tap to pivot, long press to remove */
 const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, color, cellSize, isGhost, onDragStart, onDragMove, onDragEnd, onRemove, onPress, a11yLabel, a11yValue, a11yStrings }: BoardVehicleProps) {
-  const { board } = useTheme();
+  const { board, palette } = useTheme();
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
   const sc = useSharedValue(1);
@@ -83,6 +84,9 @@ const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, color, cellS
   const radius = cellSize * board.vehicleRadius;
   const w = (v.orientation === 'horizontal' ? v.length : 1) * cellSize - 4;
   const h = (v.orientation === 'vertical' ? v.length : 1) * cellSize - 4;
+  const fill = v.isTarget ? board.targetCar : color ?? v.color;
+  // Drawn skin or palette (as on the game board): the drawing replaces the block, its shine and grip
+  const art = v.isTarget ? board.targetArt : PALETTE_ART[palette];
 
   return (
     <GestureDetector gesture={gesture}>
@@ -101,9 +105,13 @@ const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, color, cellS
         styles.vehicleBlock, animStyle,
         {
           top: v.row * cellSize + 2, left: v.col * cellSize + 2, width: w, height: h, borderRadius: radius,
-          backgroundColor: v.isTarget ? board.targetCar : color ?? v.color, borderColor: board.vehicleBorder,
+          backgroundColor: fill, borderColor: board.vehicleBorder,
         },
+        art && styles.drawnBlock,
       ]}>
+        {art ? (
+          <DrawnVehicle art={art} length={v.length} orientation={v.orientation} color={fill} width={w} height={h} />
+        ) : (<>
         <View style={[styles.vehicleShine, { borderRadius: radius, backgroundColor: board.vehicleShine }, v.orientation === 'vertical' && styles.vehicleShineV]} />
         {v.isTarget
           ? (board.targetIcon ? <Text style={{ fontSize: cellSize * 0.5 }}>{board.targetIcon}</Text> : null)
@@ -111,6 +119,7 @@ const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, color, cellS
             <View style={[styles.gripDot, { backgroundColor: board.vehicleGrip }]} /><View style={[styles.gripDot, { backgroundColor: board.vehicleGrip }]} />
           </View>
         }
+        </>)}
       </Animated.View>
     </GestureDetector>
   );

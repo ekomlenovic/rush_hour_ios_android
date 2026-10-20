@@ -27,7 +27,17 @@ export const initialStats = (): PlayerStats => ({
   freezesUsed: 0,
   missionDaysCompleted: 0,
   longestAbsenceDays: 0,
+  secretCodes: {},
 });
+
+/** Words that unlock a secret achievement when typed in the level import */
+export const SECRET_CODES = ['mafia'];
+
+/** The secret code typed in the level import field, if it is one */
+export function matchSecretCode(text: string): string | null {
+  const code = text.trim().toLowerCase();
+  return SECRET_CODES.includes(code) ? code : null;
+}
 
 /** Below this many optimal moves, a fast win is too easy to count for the speed record */
 export const SPEED_RECORD_MIN_MOVES = 10;

@@ -5,6 +5,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { WinEffectId } from '@/data/cosmetics';
 import { TRAFFIC_LIGHT } from '@/theme';
+import TommyGunEffect from './TommyGunEffect';
+import BroadsideEffect from './BroadsideEffect';
 
 interface Props {
   effect: WinEffectId;
@@ -233,12 +235,15 @@ export default function WinEffect({ effect, width, height, colors, playKey = 0 }
   const reduceMotion = useReducedMotion();
   const particles = useMemo(() => buildParticles(effect, width, height, colors), [effect, width, height, colors]);
   const lights = useMemo(() => (effect === 'greenlight' ? buildLights(width, height) : []), [effect, width, height]);
-  if (reduceMotion || particles.length === 0) return null;
+  const drawn = effect === 'tommy' || effect === 'broadside';
+  if (reduceMotion || (particles.length === 0 && !drawn)) return null;
 
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.container]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
       {lights.map((light, i) => <TrafficLight key={`light-${i}`} light={light} playKey={playKey} />)}
-      {particles.map((p, i) => <AnimatedParticle key={`${effect}-${i}`} p={p} playKey={playKey} />)}
+      {effect === 'tommy' && <TommyGunEffect width={width} height={height} playKey={playKey} />}
+      {effect === 'broadside' && <BroadsideEffect width={width} height={height} playKey={playKey} />}
+      {!drawn && particles.map((p, i) => <AnimatedParticle key={`${effect}-${i}`} p={p} playKey={playKey} />)}
     </View>
   );
 }
