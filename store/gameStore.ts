@@ -8,6 +8,7 @@ import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
 import { DailyMissionsState, FAST_WIN_MS, MissionCounter, MissionReward, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
 import { getLocalDateString, daysBetween } from '../utils/date';
 import { diffMove, toMoveRecord } from '../utils/moveLog';
+import { isLegalMove } from '../utils/collision';
 import { cleanLevelName, isSameBoard } from '../utils/sharing';
 import type {
   AppOpenInfo, AttemptStats, ChallengeDetails, ChallengeResult, Level, LevelProgress, LevelSaveState, MoveRecord, PeriodStats, PlayerStats, RecapsSeen,
@@ -161,7 +162,8 @@ interface GameState {
 
   // Actions
   loadLevel: (level: Level, savedState?: LevelSaveState) => void;
-  moveVehicle: (vehicleId: string, newRow: number, newCol: number) => void;
+  /** Plays a move; false (nothing changes) for a move through another vehicle or off its axis */
+  moveVehicle: (vehicleId: string, newRow: number, newCol: number) => boolean;
   undo: () => void;
   resetLevel: () => void;
   recordHintUsed: () => void;
@@ -423,7 +425,7 @@ export const useGameStore = create<GameState>()(
 
       moveVehicle: (vehicleId, newRow, newCol) => {
         const { vehicles, history, moveLog, attemptStartedAt, moveCount, currentLevel, stats } = get();
-        if (!currentLevel) return;
+        if (!currentLevel || !isLegalMove(vehicles, vehicleId, newRow, newCol, currentLevel.gridSize)) return false;
 
         const snapshot = vehicles.map((v) => ({ ...v }));
         const updated = vehicles.map((v) =>
@@ -443,6 +445,7 @@ export const useGameStore = create<GameState>()(
           }),
           ...periodsWith({ moves: 1 }),
         });
+        return true;
       },
 
       undo: () => {

@@ -1,7 +1,7 @@
 import { useGameStore, DAILY_LEVEL_ID, isSaveForLevel } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
 import { GENERATOR_MAX_STATES, solvePuzzle, getHint } from '../utils/solver';
-import { checkWin } from '../utils/collision';
+import { checkWin, getMoveBounds, isLegalMove } from '../utils/collision';
 import { resetStore, setToday } from './helpers';
 
 const state = () => useGameStore.getState();
@@ -51,6 +51,24 @@ describe('solver', () => {
   });
 });
 
+describe('isLegalMove: two vehicles dragged at once never overlap', () => {
+  const car = (id: string, col: number) => ({ id, row: 0, col, length: 2, orientation: 'horizontal' as const, isTarget: false, color: '#000' });
+  const board = [car('a', 0), car('b', 4)];
+
+  it('lets a vehicle slide along its axis while the way is free', () => {
+    expect(isLegalMove(board, 'a', 0, 2, 6)).toBe(true);
+    expect(isLegalMove(board, 'b', 0, 2, 6)).toBe(true);
+  });
+
+  it('refuses the second of two drags ending on the same cells, a move off its axis, an unknown vehicle', () => {
+    const afterA = board.map(v => (v.id === 'a' ? { ...v, col: 2 } : v));
+    expect(isLegalMove(afterA, 'b', 0, 2, 6)).toBe(false);
+    expect(isLegalMove(afterA, 'b', 0, 3, 6)).toBe(false);
+    expect(isLegalMove(board, 'a', 1, 0, 6)).toBe(false);
+    expect(isLegalMove(board, 'nope', 0, 0, 6)).toBe(false);
+  });
+});
+
 describe('map levels: training mode (rules in docs/GAME_DESIGN.md)', () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -61,6 +79,20 @@ describe('map levels: training mode (rules in docs/GAME_DESIGN.md)', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+  });
+
+  it('a move through another vehicle is refused and changes nothing', () => {
+    // A vehicle stopped by another one before the edge of the grid, moved past it
+    const blocked = level.vehicles.find(v => {
+      const { max } = getMoveBounds(v, level.vehicles, level.gridSize);
+      return max < level.gridSize - v.length;
+    })!;
+    const { max } = getMoveBounds(blocked, level.vehicles, level.gridSize);
+    const horizontal = blocked.orientation === 'horizontal';
+    expect(state().moveVehicle(blocked.id, horizontal ? blocked.row : max + 1, horizontal ? max + 1 : blocked.col)).toBe(false);
+    expect(state().moveCount).toBe(0);
+    expect(state().vehicles).toEqual(level.vehicles);
+    expect(state().moveVehicle(mover.id, mover.row, mover.col)).toBe(true);
   });
 
   it('undo counts as a move', () => {

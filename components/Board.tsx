@@ -14,7 +14,8 @@ interface BoardProps {
   vehicles: Vehicle[];
   exitRow: number;
   exitCol: number;
-  onMoveEnd: (vehicleId: string, newRow: number, newCol: number) => void;
+  /** false when the move is refused (another vehicle got there first): the vehicle goes back */
+  onMoveEnd: (vehicleId: string, newRow: number, newCol: number) => boolean | void;
   hintVehicleId?: string | null;
   disabled?: boolean;
   /** No dragging, without the lock overlay (solution replay) */

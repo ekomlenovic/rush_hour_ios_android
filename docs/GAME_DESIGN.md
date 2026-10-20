@@ -51,6 +51,7 @@ Les défis du jour **passés** se rejouent depuis les archives : toucher un jour
 |---|---|
 | **Indices illimités**, sans jetons ni monnaie, et ce n'est pas amené à changer | `handleHint` ; seul `totalHintsUsed` est compté (stats) |
 | **Annuler compte comme un coup** | `undo` incrémente `moveCount` : annuler n'est pas gratuit pour le score |
+| Un coup qui **traverserait un véhicule** est refusé et le véhicule revient à sa place : deux véhicules glissés en même temps (deux doigts) vers la même case ne se chevauchent plus. Même règle que le serveur (`applyMoves`), appliquée aussi au multijoueur, dont le serveur refusait sinon la victoire | `isLegalMove` (`utils/collision.ts`), `moveVehicle`, `Block`, `playMove`, `useDuel` |
 | **Recommencer** remet le compteur à zéro | `resetLevel` |
 | Progression sauvegardée par niveau | `savedStates[levelId]` |
 | Les niveaux **générés** sont numérotés à la suite de la campagne, **sans trou** : un niveau que le générateur n'a pas réussi à produire ne prend pas de numéro (sinon le suivant ne se débloquait jamais). Une seule génération à la fois | `startLevelGeneration` (`hooks/useLevelGenerator.ts`), migration v8 |

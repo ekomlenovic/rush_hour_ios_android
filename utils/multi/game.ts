@@ -1,6 +1,6 @@
 import type { MultiGame } from '../../store/multiStore';
 import type { StartResult, SubmitResult, Today } from './api';
-import { checkWin } from '../collision';
+import { checkWin, isLegalMove } from '../collision';
 import { toMoveRecord } from '../moveLog';
 
 /**
@@ -46,8 +46,9 @@ export function playMove(game: MultiGame, vehicleId: string, row: number, col: n
   const last = game.moveLog[game.moveLog.length - 1];
   // Never back in time, even if the phone clock is changed
   const record = vehicle && toMoveRecord(vehicle, row, col, Math.max(last?.t ?? 0, Math.round(elapsedMs(game, now))));
-  // The red car is out: the game is over, a move after it would make the server refuse the win
-  if (!record || isWon(game)) return null;
+  // The red car is out: the game is over, a move after it would make the server refuse the win.
+  // A move through a vehicle (two dragged at once) would make it refuse the win too
+  if (!record || isWon(game) || !isLegalMove(game.vehicles, vehicleId, row, col, game.level.gridSize)) return null;
   const vehicles = game.vehicles.map(v => (v.id === vehicleId ? { ...v, row, col } : v));
   return {
     game: { ...game, vehicles, moveLog: [...game.moveLog, record] },
