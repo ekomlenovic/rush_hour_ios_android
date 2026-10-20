@@ -14,6 +14,8 @@ import { useAppOpenAlert } from '@/hooks/useAppOpenAlert';
 import { useNow } from '@/hooks/useNow';
 import { useTheme, fixedColors } from '@/theme';
 import ChallengeCard from '@/components/home/ChallengeCard';
+import RecapCard from '@/components/home/RecapCard';
+import { pendingRecap, periodLabel, recapKind } from '@/utils/recap';
 import HomeHeader from '@/components/home/HomeHeader';
 import HomeTabBar from '@/components/home/HomeTabBar';
 import MissionsSheet from '@/components/home/MissionsSheet';
@@ -40,7 +42,7 @@ function timeUntilTomorrow(now: Date): string {
 }
 
 export default function HomeScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { colors, isDark, scheme } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -55,6 +57,12 @@ export default function HomeScreen() {
   const lastPlayedLevelId = useGameStore(s => s.lastPlayedLevelId);
   const generatedLevels = useGameStore(s => s.generatedLevels);
   const cosmetics = useGameStore(s => s.cosmetics);
+  const monthlyStats = useGameStore(s => s.monthlyStats);
+  const yearlyStats = useGameStore(s => s.yearlyStats);
+  const achievementMonths = useGameStore(s => s.achievementMonths);
+  const recapSince = useGameStore(s => s.recapSince);
+  const recapsSeen = useGameStore(s => s.recapsSeen);
+  const frozenDates = useGameStore(s => s.frozenDates);
 
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const [isMissionsVisible, setMissionsVisible] = useState(false);
@@ -71,6 +79,11 @@ export default function HomeScreen() {
   const todayMissions = getMissionsForDay(dailyMissions, dateStr);
   const missionsDone = countMissionsDone(todayMissions);
   const freezeCapacity = getFreezeCapacity(getPlayerLevel(xp));
+
+  // The recap of the month (from the 1st) or of the year (from December 26th), until opened
+  const recapKey = pendingRecap({
+    monthlyStats, yearlyStats, achievementMonths, recapSince, recapsSeen, dailyChallengeProgress, weeklyChallengeProgress, frozenDates,
+  }, now);
 
   const weekKey = getWeekKey(now);
   const weeklyStatus = weeklyChallengeProgress[weekKey];
@@ -145,8 +158,18 @@ export default function HomeScreen() {
             </View>
           </AnimatedPressable>
 
-          {/* 2. Challenges: same structure, dimmed once won */}
+          {/* 2. Challenges: same structure, dimmed once won; the recap first when it is ready */}
           <View style={styles.challenges}>
+            {recapKey ? (
+              <RecapCard
+                colors={colors}
+                title={recapKind(recapKey) === 'year'
+                  ? t('recap.ready_year', { period: periodLabel(recapKey, i18n.language) })
+                  : t('recap.ready_month', { period: periodLabel(recapKey, i18n.language) })}
+                subtitle={t('recap.ready_desc')}
+                onPress={() => router.push(`/recap?period=${recapKey}`)}
+              />
+            ) : null}
             <ChallengeCard
               colors={colors}
               icon="calendar"

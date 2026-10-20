@@ -318,6 +318,69 @@ describe('import recomputes rather than trusts', () => {
   });
 });
 
+describe('recap counters (issue 125)', () => {
+  beforeEach(playSomeDays);
+
+  it('travel with the save', () => {
+    const before = { monthlyStats: store().monthlyStats, yearlyStats: store().yearlyStats, achievementMonths: store().achievementMonths };
+    expect(before.monthlyStats['2026-10'].wins).toBeGreaterThan(0);
+    const code = exportProgress();
+    resetStore();
+    const result = parseSave(code);
+    if (!result.ok) throw new Error(result.error);
+    store().importProgress(result.state);
+    expect(store()).toMatchObject(before);
+  });
+
+  it('are capped by the lifetime totals, and a period in the future or out of the window is dropped', () => {
+    const result = parseSave(forge(s => {
+      s.monthlyStats['2026-10'].wins = 1_000_000;
+      s.monthlyStats['2026-10'].perfectWins = 999;
+      s.monthlyStats['2026-10'].moves = 'many';
+      s.monthlyStats['2030-01'] = { wins: 1 };
+      s.monthlyStats['2024-01'] = { wins: 1 };
+      s.monthlyStats.broken = { wins: 1 };
+      s.yearlyStats['2026'].playTimeMs = 1e12;
+      s.achievementMonths.unknown = '2026-10';
+      s.achievementMonths.first_win = '2099-01';
+      s.recapSince = '2099-01-01';
+      s.recapsSeen = { month: 12, year: '2026' };
+    }));
+    if (!result.ok) throw new Error(result.error);
+    const stats = result.state.stats as Record<string, number>;
+    const months = result.state.monthlyStats as Record<string, Record<string, number>>;
+    expect(Object.keys(months)).toEqual(['2026-10']);
+    expect(months['2026-10'].wins).toBe(stats.totalWins);
+    expect(months['2026-10'].perfectWins).toBeLessThanOrEqual(months['2026-10'].wins);
+    expect(months['2026-10'].moves).toBe(0);
+    expect((result.state.yearlyStats as Record<string, Record<string, number>>)['2026'].playTimeMs).toBe(stats.totalPlayTimeMs);
+    expect(result.state.achievementMonths).not.toHaveProperty('unknown');
+    expect(result.state.achievementMonths).not.toHaveProperty('first_win');
+    expect(result.state.recapSince).toBeNull();
+    expect(result.state.recapsSeen).toEqual({ year: '2026' });
+  });
+
+  it('a broken recap field never refuses the save', () => {
+    const result = parseSave(forge(s => { s.monthlyStats = 'broken'; s.yearlyStats = [1]; s.achievementMonths = null; }));
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state).toMatchObject({ monthlyStats: {}, yearlyStats: {}, achievementMonths: {} });
+  });
+
+  it('a save from before the recap (v11) gets its challenges counted back, the rest from the import', () => {
+    const v11 = decodeSave(exportProgress()) as Exclude<ReturnType<typeof decodeSave>, string>;
+    for (const field of ['monthlyStats', 'yearlyStats', 'achievementMonths', 'recapSince', 'recapsSeen']) delete v11.state[field];
+    const result = parseSave(encodeSave({ ...v11, version: 11 }));
+    if (!result.ok) throw new Error(result.error);
+    // The 3 dailies of October, no more than the lifetime wins (the dailies here are won without being played)
+    const totalWins = (result.state.stats as { totalWins: number }).totalWins;
+    expect(totalWins).toBe(2);
+    expect((result.state.monthlyStats as Record<string, { wins: number }>)['2026-10'].wins).toBe(2);
+    expect((result.state.yearlyStats as Record<string, { wins: number }>)['2026'].wins).toBe(2);
+    expect(result.state.recapSince).toBe('2026-10-12');
+    expect(Object.keys(result.state.achievementMonths as object).sort()).toEqual([...(result.state.achievements as string[])].sort());
+  });
+});
+
 describe('import drops what it cannot read', () => {
   beforeEach(playSomeDays);
 

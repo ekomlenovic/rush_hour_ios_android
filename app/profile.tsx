@@ -7,6 +7,7 @@ import { useGameStore } from '@/store/gameStore';
 import PlayerLevelCard from '@/components/progression/PlayerLevelCard';
 import StreakCard from '@/components/profile/StreakCard';
 import AchievementsSection from '@/components/profile/AchievementsSection';
+import RecapPreviewCard from '@/components/profile/RecapPreviewCard';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { formatDuration, formatPlayTime } from '@/utils/date';
@@ -98,6 +99,10 @@ export default function ProfileScreen() {
 
         <Animated.View entering={FadeInDown.delay(100).duration(400)}>
           <StreakCard colors={colors} />
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(125).duration(400)}>
+          <RecapPreviewCard colors={colors} />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(150).duration(400)} style={styles.section}>
