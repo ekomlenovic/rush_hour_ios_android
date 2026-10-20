@@ -1,8 +1,81 @@
 # Rush Hours
 
-Le jeu de casse-tête où tu fais glisser les voitures pour libérer la rouge : plus de 300 niveaux sur une carte du monde, un défi du jour, un défi hebdo, un garage de styles à débloquer, un créateur de niveaux et un mode multijoueur entre amis.
+*[Version française plus bas](#rush-hours--français)*
 
-*English version below.*
+A sliding-car puzzle game: move the cars to free the red one. 300+ levels on a world map, a daily challenge, a weekly challenge, a garage of styles to unlock, a level creator and multiplayer with friends.
+
+## Install the game
+
+### Android
+
+On the Google Play Store: **[Rush Hours on Google Play](https://play.google.com/store/apps/details?id=com.rushhours.app)**.
+
+### iPhone / iPad
+
+The game is **not on the App Store**. The `.ipa` file is published in the **[GitHub releases](https://github.com/ekomlenovic/rush_hour_ios_android/releases/latest)** (`rush-hours-unsigned.ipa`): you install it yourself with SideStore, on its own or with LiveContainer.
+
+#### With SideStore
+
+1. Install [SideStore](https://sidestore.io) on your iPhone (follow their guide).
+2. In SideStore, go to **Sources** → **+**, then paste the Rush Hours source address:
+
+   ```
+   https://raw.githubusercontent.com/ekomlenovic/rush_hour_ios_android/refs/heads/main/sidestore-source.json
+   ```
+
+3. Install **RushHours** from the source. Updates then show up directly in SideStore.
+
+   You can also download `rush-hours-unsigned.ipa` from the [latest release](https://github.com/ekomlenovic/rush_hour_ios_android/releases/latest) and open it with SideStore (**My Apps** → **+**).
+
+4. Remember to refresh the app in SideStore at least once every 7 days (Apple's limit for free accounts).
+
+#### With SideStore + LiveContainer
+
+[LiveContainer](https://github.com/LiveContainer/LiveContainer) runs apps inside a single app installed by SideStore: handy if you have already reached SideStore's 3-app limit, and only LiveContainer needs refreshing.
+
+1. Install SideStore, then install LiveContainer with SideStore (see the LiveContainer guide).
+2. Download `rush-hours-unsigned.ipa` from the [latest release](https://github.com/ekomlenovic/rush_hour_ios_android/releases/latest).
+3. In LiveContainer, tap **+** and pick the `.ipa` file.
+4. Launch Rush Hours from LiveContainer.
+
+> Your progress stays on your phone. To switch devices or installation methods, use **Options → Save → Export my progress**, then import it on the new install.
+
+## Send feedback
+
+A bug, an idea, a level that looks broken, an opinion? **[Send your feedback here](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml)** (you need a free GitHub account). English and French are both welcome.
+
+## License and publishing
+
+Rush Hours is © 2026 Imelein, licensed under the [GNU AGPL v3](LICENSE). The code is open to be read, studied and improved, **not to be republished in my place**.
+
+**The only official versions are**:
+
+- the [Google Play](https://play.google.com/store/apps/details?id=com.rushhours.app) app published by Imelein;
+- the files published in this repository's [releases](https://github.com/ekomlenovic/rush_hour_ios_android/releases) and this repository's SideStore source.
+
+**Publishing this game on the Apple App Store (or TestFlight) is not permitted.** I give nobody permission to do so: the App Store terms make it impossible to comply with the AGPL (which forbids adding further restrictions such as Apple's DRM and usage rules). Any version of Rush Hours found on the App Store is not mine and is published in breach of the license.
+
+### Additional terms (section 7 of the AGPL v3)
+
+On top of the AGPL v3, as its section 7 allows:
+
+1. **Name and visual identity** (section 7 e): the license grants **no rights** to the name "Rush Hours", the icon, the logo, the screenshots and visuals in `store-listing/`, or the name "Imelein". A modified or republished version must use a different name and a different icon.
+2. **Modified versions** (section 7 c): a modified version must be clearly marked as different from the original and must not suggest that it comes from, or is endorsed by, Imelein.
+3. **Notices** (section 7 b): every copy or modified version must keep this copyright notice, the license and a link to this repository.
+
+### If the game is published without permission
+
+Any publication that breaks these terms automatically terminates the rights granted by the license (section 8 of the AGPL). It is then **copyright infringement** of my work (French Intellectual Property Code, art. L335-2 and following), and I reserve the right to request its removal from the app store (DMCA notice / Apple's and Google's content dispute forms) and to take legal action. The history of this repository and of its releases serves as proof of prior authorship.
+
+If you see a copy of the game published by someone else, [please report it to me](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml).
+
+---
+
+# Rush Hours — Français
+
+*[English version above](#rush-hours)*
+
+Un jeu de casse-tête où tu fais glisser les voitures pour libérer la rouge. Plus de 300 niveaux sur une carte du monde, un défi du jour, un défi hebdo, un garage de styles à débloquer, un créateur de niveaux et un mode multijoueur entre amis.
 
 ## Installer le jeu
 
@@ -42,7 +115,7 @@ Le jeu **n'est pas sur l'App Store**. Le fichier `.ipa` est publié dans les **[
 
 ## Faire un retour
 
-Un bug, une idée, un niveau qui te paraît cassé, un avis ? **[Ouvre un retour ici](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml)** (il faut un compte GitHub gratuit).
+Un bug, une idée, un niveau qui te paraît cassé, un avis ? **[Envoie ton retour ici](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml)** (il faut un compte GitHub gratuit). Français et anglais sont les bienvenus.
 
 ## Licence et publication
 
@@ -68,15 +141,3 @@ En plus de l'AGPL v3, et comme son article 7 le permet :
 Une publication qui ne respecte pas ces conditions met fin automatiquement aux droits donnés par la licence (article 8 de l'AGPL). C'est alors une **contrefaçon** de mon œuvre (droit d'auteur, art. L335-2 et suivants du Code de la propriété intellectuelle), et je me réserve le droit de demander son retrait au magasin d'applications (notification DMCA / formulaire de contestation de contenu d'Apple et de Google) et d'engager des poursuites. L'historique de ce dépôt et des releases fait foi pour l'antériorité.
 
 Si tu vois une copie du jeu publiée par quelqu'un d'autre, [signale-la-moi](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml).
-
----
-
-## English
-
-**Rush Hours** is a sliding-car puzzle game: free the red car in 300+ levels, with daily and weekly challenges, unlockable styles, a level creator and multiplayer with friends.
-
-- **Android**: [Google Play](https://play.google.com/store/apps/details?id=com.rushhours.app).
-- **iPhone / iPad**: not on the App Store. Get `rush-hours-unsigned.ipa` from the [latest release](https://github.com/ekomlenovic/rush_hour_ios_android/releases/latest) and install it with [SideStore](https://sidestore.io) (add the source `https://raw.githubusercontent.com/ekomlenovic/rush_hour_ios_android/refs/heads/main/sidestore-source.json`), or with SideStore + [LiveContainer](https://github.com/LiveContainer/LiveContainer) (tap **+** in LiveContainer and pick the `.ipa`).
-- **Feedback**: [open a feedback issue](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml).
-
-**License**: © 2026 Imelein, [GNU AGPL v3](LICENSE) with the additional terms above (AGPL section 7): no rights are granted to the name "Rush Hours", its icon, logo or store visuals, or the name "Imelein"; modified versions must use a different name and icon and must not appear to come from Imelein. **Publishing this game on the Apple App Store or TestFlight is not permitted**: the App Store terms add restrictions the AGPL forbids. Any distribution that breaks these terms automatically terminates your license (AGPL section 8) and is copyright infringement; I will request its takedown and reserve the right to take legal action.
