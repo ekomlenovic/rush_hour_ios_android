@@ -9,6 +9,7 @@ import StreakCard from '@/components/profile/StreakCard';
 import AchievementsSection from '@/components/profile/AchievementsSection';
 import AchievementSheet from '@/components/profile/AchievementSheet';
 import RecapPreviewCard from '@/components/profile/RecapPreviewCard';
+import ScreenHeader from '@/components/ScreenHeader';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { formatDuration, formatPlayTime } from '@/utils/date';
@@ -99,11 +100,9 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Pressable onPress={selectedAchievement ? closeSheet : undefined} disabled={!selectedAchievement} accessible={false} style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + RFValue(12) }]}>
-        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('profile.title')}</Text>
-        <Pressable onPress={() => router.back()} style={styles.closeButton} accessibilityRole="button" hitSlop={8}>
-          <Text style={[styles.closeText, { color: colors.primaryText }]}>{t('common.close')}</Text>
-        </Pressable>
+      {/* Touching the header also closes the achievement sheet */}
+      <Pressable onPress={selectedAchievement ? closeSheet : undefined} disabled={!selectedAchievement} accessible={false}>
+        <ScreenHeader colors={colors} title={t('profile.title')} backLabel={t('common.home')} divider />
       </Pressable>
 
       <ScrollView
@@ -170,27 +169,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingBottom: RFValue(15),
-    borderBottomWidth: 1,
-  },
-  title: {
-    fontSize: RFValue(20),
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    position: 'absolute',
-    right: RFValue(20),
-    bottom: RFValue(15),
-    padding: RFValue(5),
-  },
-  closeText: {
-    fontSize: RFValue(16),
-    fontWeight: '600',
   },
   scrollView: {
     flex: 1,

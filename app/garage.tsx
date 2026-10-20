@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
@@ -20,6 +19,7 @@ import { describeUnlock, describeUnlockShort } from '@/components/garage/describ
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { IoniconName } from '@/utils/icons';
 import IconText from '@/components/IconText';
+import ScreenHeader from '@/components/ScreenHeader';
 
 const KINDS: CosmeticKind[] = ['board', 'skin', 'palette', 'effect'];
 const KIND_ICONS: Record<CosmeticKind, IoniconName> = { board: 'grid', skin: 'car-sport', palette: 'color-palette', effect: 'sparkles' };
@@ -27,7 +27,6 @@ const KIND_ICONS: Record<CosmeticKind, IoniconName> = { board: 'grid', skin: 'ca
 /** Customization: board themes, target car skins, vehicle palettes and win effects (#7) */
 export default function GarageScreen() {
   const { t } = useTranslation();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { colors, scheme, board } = useTheme();
@@ -64,17 +63,14 @@ export default function GarageScreen() {
   const items = COSMETICS.filter(def => def.kind === kind);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
-          {/* Also opened from the win screen: back then leads to the map or the challenge, not home */}
-          <Text style={[styles.backText, { color: colors.textMuted }]}>← {t('a11y.back')}</Text>
-        </Pressable>
-        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('cosmetics.garage')}</Text>
-        <Text style={[styles.count, { color: colors.textMuted }]}>
-          {t('cosmetics.unlocked_count', { unlocked: unlocked.length, total: COSMETICS.length })}
-        </Text>
-      </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Also opened from the win screen: back then leads to the map or the challenge, not home */}
+      <ScreenHeader
+        colors={colors}
+        title={t('cosmetics.garage')}
+        backLabel={t('a11y.back')}
+        subtitle={t('cosmetics.unlocked_count', { unlocked: unlocked.length, total: COSMETICS.length })}
+      />
 
       {/* The tabs stay at the top while the items scroll */}
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]} stickyHeaderIndices={[1]}>
@@ -180,11 +176,6 @@ export default function GarageScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 20, marginBottom: 8 },
-  backButton: { alignSelf: 'flex-start', paddingVertical: 4, marginBottom: 8 },
-  backText: { fontSize: RFValue(15), fontWeight: '600' },
-  title: { fontSize: RFValue(28), fontWeight: '800' },
-  count: { fontSize: RFValue(13), fontWeight: '600', marginTop: 2 },
   content: { paddingHorizontal: 20 },
   previewWrap: { alignItems: 'center', marginBottom: 4, gap: 8 },
   previewNote: { fontSize: RFValue(13), fontWeight: '700', textAlign: 'center' },

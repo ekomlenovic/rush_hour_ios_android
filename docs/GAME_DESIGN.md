@@ -416,6 +416,11 @@ Les emojis ne restent que là où une icône ne peut pas s'afficher ou n'a pas d
 - les **textes qui sortent de l'app** : résultat partagé (`utils/shareResult.ts`), titres des notifications, alertes système ;
 - les **illustrations** : décor et panneaux des zones de la carte (`components/map/zones.ts`), icône des skins sur la voiture cible et vignettes des effets (`theme/board.ts`, `data/cosmetics.ts`).
 
+## Navigation
+
+- Un écran a le même en-tête que l'écran de jeu : **« ← destination »** à gauche (« Accueil », « Profil », « Carte », ou « Retour » quand elle dépend d'où on vient), le **titre centré**, une action éventuelle à droite. Sans écran dessous (ouvert par un lien au lancement), le retour mène à l'accueil (`ScreenHeader`, `components/ScreenHeader.tsx`).
+- Exceptions voulues : la carte (en-tête flouté avec la zone), le créateur (Test et Sauver à droite), les plein-écrans qui se referment par une croix (solution, récap), le tutoriel (« Passer ») et le multijoueur, qui a son en-tête (`MultiHeader`).
+
 ## Retour du joueur
 
 - Après **3 jours ou plus** d'absence : message de bienvenue (`recordAppOpen`, `hooks/useAppOpenAlert.ts`).
