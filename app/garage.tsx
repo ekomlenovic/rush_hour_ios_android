@@ -67,7 +67,8 @@ export default function GarageScreen() {
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
-          <Text style={[styles.backText, { color: colors.textMuted }]}>← {t('common.home')}</Text>
+          {/* Also opened from the win screen: back then leads to the map or the challenge, not home */}
+          <Text style={[styles.backText, { color: colors.textMuted }]}>← {t('a11y.back')}</Text>
         </Pressable>
         <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('cosmetics.garage')}</Text>
         <Text style={[styles.count, { color: colors.textMuted }]}>
