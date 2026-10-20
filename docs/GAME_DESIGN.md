@@ -343,7 +343,7 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 - Définis à un seul endroit : `data/achievements.ts`. Les **identifiants sont persistés** : ne jamais renommer un succès, seulement en ajouter.
 - Un succès ne doit jamais contredire les règles ci-dessus : aucun succès « sans indice » ou « sans annuler » sur les défis, puisqu'ils n'en ont jamais.
 - Un succès débloqué est **nouveau** jusqu'à ce qu'on le **touche** dans le profil : pastille bleue sur sa médaille, nombre de nouveautés sur sa catégorie (ouverte d'office) et sur le bouton profil de l'accueil (`seenAchievements`, `useNewAchievements`). Ceux débloqués avant cette règle comptent comme vus (migration v10).
-- Toucher une médaille ouvre son **détail dans un panneau en bas de l'écran** (`AchievementSheet`) : nom, état, description et progression. La liste reste utilisable : toucher une autre médaille affiche directement la sienne ; la croix, le bouton retour ou un toucher ailleurs sur l'écran le referment.
+- Toucher une médaille ouvre son **détail dans un panneau en bas de l'écran** (`AchievementSheet`) : nom, état, description et progression. La liste reste utilisable : toucher une autre médaille affiche directement la sienne. Si le panneau couvrirait la médaille touchée, la liste défile pour la garder visible au-dessus. La croix, le bouton retour ou un toucher ailleurs sur l'écran le referment.
 
 ## Dates
 

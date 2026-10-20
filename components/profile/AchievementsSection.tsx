@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import AchievementIcon from './AchievementIcon';
@@ -16,7 +16,8 @@ interface Props {
   context: AchievementContext;
   /** Achievement whose detail is shown (see AchievementSheet) */
   selected: string | null;
-  onSelect: (id: string | null) => void;
+  /** `badge`: the medal touched, so the screen can keep it in view above the sheet */
+  onSelect: (id: string | null, badge?: View | null) => void;
 }
 
 /** Achievements of the profile: the closest ones, then a grid of badges per category */
@@ -28,6 +29,7 @@ export default function AchievementsSection({ colors, context, selected, onSelec
   const newSet = useMemo(() => new Set(newAchievements), [newAchievements]);
   const markAchievementSeen = useGameStore((state) => state.markAchievementSeen);
   // The first category, and those with something new to see
+  const badgeRefs = useRef(new Map<string, View | null>());
   const [openCategories, setOpenCategories] = useState<Set<AchievementCategory>>(() => new Set([
     ACHIEVEMENT_CATEGORIES[0],
     ...ACHIEVEMENTS.filter(a => newSet.has(a.id)).map(a => a.category),
@@ -102,9 +104,10 @@ export default function AchievementsSection({ colors, context, selected, onSelec
                   return (
                     <Pressable
                       key={ach.id}
+                      ref={(node) => { badgeRefs.current.set(ach.id, node); }}
                       onPress={() => {
                         if (isNew) markAchievementSeen(ach.id);
-                        onSelect(selected === ach.id ? null : ach.id);
+                        onSelect(selected === ach.id ? null : ach.id, badgeRefs.current.get(ach.id));
                       }}
                       style={styles.badge}
                       accessibilityRole="button"

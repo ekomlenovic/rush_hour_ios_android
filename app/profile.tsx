@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -35,6 +35,24 @@ export default function ProfileScreen() {
   const [selectedAchievement, setSelectedAchievement] = useState<string | null>(null);
   const [sheetHeight, setSheetHeight] = useState(0);
   const closeSheet = useCallback(() => setSelectedAchievement(null), []);
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollY = useRef(0);
+  const selectedBadge = useRef<View | null>(null);
+  const { height: windowHeight } = useWindowDimensions();
+  const selectAchievement = useCallback((id: string | null, badge?: View | null) => {
+    selectedBadge.current = badge ?? null;
+    setSelectedAchievement(id);
+  }, []);
+
+  // The medal touched stays in view: scroll it above the sheet when the sheet would cover it
+  useEffect(() => {
+    const badge = selectedBadge.current;
+    if (!selectedAchievement || !badge || sheetHeight === 0) return;
+    badge.measureInWindow((_x, y, _width, height) => {
+      const overlap = y + height + RFValue(12) - (windowHeight - sheetHeight);
+      if (overlap > 0) scrollRef.current?.scrollTo({ y: scrollY.current + overlap, animated: true });
+    });
+  }, [selectedAchievement, sheetHeight, windowHeight]);
 
   const totalStars = useMemo(() => progress.reduce((sum, p) => sum + (p.stars || 0), 0), [progress]);
   const context = useMemo(
@@ -88,7 +106,13 @@ export default function ProfileScreen() {
         </Pressable>
       </Pressable>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + RFValue(40), sheetHeight + RFValue(20)) }}>
+      <ScrollView
+        ref={scrollRef}
+        onScroll={(e) => { scrollY.current = e.nativeEvent.contentOffset.y; }}
+        scrollEventThrottle={16}
+        style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + RFValue(40), sheetHeight + RFValue(20)) }}
+      >
         {/* Touching the screen outside a badge closes the achievement sheet */}
         <Pressable onPress={selectedAchievement ? closeSheet : undefined} disabled={!selectedAchievement} accessible={false} style={styles.scrollContent}>
           <Animated.View entering={FadeInDown.delay(50).duration(400)}>
@@ -133,7 +157,7 @@ export default function ProfileScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-            <AchievementsSection colors={colors} context={context} selected={selectedAchievement} onSelect={setSelectedAchievement} />
+            <AchievementsSection colors={colors} context={context} selected={selectedAchievement} onSelect={selectAchievement} />
           </Animated.View>
         </Pressable>
       </ScrollView>
