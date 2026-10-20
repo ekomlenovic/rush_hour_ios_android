@@ -92,7 +92,7 @@ export default function HomeScreen() {
   // Play: the tutorial for a brand new player, otherwise the level the map opens on
   const isNewPlayer = progress.length === 0;
   const totalLevels = sampleLevels.length + generatedLevels.length;
-  const focusLevel = getMapFocusLevel(lastPlayedLevelId, maxUnlockedLevel);
+  const focusLevel = getMapFocusLevel(lastPlayedLevelId, maxUnlockedLevel, id => progress.some(p => p.levelId === id && p.completed));
   const playContext = isNewPlayer
     ? t('home.play_tutorial')
     : focusLevel > totalLevels

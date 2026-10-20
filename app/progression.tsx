@@ -13,6 +13,7 @@ import { useCosmetics } from '@/hooks/useCosmetics';
 import { RFValue } from '@/utils/responsive';
 import { useTheme, type UiColors, type ColorScheme } from '@/theme';
 import PlayerLevelCard from '@/components/progression/PlayerLevelCard';
+import ScreenHeader from '@/components/ScreenHeader';
 import XpBar from '@/components/progression/XpBar';
 import CosmeticThumb from '@/components/garage/CosmeticThumb';
 import { describeUnlock } from '@/components/garage/describeUnlock';
@@ -60,13 +61,8 @@ export default function ProgressionScreen() {
   const openGarage = () => router.push('/garage');
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
-          <Text style={[styles.backText, { color: colors.textMuted }]}>← {t('profile.title')}</Text>
-        </Pressable>
-        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('progression.screen_title')}</Text>
-      </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScreenHeader colors={colors} title={t('progression.screen_title')} backLabel={t('profile.title')} divider />
 
       <ScrollView ref={scrollRef} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}>
         <PlayerLevelCard colors={colors} showNext={false} />
@@ -127,7 +123,7 @@ export default function ProgressionScreen() {
                   <View style={styles.levelHeader}>
                     <Text style={[styles.levelName, { color: colors.text }]}>{t('progression.level', { level })}</Text>
                     <Text style={[styles.levelState, { color: reached ? colors.success : isNext ? colors.primaryText : colors.textMuted }]}>
-                      {reached ? `✓ ${t('progression.reached')}` : isNext ? t('progression.current') : t('progression.from_xp', { xp: totalXpForLevel(level).toLocaleString() })}
+                      {reached ? `✓ ${t('progression.reached')}` : isNext ? t('progression.next_in', { xp: Math.max(0, totalXpForLevel(level) - xp).toLocaleString() }) : t('progression.from_xp', { xp: totalXpForLevel(level).toLocaleString() })}
                     </Text>
                   </View>
                   {title && (
@@ -182,10 +178,6 @@ export default function ProgressionScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth },
-  backButton: { alignSelf: 'flex-start', paddingVertical: 4, marginBottom: 6 },
-  backText: { fontSize: RFValue(15), fontWeight: '600' },
-  title: { fontSize: RFValue(28), fontWeight: '800' },
   content: { padding: 20 },
   sectionTitle: { fontSize: RFValue(18), fontWeight: '800', marginTop: 28, marginBottom: 12 },
   sectionDesc: { fontSize: RFValue(13), marginTop: -6, marginBottom: 12 },

@@ -129,11 +129,13 @@ export default function MultiPlayScreen() {
 
   const handleMoveEnd = useCallback((vehicleId: string, row: number, col: number) => {
     const current = gameRef.current;
-    if (!current) return;
+    if (!current) return false;
     const played = playMove(current, vehicleId, row, col, Date.now());
-    if (!played) return;
+    // Refused (a move through a vehicle): the block goes back
+    if (!played) return false;
     update(played.game);
     if (played.won) void send(played.game);
+    return true;
   }, [update, send]);
 
   const abandon = () => {

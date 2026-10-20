@@ -5,10 +5,13 @@ import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
 import { DIFFICULTY_LEVELS } from '@/utils/generator';
 import { haptics, Haptics } from '@/utils/haptics';
-import { useLevelGenerator, GENERATION_TIME_MAP, DifficultyKey } from '@/hooks/useLevelGenerator';
+import { useLevelGenerator, GENERATION_TIME_MAP, DifficultyKey, formatGenerationTime } from '@/hooks/useLevelGenerator';
 import { fixedColors, type UiColors } from '@/theme';
 import IconText from '../IconText';
 import { settingsStyles as styles } from './styles';
+
+/** A level this long to generate (Expert, Master) freezes the app: confirmed first */
+const LONG_LEVEL_MS = 60_000;
 
 const REQUEST_LEVELS_URL = 'https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?title=Request:%20New%20Complex%20Levels&body=I%20would%20like%20to%20see%20more%20high-difficulty%20levels%21';
 
@@ -31,14 +34,41 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
   const [genDifficulty, setGenDifficulty] = useState<DifficultyKey>('NORMAL');
   const [genGridSize, setGenGridSize] = useState<number>(6);
 
+  const estimatedSeconds = (genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000;
+
   const handleGenerate = () => {
-    startGeneration({ amount: genAmount, difficulty: genDifficulty, gridSize: genGridSize });
-    onClose();
+    const start = () => {
+      startGeneration({ amount: genAmount, difficulty: genDifficulty, gridSize: genGridSize });
+      onClose();
+    };
+    // Expert and Master: each level blocks the app for minutes, never started without saying so
+    if ((GENERATION_TIME_MAP[genDifficulty] || 0) < LONG_LEVEL_MS) return start();
+    haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(
+      t('map.long_generation_title'),
+      t('map.long_generation_body', {
+        amount: genAmount,
+        difficulty: t(`difficulty.${genDifficulty}`),
+        time: formatGenerationTime(estimatedSeconds),
+      }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('map.long_generation_confirm'), style: 'destructive', onPress: start },
+      ],
+    );
   };
 
+  // Deletes the generated levels with their stars: never at a single touch
   const handleResetLevels = () => {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    purgeCustomLevels(sampleLevels.length);
+    Alert.alert(
+      t('map.reset_custom'),
+      t('map.reset_custom_confirm', { count: generatedLevels.length }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.delete'), style: 'destructive', onPress: () => purgeCustomLevels(sampleLevels.length) },
+      ],
+    );
   };
 
   const handleUnlockAll = () => {
@@ -81,7 +111,7 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
       </IconText>
 
       <View style={{ marginBottom: 20 }}>
-        <Text style={[styles.settingLabel, { color: colors.text }]}>{t('creator.difficulty')}: {t(`difficulty.${genDifficulty}`)}</Text>
+        <Text style={[styles.settingLabel, { color: colors.text }]}>{t('map.difficulty_label', { level: t(`difficulty.${genDifficulty}`) })}</Text>
         <View style={styles.segmentGroup}>
           {(['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER'] as const).map(diff =>
             segment(diff, genDifficulty, t(`difficulty.${diff}`), () => {
@@ -118,7 +148,7 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
             <IconText icon="hourglass" color={fixedColors.onPrimary} textStyle={styles.mainBtnText}>{t('map.generating')}</IconText>
           ) : (
             <Text style={styles.mainBtnText}>
-              {t('map.generate_btn', { amount: genAmount, time: Math.ceil((genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000) })}
+              {t('map.generate_btn', { amount: genAmount, time: formatGenerationTime(estimatedSeconds) })}
             </Text>
           )}
         </Pressable>

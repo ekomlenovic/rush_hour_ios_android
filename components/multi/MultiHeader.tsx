@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import type { UiColors } from '@/theme';
@@ -16,8 +17,9 @@ interface Props {
 export default function MultiHeader({ title, colors, right }: Props) {
   const router = useRouter();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.header, { borderBottomColor: colors.border }]}>
+    <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + RFValue(8) }]}>
       <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} style={styles.side} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
         <Text style={[styles.back, { color: colors.primaryText }]}>←</Text>
       </Pressable>
@@ -31,7 +33,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: RFValue(50),
     paddingBottom: RFValue(12),
     paddingHorizontal: RFValue(16),
     borderBottomWidth: 1,

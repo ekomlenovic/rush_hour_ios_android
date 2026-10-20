@@ -1,6 +1,6 @@
 import { useGameStore } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
-import { isGenerationActive, startLevelGeneration } from '../hooks/useLevelGenerator';
+import { formatGenerationTime, isGenerationActive, startLevelGeneration } from '../hooks/useLevelGenerator';
 import { resetStore } from './helpers';
 
 // A generation that fails one level out of three, instantly
@@ -48,5 +48,14 @@ describe('map levels generation (issue 120)', () => {
     startLevelGeneration({ amount: 2, difficulty: 'NORMAL', gridSize: 6 });
     await jest.runAllTimersAsync();
     expect(state().generatedLevels.map(l => l.id)).toEqual([base + 1, base + 2]);
+  });
+});
+
+describe('formatGenerationTime', () => {
+  it('says seconds, then minutes and hours rather than thousands of seconds', () => {
+    expect(formatGenerationTime(9.4)).toBe('9 s');
+    expect(formatGenerationTime(90)).toBe('2 min');
+    expect(formatGenerationTime(1500)).toBe('25 min');
+    expect(formatGenerationTime(24000)).toBe('6 h');
   });
 });

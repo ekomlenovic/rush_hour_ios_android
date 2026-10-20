@@ -124,7 +124,8 @@ const LevelNode = React.memo(({
           onPress={() => onPress(point.id, isUnlocked, isCustom)}
           accessibilityRole="button"
           accessibilityLabel={a11yLabel}
-          accessibilityState={{ disabled: !isPlayable }}
+          // The padlock at the end opens the level generator
+          accessibilityState={{ disabled: !isPlayable && !isPadlockNode }}
           hitSlop={6}
           style={({ pressed }) => ({ transform: [{ translateY: pressed && isPlayable ? DEPTH - 1 : 0 }] })}
         >

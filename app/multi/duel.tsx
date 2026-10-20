@@ -4,6 +4,7 @@ import {
   AccessibilityInfo, useWindowDimensions, type LayoutChangeEvent,
 } from 'react-native';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { usePreventRemove } from 'expo-router/react-navigation';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
@@ -77,28 +78,28 @@ export default function DuelScreen() {
     return () => clearInterval(timer);
   }, [running]);
 
-  // Leaving the screen during a game is losing it: asked first
+  // Leaving the screen during a game is losing it: asked first. usePreventRemove, not a
+  // 'beforeRemove' listener that prevents: the native stack removed the screen anyway on a
+  // swipe back or the Android back button, and "Cancel" left the player off the duel
   const duelRef = useRef(duel);
   duelRef.current = duel;
-  useEffect(() => navigation.addListener('beforeRemove', (event) => {
-    const current = duelRef.current;
-    if (!current || current.status === 'over') return;
-    // Nothing to lose for a spectator, nor in a room not started yet
-    if (current.spectating || current.status === 'waiting') {
-      leave();
-      return;
-    }
-    event.preventDefault();
+  const mustConfirmLeave = !!duel && duel.status !== 'over' && !duel.spectating && duel.status !== 'waiting';
+  usePreventRemove(mustConfirmLeave, ({ data }) => {
     Alert.alert(t('multi.duel.leave_title'), t('multi.duel.leave_body'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('multi.duel.leave'), style: 'destructive', onPress: () => {
           leave();
-          navigation.dispatch(event.data.action);
+          navigation.dispatch(data.action);
         },
       },
     ]);
-  }), [navigation, leave, t]);
+  });
+  // Nothing to lose for a spectator, nor in a room not started yet: leaving just leaves
+  useEffect(() => navigation.addListener('beforeRemove', () => {
+    const current = duelRef.current;
+    if (current && current.status !== 'over' && (current.spectating || current.status === 'waiting')) leave();
+  }), [navigation, leave]);
 
   // A move of the opponent is felt: no need to look at their board all the time
   const opponentMoves = duel?.status === 'playing' && !duel.spectating ? duel.opponent?.moves.length ?? 0 : 0;
@@ -273,7 +274,7 @@ interface ArenaProps {
   now: number;
   colors: UiColors;
   offline: boolean;
-  onMove: (vehicleId: string, row: number, col: number) => void;
+  onMove: (vehicleId: string, row: number, col: number) => boolean | void;
 }
 
 /** The game: the opponent at the top (small, read only), me at the bottom; for a spectator, both the same size */
