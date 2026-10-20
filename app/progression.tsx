@@ -127,7 +127,7 @@ export default function ProgressionScreen() {
                   <View style={styles.levelHeader}>
                     <Text style={[styles.levelName, { color: colors.text }]}>{t('progression.level', { level })}</Text>
                     <Text style={[styles.levelState, { color: reached ? colors.success : isNext ? colors.primaryText : colors.textMuted }]}>
-                      {reached ? `✓ ${t('progression.reached')}` : isNext ? t('progression.current') : t('progression.from_xp', { xp: totalXpForLevel(level).toLocaleString() })}
+                      {reached ? `✓ ${t('progression.reached')}` : isNext ? t('progression.next_in', { xp: Math.max(0, totalXpForLevel(level) - xp).toLocaleString() }) : t('progression.from_xp', { xp: totalXpForLevel(level).toLocaleString() })}
                     </Text>
                   </View>
                   {title && (
