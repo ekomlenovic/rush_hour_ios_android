@@ -2,6 +2,7 @@ import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
 import { DIFFICULTY_LEVELS, generateLevel } from '@/utils/generator';
 import { haptics, Haptics } from '@/utils/haptics';
+import { formatTimeLeft } from '@/utils/date';
 
 export type DifficultyKey = keyof typeof DIFFICULTY_LEVELS;
 
@@ -13,6 +14,11 @@ export const GENERATION_TIME_MAP: Record<string, number> = {
   'EXPERT': 500000,
   'MASTER': 1200000,
 };
+
+/** A generation time for the player: '45 s', then minutes and hours (an Expert batch takes hours, not '24000s') */
+export function formatGenerationTime(seconds: number): string {
+  return seconds < 60 ? `${Math.max(1, Math.round(seconds))} s` : formatTimeLeft(seconds * 1000);
+}
 
 export interface GenerationRequest {
   amount: number;

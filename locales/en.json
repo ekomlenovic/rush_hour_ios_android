@@ -135,12 +135,12 @@
     "amount_to_create": "Amount to create: {{amount}}",
     "generating": "Generation in Progress...",
     "generating_levels": "Generating Levels",
-    "generate_btn": "Generate {{amount}} Levels (~{{time}}s)",
+    "generate_btn": "Generate {{amount}} levels (~{{time}})",
     "community_levels": "Community & Levels",
     "scroll_hint": "Scroll for more content ↓",
     "canceling": "Canceling...",
-    "generation_progress": "{{current}} of {{total}} levels ready !",
-    "time_left": "{{seconds}}s left"
+    "generation_progress": "{{current}} of {{total}} levels ready!",
+    "time_left": "~{{time}} left"
   },
   "game": {
     "best": "Best",

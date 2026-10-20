@@ -5,7 +5,7 @@ import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
 import { DIFFICULTY_LEVELS } from '@/utils/generator';
 import { haptics, Haptics } from '@/utils/haptics';
-import { useLevelGenerator, GENERATION_TIME_MAP, DifficultyKey } from '@/hooks/useLevelGenerator';
+import { useLevelGenerator, GENERATION_TIME_MAP, DifficultyKey, formatGenerationTime } from '@/hooks/useLevelGenerator';
 import { fixedColors, type UiColors } from '@/theme';
 import IconText from '../IconText';
 import { settingsStyles as styles } from './styles';
@@ -126,7 +126,7 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
             <IconText icon="hourglass" color={fixedColors.onPrimary} textStyle={styles.mainBtnText}>{t('map.generating')}</IconText>
           ) : (
             <Text style={styles.mainBtnText}>
-              {t('map.generate_btn', { amount: genAmount, time: Math.ceil((genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000) })}
+              {t('map.generate_btn', { amount: genAmount, time: formatGenerationTime((genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000) })}
             </Text>
           )}
         </Pressable>

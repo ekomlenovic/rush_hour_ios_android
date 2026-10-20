@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-nati
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
+import { formatGenerationTime } from '@/hooks/useLevelGenerator';
 import { RFValue } from '@/utils/responsive';
 import { fixedColors, type UiColors } from '@/theme';
 
@@ -62,7 +63,7 @@ export default function GenerationPill({ colors }: { colors: UiColors }) {
         </Text>
         {generationState.estimatedRemainingSeconds > 0 && !generationState.shouldCancel && (
           <Text style={[styles.pillSub, { color: colors.primaryText, fontWeight: '600' }]}>
-            ~{t('map.time_left', { seconds: generationState.estimatedRemainingSeconds })}
+            {t('map.time_left', { time: formatGenerationTime(generationState.estimatedRemainingSeconds) })}
           </Text>
         )}
       </View>
