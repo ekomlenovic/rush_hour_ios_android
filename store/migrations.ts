@@ -4,11 +4,11 @@ import { recomputeStreak } from './streak';
 import { BOSS_WIN_XP, computeRetroactiveXp } from '../data/progression';
 import { isBossLevel } from '../data/bosses';
 import { getStars, starsFromScore } from '../utils/scoring';
-import { compactSavedStates } from './savedStates';
+import { compactSavedStates, compactUndoStacks, dropOldUndoStacks } from './savedStates';
 import { latestSavedDate, latestSavedWeek } from '../utils/challengeDates';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 10;
+export const STORE_VERSION = 11;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
@@ -67,6 +67,15 @@ export function migrateState(persistedState: unknown, version: number): Record<s
     // v10: a "new" badge on each achievement until it is touched in the profile. Those unlocked
     // before were already shown by their toast: they start seen
     if (Array.isArray(state.achievements)) state.seenAchievements = [...state.achievements];
+  }
+  if (version < 11) {
+    // v11: the levels left unfinished added up, each with its undo stack of whole boards (up to about
+    // 70 KB), until the save was too big to be read back. Only the 10 played last keep their undo stack,
+    // in a compact form (positions only, undoSteps); the older ones keep their game without it.
+    // Played last: the start of their attempt, saves have no time of their last move before v11
+    if (state.savedStates && typeof state.savedStates === 'object') {
+      state.savedStates = compactUndoStacks(dropOldUndoStacks(state.savedStates as Record<string, LevelSaveState>));
+    }
   }
   return state;
 }

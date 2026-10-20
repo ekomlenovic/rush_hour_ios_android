@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { useGameStore as UseGameStore } from '../store/gameStore';
-import { MAX_SAVED_UNDOS } from '../store/savedStates';
+import { MAX_SAVED_UNDOS, undoStackOf } from '../store/savedStates';
 import { sampleLevels } from '../data/sampleLevels';
 import { setToday } from './helpers';
 // Written on the device by 2.0.0 (store v5): 8 levels won, 3 dailies in a row, level 9 left after 60 moves, today's daily started
@@ -63,7 +63,7 @@ describe('updating from 2.0.0', () => {
     // And it is written back as the current version, nothing lost on the device either
     await settle();
     const { state: written, version } = await onDevice();
-    expect(version).toBe(10);
+    expect(version).toBe(11);
     expect(written.progress).toEqual(old.progress);
     expect(written.xp).toBe(old.xp);
   });
@@ -75,7 +75,7 @@ describe('updating from 2.0.0', () => {
     expect(saved.moveCount).toBe(60);
     expect(saved.attempt).toEqual(old.savedStates[9].attempt);
     expect(saved.moveLog).toEqual(old.savedStates[9].moveLog);
-    expect(saved.history).toEqual(old.savedStates[9].history.slice(-MAX_SAVED_UNDOS));
+    expect(undoStackOf(saved)).toEqual(old.savedStates[9].history.slice(-MAX_SAVED_UNDOS));
 
     store.getState().loadLevel(sampleLevels[8]);
     expect(store.getState().moveCount).toBe(60);
