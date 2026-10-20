@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList, Alert, TextInput } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
@@ -39,6 +40,7 @@ export default function CustomLevelsScreen() {
     const { t } = useTranslation();
     const { colors, isDark, scheme } = useTheme();
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const createdLevels = useGameStore(s => s.createdLevels);
     const importedLevels = useGameStore(s => s.importedLevels);
     const progress = useGameStore(s => s.progress);
@@ -152,7 +154,7 @@ export default function CustomLevelsScreen() {
 
     return (
         <KeyboardScreen style={{ backgroundColor: colors.background }}>
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 <Pressable onPress={() => router.back()} style={styles.headerSide} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
                     <Text style={[styles.backText, { color: colors.textMuted }]}>← {t('common.home')}</Text>
                 </Pressable>
@@ -446,7 +448,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: 60,
         paddingHorizontal: 20,
         marginBottom: 16,
     },

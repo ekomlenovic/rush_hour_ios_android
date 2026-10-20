@@ -89,4 +89,15 @@ describe('getMapFocusLevel', () => {
   it('ignores daily and weekly challenges', () => {
     expect(getMapFocusLevel(999999, 30)).toBe(30);
   });
+
+  it('opens on the next level to play once the last one played is won', () => {
+    const won = new Set([12, 29]);
+    expect(getMapFocusLevel(12, 30, id => won.has(id))).toBe(30);
+    expect(getMapFocusLevel(29, 30, id => won.has(id))).toBe(30);
+  });
+
+  it('keeps a level being played, even past the next one', () => {
+    const won = new Set([12]);
+    expect(getMapFocusLevel(31, 30, id => won.has(id))).toBe(31);
+  });
 });

@@ -2,11 +2,17 @@
 const CHALLENGE_ID_START = 900000;
 
 /**
- * Level the world map centers on when it opens: the last map level played, else the next one to play.
+ * Level the world map centers on when it opens: the last map level played while it is not won yet
+ * (a game to finish), else the next one to play, the one the map marks as next.
  * The home Play button names the same level, so it leads where the map opens.
  */
-export function getMapFocusLevel(lastPlayedLevelId: number | null, maxUnlockedLevel: number): number {
-  return lastPlayedLevelId && lastPlayedLevelId < CHALLENGE_ID_START ? lastPlayedLevelId : maxUnlockedLevel;
+export function getMapFocusLevel(
+  lastPlayedLevelId: number | null,
+  maxUnlockedLevel: number,
+  isCompleted: (levelId: number) => boolean = () => false,
+): number {
+  const lastPlayed = lastPlayedLevelId && lastPlayedLevelId < CHALLENGE_ID_START ? lastPlayedLevelId : null;
+  return lastPlayed !== null && !isCompleted(lastPlayed) ? lastPlayed : maxUnlockedLevel;
 }
 
 /** Levels playable past the next one: a player stuck on a hard level can go on and come back to it */
