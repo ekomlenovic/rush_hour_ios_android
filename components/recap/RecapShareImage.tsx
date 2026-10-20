@@ -46,7 +46,8 @@ const ROAD_Y = 1690;
 const ROAD_H = 150;
 
 interface Props {
-  svgRef: React.Ref<Svg>;
+  /** Only on the copy that is exported */
+  svgRef?: React.Ref<Svg>;
   /** Displayed size; the image itself is exported at SHARE_IMAGE_WIDTH × SHARE_IMAGE_HEIGHT */
   width: number;
   title: string;
