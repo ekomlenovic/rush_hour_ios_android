@@ -70,8 +70,6 @@ Distributing, modifying or monetizing the game outside these terms is **copyrigh
 
 If you see a copy of the game published by someone else, [please report it to me](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=feedback.yml).
 
-> Versions 2.0.0 and 2.0.1 were published under the GNU AGPL v3, which still applies to copies of those versions. From version 2.0.2 on, the game and its code are under the PolyForm Strict License 1.0.0.
-
 ---
 
 # Rush Hours — Français
