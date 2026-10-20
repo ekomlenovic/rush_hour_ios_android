@@ -54,7 +54,8 @@ export default function RecapsScreen() {
               const label = periodLabel(key, i18n.language);
               const detail = [
                 t(`recap.profile_${recap.profile}`),
-                t('recap.list_wins', { count: recap.stats.wins }),
+                // Never a zero in a recap (see docs/GAME_DESIGN.md)
+                recap.stats.wins > 0 ? t('recap.list_wins', { count: recap.stats.wins }) : null,
                 isInProgress(recap) ? t('recap.in_progress') : null,
               ].filter(Boolean).join(' · ');
               return (
