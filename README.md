@@ -143,5 +143,3 @@ Rush Hours est © 2026 Imelein. Le code est **consultable** (*source-available*)
 Distribuer, modifier ou monétiser le jeu en dehors de ces conditions est une **contrefaçon** (droit d'auteur, art. L335-2 et suivants du Code de la propriété intellectuelle, et lois du pays où il est publié). Je le ferai retirer du store (notification DMCA, formulaires de contestation de contenu d'Apple et de Google) et je me réserve le droit d'engager des poursuites. L'historique de ce dépôt et des releases fait foi pour la paternité et l'antériorité.
 
 Si tu vois une copie du jeu publiée par quelqu'un d'autre, [signale-la-moi](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml).
-
-> Les versions 2.0.0 et 2.0.1 ont été publiées sous GNU AGPL v3, qui reste valable pour les copies de ces versions. À partir de la version 2.0.2, le jeu et son code sont sous licence PolyForm Strict 1.0.0.
