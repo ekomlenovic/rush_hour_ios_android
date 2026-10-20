@@ -1,0 +1,58 @@
+name: Feedback (English)
+description: A bug, an idea, an opinion about the game? Tell me here.
+labels: ["retour"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to send feedback!
+        For the title, if you can: `fix: …` for a bug, `feat: …` for an idea (e.g. `fix(daily): the challenge doesn't complete`).
+        *Tu préfères le français ? Utilise le modèle « Retour (français) ».*
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type of feedback
+      options:
+        - Bug
+        - Idea / suggestion
+        - Level too hard, too easy or broken
+        - General opinion
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Your feedback
+      description: What happens, what you would like, what you think…
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce (for a bug)
+      description: The steps to run into the problem again, and what you expected instead.
+      placeholder: |
+        1. Open level 42
+        2. Move the red car
+        3. …
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Device
+      options:
+        - Android (Google Play)
+        - iPhone / iPad (SideStore)
+        - iPhone / iPad (SideStore + LiveContainer)
+        - Other
+  - type: input
+    id: version
+    attributes:
+      label: Game version
+      description: Shown in the game options or in the release name.
+      placeholder: "2.0.2"
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or video
+      description: Drag them here if you have any.
