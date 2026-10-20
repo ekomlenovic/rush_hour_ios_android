@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import Svg, { Circle, Defs, G, Line, LinearGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { CLASSIC_VEHICLE_COLORS, TARGET_CAR_COLOR, TRAFFIC_LIGHT, applyPalette, getSkinnedBoard, recapImageColors } from '@/theme';
-import type { CosmeticSelection } from '@/data/cosmetics';
+import { DEFAULT_COSMETICS } from '@/data/cosmetics';
 import type { Vehicle } from '@/store/types';
 
 /** Size of the shared image: vertical, 9:16 like the stories */
@@ -33,6 +33,11 @@ const VEHICLES: Vehicle[] = [
   { id: 'g', row: 0, col: 2, length: 2, orientation: 'vertical', isTarget: false, color: CLASSIC_VEHICLE_COLORS[6] },
 ];
 
+/** The base styles of the game, whatever the player equipped: the image shows the game as everyone knows it */
+const board = getSkinnedBoard(DEFAULT_COSMETICS.board, DEFAULT_COSMETICS.skin, 'dark');
+const palette = applyPalette(VEHICLES, DEFAULT_COSMETICS.palette);
+const vehicleColors = VEHICLES.filter(v => !v.isTarget).map(v => palette.get(v.id) ?? v.color);
+
 /** Numbers as tiles, two per row, three rows at most */
 const TILES_Y = 1125;
 const TILE_W = 420;
@@ -58,22 +63,17 @@ interface Props {
   /** Progress since the period before, stuck on the board: shown only when it went up */
   sticker: { value: string; label: string; period: string } | null;
   footer: string;
-  /** Styles equipped in the garage: the board of the image is the player's own */
-  cosmetics: CosmeticSelection;
 }
 
 /**
  * The recap as a vertical image, drawn on the phone (no online service, like the QR codes): the
- * player's board with the target car getting out, the green light of the game, the strong numbers
+ * board of the game with the target car getting out, the green light of the game, the strong numbers
  * and a road. No emoji: they only go in the shared text
  */
 export default function RecapShareImage({
-  svgRef, width, title, period, profile, profileDescription, highlights, sticker, footer, cosmetics,
+  svgRef, width, title, period, profile, profileDescription, highlights, sticker, footer,
 }: Props) {
   const height = (width * SHARE_IMAGE_HEIGHT) / SHARE_IMAGE_WIDTH;
-  const board = getSkinnedBoard(cosmetics.board, cosmetics.skin, 'dark');
-  const palette = useMemo(() => applyPalette(VEHICLES, cosmetics.palette), [cosmetics.palette]);
-  const vehicleColors = VEHICLES.filter(v => !v.isTarget).map(v => palette.get(v.id) ?? v.color);
   const profileWidth = Math.min(900, 120 + profile.length * 34);
 
   return (
