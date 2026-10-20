@@ -2,7 +2,7 @@
 
 *[Version française plus bas](#rush-hours--français)*
 
-A sliding-car puzzle game: move the cars to free the red one. 300+ levels on a world map, a daily challenge, a weekly challenge, a garage of styles to unlock, a level creator and multiplayer with friends.
+A sliding-car puzzle game: move the cars to free the red one. 700+ levels on a world map, a daily challenge, a weekly challenge, a garage of styles to unlock, a level creator and multiplayer with friends.
 
 ## Install the game
 
@@ -76,7 +76,7 @@ If you see a copy of the game published by someone else, [please report it to me
 
 *[English version above](#rush-hours)*
 
-Un jeu de casse-tête où tu fais glisser les voitures pour libérer la rouge. Plus de 300 niveaux sur une carte du monde, un défi du jour, un défi hebdo, un garage de styles à débloquer, un créateur de niveaux et un mode multijoueur entre amis.
+Un jeu de casse-tête où tu fais glisser les voitures pour libérer la rouge. Plus de 700 niveaux sur une carte du monde, un défi du jour, un défi hebdo, un garage de styles à débloquer, un créateur de niveaux et un mode multijoueur entre amis.
 
 ## Installer le jeu
 
