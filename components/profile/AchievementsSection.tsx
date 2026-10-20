@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import AchievementIcon from './AchievementIcon';
@@ -14,10 +14,14 @@ const CLOSEST_COUNT = 3;
 interface Props {
   colors: UiColors;
   context: AchievementContext;
+  /** Achievement whose detail is shown (see AchievementSheet) */
+  selected: string | null;
+  /** `badge`: the medal touched, so the screen can keep it in view above the sheet */
+  onSelect: (id: string | null, badge?: View | null) => void;
 }
 
 /** Achievements of the profile: the closest ones, then a grid of badges per category */
-export default function AchievementsSection({ colors, context }: Props) {
+export default function AchievementsSection({ colors, context, selected, onSelect }: Props) {
   const { t } = useTranslation();
   const unlocked = useGameStore((state) => state.achievements || []);
   const unlockedSet = useMemo(() => new Set(unlocked), [unlocked]);
@@ -25,11 +29,11 @@ export default function AchievementsSection({ colors, context }: Props) {
   const newSet = useMemo(() => new Set(newAchievements), [newAchievements]);
   const markAchievementSeen = useGameStore((state) => state.markAchievementSeen);
   // The first category, and those with something new to see
+  const badgeRefs = useRef(new Map<string, View | null>());
   const [openCategories, setOpenCategories] = useState<Set<AchievementCategory>>(() => new Set([
     ACHIEVEMENT_CATEGORIES[0],
     ...ACHIEVEMENTS.filter(a => newSet.has(a.id)).map(a => a.category),
   ]));
-  const [selected, setSelected] = useState<string | null>(null);
 
   const progressOf = (ach: AchievementDef) => Math.min(ach.value(context), ach.target);
   const closest = useMemo(() => ACHIEVEMENTS
@@ -67,7 +71,6 @@ export default function AchievementsSection({ colors, context }: Props) {
         const done = list.filter(a => unlockedSet.has(a.id)).length;
         const newCount = list.filter(a => newSet.has(a.id)).length;
         const open = openCategories.has(category);
-        const detail = open ? list.find(a => a.id === selected) : undefined;
         return (
           <View key={category} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Pressable
@@ -101,9 +104,10 @@ export default function AchievementsSection({ colors, context }: Props) {
                   return (
                     <Pressable
                       key={ach.id}
+                      ref={(node) => { badgeRefs.current.set(ach.id, node); }}
                       onPress={() => {
                         if (isNew) markAchievementSeen(ach.id);
-                        setSelected(id => id === ach.id ? null : ach.id);
+                        onSelect(selected === ach.id ? null : ach.id, badgeRefs.current.get(ach.id));
                       }}
                       style={styles.badge}
                       accessibilityRole="button"
@@ -127,15 +131,6 @@ export default function AchievementsSection({ colors, context }: Props) {
               </View>
             )}
 
-            {detail && (
-              <View style={[styles.detail, { backgroundColor: colors.card }]}>
-                {!detail.hidden || unlockedSet.has(detail.id) ? (
-                  <ProgressRow colors={colors} ach={detail} current={progressOf(detail)} unlocked={unlockedSet.has(detail.id)} />
-                ) : (
-                  <Text style={[styles.rowDesc, { color: colors.textMuted }]}>{t('achievements.secret_desc')}</Text>
-                )}
-              </View>
-            )}
           </View>
         );
       })}
@@ -264,10 +259,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     paddingHorizontal: 2,
-  },
-  detail: {
-    borderRadius: RFValue(12),
-    padding: RFValue(12),
   },
   row: {
     flexDirection: 'row',
