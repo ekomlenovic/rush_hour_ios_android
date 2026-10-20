@@ -42,32 +42,35 @@ The game is **not on the App Store**. The `.ipa` file is published in the **[Git
 
 ## Send feedback
 
-A bug, an idea, a level that looks broken, an opinion? **[Send your feedback here](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml)** (you need a free GitHub account). English and French are both welcome.
+A bug, an idea, a level that looks broken, an opinion? **[Send your feedback here](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=feedback.yml)** (you need a free GitHub account). Prefer French? Use the [French template](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml).
 
 ## License and publishing
 
-Rush Hours is © 2026 Imelein, licensed under the [GNU AGPL v3](LICENSE). The code is open to be read, studied and improved, **not to be republished in my place**.
+Rush Hours is © 2026 Imelein. The code is **source-available**, not open source: it is published under the [PolyForm Strict License 1.0.0](LICENSE).
 
-**The only official versions are**:
+**What you may do**, for noncommercial purposes only (personal use, private entertainment, study, testing):
 
-- the [Google Play](https://play.google.com/store/apps/details?id=com.rushhours.app) app published by Imelein;
-- the files published in this repository's [releases](https://github.com/ekomlenovic/rush_hour_ios_android/releases) and this repository's SideStore source.
+- install and play the official versions;
+- read and study the code, build it and run it on your own devices;
+- host the multiplayer server for yourself and your friends;
+- suggest changes through issues and pull requests on this repository.
 
-**Publishing this game on the Apple App Store (or TestFlight) is not permitted.** I give nobody permission to do so: the App Store terms make it impossible to comply with the AGPL (which forbids adding further restrictions such as Apple's DRM and usage rules). Any version of Rush Hours found on the App Store is not mine and is published in breach of the license.
+**What you may not do** without my written permission:
 
-### Additional terms (section 7 of the AGPL v3)
+- **distribute** the game or its code, modified or not: on the Apple App Store, TestFlight, Google Play or any other store, website or file host;
+- publish a **modified version** or a work based on this code;
+- use it for **any commercial purpose**: no ads, no in-app purchases, no paid version, no selling;
+- use the name "Rush Hours", its icon, logo or store visuals, or the name "Imelein".
 
-On top of the AGPL v3, as its section 7 allows:
-
-1. **Name and visual identity** (section 7 e): the license grants **no rights** to the name "Rush Hours", the icon, the logo, the screenshots and visuals in `store-listing/`, or the name "Imelein". A modified or republished version must use a different name and a different icon.
-2. **Modified versions** (section 7 c): a modified version must be clearly marked as different from the original and must not suggest that it comes from, or is endorsed by, Imelein.
-3. **Notices** (section 7 b): every copy or modified version must keep this copyright notice, the license and a link to this repository.
+**The only official versions are** the [Google Play](https://play.google.com/store/apps/details?id=com.rushhours.app) app published by Imelein and the files in this repository's [releases](https://github.com/ekomlenovic/rush_hour_ios_android/releases) and SideStore source. **Rush Hours is not on the Apple App Store**: any version found there, or anywhere else, is not mine and is published without permission.
 
 ### If the game is published without permission
 
-Any publication that breaks these terms automatically terminates the rights granted by the license (section 8 of the AGPL). It is then **copyright infringement** of my work (French Intellectual Property Code, art. L335-2 and following), and I reserve the right to request its removal from the app store (DMCA notice / Apple's and Google's content dispute forms) and to take legal action. The history of this repository and of its releases serves as proof of prior authorship.
+Distributing, modifying or monetizing the game outside these terms is **copyright infringement** (French Intellectual Property Code, art. L335-2 and following, and the laws of the country where it is published). I will have it removed from the store (DMCA notice, Apple's and Google's content dispute forms) and I reserve the right to take legal action. The history of this repository and of its releases serves as proof of authorship and prior publication.
 
-If you see a copy of the game published by someone else, [please report it to me](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml).
+If you see a copy of the game published by someone else, [please report it to me](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=feedback.yml).
+
+> Versions 2.0.0 and 2.0.1 were published under the GNU AGPL v3, which still applies to copies of those versions. From version 2.0.2 on, the game and its code are under the PolyForm Strict License 1.0.0.
 
 ---
 
@@ -115,29 +118,32 @@ Le jeu **n'est pas sur l'App Store**. Le fichier `.ipa` est publié dans les **[
 
 ## Faire un retour
 
-Un bug, une idée, un niveau qui te paraît cassé, un avis ? **[Envoie ton retour ici](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml)** (il faut un compte GitHub gratuit). Français et anglais sont les bienvenus.
+Un bug, une idée, un niveau qui te paraît cassé, un avis ? **[Envoie ton retour ici](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml)** (il faut un compte GitHub gratuit). Tu préfères l'anglais ? Prends le [modèle anglais](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=feedback.yml).
 
 ## Licence et publication
 
-Rush Hours est © 2026 Imelein, sous licence [GNU AGPL v3](LICENSE). Le code est ouvert pour être lu, étudié et amélioré, **pas pour être republié à ma place**.
+Rush Hours est © 2026 Imelein. Le code est **consultable** (*source-available*), mais pas libre : il est publié sous la [licence PolyForm Strict 1.0.0](LICENSE).
 
-**Les seules versions officielles sont** :
+**Ce que tu peux faire**, uniquement sans but commercial (usage personnel, divertissement privé, étude, tests) :
 
-- l'app [Google Play](https://play.google.com/store/apps/details?id=com.rushhours.app) publiée par Imelein ;
-- les fichiers publiés dans les [releases de ce dépôt](https://github.com/ekomlenovic/rush_hour_ios_android/releases) et la source SideStore de ce dépôt.
+- installer les versions officielles et y jouer ;
+- lire et étudier le code, le compiler et le lancer sur tes propres appareils ;
+- héberger le serveur multijoueur pour toi et tes amis ;
+- proposer des changements avec des issues et des pull requests sur ce dépôt.
 
-**Publier ce jeu sur l'Apple App Store (ou TestFlight) est interdit.** Je n'en donne l'autorisation à personne : les conditions de l'App Store ne permettent pas de respecter l'AGPL (qui interdit d'ajouter des restrictions comme le DRM et les conditions d'utilisation d'Apple). Toute version de Rush Hours trouvée sur l'App Store n'est pas la mienne et y est publiée en violation de la licence.
+**Ce que tu ne peux pas faire** sans mon autorisation écrite :
 
-### Conditions complémentaires (article 7 de l'AGPL v3)
+- **distribuer** le jeu ou son code, modifié ou non : sur l'App Store d'Apple, TestFlight, Google Play ou tout autre store, site ou hébergeur de fichiers ;
+- publier une **version modifiée** ou une œuvre basée sur ce code ;
+- en faire **un usage commercial**, quel qu'il soit : pas de pub, pas d'achats intégrés, pas de version payante, pas de vente ;
+- utiliser le nom « Rush Hours », son icône, son logo ou ses visuels de store, ni le nom « Imelein ».
 
-En plus de l'AGPL v3, et comme son article 7 le permet :
-
-1. **Nom et identité visuelle** (article 7 e) : la licence ne donne **aucun droit** sur le nom « Rush Hours », l'icône, le logo, les captures et visuels de `store-listing/`, ni sur le nom « Imelein ». Une version modifiée ou republiée doit porter un autre nom et une autre icône.
-2. **Versions modifiées** (article 7 c) : une version modifiée doit être clairement présentée comme différente de l'original et ne doit pas laisser croire qu'elle vient d'Imelein ou qu'elle est approuvée par Imelein.
-3. **Mentions** (article 7 b) : toute copie ou version modifiée doit garder cette notice d'auteur, la licence et un lien vers ce dépôt.
+**Les seules versions officielles sont** l'app [Google Play](https://play.google.com/store/apps/details?id=com.rushhours.app) publiée par Imelein et les fichiers des [releases de ce dépôt](https://github.com/ekomlenovic/rush_hour_ios_android/releases) et de sa source SideStore. **Rush Hours n'est pas sur l'App Store d'Apple** : toute version trouvée là-bas, ou ailleurs, n'est pas la mienne et y est publiée sans autorisation.
 
 ### Si le jeu est publié sans autorisation
 
-Une publication qui ne respecte pas ces conditions met fin automatiquement aux droits donnés par la licence (article 8 de l'AGPL). C'est alors une **contrefaçon** de mon œuvre (droit d'auteur, art. L335-2 et suivants du Code de la propriété intellectuelle), et je me réserve le droit de demander son retrait au magasin d'applications (notification DMCA / formulaire de contestation de contenu d'Apple et de Google) et d'engager des poursuites. L'historique de ce dépôt et des releases fait foi pour l'antériorité.
+Distribuer, modifier ou monétiser le jeu en dehors de ces conditions est une **contrefaçon** (droit d'auteur, art. L335-2 et suivants du Code de la propriété intellectuelle, et lois du pays où il est publié). Je le ferai retirer du store (notification DMCA, formulaires de contestation de contenu d'Apple et de Google) et je me réserve le droit d'engager des poursuites. L'historique de ce dépôt et des releases fait foi pour la paternité et l'antériorité.
 
 Si tu vois une copie du jeu publiée par quelqu'un d'autre, [signale-la-moi](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml).
+
+> Les versions 2.0.0 et 2.0.1 ont été publiées sous GNU AGPL v3, qui reste valable pour les copies de ces versions. À partir de la version 2.0.2, le jeu et son code sont sous licence PolyForm Strict 1.0.0.
