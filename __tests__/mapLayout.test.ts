@@ -2,7 +2,7 @@ import { buildZones, zoneOf, ZONE_SIZE, ZONE_THEMES, NEW_ZONE_THEMES, ZONE_SCENE
 import { lightColors, darkColors } from '../theme/ui';
 import fr from '../locales/fr.json';
 import en from '../locales/en.json';
-import { getMapFocusLevel } from '@/utils/mapFocus';
+import { getMapFocusLevel, nextMapLevel } from '@/utils/mapFocus';
 import { createMapLayout, generateRoadSegments, ZONE_GAP } from '../components/map/path';
 
 describe('map zones', () => {
@@ -99,5 +99,18 @@ describe('getMapFocusLevel', () => {
   it('keeps a level being played, even past the next one', () => {
     const won = new Set([12]);
     expect(getMapFocusLevel(31, 30, id => won.has(id))).toBe(31);
+  });
+});
+
+describe('nextMapLevel', () => {
+  it('is the following level of the map, generated levels included', () => {
+    expect(nextMapLevel(12, 734)).toBe(13);
+    expect(nextMapLevel(734, 740)).toBe(735);
+  });
+
+  it('is none after the last level, for the tutorial and for the challenges', () => {
+    expect(nextMapLevel(734, 734)).toBeNull();
+    expect(nextMapLevel(0, 734)).toBeNull();
+    expect(nextMapLevel(999999, 734)).toBeNull();
   });
 });
