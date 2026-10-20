@@ -134,6 +134,7 @@ Le streak compte les jours consécutifs avec le défi du jour réussi.
 | Rappel du défi du jour à l'heure choisie (**19 h** par défaut, réglable dans les options), seulement s'il n'est pas déjà fait | `planReminders` (`utils/reminders.ts`) |
 | « Streak en danger » **2 h plus tard** (23 h au plus tard), le premier jour où le défi reste à faire | |
 | « Nouveau défi hebdo » le **lundi à 10 h** | |
+| « Ton récap est prêt » le **1er du mois à 11 h** (si on a joué le mois écoulé) et le **26 décembre à 11 h** (si on a joué dans l'année) | `planReminders`, voir « Récap mensuel et annuel » |
 | Rien n'est envoyé quand l'app est ouverte ; tout est replanifié à chaque retour dans l'app et à chaque progrès | `useReminderSync` |
 
 ## Défi hebdomadaire — un essai unique, plus difficile
@@ -346,6 +347,25 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 
 - Le **temps de jeu** ne compte que le temps actif : écran de jeu ouvert, app au premier plan, niveau non résolu.
 - Indices, annulations, recommencements et temps sont suivis **par tentative** et survivent à la fermeture de l'écran (`savedStates[…].attempt`).
+
+## Récap mensuel et annuel
+
+Un récap de fin de mois et de fin d'année, façon Spotify Wrapped (#125) : une raison de revenir, et une fois partagé, il fait connaître le jeu.
+
+| Règle | Implémentation |
+|---|---|
+| Des **cartes plein écran façon story** (un dégradé chacune, barres de progression en haut, croix pour fermer) : on glisse, ou on touche à droite pour avancer et sur le tiers gauche pour revenir. Dans l'ordre : profil de joueur, victoires (nouveaux niveaux, étoiles gagnées, « Parfait ! »), temps de jeu et coups, défis (du jour, hebdo, à 3 étoiles, meilleure série de la période, gels utilisés), exploit (niveau le plus dur battu, boss vaincus), succès et styles débloqués, puis le partage avec la comparaison avec la période d'avant | `app/recap.tsx`, `buildRecap`, `recapSlides` (`utils/recap.ts`), `recapSlideColors` (`theme/ui.ts`) |
+| **Une idée par carte, un gros chiffre** et quelques chiffres sous lui. **Jamais de zéro** : un chiffre nul n'est pas montré, le suivant prend la grande place, et une carte sans rien à dire est sautée | `recapSlides` |
+| **Profil de joueur** : le premier qui va, dans l'ordre : Fidèle au poste (défi du jour réussi ≥ 80 % des jours, 7 au moins), Perfectionniste (≥ 60 % de victoires à 3 étoiles, 5 victoires au moins), Lève-tôt (3 défis du jour réussis entre 5 h et 7 h), Oiseau de nuit (3 victoires entre minuit et 5 h), Chasseur de boss (2 boss), Explorateur (20 nouveaux niveaux), Pilote des défis (3 défis du jour ou hebdo), sinon Conducteur | `pickProfile` |
+| « Boss vaincus » compte les **boss de la carte** (ceux qu'elle annonce) | `isBossLevel` (`data/bosses.ts`) |
+| **Mensuel** annoncé sur l'accueil du **1er au 7** du mois, **annuel** du **26 décembre au 1er janvier**, jusqu'à ce qu'on l'ouvre ; rien pour une période où l'on n'a pas joué. L'annuel passe avant le mensuel | `pendingRecap`, `recapsSeen`, `RecapCard` |
+| Profil : une carte montre le **dernier récap** (celui annoncé sur l'accueil, marqué « Nouveau », sinon le dernier mois joué) avec son profil et quelques chiffres, puis **Voir tous mes récaps** : les 12 derniers mois et le mois en cours, puis toutes les années | `RecapPreviewCard`, `availableRecaps`, `app/recaps.tsx` |
+| **Partage** (dernière carte, l'image aussi grande que l'écran le permet) en **image verticale 9:16** (1080 × 1920) dessinée sur le téléphone (SVG exporté en PNG, aucun service en ligne, comme le QR code), sans emoji : le feu vert du jeu, le **plateau équipé au Garage** (thème, voiture, palette) avec la voiture cible qui sort, le profil et sa phrase, jusqu'à **6 chiffres** en tuiles aux couleurs des véhicules (les plus parlants des cartes, jamais de zéro), un autocollant « +12 victoires vs septembre » seulement si on a progressé, et une route, et en **texte** façon Wordle, avec emojis. Chaque partage compte pour le succès « Crieur public » | `RecapShareImage`, `recapHighlights`, `recapProgress`, `buildRecapShareText`, `recordResultShared` |
+| **Stockage minimal** : des compteurs et des maxima par période, **jamais de liste de parties** (~300 octets par période). 13 mois glissants (`monthlyStats`), une entrée par année gardée pour toujours (`yearlyStats`, comptée en même temps que ses mois), le mois de déblocage de chaque succès (`achievementMonths`). Moins de 10 Ko même après 10 ans | `addToPeriods`, `RECAP_MONTHS_KEPT` (`store/periodStats.ts`) |
+| Rien de ce qui est **déjà daté** n'est recopié : défis du jour et hebdo (une semaine compte dans le mois de son lundi), série, gels utilisés se lisent dans leurs données | `buildRecap` |
+| Les joueurs d'avant la mise à jour : seuls les défis sont datés, ils sont **recomptés** dans leur mois et leur année ; le reste se compte à partir de la mise à jour (`recapSince`), et les succès déjà débloqués sont datés du mois de la mise à jour. Le récap de cette période **le dit** (« Compté depuis le 20 oct. », et ne liste pas les succès) plutôt que d'afficher des zéros trompeurs ; on ne compare les victoires qu'avec une période comptée en entier | migration v12 (`store/migrations.ts`), `partialSince` |
+| Import : compteurs **plafonnés par les totaux à vie** (une période ne contient jamais plus que tout le jeu), périodes dans le futur ou hors des 13 mois retirées ; un champ du récap abîmé prend sa valeur par défaut, la sauvegarde n'est pas refusée pour ça | `wellFormedRecap` (`utils/saveTransfer.ts`) |
+| Accessible au lecteur d'écran : chaque carte est lue d'un bloc, avec sa position (« Carte 2 sur 6 ») ; elle est « ajustable », balayer vers le haut ou le bas change de carte. Pas d'avance automatique. Les animations suivent « Réduire les animations » | `app/recap.tsx` |
 
 ## Accessibilité
 

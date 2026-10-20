@@ -10,7 +10,8 @@ import { getLocalDateString, daysBetween } from '../utils/date';
 import { diffMove, toMoveRecord } from '../utils/moveLog';
 import { cleanLevelName, isSameBoard } from '../utils/sharing';
 import type {
-  AppOpenInfo, AttemptStats, ChallengeDetails, ChallengeResult, Level, LevelProgress, LevelSaveState, MoveRecord, PlayerStats, ThemeMode, Vehicle,
+  AppOpenInfo, AttemptStats, ChallengeDetails, ChallengeResult, Level, LevelProgress, LevelSaveState, MoveRecord, PeriodStats, PlayerStats, RecapsSeen,
+  ThemeMode, Vehicle,
 } from './types';
 import { MAX_STREAK_FREEZES, settleStreak, advanceStreak } from './streak';
 import {
@@ -19,9 +20,10 @@ import {
 import { isArchiveDateAvailable } from '../utils/archives';
 import { isDailyWinnable, isWeeklyWinnable } from '../utils/challengeDates';
 import {
-  CosmeticKind, CosmeticSelection, COSMETICS_BY_KEY, DEFAULT_COSMETICS, buildCosmeticContext, isCosmeticUnlocked, sanitizeSelection,
+  CosmeticKind, CosmeticSelection, COSMETICS_BY_KEY, DEFAULT_COSMETICS, buildCosmeticContext, getUnlockedCosmetics, isCosmeticUnlocked, sanitizeSelection,
 } from '../data/cosmetics';
 import { emptyAttempt, initialStats, withWinStats, mergeChallengeResult } from './stats';
+import { addToPeriods, monthKeyOf, winIncrements } from './periodStats';
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from './migrations';
 import { compactSavedStates, dropOldUndoStacks, isWellFormedSave, savedUndoSteps, undoStackOf } from './savedStates';
 import { createGuardedStorage } from './guardedStorage';
@@ -81,6 +83,16 @@ interface GameState {
 
   /** Lifetime statistics */
   stats: PlayerStats;
+  /** Recap counters of the last months (RECAP_MONTHS_KEPT), keyed by YYYY-MM (store/periodStats.ts) */
+  monthlyStats: Record<string, PeriodStats>;
+  /** Recap counters of every year, keyed by YYYY */
+  yearlyStats: Record<string, PeriodStats>;
+  /** Month each achievement was unlocked (YYYY-MM), by achievement id */
+  achievementMonths: Record<string, string>;
+  /** Day the recap counters started (YYYY-MM-DD): the update that added them; null when counted from the start */
+  recapSince: string | null;
+  /** Latest recaps opened, the home screen stops announcing them */
+  recapsSeen: RecapsSeen;
 
   /** Daily challenge state for caching */
   currentDailyLevel: Level | null;
@@ -163,6 +175,8 @@ interface GameState {
   consumeUnlockQueue: () => string[];
   recordLevelShared: () => void;
   recordResultShared: () => void;
+  /** The recap of a month (YYYY-MM) or a year (YYYY) was opened */
+  markRecapSeen: (key: string) => void;
   addGeneratedLevel: (level: Level) => void;
   /** Adds a checked level (see parseSharedLevel); returns the id to open: the existing one for a board already imported */
   addImportedLevel: (level: Level) => number;
@@ -282,6 +296,7 @@ export const useGameStore = create<GameState>()(
           return;
         }
 
+        const cosmeticsBefore = unlockedCosmetics();
         set({
           ...update,
           dailyMissions: { ...missions, counters, rewarded: true },
@@ -292,6 +307,7 @@ export const useGameStore = create<GameState>()(
         set({ pendingMissionReward: { freezeGranted, xp } });
         addXp(xp);
         get().checkAchievements();
+        recordNewCosmetics(cosmeticsBefore);
       };
 
       /** Adds XP; each level reached gives a streak freeze (if there is room) and is queued for display */
@@ -311,6 +327,16 @@ export const useGameStore = create<GameState>()(
 
       /** Records the XP of a win (level, missions and achievements included) for the win screen */
       const recordXpGain = (from: number) => set({ lastXpGain: { from, to: get().xp } });
+
+      /** Adds to the recap of this month and this year */
+      const periodsWith = (increments: Partial<PeriodStats>, state: GameState = get()) => addToPeriods(state, increments);
+
+      /** Styles unlocked now: compared after a win, the new ones go to the recap */
+      const unlockedCosmetics = () => getUnlockedCosmetics(buildCosmeticContext(get())).length;
+      const recordNewCosmetics = (before: number) => {
+        const gained = unlockedCosmetics() - before;
+        if (gained > 0) set(periodsWith({ cosmetics: gained }));
+      };
 
       return {
       currentLevel: null,
@@ -332,6 +358,11 @@ export const useGameStore = create<GameState>()(
       achievements: [],
       unlockQueue: [],
       stats: initialStats(),
+      monthlyStats: {},
+      yearlyStats: {},
+      achievementMonths: {},
+      recapSince: null,
+      recapsSeen: {},
       currentDailyLevel: null,
       dailyLevelDate: null,
       currentWeeklyLevel: null,
@@ -400,13 +431,16 @@ export const useGameStore = create<GameState>()(
         const record = moved && toMoveRecord(moved, newRow, newCol, Date.now() - attemptStartedAt);
 
         saveStorage.deferNextWrite();
-        bumpMissions({ moves: 1 }, withSnapshot({
-          vehicles: updated,
-          moveCount: moveCount + 1,
-          history: [...history, snapshot],
-          moveLog: record ? [...moveLog, record] : moveLog,
-          stats: { ...stats, totalMoves: stats.totalMoves + 1 },
-        }));
+        bumpMissions({ moves: 1 }, {
+          ...withSnapshot({
+            vehicles: updated,
+            moveCount: moveCount + 1,
+            history: [...history, snapshot],
+            moveLog: record ? [...moveLog, record] : moveLog,
+            stats: { ...stats, totalMoves: stats.totalMoves + 1 },
+          }),
+          ...periodsWith({ moves: 1 }),
+        });
       },
 
       undo: () => {
@@ -453,14 +487,18 @@ export const useGameStore = create<GameState>()(
         if (ms <= 0) return;
         const { currentAttempt, stats } = get();
         saveStorage.deferNextWrite();
-        bumpMissions({ playMs: ms }, withSnapshot({
-          currentAttempt: { ...currentAttempt, elapsedMs: currentAttempt.elapsedMs + ms },
-          stats: { ...stats, totalPlayTimeMs: stats.totalPlayTimeMs + ms },
-        }));
+        bumpMissions({ playMs: ms }, {
+          ...withSnapshot({
+            currentAttempt: { ...currentAttempt, elapsedMs: currentAttempt.elapsedMs + ms },
+            stats: { ...stats, totalPlayTimeMs: stats.totalPlayTimeMs + ms },
+          }),
+          ...periodsWith({ playTimeMs: ms }),
+        });
       },
 
       completeLevel: (levelId, score, stars, timeMs) => {
         const { progress, maxUnlockedLevel, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
+        const cosmeticsBefore = unlockedCosmetics();
 
         // The tutorial completes a level that is not loaded: no attempt to record
         const isCurrentLevel = currentLevel?.id === levelId;
@@ -501,6 +539,11 @@ export const useGameStore = create<GameState>()(
           savedStates: newSavedStates,
           stats: isCurrentLevel && currentLevel ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'level') : stats,
           currentAttempt: emptyAttempt(),
+          ...periodsWith({
+            ...(isCurrentLevel && currentLevel ? winIncrements(currentLevel, stars, 'level') : {}),
+            newLevels: existing?.completed ? 0 : 1,
+            starsGained: Math.max(0, stars - (existing?.completed ? existing.stars || 0 : 0)),
+          }),
         });
         if (isCurrentLevel && currentLevel) {
           const isFirstWin = !existing?.completed;
@@ -516,6 +559,7 @@ export const useGameStore = create<GameState>()(
           });
         }
         get().checkAchievements();
+        recordNewCosmetics(cosmeticsBefore);
         recordXpGain(xpBefore);
       },
 
@@ -524,6 +568,7 @@ export const useGameStore = create<GameState>()(
         if (!isDailyWinnable(dateKey)) return;
         const { dailyChallengeProgress, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
         const firstWin = !dailyChallengeProgress[dateKey]?.completed;
+        const cosmeticsBefore = unlockedCosmetics();
         const newSavedStates = { ...savedStates };
         delete newSavedStates[`daily-${dateKey}`];
 
@@ -535,6 +580,7 @@ export const useGameStore = create<GameState>()(
           savedStates: newSavedStates,
           stats: currentLevel?.id === DAILY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'daily') : stats,
           currentAttempt: emptyAttempt(),
+          ...(currentLevel?.id === DAILY_LEVEL_ID && periodsWith(winIncrements(currentLevel, stars, 'daily'))),
         });
 
         // Update streak
@@ -545,6 +591,7 @@ export const useGameStore = create<GameState>()(
         }
 
         get().checkAchievements();
+        recordNewCosmetics(cosmeticsBefore);
         recordXpGain(xpBefore);
       },
 
@@ -552,6 +599,7 @@ export const useGameStore = create<GameState>()(
         if (!isWeeklyWinnable(weekKey)) return;
         const { weeklyChallengeProgress, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
         const firstWin = !weeklyChallengeProgress[weekKey]?.completed;
+        const cosmeticsBefore = unlockedCosmetics();
         const newSavedStates = { ...savedStates };
         delete newSavedStates[`weekly-${weekKey}`];
 
@@ -563,9 +611,11 @@ export const useGameStore = create<GameState>()(
           savedStates: newSavedStates,
           stats: currentLevel?.id === WEEKLY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'weekly') : stats,
           currentAttempt: emptyAttempt(),
+          ...(currentLevel?.id === WEEKLY_LEVEL_ID && periodsWith(winIncrements(currentLevel, stars, 'weekly'))),
         });
         if (firstWin) addXp(weeklyWinXp(stars));
         get().checkAchievements();
+        recordNewCosmetics(cosmeticsBefore);
         recordXpGain(xpBefore);
       },
 
@@ -574,6 +624,7 @@ export const useGameStore = create<GameState>()(
         if (!isArchiveDateAvailable(dateKey, getLocalDateString(new Date()))) return;
         const { archiveProgress, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
         const firstWin = !archiveProgress[dateKey]?.completed;
+        const cosmeticsBefore = unlockedCosmetics();
         const newSavedStates = { ...savedStates };
         delete newSavedStates[`archive-${dateKey}`];
         const isCurrentLevel = currentLevel?.id === ARCHIVE_LEVEL_ID;
@@ -586,11 +637,13 @@ export const useGameStore = create<GameState>()(
           savedStates: newSavedStates,
           stats: isCurrentLevel ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'archive') : stats,
           currentAttempt: emptyAttempt(),
+          ...(isCurrentLevel && periodsWith(winIncrements(currentLevel, stars, 'archive'))),
         });
 
         // No streak, freeze or mission: playing a missed day afterwards does not make up for it
         if (firstWin) addXp(archiveWinXp(details?.minMoves ?? currentLevel?.minMoves ?? 0, stars));
         get().checkAchievements();
+        recordNewCosmetics(cosmeticsBefore);
         recordXpGain(xpBefore);
       },
 
@@ -602,6 +655,13 @@ export const useGameStore = create<GameState>()(
           .map(a => a.id);
 
         if (newlyUnlocked.length === 0) return;
+
+        // The month of each one, for the recap
+        const month = monthKeyOf(new Date());
+        set({
+          achievementMonths: { ...state.achievementMonths, ...Object.fromEntries(newlyUnlocked.map(id => [id, month])) },
+          ...periodsWith({ achievements: newlyUnlocked.length }, state),
+        });
 
         if (options?.silent) {
           set({ achievements: [...state.achievements, ...newlyUnlocked] });
@@ -659,8 +719,16 @@ export const useGameStore = create<GameState>()(
 
       recordResultShared: () => {
         const { stats } = get();
-        set({ stats: { ...stats, resultsShared: stats.resultsShared + 1 } });
+        set({ stats: { ...stats, resultsShared: stats.resultsShared + 1 }, ...periodsWith({ resultsShared: 1 }) });
         get().checkAchievements();
+      },
+
+      markRecapSeen: (key) => {
+        const field = key.length === 4 ? 'year' : 'month';
+        const seen = get().recapsSeen[field];
+        // Opening an older recap again from the profile does not announce the latest one again
+        if (seen && seen >= key) return;
+        set({ recapsSeen: { ...get().recapsSeen, [field]: key } });
       },
 
       recordLevelShared: () => {
@@ -844,6 +912,11 @@ export const useGameStore = create<GameState>()(
           achievements: [],
           unlockQueue: [],
           stats: initialStats(),
+          monthlyStats: {},
+          yearlyStats: {},
+          achievementMonths: {},
+          recapSince: null,
+          recapsSeen: {},
           currentDailyLevel: null,
           dailyLevelDate: null,
           currentWeeklyLevel: null,
@@ -925,6 +998,11 @@ export const useGameStore = create<GameState>()(
         archiveProgress: state.archiveProgress,
         achievements: state.achievements,
         stats: state.stats,
+        monthlyStats: state.monthlyStats,
+        yearlyStats: state.yearlyStats,
+        achievementMonths: state.achievementMonths,
+        recapSince: state.recapSince,
+        recapsSeen: state.recapsSeen,
         currentDailyLevel: state.currentDailyLevel,
         dailyLevelDate: state.dailyLevelDate,
         currentWeeklyLevel: state.currentWeeklyLevel,

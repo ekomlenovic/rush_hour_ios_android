@@ -1,4 +1,4 @@
-import type { ChallengeResult, Level, LevelProgress, LevelSaveState } from './types';
+import type { ChallengeResult, Level, LevelProgress, LevelSaveState, PeriodStats } from './types';
 import { sampleLevels } from '../data/sampleLevels';
 import { recomputeStreak } from './streak';
 import { BOSS_WIN_XP, computeRetroactiveXp } from '../data/progression';
@@ -6,9 +6,11 @@ import { isBossLevel } from '../data/bosses';
 import { getStars, starsFromScore } from '../utils/scoring';
 import { compactSavedStates, compactUndoStacks, dropOldUndoStacks } from './savedStates';
 import { latestSavedDate, latestSavedWeek } from '../utils/challengeDates';
+import { addToPeriod, keptMonths, monthKeyOf } from './periodStats';
+import { getLocalDateString, getWeekStart } from '../utils/date';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 11;
+export const STORE_VERSION = 12;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
@@ -77,7 +79,44 @@ export function migrateState(persistedState: unknown, version: number): Record<s
       state.savedStates = compactUndoStacks(dropOldUndoStacks(state.savedStates as Record<string, LevelSaveState>));
     }
   }
+  if (version < 12) {
+    // v12: monthly and yearly recap (issue 125). Only the challenges are dated: their wins are counted
+    // back in their month and year, the rest starts to count now (recapSince). The month an achievement
+    // was unlocked is unknown: it is set to the month of the update
+    Object.assign(state, seedRecap(state));
+  }
   return state;
+}
+
+/** Recap counters rebuilt from the dated challenges, from today on for everything else */
+function seedRecap(state: Record<string, unknown>, now: Date = new Date()): Record<string, unknown> {
+  const monthlyStats: Record<string, PeriodStats> = {};
+  const yearlyStats: Record<string, PeriodStats> = {};
+  const count = (dateKey: string, result: ChallengeResult | undefined) => {
+    if (!result?.completed) return;
+    const win = { wins: 1, perfectWins: result.stars === 3 ? 1 : 0, hardestWinMoves: result.minMoves ?? 0 };
+    const month = dateKey.slice(0, 7);
+    const year = dateKey.slice(0, 4);
+    monthlyStats[month] = addToPeriod(monthlyStats[month], win);
+    yearlyStats[year] = addToPeriod(yearlyStats[year], win);
+  };
+  const results = (value: unknown) => (value && typeof value === 'object' ? Object.entries(value as Record<string, ChallengeResult>) : []);
+  for (const [dateKey, result] of results(state.dailyChallengeProgress)) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) count(dateKey, result);
+  }
+  for (const [weekKey, result] of results(state.weeklyChallengeProgress)) {
+    if (/^\d{4}-W\d{2}$/.test(weekKey)) count(getWeekStart(weekKey), result);
+  }
+  // Archives are keyed by the day replayed, not the day played: left out
+
+  const month = monthKeyOf(now);
+  const achievements = Array.isArray(state.achievements) ? (state.achievements as unknown[]) : [];
+  return {
+    monthlyStats: keptMonths(monthlyStats, now),
+    yearlyStats,
+    achievementMonths: Object.fromEntries(achievements.filter(id => typeof id === 'string').map(id => [id, month])),
+    recapSince: getLocalDateString(now),
+  };
 }
 
 /**

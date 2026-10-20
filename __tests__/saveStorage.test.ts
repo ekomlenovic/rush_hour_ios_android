@@ -100,7 +100,7 @@ describe('the save on the device', () => {
     await flush();
     await settle();
     const { state, version } = await stored();
-    expect(version).toBe(11);
+    expect(version).toBe(12);
     expect(state.savedStates[12].history).toEqual([]);
     expect(state.savedStates[12].undoSteps).toHaveLength(MAX_SAVED_UNDOS);
   });

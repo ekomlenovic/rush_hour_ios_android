@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { addDays, getLocalDateString, getWeekKey, parseLocalDateString } from './date';
+import { addDays, addMonths, getLocalDateString, getWeekKey, parseLocalDateString } from './date';
 
 export const DEFAULT_REMINDER_HOUR = 19;
 /** "Streak in danger" comes this many hours after the daily reminder */
@@ -7,6 +7,9 @@ const STREAK_DANGER_DELAY_HOURS = 2;
 /** Daily reminders are planned this many days ahead; reopening the app replans them */
 const DAYS_AHEAD = 7;
 const WEEKLY_REMINDER_HOUR = 10;
+/** The recap is ready on the 1st of the month, the annual one on December 26th (issue 125) */
+const RECAP_REMINDER_HOUR = 11;
+const YEAR_RECAP_DAY = '12-26';
 
 export interface ReminderInput {
   now: Date;
@@ -16,6 +19,11 @@ export interface ReminderInput {
   /** YYYY-Www keys of the completed weeklies */
   completedWeeklies: Set<string>;
   currentStreak: number;
+  /** Something played this month / this year: its recap will be announced */
+  playedThisMonth?: boolean;
+  playedThisYear?: boolean;
+  /** Language of the month name in the recap reminder */
+  language?: string;
 }
 
 export interface PlannedReminder {
@@ -75,6 +83,30 @@ export function planReminders(t: TFunction, input: ReminderInput): PlannedRemind
     title: t('reminders.weekly_title'),
     body: t('reminders.weekly_body'),
   });
+
+  // The recap of this month, ready on the 1st of the next one; the annual one on December 26th
+  const month = today.slice(0, 7);
+  if (input.playedThisMonth) {
+    const firstOfNext = `${addMonths(month, 1)}-01`;
+    reminders.push({
+      id: `recap-${month}`,
+      date: at(firstOfNext, RECAP_REMINDER_HOUR),
+      title: t('reminders.recap_title'),
+      body: t('reminders.recap_month_body', {
+        month: parseLocalDateString(`${month}-01`).toLocaleDateString(input.language, { month: 'long' }),
+        interpolation: { escapeValue: false },
+      }),
+    });
+  }
+  const year = today.slice(0, 4);
+  if (input.playedThisYear) {
+    reminders.push({
+      id: `recap-${year}`,
+      date: at(`${year}-${YEAR_RECAP_DAY}`, RECAP_REMINDER_HOUR),
+      title: t('reminders.recap_title'),
+      body: t('reminders.recap_year_body', { year }),
+    });
+  }
 
   return reminders
     .filter(r => r.date > now)
