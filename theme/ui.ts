@@ -123,6 +123,16 @@ export const fixedColors = {
   neutralSoft: 'rgba(128,128,128,0.1)',
 } satisfies Partial<UiColors>;
 
+/** The recap image shared (issue 125): it leaves the app, same colors in light and dark */
+export const recapImageColors = {
+  top: '#1E1B4B',
+  bottom: '#4338CA',
+  text: '#FFFFFF',
+  muted: '#C7D2FE',
+  box: 'rgba(255,255,255,0.12)',
+  accent: '#FACC15',
+};
+
 export const darkColors: UiColors = {
   ...fixedColors,
   background: '#0F0F1A',

@@ -10,12 +10,17 @@ const migrate = (state: Record<string, unknown>, version: number) =>
   options.migrate!(structuredClone(state), version) as unknown as Record<string, unknown>;
 /** Id a level of the pack had before the 5 levels inserted after level 5 in v5 */
 const idBeforeV5 = (id: number) => (id > 10 ? id - 5 : id);
+/** The state without the recap fields that v9 adds to every save, to check the steps before it */
+const withoutRecap = (state: Record<string, unknown>) => {
+  const { monthlyStats: _m, yearlyStats: _y, achievementMonths: _a, recapSince: _r, ...rest } = state;
+  return rest;
+};
 const merge = (persisted: Record<string, unknown>) =>
   options.merge!(persisted, useGameStore.getInitialState());
 
 describe('persisted state', () => {
-  it('is at version 8', () => {
-    expect(options.version).toBe(8);
+  it('is at version 9', () => {
+    expect(options.version).toBe(9);
   });
 
   it('keeps the player data and leaves the in-game state out', () => {
@@ -88,7 +93,7 @@ describe('migrate', () => {
 
   it('v3 is up to date: nothing changes', () => {
     const saved = { currentStreak: 3, bestStreak: 5, lastStreakDate: '2026-10-14', dailyChallengeProgress: {}, xp: 1234 };
-    expect(migrate(saved, 3)).toEqual(saved);
+    expect(withoutRecap(migrate(saved, 3))).toEqual(saved);
   });
 });
 
@@ -247,7 +252,7 @@ describe('migrate v6 → v7', () => {
 
   it('leaves a save without challenge to come untouched', () => {
     const v6 = { dailyChallengeProgress: { '2026-10-19': win }, currentStreak: 1, bestStreak: 5, lastStreakDate: '2026-10-19', streakFreezes: 1 };
-    expect(migrate(v6, 6)).toEqual(v6);
+    expect(withoutRecap(migrate(v6, 6))).toEqual(v6);
   });
 
   it('a daily of a day to come is never won again', () => {
@@ -297,7 +302,68 @@ describe('migrate v7 → v8', () => {
 
   it('leaves a player without generated levels untouched', () => {
     const v7 = { progress: [{ levelId: 2, completed: true, bestScore: 300, stars: 3 }], maxUnlockedLevel: 3, generatedLevels: [] };
-    expect(migrate(v7, 7)).toEqual(v7);
+    expect(withoutRecap(migrate(v7, 7))).toEqual(v7);
+  });
+});
+
+describe('migrate v8 → v9', () => {
+  const win = (stars: number, minMoves = 12) => ({ completed: true, score: minMoves * 100, stars, moves: minMoves, minMoves });
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    setToday('2026-10-20');
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('counts the dated challenges back in their month and year, the rest from the update (issue 125)', () => {
+    // Saved by 2.0.2: no recap counters yet
+    const v8 = {
+      dailyChallengeProgress: {
+        '2025-06-01': win(3),
+        '2025-12-30': win(2, 20),
+        '2026-09-29': win(3),
+        '2026-10-01': win(1),
+        '2026-10-02': { completed: false, score: 0, stars: 0 },
+      },
+      // Monday September 28th: September
+      weeklyChallengeProgress: { '2026-W40': win(3, 30) },
+      archiveProgress: { '2026-10-05': win(3) },
+      achievements: ['first_win', 'daily_winner'],
+      stats: { totalWins: 40 },
+      xp: 5000,
+    };
+    const state = migrate(v8, 8);
+    expect(Object.keys(state.monthlyStats as object).sort()).toEqual(['2025-12', '2026-09', '2026-10']);
+    expect(state.monthlyStats).toMatchObject({
+      '2025-12': { wins: 1, perfectWins: 0, hardestWinMoves: 20 },
+      '2026-09': { wins: 2, perfectWins: 2, hardestWinMoves: 30, moves: 0, playTimeMs: 0 },
+      '2026-10': { wins: 1, perfectWins: 0, hardestWinMoves: 12, achievements: 0 },
+    });
+    // June 2025 left the 13 months, its year keeps it
+    expect(state.yearlyStats).toMatchObject({ 2025: { wins: 2, perfectWins: 1 }, 2026: { wins: 3, perfectWins: 2, hardestWinMoves: 30 } });
+    expect(state.achievementMonths).toEqual({ first_win: '2026-10', daily_winner: '2026-10' });
+    expect(state.recapSince).toBe('2026-10-20');
+    // Nothing else changes
+    expect(withoutRecap(state)).toEqual(v8);
+  });
+
+  it('a player without anything starts with empty counters', () => {
+    const state = migrate({ progress: [] }, 8);
+    expect(state).toEqual({ progress: [], monthlyStats: {}, yearlyStats: {}, achievementMonths: {}, recapSince: '2026-10-20' });
+  });
+
+  it('a save of the previous version still loads in the store', () => {
+    const merged = merge(migrate({ dailyChallengeProgress: { '2026-10-01': win(3) }, achievements: ['first_win'] }, 8));
+    expect(merged.monthlyStats['2026-10'].wins).toBe(1);
+    expect(merged.recapsSeen).toEqual({});
+    expect(merged.recapSince).toBe('2026-10-20');
+  });
+
+  it('a new player counts from the start', () => {
+    expect(useGameStore.getInitialState().recapSince).toBeNull();
   });
 });
 

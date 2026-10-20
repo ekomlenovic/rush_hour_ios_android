@@ -5,6 +5,7 @@ import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../store/gameStore';
 import { planReminders } from './reminders';
+import { monthKeyOf, yearKeyOf } from '../store/periodStats';
 
 const CHANNEL_ID = 'reminders';
 
@@ -102,6 +103,9 @@ export function useReminderSync() {
   const dailyChallengeProgress = useGameStore(s => s.dailyChallengeProgress);
   const weeklyChallengeProgress = useGameStore(s => s.weeklyChallengeProgress);
   const currentStreak = useGameStore(s => s.currentStreak);
+  // Booleans: they change once a month, not at every move
+  const playedThisMonth = useGameStore(s => !!s.monthlyStats[monthKeyOf(new Date())]);
+  const playedThisYear = useGameStore(s => !!s.yearlyStats[yearKeyOf(new Date())]);
   const [foregroundCount, setForegroundCount] = useState(0);
 
   useEffect(() => {
@@ -130,6 +134,9 @@ export function useReminderSync() {
         completedDailies: completed(dailyChallengeProgress),
         completedWeeklies: completed(weeklyChallengeProgress),
         currentStreak,
+        playedThisMonth,
+        playedThisYear,
+        language: i18n.language,
       });
       for (const reminder of reminders) {
         if (outdated) return;
@@ -150,5 +157,5 @@ export function useReminderSync() {
     return () => {
       outdated = true;
     };
-  }, [enabled, reminderHour, dailyChallengeProgress, weeklyChallengeProgress, currentStreak, foregroundCount, i18n.language]);
+  }, [enabled, reminderHour, dailyChallengeProgress, weeklyChallengeProgress, currentStreak, playedThisMonth, playedThisYear, foregroundCount, i18n.language]);
 }

@@ -2,6 +2,9 @@ import { useGameStore, type Level, type LevelProgress, type ChallengeResult } fr
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from '../store/migrations';
 import { isWellFormedSave } from '../store/savedStates';
 import { initialStats } from '../store/stats';
+import { emptyPeriodStats, keptMonths } from '../store/periodStats';
+import type { PeriodStats, PlayerStats } from '../store/types';
+import { COSMETICS } from '../data/cosmetics';
 import { sampleLevels } from '../data/sampleLevels';
 import { ACHIEVEMENTS } from '../data/achievements';
 import {
@@ -283,6 +286,75 @@ function wellFormedStats(stats: Record<string, unknown> = {}): Record<string, un
   return clean;
 }
 
+const MONTH_KEY = /^\d{4}-\d{2}$/;
+const YEAR_KEY = /^\d{4}$/;
+
+/**
+ * Recap counters of a period, each one capped by its lifetime total: a period never holds more
+ * than the whole game (a broken or missing counter takes 0)
+ */
+function cappedPeriod(period: unknown, caps: Record<keyof PeriodStats, number>): PeriodStats {
+  const clean = emptyPeriodStats();
+  if (!isRecord(period)) return clean;
+  for (const field of Object.keys(clean) as (keyof PeriodStats)[]) {
+    const value = period[field];
+    if (isAmount(value)) clean[field] = Math.min(value, caps[field]);
+  }
+  clean.perfectWins = Math.min(clean.perfectWins, clean.wins);
+  clean.bossWins = Math.min(clean.bossWins, clean.wins);
+  return clean;
+}
+
+/** Periods with a valid key, not in the future */
+function cappedPeriods(periods: unknown, isKey: (key: string) => boolean, caps: Record<keyof PeriodStats, number>): Record<string, PeriodStats> {
+  if (!isRecord(periods)) return {};
+  return Object.fromEntries(Object.entries(periods).filter(([key]) => isKey(key)).map(([key, period]) => [key, cappedPeriod(period, caps)]));
+}
+
+/**
+ * The recap fields checked (issue 125): counters capped by the lifetime totals, months in the window,
+ * nothing in the future. A broken field takes its default: the recap is not worth refusing a save
+ */
+function wellFormedRecap(state: Record<string, any>, now: Date): Record<string, unknown> {
+  const latestDate = latestSavedDate(now);
+  const latestMonth = latestDate.slice(0, 7);
+  const latestYear = latestDate.slice(0, 4);
+  const stats: PlayerStats = { ...initialStats(), ...state.stats };
+  const completed = (state.progress as LevelProgress[]).filter(p => p.completed);
+  const achievements: string[] = state.achievements;
+  const caps: Record<keyof PeriodStats, number> = {
+    wins: stats.totalWins,
+    newLevels: completed.length,
+    starsGained: completed.reduce((sum, p) => sum + (p.stars || 0), 0),
+    perfectWins: stats.totalWins,
+    playTimeMs: stats.totalPlayTimeMs,
+    moves: stats.totalMoves,
+    bossWins: stats.totalWins,
+    hardestWinMoves: stats.hardestWinMoves,
+    nightWins: stats.nightWins,
+    earlyWins: stats.earlyDailyWins,
+    achievements: achievements.length,
+    resultsShared: stats.resultsShared,
+    cosmetics: COSMETICS.length,
+  };
+
+  const months = cappedPeriods(state.monthlyStats, key => MONTH_KEY.test(key) && key <= latestMonth, caps);
+  const achievementMonths = isRecord(state.achievementMonths) ? state.achievementMonths : {};
+  const recapsSeen = isRecord(state.recapsSeen) ? state.recapsSeen : {};
+  return {
+    monthlyStats: keptMonths(months, now),
+    yearlyStats: cappedPeriods(state.yearlyStats, key => YEAR_KEY.test(key) && key <= latestYear, caps),
+    achievementMonths: Object.fromEntries(achievements
+      .filter(id => typeof achievementMonths[id] === 'string' && MONTH_KEY.test(achievementMonths[id]) && achievementMonths[id] <= latestMonth)
+      .map(id => [id, achievementMonths[id]])),
+    recapSince: typeof state.recapSince === 'string' && DATE_KEY.test(state.recapSince) && state.recapSince <= latestDate ? state.recapSince : null,
+    recapsSeen: {
+      ...(typeof recapsSeen.month === 'string' && MONTH_KEY.test(recapsSeen.month) && { month: recapsSeen.month }),
+      ...(typeof recapsSeen.year === 'string' && YEAR_KEY.test(recapsSeen.year) && { year: recapsSeen.year }),
+    },
+  };
+}
+
 /** Most XP the save's wins can have given: first wins at their best stars, every other win as a replay */
 export function maxPlausibleXp(state: Record<string, any>): number {
   const levels = fixedLevelsOf(state);
@@ -334,6 +406,7 @@ export function parseSave(code: string, now: Date = new Date()): ImportResult {
   state.achievements = [...new Set((state.achievements ?? []) as string[])].filter(id => knownAchievements.has(id));
   state.xp = Math.min(state.xp ?? 0, maxPlausibleXp(state));
   state.streakFreezes = Math.min(state.streakFreezes ?? 0, getFreezeCapacity(getPlayerLevel(state.xp)));
+  Object.assign(state, wellFormedRecap(state, now));
 
   const completed = (state.progress as LevelProgress[]).filter(p => p.completed);
   return {
