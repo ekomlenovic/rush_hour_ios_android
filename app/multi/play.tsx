@@ -12,6 +12,7 @@ import Board from '@/components/Board';
 import MultiHeader from '@/components/multi/MultiHeader';
 import { errorCode, multiErrorMessage } from '@/components/multi/errors';
 import { gameKey, selectActiveAccount, useMultiStore, type MultiGame } from '@/store/multiStore';
+import { useGameStore } from '@/store/gameStore';
 import { useMultiApi } from '@/hooks/useMultiApi';
 import { elapsedMs, gameFromStart, isWon, playMove, submission, wonResult } from '@/utils/multi/game';
 import { MultiApiError, type SubmitResult } from '@/utils/multi/api';
@@ -113,7 +114,9 @@ export default function MultiPlayScreen() {
       AccessibilityInfo.announceForAccessibility(t('multi.win_a11y', { moves: res.moves, time: formatDuration(res.timeMs), rank: res.rank }));
     };
     try {
-      won(await api.submit(finished.date, moves, clientMs, backgroundMs));
+      // My look, for the replays of the others
+      const { board, skin, palette } = useGameStore.getState().cosmetics;
+      won(await api.submit(finished.date, moves, clientMs, backgroundMs, { board, skin, palette }));
     } catch (e) {
       setError(e);
       // Taken by the server, but its answer was lost: the win it has
