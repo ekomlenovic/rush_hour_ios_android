@@ -48,8 +48,10 @@ export function savedHistory(key: string | number, history: LevelSaveState['hist
  * A past day's daily can no longer be played as such: its game carries on in the
  * archive of that day (same puzzle) when there is none yet, rather than being lost.
  * Past weeks and archive days out of reach can never be opened again: dropped.
+ * `openDaily`: a past day's daily still open on the game screen, left open past midnight:
+ * it can still be won, its save stays as is.
  */
-export function compactSavedStates(savedStates: SavedStates, now: Date = new Date()): SavedStates {
+export function compactSavedStates(savedStates: SavedStates, now: Date = new Date(), openDaily: string | null = null): SavedStates {
   const today = getLocalDateString(now);
   const week = getWeekKey(now);
   const compacted: SavedStates = {};
@@ -59,7 +61,7 @@ export function compactSavedStates(savedStates: SavedStates, now: Date = new Dat
     if (!save || typeof save !== 'object') continue;
     if (key.startsWith('daily-')) {
       const date = key.slice('daily-'.length);
-      if (date >= today) compacted[key] = withHistory(key, save);
+      if (date >= today || date === openDaily) compacted[key] = withHistory(key, save);
       else pastDailies.push([date, save]);
     } else if (key.startsWith('weekly-')) {
       if (key.slice('weekly-'.length) >= week) compacted[key] = withHistory(key, save);

@@ -16,11 +16,15 @@ import { fixedColors, toBoardLook, useTheme, type UiColors } from '@/theme';
 import Board from '@/components/Board';
 import MultiHeader from '@/components/multi/MultiHeader';
 import DuelPlayerBar from '@/components/multi/DuelPlayerBar';
+import {
+  REACTION_PICKER_HEIGHT, REACTION_TRAY_HEIGHT, ReactionOverlay, ReactionPicker, ReactionTray, pauseSeconds, useReactionSender,
+  type ReactionSender,
+} from '@/components/multi/DuelReactions';
 import { multiErrorMessage } from '@/components/multi/errors';
 import { selectActiveAccount, useMultiStore } from '@/store/multiStore';
 import { useDuel } from '@/hooks/useDuel';
 import {
-  DUEL_DIFFICULTIES, DUEL_METRICS, countdownMs, duelElapsedMs, iHaveWon, normalizeDuelCode, opponentHasWon, outcome, winnerOf,
+  DUEL_DIFFICULTIES, DUEL_METRICS, countdownMs, duelElapsedMs, iHaveWon, normalizeDuelCode, opponentHasWon, outcome, reactionsFor, winnerOf,
   type Duel, type DuelDifficulty, type DuelMetric, type DuelSide, type HeadToHead,
 } from '@/utils/multi/duel';
 
@@ -33,8 +37,9 @@ const BARS_HEIGHT = RFValue(150);
  * on moves, the fewest moves (the same count is a draw): who got out may leave, and comes
  * back for the result.
  * Opened from the multiplayer screen to create a duel (?create=HARD&metric=moves&private=1), to
- * join one (?join=CODE), to watch one (?watch=CODE: both boards, nothing to play), or
- * to go back to mine. A duel already started, joined with its code, is watched.
+ * join one (?join=CODE), to watch one (?watch=CODE: both boards, nothing to play but
+ * reactions to send to a player), or to go back to mine. A duel already started, joined
+ * with its code, is watched. Players react to each other too.
  */
 export default function DuelScreen() {
   const { t } = useTranslation();
@@ -43,9 +48,14 @@ export default function DuelScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ create?: string; metric?: string; private?: string; join?: string; watch?: string }>();
   const account = useMultiStore(selectActiveAccount);
-  const { state, unreachable, create, join, watch, move, leave, rematch, clearError } = useDuel(account);
+  const { state, unreachable, create, join, watch, move, leave, rematch, react, clearError } = useDuel(account);
   const duel = state.duel;
+  // The reactions of the players I blocked are not shown
+  const blockedPlayers = useMultiStore(s => (account ? s.blocked[account.url] : undefined));
+  const blocked = useMemo(() => (blockedPlayers ?? []).map(p => p.playerId), [blockedPlayers]);
   const [now, setNow] = useState(Date.now());
+  // The waits between two reactions outlive a game: the server keeps its own through the rematches
+  const sender = useReactionSender(react, now);
 
   // What the screen was opened for, asked once connected (unless a duel is already going on)
   const [asked, setAsked] = useState(false);
@@ -157,7 +167,19 @@ export default function DuelScreen() {
       </View>
     );
   } else {
-    body = <Arena duel={duel} now={now} colors={colors} offline={state.connection !== 'online'} onMove={move} onLeave={goBack} />;
+    body = (
+      <Arena
+        duel={duel}
+        now={now}
+        colors={colors}
+        offline={state.connection !== 'online'}
+        blocked={blocked}
+        myId={state.player?.id ?? null}
+        onMove={move}
+        onLeave={goBack}
+        sender={sender}
+      />
+    );
   }
 
   return (
@@ -278,13 +300,25 @@ interface ArenaProps {
   now: number;
   colors: UiColors;
   offline: boolean;
+  /** Ids of the players I blocked: their reactions are not shown */
+  blocked: number[];
+  /** Who I am on the server */
+  myId: number | null;
   onMove: (vehicleId: string, row: number, col: number) => boolean | void;
   /** Out in a duel on moves: leave, the result waits */
   onLeave: () => void;
+  /** Sends a reaction to a player: either one when watching, the other one when playing */
+  sender: ReactionSender;
 }
 
-/** The game: the opponent at the top (small, read only), me at the bottom; for a spectator, both the same size */
-function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
+/**
+ * The game: the opponent at the top (small, read only), me at the bottom; for a spectator,
+ * both the same size, and the reactions to send under them, to the player of the board
+ * touched (framed). A player reacts to the other one from the button next to the clock: a
+ * row over the board of the other one, never over mine. The reactions show over the board
+ * of the player they are aimed at; a player may hide them.
+ */
+function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sender }: ArenaProps) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -294,7 +328,8 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
   const level = duel.level!;
   const countdown = countdownMs(duel, now);
   const won = iHaveWon(duel);
-  const space = Math.max(0, height - BARS_HEIGHT - insets.bottom);
+  const showTray = duel.spectating && duel.reactions.length > 0 && duel.status === 'playing';
+  const space = Math.max(0, height - BARS_HEIGHT - (showTray ? REACTION_TRAY_HEIGHT : 0) - insets.bottom);
   const mySize = Math.min(width - RFValue(32), space * (duel.spectating ? 0.5 : 0.62));
   const opponentSize = Math.min(duel.spectating ? mySize : width * 0.62, space - mySize);
   const time = formatDuration(duelElapsedMs(duel, now));
@@ -311,15 +346,69 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
   const opponentLook = useMemo(() => toBoardLook(duel.opponent?.look), [duel.opponent?.look]);
   const firstLook = useMemo(() => (duel.spectating ? toBoardLook(duel.me.look) : undefined), [duel.spectating, duel.me.look]);
 
+  const opponent = duel.opponent;
+  // Watching: my reactions go to the player of the board touched, the one at the top first
+  const [targetId, setTargetId] = useState<number | null>(null);
+  const target = [opponent, duel.me].find(p => p?.id === targetId) ?? opponent;
+  const targetOnTop = target === opponent;
+  // Playing: to the other one, if their app shows them, from a row over their board
+  const canReact = !duel.spectating && duel.reactions.length > 0 && duel.status === 'playing' && !!opponent?.seesReactions;
+  const [picking, setPicking] = useState(false);
+  // Closed at the pause: the button next to the clock counts it down
+  useEffect(() => {
+    if (!canReact || sender.waiting) setPicking(false);
+  }, [canReact, sender.waiting]);
+  // A touch anywhere else closes the row, without taking the touch: a move on my board is still played
+  const inPicker = useRef(false);
+  const touchedPicker = () => { inPicker.current = true; };
+  const closePickerOutside = () => {
+    if (picking && !inPicker.current) setPicking(false);
+    inPicker.current = false;
+  };
+  const [opponentBottom, setOpponentBottom] = useState(0);
+  const onOpponentLayout = (e: LayoutChangeEvent) => setOpponentBottom(e.nativeEvent.layout.y + e.nativeEvent.layout.height);
+  const pickerWidth = Math.min(width - RFValue(32), 440);
+
+  // A player may hide the reactions, for this duel
+  const [muted, setMuted] = useState(false);
+  const canMute = !duel.spectating && duel.reactions.length > 0 && (canReact || duel.spectators > 0 || duel.lastReactions.length > 0);
+  // Only during the game: the clock of the screen stops at the end, a reaction would stay there
+  const shown = (playerId: number) => (muted || duel.status !== 'playing' ? [] : reactionsFor(duel, playerId, now, blocked));
+  // An encouragement for me is said (not the emojis: too many to listen to while playing),
+  // even when other reactions came with it
+  const announced = useRef({ code: duel.code, seq: duel.lastReactions[duel.lastReactions.length - 1]?.seq ?? 0 });
+  useEffect(() => {
+    const seen = announced.current;
+    const fresh = duel.lastReactions.filter(r => duel.code !== seen.code || r.seq > seen.seq);
+    if (fresh.length === 0) return;
+    announced.current = { code: duel.code, seq: fresh[fresh.length - 1].seq };
+    if (muted || duel.spectating) return;
+    const forMe = fresh.filter(r => r.reaction === 'encourage' && r.playerId === duel.me.id && !blocked.includes(r.from.id)).pop();
+    if (forMe) AccessibilityInfo.announceForAccessibility(t('multi.reactions.encourages_you', { pseudo: forMe.from.pseudo }));
+  }, [duel.lastReactions, duel.code, muted, duel.spectating, duel.me.id, blocked, t]);
+
   return (
-    <View style={styles.arena} onLayout={onLayout}>
-      {height > 0 && duel.opponent && (
+    <View style={styles.arena} onLayout={onLayout} onTouchStart={closePickerOutside}>
+      {height > 0 && opponent && (
         <>
-          <DuelPlayerBar name={duel.opponent.pseudo} moves={duel.opponent.moves.length} colors={colors} width={opponentSize} away={!duel.opponent.connected} />
-          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ opacity: duel.opponent.connected ? 1 : 0.5 }}>
+          <DuelPlayerBar
+            name={opponent.pseudo}
+            moves={opponent.moves.length}
+            colors={colors}
+            width={opponentSize}
+            away={!opponent.connected}
+            onSelect={showTray ? () => setTargetId(opponent.id) : undefined}
+            selected={showTray && targetOnTop}
+          />
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={{ opacity: opponent.connected ? 1 : 0.5 }}
+            onLayout={onOpponentLayout}
+          >
             <Board
               gridSize={level.gridSize}
-              vehicles={duel.opponent.vehicles}
+              vehicles={opponent.vehicles}
               exitRow={level.exitRow}
               exitCol={level.exitCol}
               onMoveEnd={noop}
@@ -327,30 +416,64 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
               size={opponentSize}
               look={opponentLook}
             />
+            <ReactionOverlay reactions={shown(opponent.id)} size={opponentSize} target={opponent.pseudo} myId={myId} colors={colors} />
+            {showTray && <TargetFrame selected={targetOnTop} colors={colors} onPress={() => setTargetId(opponent.id)} />}
           </View>
 
-          <View
-            style={[styles.clock, { backgroundColor: offline ? colors.dangerSoft : colors.card, maxWidth: mySize }]}
-            accessible
-            accessibilityLabel={offline ? t('multi.duel.reconnecting') : [t('multi.time_a11y', { time }), waiting].filter(Boolean).join(', ')}
-            accessibilityLiveRegion="polite"
-          >
-            <Ionicons name={offline ? 'cloud-offline' : duel.metric === 'moves' ? 'footsteps-outline' : 'timer-outline'} size={RFValue(17)} color={offline ? colors.danger : colors.text} />
-            <Text style={[styles.clockText, { color: offline ? colors.danger : colors.text }]}>
-              {offline ? t('multi.duel.reconnecting') : time}
-            </Text>
-            {!offline && waiting && (
-              <Text style={[styles.clockStatus, { color: colors.textMuted }]} numberOfLines={1}>{waiting}</Text>
-            )}
-            {duel.spectators > 0 && (
-              <View
-                style={styles.spectators}
-                accessible
-                accessibilityLabel={t('multi.duel.spectators', { count: duel.spectators })}
+          <View style={[styles.clockRow, { maxWidth: mySize }]}>
+            <View
+              style={[styles.clock, { backgroundColor: offline ? colors.dangerSoft : colors.card }]}
+              accessible
+              accessibilityLabel={offline ? t('multi.duel.reconnecting') : [t('multi.time_a11y', { time }), waiting].filter(Boolean).join(', ')}
+              accessibilityLiveRegion="polite"
+            >
+              <Ionicons name={offline ? 'cloud-offline' : duel.metric === 'moves' ? 'footsteps-outline' : 'timer-outline'} size={RFValue(17)} color={offline ? colors.danger : colors.text} />
+              <Text style={[styles.clockText, { color: offline ? colors.danger : colors.text }]}>
+                {offline ? t('multi.duel.reconnecting') : time}
+              </Text>
+              {!offline && waiting && (
+                <Text style={[styles.clockStatus, { color: colors.textMuted }]} numberOfLines={1}>{waiting}</Text>
+              )}
+              {duel.spectators > 0 && (
+                <View
+                  style={styles.spectators}
+                  accessible
+                  accessibilityLabel={t('multi.duel.spectators', { count: duel.spectators })}
+                >
+                  <Ionicons name="eye-outline" size={RFValue(17)} color={colors.textMuted} />
+                  <Text style={[styles.clockText, { color: colors.textMuted }]}>{duel.spectators}</Text>
+                </View>
+              )}
+            </View>
+            {canReact && (
+              <Pressable
+                onTouchStart={touchedPicker}
+                onPress={() => setPicking(p => !p)}
+                disabled={sender.waiting}
+                style={[styles.muteButton, { backgroundColor: picking ? colors.primarySoft : colors.card }]}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: picking, disabled: sender.waiting }}
+                accessibilityLabel={sender.waiting
+                  ? t('multi.reactions.pause_a11y', { count: pauseSeconds(sender) })
+                  : t('multi.reactions.target_a11y', { pseudo: opponent.pseudo })}
+                hitSlop={6}
               >
-                <Ionicons name="eye-outline" size={RFValue(17)} color={colors.textMuted} />
-                <Text style={[styles.clockText, { color: colors.textMuted }]}>{duel.spectators}</Text>
-              </View>
+                {sender.waiting
+                  ? <Text style={[styles.pauseCount, { color: colors.warning }]}>{pauseSeconds(sender)}</Text>
+                  : <Ionicons name={picking ? 'happy' : 'happy-outline'} size={RFValue(19)} color={picking ? colors.primaryText : colors.text} />}
+              </Pressable>
+            )}
+            {canMute && (
+              <Pressable
+                onPress={() => setMuted(m => !m)}
+                style={[styles.muteButton, { backgroundColor: muted ? colors.neutralSoft : colors.card }]}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: !muted }}
+                accessibilityLabel={t('multi.reactions.show_a11y')}
+                hitSlop={6}
+              >
+                <Ionicons name={muted ? 'notifications-off-outline' : 'notifications-outline'} size={RFValue(17)} color={muted ? colors.textMuted : colors.text} />
+              </Pressable>
             )}
           </View>
 
@@ -361,6 +484,8 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
             isMe={!duel.spectating}
             width={mySize}
             away={firstAway}
+            onSelect={showTray ? () => setTargetId(duel.me.id) : undefined}
+            selected={showTray && !targetOnTop}
           />
           <View style={{ opacity: firstAway ? 0.5 : 1 }}>
             <Board
@@ -369,10 +494,13 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
               exitRow={level.exitRow}
               exitCol={level.exitCol}
               onMoveEnd={duel.spectating ? noop : onMove}
-              readOnly={duel.spectating || countdown > 0 || won || duel.status !== 'playing'}
+              // Frozen while reconnecting: the server would never see the moves
+              readOnly={duel.spectating || countdown > 0 || won || duel.status !== 'playing' || offline}
               size={mySize}
               look={firstLook}
             />
+            <ReactionOverlay reactions={shown(duel.me.id)} size={mySize} target={duel.spectating ? duel.me.pseudo : null} myId={myId} colors={colors} />
+            {showTray && <TargetFrame selected={!targetOnTop} colors={colors} onPress={() => setTargetId(duel.me.id)} />}
             {countdown > 0 && (
               <View style={[StyleSheet.absoluteFill, styles.countdown]} pointerEvents="none">
                 <Animated.Text
@@ -391,7 +519,7 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
                   <Text style={[styles.outTitle, { color: colors.text }]} accessibilityRole="header">
                     {t('multi.duel.out_title', { count: duel.me.moves.length + duel.pending.length })}
                   </Text>
-                  <Text style={[styles.outText, { color: colors.textMuted }]}>{t('multi.duel.out_can_leave', { pseudo: duel.opponent?.pseudo ?? '' })}</Text>
+                  <Text style={[styles.outText, { color: colors.textMuted }]}>{t('multi.duel.out_can_leave', { pseudo: opponent.pseudo })}</Text>
                   <Pressable onPress={onLeave} style={[styles.outButton, { backgroundColor: colors.primary }]} accessibilityRole="button">
                     <Text style={[styles.actionText, { color: colors.onPrimary }]}>{t('multi.duel.out_leave')}</Text>
                   </Pressable>
@@ -399,9 +527,39 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
               </View>
             )}
           </View>
+          {showTray && target && (
+            <ReactionTray
+              target={target}
+              targetOnTop={targetOnTop}
+              available={duel.reactions}
+              sender={sender}
+              colors={colors}
+              width={width - RFValue(32)}
+            />
+          )}
+          {canReact && picking && opponentBottom > 0 && (
+            <View onTouchStart={touchedPicker} style={[styles.pickerSlot, { top: Math.max(0, opponentBottom - REACTION_PICKER_HEIGHT - RFValue(6)), left: (width - pickerWidth) / 2, width: pickerWidth }]}>
+              <ReactionPicker opponent={opponent} available={duel.reactions} sender={sender} colors={colors} onClose={() => setPicking(false)} />
+            </View>
+          )}
         </>
       )}
     </View>
+  );
+}
+
+/**
+ * Watching: touching a board chooses its player for my reactions, the chosen one is framed.
+ * The screen reader chooses with the bars of the players (radio buttons).
+ */
+function TargetFrame({ selected, colors, onPress }: { selected: boolean; colors: UiColors; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[StyleSheet.absoluteFill, styles.targetFrame, { borderColor: selected ? colors.primary : 'transparent' }]}
+      accessible={false}
+      importantForAccessibility="no"
+    />
   );
 }
 
@@ -799,14 +957,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: RFValue(10),
   },
+  clockRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(8),
+    marginVertical: RFValue(10),
+  },
   clock: {
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     borderRadius: 999,
     paddingVertical: RFValue(6),
     paddingHorizontal: RFValue(16),
-    marginVertical: RFValue(10),
+  },
+  targetFrame: {
+    borderWidth: 3,
+    borderRadius: 14,
+  },
+  pickerSlot: {
+    position: 'absolute',
+  },
+  pauseCount: {
+    fontSize: RFValue(15),
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+  },
+  muteButton: {
+    width: RFValue(34),
+    height: RFValue(34),
+    borderRadius: RFValue(17),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   clockText: {
     fontSize: RFValue(17),
