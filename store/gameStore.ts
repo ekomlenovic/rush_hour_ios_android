@@ -107,6 +107,8 @@ interface GameState {
   saveLoadFailed: boolean;
   /** Date of the archive being played (not persisted) */
   archiveDate: string | null;
+  /** Day of the daily open on the game screen and not won yet (not persisted): left open past midnight, it can still be won */
+  openDailyDate: string | null;
   generationState: GenerationState;
 
   /** Per-level saved state (to prevent reset on leave), keyed by levelId, "daily-YYYY-MM-DD", "weekly-YYYY-Www" or "archive-YYYY-MM-DD" */
@@ -205,6 +207,8 @@ interface GameState {
   importProgress: (imported: Record<string, unknown>) => void;
   updateStreak: (dateKey: string) => void;
   recordAppOpen: () => AppOpenInfo;
+  /** The game screen opens (a day) or closes (null) a daily not won yet */
+  setOpenDailyDate: (date: string | null) => void;
   addStreakFreeze: () => boolean;
   consumeMissionReward: () => MissionReward | null;
   consumeLevelUps: () => number[];
@@ -373,6 +377,7 @@ export const useGameStore = create<GameState>()(
       weeklyLevelKey: null,
       archiveLevels: {},
       archiveDate: null,
+      openDailyDate: null,
       saveLoadFailed: false,
       savedStates: {},
       isMusicEnabled: true,
@@ -764,8 +769,13 @@ export const useGameStore = create<GameState>()(
       },
 
       recordAppOpen: () => {
-        const { lastOpenDate, stats } = get();
+        const { lastOpenDate, stats, openDailyDate, dailyChallengeProgress } = get();
         const today = getLocalDateString(new Date());
+        // The daily of a day before still open on the game screen (left open past midnight) can still be won:
+        // its day is not missed yet, and its game stays a daily instead of going to the archives
+        const openDaily = openDailyDate && openDailyDate < today && !dailyChallengeProgress[openDailyDate]?.completed
+          ? openDailyDate
+          : null;
 
         let isComeback = false;
         let missedDays = 0;
@@ -779,13 +789,15 @@ export const useGameStore = create<GameState>()(
           lastOpenDate: today,
           stats: { ...stats, longestAbsenceDays: Math.max(stats.longestAbsenceDays, missedDays) },
           // Keeps the save small: past challenges cleared, no undo stack for the levels played long ago
-          savedStates: dropOldUndoStacks(compactSavedStates(get().savedStates)),
+          savedStates: dropOldUndoStacks(compactSavedStates(get().savedStates, new Date(), openDaily)),
         });
-        const { patch, frozenDays, lostStreak } = settleStreak(get(), today);
+        const { patch, frozenDays, lostStreak } = settleStreak(get(), openDaily ?? today);
         set(patch);
         get().checkAchievements();
         return { isComeback, missedDays, frozenDays, lostStreak };
       },
+
+      setOpenDailyDate: (date) => set({ openDailyDate: date }),
 
       addGeneratedLevel: (level) => {
         const { generatedLevels } = get();

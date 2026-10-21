@@ -137,6 +137,44 @@ describe('streak freezes', () => {
   });
 });
 
+describe('a daily left open past midnight', () => {
+  /** Streak of 5 up to 10-19, then the daily of 10-20 opened on the game screen, still there at midnight */
+  function openPastMidnight(freezes: number) {
+    winDays('2026-10-15', 5);
+    useGameStore.setState({ streakFreezes: freezes });
+    setToday('2026-10-20', 23);
+    state().recordAppOpen();
+    state().setOpenDailyDate('2026-10-20');
+    // The home screen under the game records the new day
+    setToday('2026-10-21', 0);
+    return state().recordAppOpen();
+  }
+
+  it('can still be won: its day is not missed, the streak continues', () => {
+    expect(openPastMidnight(0)).toMatchObject({ frozenDays: 0, lostStreak: 0 });
+    expect(state().currentStreak).toBe(5);
+
+    state().completeDailyChallenge('2026-10-20', 300, 3);
+    expect(state().currentStreak).toBe(6);
+    expect(state().lastStreakDate).toBe('2026-10-20');
+  });
+
+  it('uses no freeze for its day', () => {
+    expect(openPastMidnight(1)).toMatchObject({ frozenDays: 0, lostStreak: 0 });
+    state().completeDailyChallenge('2026-10-20', 300, 3);
+    expect(state().currentStreak).toBe(6);
+    expect(state().streakFreezes).toBe(1);
+    expect(state().frozenDates).toEqual([]);
+  });
+
+  it('closed without a win, its day is missed (the home records the app open again)', () => {
+    openPastMidnight(0);
+    state().setOpenDailyDate(null);
+    expect(state().recordAppOpen()).toMatchObject({ lostStreak: 5 });
+    expect(state().currentStreak).toBe(0);
+  });
+});
+
 describe('app open', () => {
   it('detects a comeback after 3 days or more', () => {
     setToday('2026-10-01');
