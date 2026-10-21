@@ -7,3 +7,7 @@ export { levelVariants, dressVariant, variantSources } from '../../utils/variant
 export { createPRNG } from '../../utils/generator';
 /** The levels of the app: the hardest ones are the base of the hardest duels */
 export { sampleLevels } from '../../data/sampleLevels';
+/** The reactions of the spectators of a duel: the same closed list as the app */
+export {
+  ENCOURAGE_COOLDOWN_MS, MAX_REACTIONS, REACTION_IDS, REACTIONS_WINDOW_MS, isReactionId, type ReactionId,
+} from '../../utils/multi/reactions';
