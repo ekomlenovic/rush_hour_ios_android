@@ -1,10 +1,11 @@
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  COUNTDOWN_MS, CREATES_WINDOW_MS, Duels, MAX_CREATES, MAX_DUEL_MS, MAX_MESSAGES_PER_SECOND, MAX_SPECTATORS, MAX_WRONG_CODES, OVER_TTL_MS,
-  RECONNECT_GRACE_MS, RESULT_TTL_MS, WAITING_TTL_MS,
+  COUNTDOWN_MS, CREATES_WINDOW_MS, Duels, MAX_CREATES, MAX_DUEL_MS, MAX_DUEL_REACTIONS_PER_SECOND, MAX_MESSAGES_PER_SECOND, MAX_SPECTATORS,
+  MAX_WRONG_CODES, OVER_TTL_MS, RECONNECT_GRACE_MS, RESULT_TTL_MS, WAITING_TTL_MS,
   normalizeDuelCode, type DuelConnection, type ServerMessage,
 } from '../src/duel';
+import { ENCOURAGE_COOLDOWN_MS, MAX_REACTIONS, REACTION_IDS, REACTIONS_WINDOW_MS } from '../src/core';
 import type { PuzzleGenerator } from '../src/generation';
 import { PuzzlePool } from '../src/puzzlePool';
 import { openDatabase } from '../src/db';
@@ -15,6 +16,9 @@ const PLAYERS: Record<string, { id: number; pseudo: string }> = {
   'token-emma': { id: 2, pseudo: 'Emma' },
   'token-sam': { id: 3, pseudo: 'Sam' },
   'token-zoe': { id: 4, pseudo: 'Zoé' },
+  'token-noa': { id: 5, pseudo: 'Noa' },
+  // A crowd, to watch a busy duel
+  ...Object.fromEntries(Array.from({ length: 10 }, (_, i) => [`token-fan${i}`, { id: 200 + i, pseudo: `Fan${i}` }])),
 };
 
 /** Lets the generation of the puzzle (a promise) finish */
@@ -29,8 +33,8 @@ function setup(generator: PuzzleGenerator = fakeGenerator().generator) {
     authenticate: (token) => (token === 'token-banned' ? 'banned' : PLAYERS[token] ?? null),
   });
 
-  /** A phone connected to the duels: what it received, and how it talks */
-  const connect = (token?: string) => {
+  /** A phone connected to the duels: what it received, and how it talks; an app that knows the reactions, unless `older` */
+  const connect = (token?: string, { older = false } = {}) => {
     const received: ServerMessage[] = [];
     const closed: { code: number; reason: string }[] = [];
     const connection: DuelConnection = {
@@ -39,7 +43,7 @@ function setup(generator: PuzzleGenerator = fakeGenerator().generator) {
     };
     const handlers = duels.connect(connection);
     const send = (message: object) => handlers.onMessage(JSON.stringify(message));
-    if (token) send({ type: 'auth', token });
+    if (token) send(older ? { type: 'auth', token } : { type: 'auth', token, features: ['reactions'] });
     const last = <T extends ServerMessage['type']>(type: T) =>
       [...received].reverse().find(m => m.type === type) as Extract<ServerMessage, { type: T }> | undefined;
     return { received, closed, send, last, handlers, disconnect: () => handlers.onClose() };
@@ -364,7 +368,7 @@ describe('duels', () => {
     clock.now += RECONNECT_GRACE_MS - 1000;
     const back = connect('token-leo');
     expect(back.last('ready')!.duel).toMatchObject({ status: 'playing', me: { moves: [{ vehicleId: 'v1', delta: 2 }] } });
-    expect(emma.last('presence')).toEqual({ type: 'presence', playerId: 1, connected: true });
+    expect(emma.last('presence')).toEqual({ type: 'presence', playerId: 1, connected: true, seesReactions: true });
     back.send({ type: 'move', vehicleId: 'target', delta: 4 });
     expect(emma.last('end')!.result.winnerId).toBe(1);
   });
@@ -538,6 +542,176 @@ describe('duels', () => {
     expect(zoe.last('error')).toEqual({ type: 'error', error: 'too_many_spectators' });
   });
 
+  it('a spectator teases, cheers or encourages a player: everyone in the duel sees it', async () => {
+    const { connect, started } = setup();
+    const { leo, emma } = await started();
+    const code = leo.last('duel')!.duel.code;
+    const sam = connect('token-sam');
+    const zoe = connect('token-zoe');
+    sam.send({ type: 'watch', code });
+    zoe.send({ type: 'watch', code });
+    // The server says which reactions it relays: the app offers only those
+    expect(sam.last('duel')!.duel.reactions).toEqual(REACTION_IDS);
+    expect(leo.last('duel')!.duel.reactions).toEqual(REACTION_IDS);
+
+    sam.send({ type: 'react', playerId: 2, reaction: 'snail' });
+    const snail = { type: 'reaction', from: { id: 3, pseudo: 'Sam' }, playerId: 2, reaction: 'snail' };
+    // The two players and every spectator, Sam too: it shows over the board of Emma
+    for (const phone of [leo, emma, sam, zoe]) expect(phone.last('reaction')).toEqual(snail);
+    zoe.send({ type: 'react', playerId: 1, reaction: 'encourage' });
+    expect(leo.last('reaction')).toEqual({ type: 'reaction', from: { id: 4, pseudo: 'Zoé' }, playerId: 1, reaction: 'encourage' });
+
+    // Someone who does not watch it sees nothing
+    const noa = connect('token-noa');
+    sam.send({ type: 'react', playerId: 1, reaction: 'popcorn' });
+    expect(noa.last('reaction')).toBeUndefined();
+  });
+
+  it('a player teases or encourages the other one, seen by the spectators too', async () => {
+    const { connect, started } = setup();
+    const { leo, emma } = await started();
+    const sam = connect('token-sam');
+    sam.send({ type: 'watch', code: leo.last('duel')!.duel.code });
+    emma.send({ type: 'react', playerId: 1, reaction: 'popcorn' });
+    const popcorn = { type: 'reaction', from: { id: 2, pseudo: 'Emma' }, playerId: 1, reaction: 'popcorn' };
+    for (const phone of [leo, emma, sam]) expect(phone.last('reaction')).toEqual(popcorn);
+    // Who has finished (duel on moves) may still tease the other one: covered by the same rule, the game goes on
+    leo.send({ type: 'react', playerId: 2, reaction: 'encourage' });
+    expect(emma.last('reaction')).toMatchObject({ from: { id: 1 }, playerId: 2, reaction: 'encourage' });
+  });
+
+  it('an app older than the reactions is never sent one: it would break on it', async () => {
+    const { connect, clock, duels } = setup();
+    // Léo has the old app, Emma the new one
+    const leo = connect('token-leo', { older: true });
+    const emma = connect('token-emma');
+    leo.send({ type: 'create', difficulty: 'HARD' });
+    const code = leo.last('duel')!.duel.code;
+    emma.send({ type: 'join', code });
+    await settle();
+    clock.now += COUNTDOWN_MS;
+    const oldSam = connect('token-sam', { older: true });
+    const zoe = connect('token-zoe');
+    oldSam.send({ type: 'watch', code });
+    zoe.send({ type: 'watch', code });
+    // The others know whose app shows the reactions
+    expect(zoe.last('duel')!.duel).toMatchObject({ me: { id: 1, seesReactions: false }, opponent: { id: 2, seesReactions: true } });
+    expect(duels.duelOf(2)).toMatchObject({ opponent: { seesReactions: false } });
+
+    zoe.send({ type: 'react', playerId: 1, reaction: 'snail' });
+    emma.send({ type: 'react', playerId: 1, reaction: 'yawn' });
+    zoe.send({ type: 'react', playerId: 2, reaction: 'clap' });
+    for (const phone of [leo, oldSam]) expect(phone.received.map(m => m.type)).not.toContain('reaction');
+    expect(emma.received.filter(m => m.type === 'reaction')).toHaveLength(3);
+    expect(zoe.received.filter(m => m.type === 'reaction')).toHaveLength(3);
+
+    // Back with the new app: sent again, and the others know it
+    leo.disconnect();
+    const back = connect('token-leo');
+    expect(back.last('ready')!.duel).toMatchObject({ me: { seesReactions: true } });
+    expect(emma.last('presence')).toEqual({ type: 'presence', playerId: 1, connected: true, seesReactions: true });
+    zoe.send({ type: 'react', playerId: 1, reaction: 'fire' });
+    expect(back.last('reaction')).toMatchObject({ reaction: 'fire' });
+    // The old app again, on another phone, replacing the connection at once: said too
+    const oldPhone = connect('token-leo', { older: true });
+    expect(emma.last('presence')).toEqual({ type: 'presence', playerId: 1, connected: true, seesReactions: false });
+    emma.send({ type: 'react', playerId: 1, reaction: 'snail' });
+    expect(oldPhone.received.map(m => m.type)).not.toContain('reaction');
+    // Features it does not know, or a list that is not one, are not a reason to refuse the app
+    const newer = connect();
+    newer.send({ type: 'auth', token: 'token-noa', features: ['reactions', 'holograms'] });
+    expect(newer.last('ready')).toMatchObject({ player: { id: 5 } });
+    const odd = connect();
+    odd.send({ type: 'auth', token: 'token-noa', features: 'reactions' });
+    expect(odd.last('ready')).toMatchObject({ player: { id: 5 } });
+  });
+
+  it('a reaction goes during the game, to a player of the duel, from the list only', async () => {
+    const { connect, started } = setup();
+    const { leo, emma } = await started();
+    const code = leo.last('duel')!.duel.code;
+    const sam = connect('token-sam');
+    sam.send({ type: 'watch', code });
+
+    // A player does not react to themselves
+    leo.send({ type: 'react', playerId: 1, reaction: 'muscle' });
+    expect(leo.last('error')).toEqual({ type: 'error', error: 'reaction_refused' });
+    expect(emma.last('reaction')).toBeUndefined();
+    // Nobody of the duel, no free text
+    sam.send({ type: 'react', playerId: 4, reaction: 'snail' });
+    expect(sam.last('error')).toEqual({ type: 'error', error: 'reaction_refused' });
+    for (const bad of [{ playerId: 2, reaction: 'Tu es nul' }, { playerId: '2', reaction: 'snail' }, { playerId: 2 }]) {
+      sam.received.length = 0;
+      sam.send({ type: 'react', ...bad });
+      expect(sam.last('error')).toEqual({ type: 'error', error: 'invalid_request' });
+    }
+    expect(leo.last('reaction')).toBeUndefined();
+
+    // After the end: the result, nothing more
+    emma.send({ type: 'move', vehicleId: 'v1', delta: 2 });
+    emma.send({ type: 'move', vehicleId: 'target', delta: 4 });
+    sam.send({ type: 'react', playerId: 2, reaction: 'clap' });
+    expect(sam.last('error')).toEqual({ type: 'error', error: 'reaction_refused' });
+
+    // Nor before the game: an open room has no board to react to
+    const zoe = connect('token-zoe');
+    zoe.send({ type: 'create', private: true });
+    const noa = connect('token-noa');
+    noa.send({ type: 'watch', code: zoe.last('duel')!.duel.code });
+    noa.send({ type: 'react', playerId: 4, reaction: 'yawn' });
+    expect(noa.last('error')).toEqual({ type: 'error', error: 'reaction_refused' });
+    expect(zoe.last('reaction')).toBeUndefined();
+  });
+
+  it('a few reactions at most: by spectator, by duel, and one encouragement to a player in a while', async () => {
+    const { connect, started, clock } = setup();
+    const { leo } = await started();
+    const code = leo.last('duel')!.duel.code;
+    const [sam, zoe, noa] = ['token-sam', 'token-zoe', 'token-noa'].map(token => connect(token));
+    for (const spectator of [sam, zoe, noa]) spectator.send({ type: 'watch', code });
+    const relayed = () => leo.received.filter(m => m.type === 'reaction').length;
+
+    for (let i = 0; i < MAX_REACTIONS; i++) sam.send({ type: 'react', playerId: 1, reaction: 'yawn' });
+    expect(relayed()).toBe(MAX_REACTIONS);
+    // One more is dropped, and the connection stays
+    sam.send({ type: 'react', playerId: 1, reaction: 'yawn' });
+    expect(sam.last('error')).toEqual({ type: 'error', error: 'too_many_reactions' });
+    expect(relayed()).toBe(MAX_REACTIONS);
+    expect(sam.closed).toEqual([]);
+
+    // A whole duel: a few in a second, whoever sends them
+    for (let i = 0; i < MAX_DUEL_REACTIONS_PER_SECOND - MAX_REACTIONS; i++) zoe.send({ type: 'react', playerId: 2, reaction: 'fire' });
+    expect(relayed()).toBe(MAX_DUEL_REACTIONS_PER_SECOND);
+    noa.send({ type: 'react', playerId: 2, reaction: 'fire' });
+    expect(noa.last('error')).toEqual({ type: 'error', error: 'too_many_reactions' });
+    clock.now += 1000;
+    noa.send({ type: 'react', playerId: 2, reaction: 'fire' });
+    expect(relayed()).toBe(MAX_DUEL_REACTIONS_PER_SECOND + 1);
+
+    // A busy duel goes on relaying a few each second: the reactions dropped do not count
+    clock.now += REACTIONS_WINDOW_MS;
+    const fans = Array.from({ length: 10 }, (_, i) => connect(`token-fan${i}`));
+    for (const fan of fans) fan.send({ type: 'watch', code });
+    for (let second = 0; second < 3; second++) {
+      const start = relayed();
+      for (let k = 0; k < MAX_DUEL_REACTIONS_PER_SECOND + 2; k++) fans[(second * 12 + k) % fans.length].send({ type: 'react', playerId: 1, reaction: 'popcorn' });
+      expect(relayed() - start).toBe(MAX_DUEL_REACTIONS_PER_SECOND);
+      clock.now += 1000;
+    }
+
+    // Later, Sam reacts again; one encouragement to each player, not two to the same one
+    clock.now += REACTIONS_WINDOW_MS;
+    const before = relayed();
+    sam.send({ type: 'react', playerId: 1, reaction: 'encourage' });
+    sam.send({ type: 'react', playerId: 2, reaction: 'encourage' });
+    sam.send({ type: 'react', playerId: 1, reaction: 'encourage' });
+    expect(sam.last('error')).toEqual({ type: 'error', error: 'too_many_reactions' });
+    expect(relayed()).toBe(before + 2);
+    clock.now += ENCOURAGE_COOLDOWN_MS;
+    sam.send({ type: 'react', playerId: 1, reaction: 'encourage' });
+    expect(relayed()).toBe(before + 3);
+  });
+
 
   it('closes a connection that floods the server, even before saying who it is', () => {
     const { connect, clock } = setup();
@@ -688,7 +862,7 @@ describe('duels over a WebSocket', () => {
 
   it('/info tells the app the server has duels', async () => {
     server = testServer();
-    expect((await server.request('GET', '/info')).body.features).toEqual(['duel', 'ranking_range']);
+    expect((await server.request('GET', '/info')).body.features).toEqual(['duel', 'ranking_range', 'reactions']);
   });
 
   it('two players of the server play a duel', async () => {

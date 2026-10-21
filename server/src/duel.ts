@@ -1,5 +1,8 @@
 import { randomInt } from 'node:crypto';
-import { applyMoves, type Level, type MoveRecord, type Vehicle } from './core';
+import {
+  ENCOURAGE_COOLDOWN_MS, MAX_REACTIONS, REACTION_IDS, REACTIONS_WINDOW_MS, applyMoves, isReactionId,
+  type Level, type MoveRecord, type ReactionId, type Vehicle,
+} from './core';
 import { DIFFICULTIES, type Difficulty } from './config';
 import type { PuzzleSource } from './puzzlePool';
 
@@ -12,8 +15,11 @@ import type { PuzzleSource } from './puzzlePool';
  *   not count). Who got out first waits for the other, unless the other can no longer
  *   do as well; they may leave meanwhile, and find the result when they come back.
  * Other players of the server can watch a duel live (spectators): they see both boards,
- * and play nothing. Each board is drawn with the look of its player (their board theme,
- * car skin and palette in the app), said when they connect. Nothing is stored: a duel lives in memory, for as long as it is played.
+ * and play nothing. Spectators react to a player, and each player to the other one (tease,
+ * cheer, encourage: a closed list, no free text), seen over that player's board by everyone
+ * in the duel whose app knows the reactions (said when connecting). Each board
+ * is drawn with the look of its player (their board theme, car skin and palette in the
+ * app), said when they connect. Nothing is stored: a duel lives in memory, for as long as it is played.
  */
 
 /** Code to join a duel: no 0/O nor 1/I, easy to read out loud */
@@ -44,6 +50,8 @@ export const CREATES_WINDOW_MS = 60_000;
 export const MAX_DUEL_MOVES = 1000;
 /** Spectators of one duel at most: each move goes to each of them */
 export const MAX_SPECTATORS = 50;
+/** Reactions relayed in one duel in a second at most, whoever sends them: each one goes to everyone in it */
+export const MAX_DUEL_REACTIONS_PER_SECOND = 10;
 
 export interface DuelIdentity { id: number; pseudo: string }
 
@@ -88,8 +96,11 @@ export interface DuelConnection {
 }
 
 export type ClientMessage =
-  /** look: absent from apps older than it */
-  | { type: 'auth'; token: string; look?: DuelLook }
+  /**
+   * look: absent from apps older than it. features: the messages the app knows beyond the
+   * first duels ('reactions'); an app sent none it does not know: it would break on them
+   */
+  | { type: 'auth'; token: string; look?: DuelLook; features?: AppFeature[] }
   /** private: only who has the code can join; otherwise the duel is listed for everyone on the server */
   | { type: 'create'; difficulty?: Difficulty; metric?: DuelMetric; private?: boolean }
   | { type: 'join'; code: string }
@@ -97,7 +108,13 @@ export type ClientMessage =
   | { type: 'watch'; code: string }
   | { type: 'move'; vehicleId: string; delta: number }
   | { type: 'leave' }
-  | { type: 'rematch' };
+  | { type: 'rematch' }
+  /** A spectator reacts to one of the two players (playerId), a player to the other one */
+  | { type: 'react'; playerId: number; reaction: ReactionId };
+
+/** What an app knows beyond the first duels, said with auth */
+export type AppFeature = 'reactions';
+const APP_FEATURES: readonly AppFeature[] = ['reactions'];
 
 export type EndReason = 'won' | 'forfeit' | 'disconnected' | 'timeout';
 
@@ -105,6 +122,8 @@ export interface DuelPlayerView {
   id: number; pseudo: string; connected: boolean; moves: MoveRecord[]; wantsRematch: boolean;
   /** null: an app older than the looks, its board is drawn as the viewer's own */
   look: DuelLook | null;
+  /** Their app shows the reactions: false for an app older than them, no use reacting to them */
+  seesReactions: boolean;
 }
 
 /**
@@ -128,6 +147,8 @@ export interface DuelView {
   spectating: boolean;
   /** How many watch it */
   spectators: number;
+  /** The reactions this server relays: a spectator, or a player, may send these */
+  reactions: readonly ReactionId[];
 }
 
 /** A duel in the list of the server: the open ones to join, the ones being played */
@@ -164,10 +185,13 @@ export type ServerMessage =
   | { type: 'ready'; player: DuelIdentity; duel: DuelView | null }
   | { type: 'duel'; duel: DuelView }
   | { type: 'move'; playerId: number; move: MoveRecord }
-  | { type: 'presence'; playerId: number; connected: boolean }
+  /** seesReactions: back with an app that shows the reactions, or not (it may have changed) */
+  | { type: 'presence'; playerId: number; connected: boolean; seesReactions?: boolean }
   | { type: 'rematch'; playerId: number }
   /** Someone started or stopped watching */
   | { type: 'spectators'; count: number }
+  /** A spectator or the other player (from) reacted to a player of the duel (playerId); only to the apps that know it */
+  | { type: 'reaction'; from: DuelIdentity; playerId: number; reaction: ReactionId }
   | { type: 'end'; result: DuelResult; level: Level }
   | { type: 'closed' }
   | { type: 'error'; error: string };
@@ -182,6 +206,8 @@ interface Seat {
   solved: boolean;
   wantsRematch: boolean;
   look: DuelLook | null;
+  /** The app of the player knows the reactions */
+  seesReactions: boolean;
 }
 
 interface Duel {
@@ -203,12 +229,17 @@ interface Duel {
 }
 
 /** Counts events by key in a sliding window: too many, and the next one is refused */
-class WindowLimiter {
-  private readonly hits = new Map<number, number[]>();
+class WindowLimiter<K = number> {
+  private readonly hits = new Map<K, number[]>();
   constructor(private readonly max: number, private readonly windowMs: number) {}
 
+  /** Whether one more event would be accepted now, without recording it */
+  allows(key: K, now: number): boolean {
+    return (this.hits.get(key) ?? []).filter(at => now - at < this.windowMs).length < this.max;
+  }
+
   /** Records an event; false once there were `max` of them in the window */
-  hit(key: number, now: number): boolean {
+  hit(key: K, now: number): boolean {
     const recent = (this.hits.get(key) ?? []).filter(at => now - at < this.windowMs);
     recent.push(now);
     this.hits.set(key, recent);
@@ -254,7 +285,9 @@ function parseMessage(raw: string): ClientMessage | null {
     case 'auth': {
       if (typeof m.token !== 'string' || m.token.length > 200) return null;
       const look = parseLook(m.look);
-      return look ? { type: 'auth', token: m.token, look } : { type: 'auth', token: m.token };
+      // Unknown features (a newer app) are left out; a list that is not one gives none
+      const features = Array.isArray(m.features) ? APP_FEATURES.filter(f => (m.features as unknown[]).includes(f)) : [];
+      return { type: 'auth', token: m.token, ...(look && { look }), features };
     }
     case 'create':
       if (m.difficulty !== undefined && !DIFFICULTIES.includes(m.difficulty as Difficulty)) return null;
@@ -271,6 +304,10 @@ function parseMessage(raw: string): ClientMessage | null {
         ? { type: 'move', vehicleId: m.vehicleId, delta: m.delta as number } : null;
     case 'leave': return { type: 'leave' };
     case 'rematch': return { type: 'rematch' };
+    case 'react':
+      // Only the reactions of the list: an app newer than the server sends only those it relays
+      return Number.isInteger(m.playerId) && isReactionId(m.reaction)
+        ? { type: 'react', playerId: m.playerId as number, reaction: m.reaction } : null;
     default: return null;
   }
 }
@@ -283,8 +320,14 @@ export class Duels {
   private readonly connections = new Map<number, DuelConnection>();
   /** The look of each connected player */
   private readonly looks = new Map<number, DuelLook>();
+  /** The connected players whose app knows the reactions: the others are never sent one */
+  private readonly seeReactions = new Set<number>();
   private readonly wrongCodes = new WindowLimiter(MAX_WRONG_CODES - 1, WRONG_CODES_WINDOW_MS);
   private readonly creates = new WindowLimiter(MAX_CREATES, CREATES_WINDOW_MS);
+  /** Reactions of each spectator, of each duel (by code), and encouragements of a spectator to a player */
+  private readonly reactions = new WindowLimiter(MAX_REACTIONS, REACTIONS_WINDOW_MS);
+  private readonly duelReactions = new WindowLimiter<string>(MAX_DUEL_REACTIONS_PER_SECOND, 1000);
+  private readonly encouragements = new WindowLimiter<string>(1, ENCOURAGE_COOLDOWN_MS);
 
   constructor(private readonly deps: DuelDeps) {}
 
@@ -318,7 +361,7 @@ export class Duels {
         const found = this.deps.authenticate(message.token);
         if (!found || found === 'banned') return refuse(4001, found === 'banned' ? 'banned' : 'unauthorized');
         player = found;
-        this.attach(player, connection, message.look ?? null);
+        this.attach(player, connection, message.look ?? null, message.features?.includes('reactions') ?? false);
         return;
       }
 
@@ -327,6 +370,11 @@ export class Duels {
         const error = message.type === 'join' ? this.join(player, message.code) : this.watch(player, message.code);
         // Counted by player, not by connection: connecting again does not give more tries
         if (error === 'duel_not_found' && !this.wrongCodes.hit(player.id, now)) return refuse(4029, 'rate_limited');
+        if (error) connection.send({ type: 'error', error });
+        return;
+      }
+      if (message.type === 'react') {
+        const error = this.react(player, message.playerId, message.reaction, now);
         if (error) connection.send({ type: 'error', error });
         return;
       }
@@ -361,6 +409,7 @@ export class Duels {
     const connection = this.connections.get(playerId);
     this.connections.delete(playerId);
     this.looks.delete(playerId);
+    this.seeReactions.delete(playerId);
     connection?.close(4003, reason);
   }
 
@@ -403,6 +452,9 @@ export class Duels {
     const now = this.deps.now();
     this.wrongCodes.prune(now);
     this.creates.prune(now);
+    this.reactions.prune(now);
+    this.duelReactions.prune(now);
+    this.encouragements.prune(now);
     for (const duel of [...this.duels.values()]) {
       if (duel.status === 'waiting' && now - duel.createdAt > WAITING_TTL_MS) {
         this.close(duel);
@@ -431,31 +483,37 @@ export class Duels {
 
   // ── Connections ────────────────────────────────────────────────────────────
 
-  private attach(player: DuelIdentity, connection: DuelConnection, look: DuelLook | null) {
+  private attach(player: DuelIdentity, connection: DuelConnection, look: DuelLook | null, seesReactions: boolean) {
     // The same player on another phone (or a reconnection): the old connection goes
     const previous = this.connections.get(player.id);
     if (previous && previous !== connection) previous.close(4000, 'replaced');
     this.connections.set(player.id, connection);
     if (look) this.looks.set(player.id, look);
     else this.looks.delete(player.id);
+    if (seesReactions) this.seeReactions.add(player.id);
+    else this.seeReactions.delete(player.id);
 
     const duel = this.byPlayer.get(player.id);
     if (!duel) return connection.send({ type: 'ready', player, duel: null });
     const seat = this.seat(duel, player.id)!;
     seat.connection = connection;
-    // The pseudo, and the look, may have changed in the meantime
+    // The pseudo, the look and the app may have changed in the meantime
     seat.player = player;
     seat.look = look;
+    // Another app (updated, or another phone): the others know whether to react to them
+    const otherApp = seat.seesReactions !== seesReactions;
+    seat.seesReactions = seesReactions;
     const wasAway = seat.disconnectedAt !== null;
     seat.disconnectedAt = null;
     connection.send({ type: 'ready', player, duel: this.view(duel, player.id) });
-    if (wasAway) this.broadcast(duel, { type: 'presence', playerId: player.id, connected: true }, player.id);
+    if (wasAway || otherApp) this.broadcast(duel, { type: 'presence', playerId: player.id, connected: true, seesReactions }, player.id);
   }
 
   private detach(playerId: number, connection: DuelConnection) {
     if (this.connections.get(playerId) !== connection) return;
     this.connections.delete(playerId);
     this.looks.delete(playerId);
+    this.seeReactions.delete(playerId);
     // A spectator watches again once connected again (the app asks)
     this.unwatch(playerId);
     const duel = this.byPlayer.get(playerId);
@@ -476,7 +534,7 @@ export class Duels {
     return !!duel && (duel.status === 'preparing' || duel.status === 'playing');
   }
 
-  private handle(player: DuelIdentity, message: Exclude<ClientMessage, { type: 'auth' | 'join' | 'watch' }>): string | null {
+  private handle(player: DuelIdentity, message: Exclude<ClientMessage, { type: 'auth' | 'join' | 'watch' | 'react' }>): string | null {
     const duel = this.byPlayer.get(player.id);
     switch (message.type) {
       case 'create': {
@@ -595,6 +653,27 @@ export class Duels {
     return null;
   }
 
+  /**
+   * A spectator reacts to one of the players, a player to the other one: everyone in the
+   * duel sees it over that player's board. Only during the game; a few at most, the others
+   * are dropped.
+   */
+  private react(from: DuelIdentity, playerId: number, reaction: ReactionId, now: number): string | null {
+    // Watching, or playing (not to themselves)
+    const duel = this.watching.get(from.id) ?? this.byPlayer.get(from.id);
+    if (!duel || duel.status !== 'playing' || playerId === from.id || !this.seat(duel, playerId)) return 'reaction_refused';
+    // A busy duel: dropped without counting, neither for the duel (it would never relay again) nor for the sender
+    if (!this.duelReactions.allows(duel.code, now)) return 'too_many_reactions';
+    if (reaction === 'encourage' && !this.encouragements.hit(`${from.id}:${playerId}`, now)) return 'too_many_reactions';
+    if (!this.reactions.hit(from.id, now)) return 'too_many_reactions';
+    this.duelReactions.hit(duel.code, now);
+    // Never to an app older than the reactions: it does not know the message
+    const message: ServerMessage = { type: 'reaction', from, playerId, reaction };
+    for (const seat of duel.seats) if (seat.seesReactions) seat.connection?.send(message);
+    for (const id of duel.spectators) if (this.seeReactions.has(id)) this.connections.get(id)?.send(message);
+    return null;
+  }
+
   /** No longer watching (left, gone, or playing a duel of their own) */
   private unwatch(playerId: number) {
     const duel = this.watching.get(playerId);
@@ -609,7 +688,7 @@ export class Duels {
   private newSeat(player: DuelIdentity): Seat {
     return {
       player, connection: this.connections.get(player.id) ?? null, disconnectedAt: null, vehicles: [], moves: [], solved: false,
-      wantsRematch: false, look: this.looks.get(player.id) ?? null,
+      wantsRematch: false, look: this.looks.get(player.id) ?? null, seesReactions: this.seeReactions.has(player.id),
     };
   }
 
@@ -732,7 +811,10 @@ export class Duels {
   }
 
   private playerView(seat: Seat): DuelPlayerView {
-    return { ...seat.player, connected: seat.connection !== null, moves: seat.moves, wantsRematch: seat.wantsRematch, look: seat.look };
+    return {
+      ...seat.player, connected: seat.connection !== null, moves: seat.moves, wantsRematch: seat.wantsRematch, look: seat.look,
+      seesReactions: seat.seesReactions,
+    };
   }
 
   private view(duel: Duel, playerId: number): DuelView {
@@ -754,6 +836,7 @@ export class Duels {
       result: duel.result,
       spectating: !this.seat(duel, playerId),
       spectators: duel.spectators.size,
+      reactions: REACTION_IDS,
     };
   }
 

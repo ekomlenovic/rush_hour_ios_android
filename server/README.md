@@ -122,7 +122,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 
 | Route | Rôle |
 |---|---|
-| `GET /info` | nom, `apiVersion`, `minAppVersion`, `features` (`["duel", "ranking_range"]`) |
+| `GET /info` | nom, `apiVersion`, `minAppVersion`, `features` (`["duel", "ranking_range", "reactions"]`) |
 | `POST /join` `{ inviteCode, pseudo }` | crée un compte → `{ token, recoveryCode, player }` |
 | `POST /recover` `{ recoveryCode }` | nouveau jeton pour un compte (l'ancien téléphone est déconnecté) |
 | `GET /me`, `PATCH /me` `{ pseudo }`, `DELETE /me` | mon compte ; supprimer efface aussi mes parties |
@@ -151,7 +151,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 
 ### Duels (WebSocket `/api/v1/duel`)
 
-Messages JSON. Le premier est `{ "type": "auth", "token": "…" }` → `{ type: "ready", player, duel }` (`duel` : celui en cours, pour reprendre après une coupure, ou `null`).
+Messages JSON. Le premier est `{ "type": "auth", "token": "…", "look"?, "features"? }` → `{ type: "ready", player, duel }` (`duel` : celui en cours, pour reprendre après une coupure, ou `null`). `features` : ce que l'app connaît en plus des premiers duels (`["reactions"]`) ; **le serveur n'envoie jamais à une app un message qu'elle n'a pas annoncé** (la 2.0.3 plantait sur un message inconnu).
 
 | Envoyé par l'app | Effet |
 |---|---|
@@ -161,8 +161,9 @@ Messages JSON. Le premier est `{ "type": "auth", "token": "…" }` → `{ type: 
 | `{ type: "move", vehicleId, delta }` | un coup, vérifié puis envoyé aux deux : `{ type: "move", playerId, move }` (temps du serveur) |
 | `{ type: "leave" }` | quitte le duel (en pleine partie : défaite) |
 | `{ type: "rematch" }` | revanche, lancée quand les deux l'ont demandée |
+| `{ type: "react", playerId, reaction }` | pendant la partie, un spectateur réagit à un des deux joueurs, un joueur à l'autre : `reaction` est un identifiant de la liste fermée (`duel.reactions`, voir `utils/multi/reactions.ts`), jamais du texte libre ; envoyé à tous ceux du duel dont l'app a annoncé `reactions` : `{ type: "reaction", from, playerId, reaction }`. Refusé hors partie, à soi-même ou à quelqu'un d'autre (`reaction_refused`) ; 8 par personne en 10 s (l'app en envoie 3 d'affilée puis fait une pause), 10 par duel et par seconde, un `encourage` d'une personne à un même joueur toutes les 30 s (`too_many_reactions`, la connexion reste ouverte ; refusée parce que le duel est trop animé, elle ne compte pas) |
 
-Le serveur envoie aussi `duel` (tout le duel : statut `waiting`, `preparing`, `playing`, `over`, puzzle, `startsAt`, coups des deux joueurs), `presence` (adversaire connecté ou non), `spectators` (nombre de spectateurs), `end` (`winnerId`, `reason` : `won`, `forfeit`, `disconnected`, `timeout` ; l'optimum, `duelId` pour le replay et `score` des deux joueurs l'un contre l'autre), `closed` et `error`.
+Le serveur envoie aussi `duel` (tout le duel : statut `waiting`, `preparing`, `playing`, `over`, puzzle, `startsAt`, coups des deux joueurs et si leur app montre les réactions, `seesReactions`, `reactions` que le serveur relaie), `presence` (adversaire connecté ou non, et `seesReactions` quand il revient avec une autre app), `spectators` (nombre de spectateurs), `reaction` (réaction d'un spectateur ou de l'autre joueur, seulement aux apps qui l'ont annoncé), `end` (`winnerId`, `reason` : `won`, `forfeit`, `disconnected`, `timeout` ; l'optimum, `duelId` pour le replay et `score` des deux joueurs l'un contre l'autre), `closed` et `error`.
 
 ## Développement
 
