@@ -214,6 +214,15 @@ export default function GameScreen() {
 
   const playTime = useActivePlayTime(!isLoading && !!currentLevel && !won && !isChallengeCompleted);
 
+  // A daily left open past midnight can still be won: while it is open, its day is not missed (see docs/GAME_DESIGN.md)
+  const setOpenDailyDate = useGameStore(s => s.setOpenDailyDate);
+  const openDaily = challengeKind === 'daily' && !isLoading && !isChallengeCompleted ? params.date! : null;
+  useEffect(() => {
+    if (!openDaily) return;
+    setOpenDailyDate(openDaily);
+    return () => setOpenDailyDate(null);
+  }, [openDaily, setOpenDailyDate]);
+
   const handleMoveEnd = useCallback((vehicleId: string, newRow: number, newCol: number) => {
     if (won || isChallengeCompleted) return false;
     // Refused when another vehicle took the room meanwhile (two fingers): the block goes back

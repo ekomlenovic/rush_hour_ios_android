@@ -40,6 +40,19 @@ describe('opening the app', () => {
     });
   });
 
+  it("keeps yesterday's daily still open on the game screen as a daily, until it is closed", () => {
+    setToday('2026-11-20', 0);
+    useGameStore.setState({ savedStates: { 'daily-2026-11-19': save(3) } });
+    state().setOpenDailyDate('2026-11-19');
+    state().recordAppOpen();
+    // Left open past midnight, it can still be won: not moved to the archives under the player
+    expect(state().savedStates).toEqual({ 'daily-2026-11-19': save(3) });
+
+    state().setOpenDailyDate(null);
+    state().recordAppOpen();
+    expect(state().savedStates).toEqual({ 'archive-2026-11-19': save(3) });
+  });
+
   it('forgets the archives out of reach (more than 90 days ago)', () => {
     setToday('2027-02-01');
     useGameStore.setState({ savedStates: { 'archive-2026-10-14': save(1), 'archive-2026-12-01': save(2) } });
