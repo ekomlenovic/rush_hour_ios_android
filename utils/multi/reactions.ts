@@ -42,10 +42,30 @@ export const isReactionId = (id: unknown): id is ReactionId => typeof id === 'st
 
 export const reactionOf = (id: ReactionId): typeof REACTIONS[number] => REACTIONS.find(r => r.id === id)!;
 
-/** Reactions of one person (spectator or player) in REACTIONS_WINDOW_MS at most, on the server: the others are dropped */
-export const MAX_REACTIONS = 5;
+/**
+ * The phone sends REACTION_BURST reactions in a row, then pauses: one more each time the
+ * first of them is REACTION_BURST_WINDOW_MS old. One every 2 s never waits.
+ */
+export const REACTION_BURST = 3;
+export const REACTION_BURST_WINDOW_MS = 6000;
+/**
+ * Reactions of one person (spectator or player) in REACTIONS_WINDOW_MS at most, on the server:
+ * the others are dropped. Above what the phone sends, whatever the delays of the network
+ * (REACTION_BURST in REACTION_BURST_WINDOW_MS: 6 in 10 s at most)
+ */
+export const MAX_REACTIONS = 8;
 export const REACTIONS_WINDOW_MS = 10_000;
 /** One encouragement of a person to a same player in this time at most: it stays a real word of support */
 export const ENCOURAGE_COOLDOWN_MS = 30_000;
-/** Between two reactions of the phone: under the limit of the server, whatever the delays of the network */
-export const REACTION_COOLDOWN_MS = 2500;
+
+/** The reactions sent lately by the phone (times, oldest first) that still count for the pause */
+export const recentReactions = (sentAt: readonly number[], now: number) => sentAt.filter(at => now - at < REACTION_BURST_WINDOW_MS);
+
+/** How many the phone may still send before the pause */
+export const reactionsLeft = (sentAt: readonly number[], now: number) => Math.max(0, REACTION_BURST - recentReactions(sentAt, now).length);
+
+/** Time before the next one may be sent: 0 if one is left */
+export function reactionPauseMs(sentAt: readonly number[], now: number): number {
+  const recent = recentReactions(sentAt, now);
+  return recent.length < REACTION_BURST ? 0 : recent[recent.length - REACTION_BURST] + REACTION_BURST_WINDOW_MS - now;
+}
