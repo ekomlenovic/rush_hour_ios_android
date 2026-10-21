@@ -279,6 +279,7 @@ Mode **totalement optionnel** (#46). Chacun peut héberger un serveur Docker (`s
 | Victoire envoyée comme **journal de coups horodatés**, **rejoué** par le serveur avec les règles de l'app | `applyMoves` (`utils/moveLog.ts`), `POST /challenge/submit` |
 | Temps officiel = temps du **serveur** ; le temps du téléphone et le temps hors de l'app sont envoyés comme signaux | `submission` (`utils/multi/game.ts`) |
 | **Délai de grâce** (`GRACE_PERIOD`) : une partie commencée avant la sortie suivante peut être finie après, sinon elle est « non terminée » | `Challenges.deadline` |
+| La carte du défi dit **où en est le joueur** (À jouer, En cours, Réussi, Abandonné, Non terminé, En préparation) ; avant de commencer, les règles en bref (un seul essai et chrono qui ne s'arrête pas, pas d'aide, coups puis temps) ; une fois réussi, **sa place du jour et ses points**, qui peuvent encore changer. Le « ? » et « Comment ça marche ? » ouvrent toutes les règles : heure de sortie, essai unique, classement, points de la semaine et du mois, délai de grâce | `app/multi/index.tsx`, `ChallengeRulesSheet` (`components/multi/ChallengeRulesSheet.tsx`) |
 
 ### Duel 1v1 en temps réel
 
