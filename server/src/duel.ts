@@ -12,7 +12,8 @@ import type { PuzzleSource } from './puzzlePool';
  *   not count). Who got out first waits for the other, unless the other can no longer
  *   do as well; they may leave meanwhile, and find the result when they come back.
  * Other players of the server can watch a duel live (spectators): they see both boards,
- * and play nothing. Nothing is stored: a duel lives in memory, for as long as it is played.
+ * and play nothing. Each board is drawn with the look of its player (their board theme,
+ * car skin and palette in the app), said when they connect. Nothing is stored: a duel lives in memory, for as long as it is played.
  */
 
 /** Code to join a duel: no 0/O nor 1/I, easy to read out loud */
@@ -45,6 +46,9 @@ export const MAX_DUEL_MOVES = 1000;
 export const MAX_SPECTATORS = 50;
 
 export interface DuelIdentity { id: number; pseudo: string }
+
+/** How a player's board looks in the app (ids of its cosmetics): the others see their board so */
+export interface DuelLook { board: string; skin: string; palette: string }
 
 /** What decides the winner of a duel */
 export type DuelMetric = 'time' | 'moves';
@@ -84,7 +88,8 @@ export interface DuelConnection {
 }
 
 export type ClientMessage =
-  | { type: 'auth'; token: string }
+  /** look: absent from apps older than it */
+  | { type: 'auth'; token: string; look?: DuelLook }
   /** private: only who has the code can join; otherwise the duel is listed for everyone on the server */
   | { type: 'create'; difficulty?: Difficulty; metric?: DuelMetric; private?: boolean }
   | { type: 'join'; code: string }
@@ -96,7 +101,11 @@ export type ClientMessage =
 
 export type EndReason = 'won' | 'forfeit' | 'disconnected' | 'timeout';
 
-export interface DuelPlayerView { id: number; pseudo: string; connected: boolean; moves: MoveRecord[]; wantsRematch: boolean }
+export interface DuelPlayerView {
+  id: number; pseudo: string; connected: boolean; moves: MoveRecord[]; wantsRematch: boolean;
+  /** null: an app older than the looks, its board is drawn as the viewer's own */
+  look: DuelLook | null;
+}
 
 /**
  * The whole duel as one player sees it: sent at the start and when they come back.
@@ -172,6 +181,7 @@ interface Seat {
   /** Red car out (duel on moves: waiting for the other) */
   solved: boolean;
   wantsRematch: boolean;
+  look: DuelLook | null;
 }
 
 interface Duel {
@@ -220,6 +230,17 @@ export function newDuelCode(): string {
 /** 'ab-c d3' → 'ABCD3': what a player typed */
 export const normalizeDuelCode = (input: string) => input.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
+/** An id of a cosmetic: a short word (the app draws what it does not know as the classic look) */
+const LOOK_ID = /^[a-z0-9_-]{1,24}$/;
+
+/** The look said by the app, or null if it is not one (never a reason to refuse the player) */
+function parseLook(data: unknown): DuelLook | null {
+  if (!data || typeof data !== 'object') return null;
+  const { board, skin, palette } = data as Record<string, unknown>;
+  const ok = (id: unknown): id is string => typeof id === 'string' && LOOK_ID.test(id);
+  return ok(board) && ok(skin) && ok(palette) ? { board, skin, palette } : null;
+}
+
 function parseMessage(raw: string): ClientMessage | null {
   let data: unknown;
   try {
@@ -230,7 +251,11 @@ function parseMessage(raw: string): ClientMessage | null {
   if (!data || typeof data !== 'object') return null;
   const m = data as Record<string, unknown>;
   switch (m.type) {
-    case 'auth': return typeof m.token === 'string' && m.token.length <= 200 ? { type: 'auth', token: m.token } : null;
+    case 'auth': {
+      if (typeof m.token !== 'string' || m.token.length > 200) return null;
+      const look = parseLook(m.look);
+      return look ? { type: 'auth', token: m.token, look } : { type: 'auth', token: m.token };
+    }
     case 'create':
       if (m.difficulty !== undefined && !DIFFICULTIES.includes(m.difficulty as Difficulty)) return null;
       if (m.metric !== undefined && !DUEL_METRICS.includes(m.metric as DuelMetric)) return null;
@@ -256,6 +281,8 @@ export class Duels {
   /** The duel each spectator watches */
   private readonly watching = new Map<number, Duel>();
   private readonly connections = new Map<number, DuelConnection>();
+  /** The look of each connected player */
+  private readonly looks = new Map<number, DuelLook>();
   private readonly wrongCodes = new WindowLimiter(MAX_WRONG_CODES - 1, WRONG_CODES_WINDOW_MS);
   private readonly creates = new WindowLimiter(MAX_CREATES, CREATES_WINDOW_MS);
 
@@ -291,7 +318,7 @@ export class Duels {
         const found = this.deps.authenticate(message.token);
         if (!found || found === 'banned') return refuse(4001, found === 'banned' ? 'banned' : 'unauthorized');
         player = found;
-        this.attach(player, connection);
+        this.attach(player, connection, message.look ?? null);
         return;
       }
 
@@ -333,6 +360,7 @@ export class Duels {
     if (duel) this.leave(duel, playerId);
     const connection = this.connections.get(playerId);
     this.connections.delete(playerId);
+    this.looks.delete(playerId);
     connection?.close(4003, reason);
   }
 
@@ -403,18 +431,21 @@ export class Duels {
 
   // ── Connections ────────────────────────────────────────────────────────────
 
-  private attach(player: DuelIdentity, connection: DuelConnection) {
+  private attach(player: DuelIdentity, connection: DuelConnection, look: DuelLook | null) {
     // The same player on another phone (or a reconnection): the old connection goes
     const previous = this.connections.get(player.id);
     if (previous && previous !== connection) previous.close(4000, 'replaced');
     this.connections.set(player.id, connection);
+    if (look) this.looks.set(player.id, look);
+    else this.looks.delete(player.id);
 
     const duel = this.byPlayer.get(player.id);
     if (!duel) return connection.send({ type: 'ready', player, duel: null });
     const seat = this.seat(duel, player.id)!;
     seat.connection = connection;
-    // The pseudo may have changed in the meantime
+    // The pseudo, and the look, may have changed in the meantime
     seat.player = player;
+    seat.look = look;
     const wasAway = seat.disconnectedAt !== null;
     seat.disconnectedAt = null;
     connection.send({ type: 'ready', player, duel: this.view(duel, player.id) });
@@ -424,6 +455,7 @@ export class Duels {
   private detach(playerId: number, connection: DuelConnection) {
     if (this.connections.get(playerId) !== connection) return;
     this.connections.delete(playerId);
+    this.looks.delete(playerId);
     // A spectator watches again once connected again (the app asks)
     this.unwatch(playerId);
     const duel = this.byPlayer.get(playerId);
@@ -577,7 +609,7 @@ export class Duels {
   private newSeat(player: DuelIdentity): Seat {
     return {
       player, connection: this.connections.get(player.id) ?? null, disconnectedAt: null, vehicles: [], moves: [], solved: false,
-      wantsRematch: false,
+      wantsRematch: false, look: this.looks.get(player.id) ?? null,
     };
   }
 
@@ -700,7 +732,7 @@ export class Duels {
   }
 
   private playerView(seat: Seat): DuelPlayerView {
-    return { ...seat.player, connected: seat.connection !== null, moves: seat.moves, wantsRematch: seat.wantsRematch };
+    return { ...seat.player, connected: seat.connection !== null, moves: seat.moves, wantsRematch: seat.wantsRematch, look: seat.look };
   }
 
   private view(duel: Duel, playerId: number): DuelView {

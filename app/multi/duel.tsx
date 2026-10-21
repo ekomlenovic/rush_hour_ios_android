@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, Modal, Share,
   AccessibilityInfo, useWindowDimensions, type LayoutChangeEvent,
@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { haptics, Haptics } from '@/utils/haptics';
 import { RFValue } from '@/utils/responsive';
 import { formatDuration } from '@/utils/date';
-import { fixedColors, useTheme, type UiColors } from '@/theme';
+import { fixedColors, toBoardLook, useTheme, type UiColors } from '@/theme';
 import Board from '@/components/Board';
 import MultiHeader from '@/components/multi/MultiHeader';
 import DuelPlayerBar from '@/components/multi/DuelPlayerBar';
@@ -307,6 +307,9 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
     : null;
   const firstAway = duel.spectating && !duel.me.connected;
   const outWaiting = duel.metric === 'moves' && duel.status === 'playing' && !duel.spectating && won;
+  // Each board as its player sees it; mine as I do
+  const opponentLook = useMemo(() => toBoardLook(duel.opponent?.look), [duel.opponent?.look]);
+  const firstLook = useMemo(() => (duel.spectating ? toBoardLook(duel.me.look) : undefined), [duel.spectating, duel.me.look]);
 
   return (
     <View style={styles.arena} onLayout={onLayout}>
@@ -322,6 +325,7 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
               onMoveEnd={noop}
               readOnly
               size={opponentSize}
+              look={opponentLook}
             />
           </View>
 
@@ -367,6 +371,7 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
               onMoveEnd={duel.spectating ? noop : onMove}
               readOnly={duel.spectating || countdown > 0 || won || duel.status !== 'playing'}
               size={mySize}
+              look={firstLook}
             />
             {countdown > 0 && (
               <View style={[StyleSheet.absoluteFill, styles.countdown]} pointerEvents="none">
