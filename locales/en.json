@@ -1431,6 +1431,35 @@
       "see_result": "Result",
       "over_short": "finished"
     },
+    "reactions": {
+      "names": {
+        "snail": "Snail",
+        "yawn": "Yawn",
+        "sleep": "Sleepy",
+        "popcorn": "Popcorn",
+        "eyes": "Watching you",
+        "monocle": "Hmm, interesting",
+        "grimace": "Yikes",
+        "pinch": "So close",
+        "hourglass": "Time flies",
+        "peek": "Can't watch",
+        "clap": "Bravo",
+        "fire": "On fire",
+        "muscle": "Stay strong",
+        "rocket": "Rocket",
+        "encourage": "Encouragement"
+      },
+      "send_a11y": "{{reaction}} for {{pseudo}}",
+      "target_a11y": "React to {{pseudo}}",
+      "encourage": "Cheer on",
+      "encouraged": "Cheered",
+      "encourage_a11y": "Cheer {{pseudo}} on",
+      "encouraged_a11y": "You cheered {{pseudo}} on, you can again in a moment",
+      "encourages_you": "{{pseudo}} is cheering you on!",
+      "you_encourage": "You cheer {{pseudo}} on",
+      "encourages": "{{from}} cheers {{pseudo}} on",
+      "show_a11y": "Spectator reactions"
+    },
     "errors": {
       "network": "The server does not answer. Check your connection and the server address.",
       "timeout": "The server takes too long to answer. Try again.",
@@ -1477,6 +1506,8 @@
       "duel_replaced": "Your account now plays on another phone: the duel goes on there.",
       "puzzle_unavailable": "The server could not prepare a puzzle for this duel. Try again, or pick another level.",
       "too_many_spectators": "Too many people are already watching this duel. Try again later.",
+      "reaction_refused": "Only a spectator can react, during the game.",
+      "too_many_reactions": "Easy! Wait a little before reacting again.",
       "unknown": "Something unexpected happened."
     }
   },

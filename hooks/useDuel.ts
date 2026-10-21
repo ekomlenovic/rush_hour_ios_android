@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import type { ServerAccount } from '@/store/multiStore';
 import { useGameStore } from '@/store/gameStore';
 import { multiApi } from '@/utils/multi/api';
+import type { ReactionId } from '@/utils/multi/reactions';
 import {
   duelReducer, duelSocketUrl, initialDuelState, myMove,
   type DuelClientMessage, type DuelDifficulty, type DuelMetric, type DuelServerMessage, type DuelState,
@@ -23,6 +24,8 @@ export interface DuelControls {
   move: (vehicleId: string, row: number, col: number) => boolean;
   leave: () => void;
   rematch: () => void;
+  /** A spectator reacts to a player of the duel watched */
+  react: (playerId: number, reaction: ReactionId) => void;
   clearError: () => void;
 }
 
@@ -146,6 +149,7 @@ export function useDuel(account: ServerAccount | null): DuelControls {
       dispatch({ type: 'left' });
     }, [send]),
     rematch: useCallback(() => send({ type: 'rematch' }), [send]),
+    react: useCallback((playerId: number, reaction: ReactionId) => send({ type: 'react', playerId, reaction }), [send]),
     clearError: useCallback(() => dispatch({ type: 'clear_error' }), []),
   };
 }
