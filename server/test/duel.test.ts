@@ -17,6 +17,8 @@ const PLAYERS: Record<string, { id: number; pseudo: string }> = {
   'token-sam': { id: 3, pseudo: 'Sam' },
   'token-zoe': { id: 4, pseudo: 'Zoé' },
   'token-noa': { id: 5, pseudo: 'Noa' },
+  // A crowd, to watch a busy duel
+  ...Object.fromEntries(Array.from({ length: 10 }, (_, i) => [`token-fan${i}`, { id: 200 + i, pseudo: `Fan${i}` }])),
 };
 
 /** Lets the generation of the puzzle (a promise) finish */
@@ -366,7 +368,7 @@ describe('duels', () => {
     clock.now += RECONNECT_GRACE_MS - 1000;
     const back = connect('token-leo');
     expect(back.last('ready')!.duel).toMatchObject({ status: 'playing', me: { moves: [{ vehicleId: 'v1', delta: 2 }] } });
-    expect(emma.last('presence')).toEqual({ type: 'presence', playerId: 1, connected: true });
+    expect(emma.last('presence')).toEqual({ type: 'presence', playerId: 1, connected: true, seesReactions: true });
     back.send({ type: 'move', vehicleId: 'target', delta: 4 });
     expect(emma.last('end')!.result.winnerId).toBe(1);
   });
@@ -603,12 +605,18 @@ describe('duels', () => {
     expect(emma.received.filter(m => m.type === 'reaction')).toHaveLength(3);
     expect(zoe.received.filter(m => m.type === 'reaction')).toHaveLength(3);
 
-    // Back with the new app: sent again
+    // Back with the new app: sent again, and the others know it
     leo.disconnect();
     const back = connect('token-leo');
     expect(back.last('ready')!.duel).toMatchObject({ me: { seesReactions: true } });
+    expect(emma.last('presence')).toEqual({ type: 'presence', playerId: 1, connected: true, seesReactions: true });
     zoe.send({ type: 'react', playerId: 1, reaction: 'fire' });
     expect(back.last('reaction')).toMatchObject({ reaction: 'fire' });
+    // The old app again, on another phone, replacing the connection at once: said too
+    const oldPhone = connect('token-leo', { older: true });
+    expect(emma.last('presence')).toEqual({ type: 'presence', playerId: 1, connected: true, seesReactions: false });
+    emma.send({ type: 'react', playerId: 1, reaction: 'snail' });
+    expect(oldPhone.received.map(m => m.type)).not.toContain('reaction');
     // Features it does not know, or a list that is not one, are not a reason to refuse the app
     const newer = connect();
     newer.send({ type: 'auth', token: 'token-noa', features: ['reactions', 'holograms'] });
@@ -679,6 +687,17 @@ describe('duels', () => {
     clock.now += 1000;
     noa.send({ type: 'react', playerId: 2, reaction: 'fire' });
     expect(relayed()).toBe(MAX_DUEL_REACTIONS_PER_SECOND + 1);
+
+    // A busy duel goes on relaying a few each second: the reactions dropped do not count
+    clock.now += REACTIONS_WINDOW_MS;
+    const fans = Array.from({ length: 10 }, (_, i) => connect(`token-fan${i}`));
+    for (const fan of fans) fan.send({ type: 'watch', code });
+    for (let second = 0; second < 3; second++) {
+      const start = relayed();
+      for (let k = 0; k < MAX_DUEL_REACTIONS_PER_SECOND + 2; k++) fans[(second * 12 + k) % fans.length].send({ type: 'react', playerId: 1, reaction: 'popcorn' });
+      expect(relayed() - start).toBe(MAX_DUEL_REACTIONS_PER_SECOND);
+      clock.now += 1000;
+    }
 
     // Later, Sam reacts again; one encouragement to each player, not two to the same one
     clock.now += REACTIONS_WINDOW_MS;

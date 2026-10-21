@@ -1462,7 +1462,7 @@
       "encourages_you": "{{pseudo}} is cheering you on!",
       "you_encourage": "You cheer {{pseudo}} on",
       "encourages": "{{from}} cheers {{pseudo}} on",
-      "show_a11y": "Spectator reactions"
+      "show_a11y": "Show reactions"
     },
     "errors": {
       "network": "The server does not answer. Check your connection and the server address.",

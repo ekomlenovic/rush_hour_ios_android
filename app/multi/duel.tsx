@@ -18,15 +18,15 @@ import MultiHeader from '@/components/multi/MultiHeader';
 import DuelPlayerBar from '@/components/multi/DuelPlayerBar';
 import {
   REACTION_PICKER_HEIGHT, REACTION_TRAY_HEIGHT, ReactionOverlay, ReactionPicker, ReactionTray, useReactionSender,
+  type ReactionSender,
 } from '@/components/multi/DuelReactions';
 import { multiErrorMessage } from '@/components/multi/errors';
 import { selectActiveAccount, useMultiStore } from '@/store/multiStore';
 import { useDuel } from '@/hooks/useDuel';
 import {
   DUEL_DIFFICULTIES, DUEL_METRICS, countdownMs, duelElapsedMs, iHaveWon, normalizeDuelCode, opponentHasWon, outcome, reactionsFor, winnerOf,
-  type Duel, type DuelDifficulty, type DuelMetric, type DuelReaction, type DuelSide, type HeadToHead,
+  type Duel, type DuelDifficulty, type DuelMetric, type DuelSide, type HeadToHead,
 } from '@/utils/multi/duel';
-import type { ReactionId } from '@/utils/multi/reactions';
 
 /** Room for the two player bars and the clock around the boards */
 const BARS_HEIGHT = RFValue(150);
@@ -54,6 +54,8 @@ export default function DuelScreen() {
   const blockedPlayers = useMultiStore(s => (account ? s.blocked[account.url] : undefined));
   const blocked = useMemo(() => (blockedPlayers ?? []).map(p => p.playerId), [blockedPlayers]);
   const [now, setNow] = useState(Date.now());
+  // The waits between two reactions outlive a game: the server keeps its own through the rematches
+  const sender = useReactionSender(react, now);
 
   // What the screen was opened for, asked once connected (unless a duel is already going on)
   const [asked, setAsked] = useState(false);
@@ -175,7 +177,7 @@ export default function DuelScreen() {
         myId={state.player?.id ?? null}
         onMove={move}
         onLeave={goBack}
-        onReact={react}
+        sender={sender}
       />
     );
   }
@@ -305,8 +307,8 @@ interface ArenaProps {
   onMove: (vehicleId: string, row: number, col: number) => boolean | void;
   /** Out in a duel on moves: leave, the result waits */
   onLeave: () => void;
-  /** A reaction to a player: either one when watching, the other one when playing */
-  onReact: (playerId: number, reaction: ReactionId) => void;
+  /** Sends a reaction to a player: either one when watching, the other one when playing */
+  sender: ReactionSender;
 }
 
 /**
@@ -316,7 +318,7 @@ interface ArenaProps {
  * row over the board of the other one, never over mine. The reactions show over the board
  * of the player they are aimed at; a player may hide them.
  */
-function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, onReact }: ArenaProps) {
+function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sender }: ArenaProps) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -352,7 +354,6 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, onR
   // Playing: to the other one, if their app shows them, from a row over their board
   const canReact = !duel.spectating && duel.reactions.length > 0 && duel.status === 'playing' && !!opponent?.seesReactions;
   const [picking, setPicking] = useState(false);
-  const sender = useReactionSender(onReact, now);
   useEffect(() => {
     if (!canReact) setPicking(false);
   }, [canReact]);
@@ -363,16 +364,20 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, onR
   // A player may hide the reactions, for this duel
   const [muted, setMuted] = useState(false);
   const canMute = !duel.spectating && duel.reactions.length > 0 && (canReact || duel.spectators > 0 || duel.lastReactions.length > 0);
-  const shown = (playerId: number) => (muted ? [] : reactionsFor(duel, playerId, now, blocked));
-  // An encouragement for me is said (not the emojis: too many to listen to while playing)
-  const lastReaction = duel.lastReactions[duel.lastReactions.length - 1];
-  const announced = useRef<DuelReaction | undefined>(lastReaction);
+  // Only during the game: the clock of the screen stops at the end, a reaction would stay there
+  const shown = (playerId: number) => (muted || duel.status !== 'playing' ? [] : reactionsFor(duel, playerId, now, blocked));
+  // An encouragement for me is said (not the emojis: too many to listen to while playing),
+  // even when other reactions came with it
+  const announced = useRef({ code: duel.code, seq: duel.lastReactions[duel.lastReactions.length - 1]?.seq ?? 0 });
   useEffect(() => {
-    if (!lastReaction || announced.current === lastReaction) return;
-    announced.current = lastReaction;
-    if (lastReaction.reaction !== 'encourage' || muted || duel.spectating || lastReaction.playerId !== duel.me.id || blocked.includes(lastReaction.from.id)) return;
-    AccessibilityInfo.announceForAccessibility(t('multi.reactions.encourages_you', { pseudo: lastReaction.from.pseudo }));
-  }, [lastReaction, muted, duel.spectating, duel.me.id, blocked, t]);
+    const seen = announced.current;
+    const fresh = duel.lastReactions.filter(r => duel.code !== seen.code || r.seq > seen.seq);
+    if (fresh.length === 0) return;
+    announced.current = { code: duel.code, seq: fresh[fresh.length - 1].seq };
+    if (muted || duel.spectating) return;
+    const forMe = fresh.filter(r => r.reaction === 'encourage' && r.playerId === duel.me.id && !blocked.includes(r.from.id)).pop();
+    if (forMe) AccessibilityInfo.announceForAccessibility(t('multi.reactions.encourages_you', { pseudo: forMe.from.pseudo }));
+  }, [duel.lastReactions, duel.code, muted, duel.spectating, duel.me.id, blocked, t]);
 
   return (
     <View style={styles.arena} onLayout={onLayout}>
@@ -513,10 +518,9 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, onR
               target={target}
               targetOnTop={targetOnTop}
               available={duel.reactions}
+              sender={sender}
               colors={colors}
               width={width - RFValue(32)}
-              now={now}
-              onReact={onReact}
             />
           )}
           {canReact && picking && opponentBottom > 0 && (

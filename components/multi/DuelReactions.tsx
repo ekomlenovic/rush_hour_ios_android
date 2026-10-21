@@ -70,9 +70,11 @@ export function ReactionOverlay({ reactions, target, myId, colors }: OverlayProp
 
 /**
  * Sends the reactions of the phone: a short wait between two of them (the server drops the
- * extra ones), a longer one between two encouragements of the same player.
+ * extra ones), a longer one between two encouragements of the same player. Kept by the
+ * screen of the duel, through the rematches, as the server keeps its own waits; a reaction
+ * not sent (offline) starts no wait.
  */
-export function useReactionSender(onReact: (playerId: number, reaction: ReactionId) => void, now: number) {
+export function useReactionSender(onReact: (playerId: number, reaction: ReactionId) => boolean, now: number) {
   const [waitUntil, setWaitUntil] = useState(0);
   const [encouragedAt, setEncouragedAt] = useState<Record<number, number>>({});
   const isEncouraged = (playerId: number, at = now) => at - (encouragedAt[playerId] ?? -Infinity) < ENCOURAGE_COOLDOWN_MS;
@@ -81,21 +83,21 @@ export function useReactionSender(onReact: (playerId: number, reaction: Reaction
   const send = (playerId: number, reaction: ReactionId) => {
     const at = Date.now();
     if (at < waitUntil || (reaction === 'encourage' && isEncouraged(playerId, at))) return false;
+    if (!onReact(playerId, reaction)) return false;
     if (reaction === 'encourage') setEncouragedAt(previous => ({ ...previous, [playerId]: at }));
     setWaitUntil(at + REACTION_COOLDOWN_MS);
     haptics.selectionAsync();
-    onReact(playerId, reaction);
     return true;
   };
 
   return { send, waiting: now < waitUntil, isEncouraged };
 }
 
-type Sender = ReturnType<typeof useReactionSender>;
+export type ReactionSender = ReturnType<typeof useReactionSender>;
 
 /** The emoji buttons, the teasing ones then the cheering ones */
 function EmojiButtons({ available, target, sender, colors, onSent }: {
-  available: ReactionId[]; target: DuelSide; sender: Sender; colors: UiColors; onSent?: () => void;
+  available: ReactionId[]; target: DuelSide; sender: ReactionSender; colors: UiColors; onSent?: () => void;
 }) {
   const { t } = useTranslation();
   const emojis = available.map(reactionOf).filter(r => r.emoji);
@@ -127,20 +129,17 @@ interface TrayProps {
   targetOnTop: boolean;
   /** What the server relays */
   available: ReactionId[];
+  sender: ReactionSender;
   colors: UiColors;
   width: number;
-  /** The clock of the screen, for the waits between two reactions */
-  now: number;
-  onReact: (playerId: number, reaction: ReactionId) => void;
 }
 
 /**
  * What a spectator sends to the player chosen above (their board is framed): an emoji to
  * tease or cheer them, or a word of encouragement.
  */
-export function ReactionTray({ target, targetOnTop, available, colors, width, now, onReact }: TrayProps) {
+export function ReactionTray({ target, targetOnTop, available, sender, colors, width }: TrayProps) {
   const { t } = useTranslation();
-  const sender = useReactionSender(onReact, now);
   const encouraged = sender.isEncouraged(target.id);
   const canEncourage = available.includes('encourage');
 
@@ -181,7 +180,7 @@ interface PickerProps {
   /** The other player: the reactions go to them */
   opponent: DuelSide;
   available: ReactionId[];
-  sender: Sender;
+  sender: ReactionSender;
   colors: UiColors;
   onClose: () => void;
 }

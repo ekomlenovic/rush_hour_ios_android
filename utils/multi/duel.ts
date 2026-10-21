@@ -72,7 +72,8 @@ export type DuelServerMessage =
   | { type: 'ready'; player: { id: number; pseudo: string }; duel: DuelView | null }
   | { type: 'duel'; duel: DuelView }
   | { type: 'move'; playerId: number; move: MoveRecord }
-  | { type: 'presence'; playerId: number; connected: boolean }
+  /** seesReactions: back with an app that shows the reactions, or not; absent from a server older than them */
+  | { type: 'presence'; playerId: number; connected: boolean; seesReactions?: boolean }
   | { type: 'rematch'; playerId: number }
   | { type: 'spectators'; count: number }
   | { type: 'reaction'; from: { id: number; pseudo: string }; playerId: number; reaction: string }
@@ -291,7 +292,10 @@ export function duelReducer(state: DuelState, action: DuelAction): DuelState {
 
         case 'presence': {
           if (!duel) return state;
-          const mark = (player: DuelSide) => (player.id === message.playerId ? { ...player, connected: message.connected } : player);
+          const { seesReactions } = message;
+          const mark = (player: DuelSide) => (player.id === message.playerId
+            ? { ...player, connected: message.connected, seesReactions: seesReactions ?? player.seesReactions }
+            : player);
           return { ...state, duel: { ...duel, me: mark(duel.me), opponent: duel.opponent && mark(duel.opponent) } };
         }
 

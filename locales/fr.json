@@ -1462,7 +1462,7 @@
       "encourages_you": "{{pseudo}} t'encourage !",
       "you_encourage": "Tu encourages {{pseudo}}",
       "encourages": "{{from}} encourage {{pseudo}}",
-      "show_a11y": "Réactions des spectateurs"
+      "show_a11y": "Afficher les réactions"
     },
     "errors": {
       "network": "Le serveur ne répond pas. Vérifie ta connexion et l'adresse du serveur.",
