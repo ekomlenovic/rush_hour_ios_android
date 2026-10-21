@@ -1,9 +1,13 @@
 import type { Level } from '../store/types';
+import en from '../locales/en.json';
+import fr from '../locales/fr.json';
 import {
+  MAX_KEPT_REACTIONS, REACTION_SHOWN_MS,
   countdownMs, duelElapsedMs, duelReducer, duelSocketUrl, iHaveWon, initialDuelState, myMove, normalizeDuelCode, opponentHasWon, outcome,
-  winnerOf,
+  reactionsFor, winnerOf,
   type DuelAction, type DuelServerMessage, type DuelState, type DuelView,
 } from '../utils/multi/duel';
+import { REACTIONS, REACTION_IDS, isReactionId } from '../utils/multi/reactions';
 
 /** The puzzle of the server tests: v1 goes down 2 cells, then the red car leaves */
 const LEVEL: Level = {
@@ -186,6 +190,44 @@ describe('duel on the phone', () => {
     // A server older than the spectators: a player
     expect(playing().duel).toMatchObject({ spectating: false, spectators: 0 });
   });
+
+  it('the reactions of the spectators show over the board of their player, for a while', () => {
+    const sam = { id: 3, pseudo: 'Sam' };
+    // The server says which reactions it relays: those this app does not know are not offered
+    let state = run(initialDuelState, message({ type: 'duel', duel: view({ spectating: true, reactions: ['snail', 'encourage', 'dance'] }) }));
+    expect(state.duel!.reactions).toEqual(['snail', 'encourage']);
+    // A server older than the reactions: none
+    expect(playing().duel!.reactions).toEqual([]);
+
+    state = run(
+      state,
+      message({ type: 'reaction', from: sam, playerId: 2, reaction: 'snail' }),
+      message({ type: 'reaction', from: { id: 4, pseudo: 'Zoé' }, playerId: 1, reaction: 'encourage' }, NOW + 1000),
+      // A newer reaction, or aimed at nobody of the duel: not shown
+      message({ type: 'reaction', from: sam, playerId: 2, reaction: 'dance' }),
+      message({ type: 'reaction', from: sam, playerId: 9, reaction: 'snail' }),
+    );
+    expect(state.duel!.lastReactions).toEqual([
+      { seq: 1, from: sam, playerId: 2, reaction: 'snail', at: NOW },
+      { seq: 2, from: { id: 4, pseudo: 'Zoé' }, playerId: 1, reaction: 'encourage', at: NOW + 1000 },
+    ]);
+    expect(reactionsFor(state.duel!, 2, NOW + 500).map(r => r.reaction)).toEqual(['snail']);
+    expect(reactionsFor(state.duel!, 1, NOW + 500).map(r => r.reaction)).toEqual(['encourage']);
+    // Gone after a while, and never from a player I blocked
+    expect(reactionsFor(state.duel!, 2, NOW + REACTION_SHOWN_MS)).toEqual([]);
+    expect(reactionsFor(state.duel!, 1, NOW + 1500, [4])).toEqual([]);
+
+    // A few at once at most; a rematch keeps them on screen
+    for (let i = 0; i < MAX_KEPT_REACTIONS; i++) state = run(state, message({ type: 'reaction', from: sam, playerId: 1, reaction: 'yawn' }));
+    expect(state.duel!.lastReactions).toHaveLength(MAX_KEPT_REACTIONS);
+    expect(state.duel!.lastReactions[MAX_KEPT_REACTIONS - 1].seq).toBe(MAX_KEPT_REACTIONS + 2);
+    state = run(state, message({ type: 'duel', duel: view({ spectating: true, reactions: ['snail'] }) }));
+    expect(state.duel!.lastReactions).toHaveLength(MAX_KEPT_REACTIONS);
+
+    // A reaction dropped by the server: nothing to tell
+    expect(run(state, message({ type: 'error', error: 'too_many_reactions' }))).toBe(state);
+    expect(run(state, message({ type: 'error', error: 'reaction_refused' }))).toBe(state);
+  });
 });
 
 describe('replay of a duel', () => {
@@ -201,5 +243,26 @@ describe('replay of a duel', () => {
     expect(movesPlayedAt(steps, 0, 2)).toEqual([0, 0]);
     expect(movesPlayedAt(steps, 3, 2)).toEqual([2, 1]);
     expect(movesPlayedAt(steps, 99, 2)).toEqual([3, 2]);
+  });
+});
+
+describe('reactions of the spectators', () => {
+  it('keeps its ids: they go over the WebSocket, only add at the end', () => {
+    expect(REACTION_IDS).toEqual([
+      'snail', 'yawn', 'sleep', 'popcorn', 'eyes', 'monocle', 'grimace', 'pinch', 'hourglass', 'peek',
+      'clap', 'fire', 'muscle', 'rocket', 'encourage',
+    ]);
+    expect(new Set(REACTION_IDS).size).toBe(REACTION_IDS.length);
+    expect(isReactionId('snail')).toBe(true);
+    expect(isReactionId('Tu es nul')).toBe(false);
+  });
+
+  it('an emoji for each one, except the encouragement, said in words', () => {
+    for (const reaction of REACTIONS) expect(!!reaction.emoji).toBe(reaction.kind !== 'encourage');
+  });
+
+  it.each([['en', en], ['fr', fr]] as const)('each one has its name in %s, for the screen reader', (_, strings) => {
+    const names = (strings.multi as unknown as { reactions: { names: Record<string, string> } }).reactions.names;
+    expect(REACTION_IDS.filter(id => !names[id])).toEqual([]);
   });
 });

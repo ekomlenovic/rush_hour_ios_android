@@ -122,7 +122,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 
 | Route | Rôle |
 |---|---|
-| `GET /info` | nom, `apiVersion`, `minAppVersion`, `features` (`["duel", "ranking_range"]`) |
+| `GET /info` | nom, `apiVersion`, `minAppVersion`, `features` (`["duel", "ranking_range", "reactions"]`) |
 | `POST /join` `{ inviteCode, pseudo }` | crée un compte → `{ token, recoveryCode, player }` |
 | `POST /recover` `{ recoveryCode }` | nouveau jeton pour un compte (l'ancien téléphone est déconnecté) |
 | `GET /me`, `PATCH /me` `{ pseudo }`, `DELETE /me` | mon compte ; supprimer efface aussi mes parties |
@@ -161,8 +161,9 @@ Messages JSON. Le premier est `{ "type": "auth", "token": "…" }` → `{ type: 
 | `{ type: "move", vehicleId, delta }` | un coup, vérifié puis envoyé aux deux : `{ type: "move", playerId, move }` (temps du serveur) |
 | `{ type: "leave" }` | quitte le duel (en pleine partie : défaite) |
 | `{ type: "rematch" }` | revanche, lancée quand les deux l'ont demandée |
+| `{ type: "react", playerId, reaction }` | un spectateur réagit à un des deux joueurs pendant la partie : `reaction` est un identifiant de la liste fermée (`duel.reactions`, voir `utils/multi/reactions.ts`), jamais du texte libre ; envoyé à tous ceux du duel : `{ type: "reaction", from, playerId, reaction }`. Refusé pour un joueur, hors partie ou pour quelqu'un d'autre (`reaction_refused`) ; 5 par spectateur en 10 s, 10 par duel et par seconde, un `encourage` d'un spectateur à un même joueur toutes les 30 s (`too_many_reactions`, la connexion reste ouverte) |
 
-Le serveur envoie aussi `duel` (tout le duel : statut `waiting`, `preparing`, `playing`, `over`, puzzle, `startsAt`, coups des deux joueurs), `presence` (adversaire connecté ou non), `spectators` (nombre de spectateurs), `end` (`winnerId`, `reason` : `won`, `forfeit`, `disconnected`, `timeout` ; l'optimum, `duelId` pour le replay et `score` des deux joueurs l'un contre l'autre), `closed` et `error`.
+Le serveur envoie aussi `duel` (tout le duel : statut `waiting`, `preparing`, `playing`, `over`, puzzle, `startsAt`, coups des deux joueurs, `reactions` que le serveur relaie), `presence` (adversaire connecté ou non), `spectators` (nombre de spectateurs), `reaction` (réaction d'un spectateur), `end` (`winnerId`, `reason` : `won`, `forfeit`, `disconnected`, `timeout` ; l'optimum, `duelId` pour le replay et `score` des deux joueurs l'un contre l'autre), `closed` et `error`.
 
 ## Développement
 

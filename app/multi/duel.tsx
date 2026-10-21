@@ -16,13 +16,15 @@ import { fixedColors, toBoardLook, useTheme, type UiColors } from '@/theme';
 import Board from '@/components/Board';
 import MultiHeader from '@/components/multi/MultiHeader';
 import DuelPlayerBar from '@/components/multi/DuelPlayerBar';
+import { REACTION_TRAY_HEIGHT, ReactionOverlay, ReactionTray } from '@/components/multi/DuelReactions';
 import { multiErrorMessage } from '@/components/multi/errors';
 import { selectActiveAccount, useMultiStore } from '@/store/multiStore';
 import { useDuel } from '@/hooks/useDuel';
 import {
-  DUEL_DIFFICULTIES, DUEL_METRICS, countdownMs, duelElapsedMs, iHaveWon, normalizeDuelCode, opponentHasWon, outcome, winnerOf,
-  type Duel, type DuelDifficulty, type DuelMetric, type DuelSide, type HeadToHead,
+  DUEL_DIFFICULTIES, DUEL_METRICS, countdownMs, duelElapsedMs, iHaveWon, normalizeDuelCode, opponentHasWon, outcome, reactionsFor, winnerOf,
+  type Duel, type DuelDifficulty, type DuelMetric, type DuelReaction, type DuelSide, type HeadToHead,
 } from '@/utils/multi/duel';
+import type { ReactionId } from '@/utils/multi/reactions';
 
 /** Room for the two player bars and the clock around the boards */
 const BARS_HEIGHT = RFValue(150);
@@ -33,8 +35,9 @@ const BARS_HEIGHT = RFValue(150);
  * on moves, the fewest moves (the same count is a draw): who got out may leave, and comes
  * back for the result.
  * Opened from the multiplayer screen to create a duel (?create=HARD&metric=moves&private=1), to
- * join one (?join=CODE), to watch one (?watch=CODE: both boards, nothing to play), or
- * to go back to mine. A duel already started, joined with its code, is watched.
+ * join one (?join=CODE), to watch one (?watch=CODE: both boards, nothing to play but
+ * reactions to send to a player), or to go back to mine. A duel already started, joined
+ * with its code, is watched.
  */
 export default function DuelScreen() {
   const { t } = useTranslation();
@@ -43,8 +46,11 @@ export default function DuelScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ create?: string; metric?: string; private?: string; join?: string; watch?: string }>();
   const account = useMultiStore(selectActiveAccount);
-  const { state, unreachable, create, join, watch, move, leave, rematch, clearError } = useDuel(account);
+  const { state, unreachable, create, join, watch, move, leave, rematch, react, clearError } = useDuel(account);
   const duel = state.duel;
+  // The reactions of the players I blocked are not shown
+  const blockedPlayers = useMultiStore(s => (account ? s.blocked[account.url] : undefined));
+  const blocked = useMemo(() => (blockedPlayers ?? []).map(p => p.playerId), [blockedPlayers]);
   const [now, setNow] = useState(Date.now());
 
   // What the screen was opened for, asked once connected (unless a duel is already going on)
@@ -157,7 +163,19 @@ export default function DuelScreen() {
       </View>
     );
   } else {
-    body = <Arena duel={duel} now={now} colors={colors} offline={state.connection !== 'online'} onMove={move} onLeave={goBack} />;
+    body = (
+      <Arena
+        duel={duel}
+        now={now}
+        colors={colors}
+        offline={state.connection !== 'online'}
+        blocked={blocked}
+        myId={state.player?.id ?? null}
+        onMove={move}
+        onLeave={goBack}
+        onReact={react}
+      />
+    );
   }
 
   return (
@@ -278,13 +296,23 @@ interface ArenaProps {
   now: number;
   colors: UiColors;
   offline: boolean;
+  /** Ids of the players I blocked: their reactions are not shown */
+  blocked: number[];
+  /** Who I am on the server */
+  myId: number | null;
   onMove: (vehicleId: string, row: number, col: number) => boolean | void;
   /** Out in a duel on moves: leave, the result waits */
   onLeave: () => void;
+  /** Watching: a reaction to one of the players */
+  onReact: (playerId: number, reaction: ReactionId) => void;
 }
 
-/** The game: the opponent at the top (small, read only), me at the bottom; for a spectator, both the same size */
-function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
+/**
+ * The game: the opponent at the top (small, read only), me at the bottom; for a spectator,
+ * both the same size, and the reactions to send under them. The reactions of the spectators
+ * show over the board of the player they are aimed at; a player may hide them.
+ */
+function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, onReact }: ArenaProps) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -294,7 +322,8 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
   const level = duel.level!;
   const countdown = countdownMs(duel, now);
   const won = iHaveWon(duel);
-  const space = Math.max(0, height - BARS_HEIGHT - insets.bottom);
+  const showTray = duel.spectating && duel.reactions.length > 0 && duel.status === 'playing';
+  const space = Math.max(0, height - BARS_HEIGHT - (showTray ? REACTION_TRAY_HEIGHT : 0) - insets.bottom);
   const mySize = Math.min(width - RFValue(32), space * (duel.spectating ? 0.5 : 0.62));
   const opponentSize = Math.min(duel.spectating ? mySize : width * 0.62, space - mySize);
   const time = formatDuration(duelElapsedMs(duel, now));
@@ -310,6 +339,20 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
   // Each board as its player sees it; mine as I do
   const opponentLook = useMemo(() => toBoardLook(duel.opponent?.look), [duel.opponent?.look]);
   const firstLook = useMemo(() => (duel.spectating ? toBoardLook(duel.me.look) : undefined), [duel.spectating, duel.me.look]);
+
+  // A player may hide the reactions of the spectators, for this duel
+  const [muted, setMuted] = useState(false);
+  const canMute = !duel.spectating && duel.reactions.length > 0 && (duel.spectators > 0 || duel.lastReactions.length > 0);
+  const shown = (playerId: number) => (muted ? [] : reactionsFor(duel, playerId, now, blocked));
+  // An encouragement for me is said (not the emojis: too many to listen to while playing)
+  const lastReaction = duel.lastReactions[duel.lastReactions.length - 1];
+  const announced = useRef<DuelReaction | undefined>(lastReaction);
+  useEffect(() => {
+    if (!lastReaction || announced.current === lastReaction) return;
+    announced.current = lastReaction;
+    if (lastReaction.reaction !== 'encourage' || muted || duel.spectating || lastReaction.playerId !== duel.me.id || blocked.includes(lastReaction.from.id)) return;
+    AccessibilityInfo.announceForAccessibility(t('multi.reactions.encourages_you', { pseudo: lastReaction.from.pseudo }));
+  }, [lastReaction, muted, duel.spectating, duel.me.id, blocked, t]);
 
   return (
     <View style={styles.arena} onLayout={onLayout}>
@@ -327,30 +370,45 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
               size={opponentSize}
               look={opponentLook}
             />
+            <ReactionOverlay reactions={shown(duel.opponent.id)} target={duel.opponent.pseudo} myId={duel.spectating ? myId : null} colors={colors} />
           </View>
 
-          <View
-            style={[styles.clock, { backgroundColor: offline ? colors.dangerSoft : colors.card, maxWidth: mySize }]}
-            accessible
-            accessibilityLabel={offline ? t('multi.duel.reconnecting') : [t('multi.time_a11y', { time }), waiting].filter(Boolean).join(', ')}
-            accessibilityLiveRegion="polite"
-          >
-            <Ionicons name={offline ? 'cloud-offline' : duel.metric === 'moves' ? 'footsteps-outline' : 'timer-outline'} size={RFValue(17)} color={offline ? colors.danger : colors.text} />
-            <Text style={[styles.clockText, { color: offline ? colors.danger : colors.text }]}>
-              {offline ? t('multi.duel.reconnecting') : time}
-            </Text>
-            {!offline && waiting && (
-              <Text style={[styles.clockStatus, { color: colors.textMuted }]} numberOfLines={1}>{waiting}</Text>
-            )}
-            {duel.spectators > 0 && (
-              <View
-                style={styles.spectators}
-                accessible
-                accessibilityLabel={t('multi.duel.spectators', { count: duel.spectators })}
+          <View style={[styles.clockRow, { maxWidth: mySize }]}>
+            <View
+              style={[styles.clock, { backgroundColor: offline ? colors.dangerSoft : colors.card }]}
+              accessible
+              accessibilityLabel={offline ? t('multi.duel.reconnecting') : [t('multi.time_a11y', { time }), waiting].filter(Boolean).join(', ')}
+              accessibilityLiveRegion="polite"
+            >
+              <Ionicons name={offline ? 'cloud-offline' : duel.metric === 'moves' ? 'footsteps-outline' : 'timer-outline'} size={RFValue(17)} color={offline ? colors.danger : colors.text} />
+              <Text style={[styles.clockText, { color: offline ? colors.danger : colors.text }]}>
+                {offline ? t('multi.duel.reconnecting') : time}
+              </Text>
+              {!offline && waiting && (
+                <Text style={[styles.clockStatus, { color: colors.textMuted }]} numberOfLines={1}>{waiting}</Text>
+              )}
+              {duel.spectators > 0 && (
+                <View
+                  style={styles.spectators}
+                  accessible
+                  accessibilityLabel={t('multi.duel.spectators', { count: duel.spectators })}
+                >
+                  <Ionicons name="eye-outline" size={RFValue(17)} color={colors.textMuted} />
+                  <Text style={[styles.clockText, { color: colors.textMuted }]}>{duel.spectators}</Text>
+                </View>
+              )}
+            </View>
+            {canMute && (
+              <Pressable
+                onPress={() => setMuted(m => !m)}
+                style={[styles.muteButton, { backgroundColor: muted ? colors.neutralSoft : colors.card }]}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: !muted }}
+                accessibilityLabel={t('multi.reactions.show_a11y')}
+                hitSlop={6}
               >
-                <Ionicons name="eye-outline" size={RFValue(17)} color={colors.textMuted} />
-                <Text style={[styles.clockText, { color: colors.textMuted }]}>{duel.spectators}</Text>
-              </View>
+                <Ionicons name={muted ? 'notifications-off-outline' : 'notifications-outline'} size={RFValue(17)} color={muted ? colors.textMuted : colors.text} />
+              </Pressable>
             )}
           </View>
 
@@ -372,6 +430,12 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
               readOnly={duel.spectating || countdown > 0 || won || duel.status !== 'playing'}
               size={mySize}
               look={firstLook}
+            />
+            <ReactionOverlay
+              reactions={shown(duel.me.id)}
+              target={duel.spectating ? duel.me.pseudo : null}
+              myId={duel.spectating ? myId : null}
+              colors={colors}
             />
             {countdown > 0 && (
               <View style={[StyleSheet.absoluteFill, styles.countdown]} pointerEvents="none">
@@ -399,6 +463,16 @@ function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
               </View>
             )}
           </View>
+          {showTray && duel.opponent && (
+            <ReactionTray
+              players={[duel.opponent, duel.me]}
+              available={duel.reactions}
+              colors={colors}
+              width={width - RFValue(32)}
+              now={now}
+              onReact={onReact}
+            />
+          )}
         </>
       )}
     </View>
@@ -799,14 +873,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: RFValue(10),
   },
+  clockRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(8),
+    marginVertical: RFValue(10),
+  },
   clock: {
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     borderRadius: 999,
     paddingVertical: RFValue(6),
     paddingHorizontal: RFValue(16),
-    marginVertical: RFValue(10),
+  },
+  muteButton: {
+    width: RFValue(34),
+    height: RFValue(34),
+    borderRadius: RFValue(17),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   clockText: {
     fontSize: RFValue(17),

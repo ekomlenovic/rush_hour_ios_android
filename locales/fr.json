@@ -1431,6 +1431,35 @@
       "see_result": "Résultat",
       "over_short": "terminé"
     },
+    "reactions": {
+      "names": {
+        "snail": "Escargot",
+        "yawn": "Bâillement",
+        "sleep": "Dodo",
+        "popcorn": "Popcorn",
+        "eyes": "Je te regarde",
+        "monocle": "Hmm, intéressant",
+        "grimace": "Aïe",
+        "pinch": "Presque",
+        "hourglass": "Le temps passe",
+        "peek": "J'ose pas regarder",
+        "clap": "Bravo",
+        "fire": "En feu",
+        "muscle": "Courage",
+        "rocket": "Fusée",
+        "encourage": "Encouragement"
+      },
+      "send_a11y": "{{reaction}} pour {{pseudo}}",
+      "target_a11y": "Réagir à {{pseudo}}",
+      "encourage": "Encourager",
+      "encouraged": "Encouragé",
+      "encourage_a11y": "Encourager {{pseudo}}",
+      "encouraged_a11y": "Tu as encouragé {{pseudo}}, tu pourras recommencer dans un moment",
+      "encourages_you": "{{pseudo}} t'encourage !",
+      "you_encourage": "Tu encourages {{pseudo}}",
+      "encourages": "{{from}} encourage {{pseudo}}",
+      "show_a11y": "Réactions des spectateurs"
+    },
     "errors": {
       "network": "Le serveur ne répond pas. Vérifie ta connexion et l'adresse du serveur.",
       "timeout": "Le serveur met trop de temps à répondre. Réessaie.",
@@ -1477,6 +1506,8 @@
       "duel_replaced": "Ton compte joue maintenant sur un autre téléphone : le duel continue là-bas.",
       "puzzle_unavailable": "Le serveur n'a pas pu préparer de puzzle pour ce duel. Réessaie, ou choisis un autre niveau.",
       "too_many_spectators": "Trop de monde regarde déjà ce duel. Réessaie plus tard.",
+      "reaction_refused": "Seul un spectateur peut réagir, pendant la partie.",
+      "too_many_reactions": "Doucement ! Attends un peu avant de réagir encore.",
       "unknown": "Une erreur inattendue est survenue."
     }
   },
