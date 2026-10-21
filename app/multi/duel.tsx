@@ -408,7 +408,7 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
               size={opponentSize}
               look={opponentLook}
             />
-            <ReactionOverlay reactions={shown(opponent.id)} target={opponent.pseudo} myId={myId} colors={colors} />
+            <ReactionOverlay reactions={shown(opponent.id)} size={opponentSize} target={opponent.pseudo} myId={myId} colors={colors} />
             {showTray && <TargetFrame selected={targetOnTop} colors={colors} onPress={() => setTargetId(opponent.id)} />}
           </View>
 
@@ -485,7 +485,7 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
               size={mySize}
               look={firstLook}
             />
-            <ReactionOverlay reactions={shown(duel.me.id)} target={duel.spectating ? duel.me.pseudo : null} myId={myId} colors={colors} />
+            <ReactionOverlay reactions={shown(duel.me.id)} size={mySize} target={duel.spectating ? duel.me.pseudo : null} myId={myId} colors={colors} />
             {showTray && <TargetFrame selected={!targetOnTop} colors={colors} onPress={() => setTargetId(duel.me.id)} />}
             {countdown > 0 && (
               <View style={[StyleSheet.absoluteFill, styles.countdown]} pointerEvents="none">

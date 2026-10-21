@@ -16,17 +16,21 @@ export const REACTION_PICKER_HEIGHT = 52;
 
 /** Where the emojis rise over the board, in turn (% of its width): never all at the same place */
 const LANES = [14, 58, 34, 78, 46, 22, 68, 40];
+/** Width of the emoji, centered on its lane */
+const EMOJI_BOX = RFValue(44);
 
-/** An emoji pops up from the bottom of the board and rises a little; without the animations, it is just there */
+/** An emoji comes up from the bottom of the board and rises a little; without the animations, it is just there */
 const RISE = new Keyframe({
-  0: { opacity: 0, transform: [{ translateY: 36 }, { scale: 0.4 }] },
-  35: { opacity: 1, transform: [{ translateY: 0 }, { scale: 1.25 }] },
-  100: { opacity: 1, transform: [{ translateY: -24 }, { scale: 1 }] },
+  0: { opacity: 0, transform: [{ translateY: 36 }] },
+  35: { opacity: 1, transform: [{ translateY: 0 }] },
+  100: { opacity: 1, transform: [{ translateY: -24 }] },
 }).duration(1100);
 
 interface OverlayProps {
   /** The reactions to show now over this board (reactionsFor) */
   reactions: DuelReaction[];
+  /** Side of the board: the emojis and the whole pseudos stay inside it */
+  size: number;
   /** The player of the board; null: my own board */
   target: string | null;
   /** Me: my own reactions say "you" */
@@ -39,7 +43,7 @@ interface OverlayProps {
  * them, the last encouragement is said at the top. Nothing to touch: the board under it is
  * played as usual, and the screen reader reads the board, not this.
  */
-export function ReactionOverlay({ reactions, target, myId, colors }: OverlayProps) {
+export function ReactionOverlay({ reactions, size, target, myId, colors }: OverlayProps) {
   const { t } = useTranslation();
   const emojis = reactions.filter(r => reactionOf(r.reaction).emoji);
   const encouragement = [...reactions].reverse().find(r => r.reaction === 'encourage');
@@ -53,18 +57,40 @@ export function ReactionOverlay({ reactions, target, myId, colors }: OverlayProp
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {emojis.map(r => (
-        <Animated.View key={r.seq} entering={RISE} exiting={FadeOut.duration(300)} style={[styles.bubble, { left: `${LANES[r.seq % LANES.length]}%` }]}>
-          <Text style={styles.emoji}>{reactionOf(r.reaction).emoji}</Text>
-          <Text style={[styles.sender, { backgroundColor: colors.surface, color: colors.text }]} numberOfLines={1}>{sender(r)}</Text>
-        </Animated.View>
+        <Bubble key={r.seq} reaction={r} label={sender(r)} size={size} colors={colors} />
       ))}
       {encouragement && (
         <Animated.View key={encouragement.seq} entering={FadeInDown.springify()} exiting={FadeOut.duration(300)} style={[styles.cheer, { backgroundColor: colors.primary }]}>
           <Ionicons name="megaphone" size={RFValue(16)} color={colors.onPrimary} />
-          <Text style={[styles.cheerText, { color: colors.onPrimary }]} numberOfLines={1}>{encouraged(encouragement)}</Text>
+          <Text style={[styles.cheerText, { color: colors.onPrimary }]} numberOfLines={2}>{encouraged(encouragement)}</Text>
         </Animated.View>
       )}
     </View>
+  );
+}
+
+/** An emoji at its lane, with the whole pseudo of who sent it centered under it, both kept inside the board */
+function Bubble({ reaction, label, size, colors }: { reaction: DuelReaction; label: string; size: number; colors: UiColors }) {
+  const x = (LANES[reaction.seq % LANES.length] / 100) * size;
+  // The pseudo is measured once drawn, then centered under the emoji
+  const [labelWidth, setLabelWidth] = useState(0);
+  const around = (width: number) => Math.max(2, Math.min(x - width / 2, size - width - 2));
+  return (
+    <Animated.View entering={RISE} exiting={FadeOut.duration(300)} style={[styles.bubble, { width: size }]}>
+      <Text style={[styles.emoji, { marginLeft: around(EMOJI_BOX) }]}>{reactionOf(reaction.reaction).emoji}</Text>
+      {/* A little smaller on a small board rather than cut */}
+      <Text
+        onLayout={e => setLabelWidth(e.nativeEvent.layout.width)}
+        style={[styles.sender, {
+          marginLeft: around(labelWidth), maxWidth: size - 4, opacity: labelWidth > 0 ? 1 : 0, backgroundColor: colors.surface, color: colors.text,
+        }]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+      >
+        {label}
+      </Text>
+    </Animated.View>
   );
 }
 
@@ -222,22 +248,22 @@ export function ReactionPicker({ opponent, available, sender, colors, onClose }:
 const styles = StyleSheet.create({
   bubble: {
     position: 'absolute',
+    left: 0,
     bottom: '16%',
-    width: RFValue(64),
-    marginLeft: -RFValue(32),
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   emoji: {
+    width: EMOJI_BOX,
+    textAlign: 'center',
     fontSize: RFValue(34),
   },
   sender: {
-    maxWidth: RFValue(64),
     marginTop: -RFValue(4),
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 999,
     overflow: 'hidden',
-    fontSize: RFValue(10),
+    fontSize: RFValue(11),
     fontWeight: '800',
   },
   cheer: {
@@ -248,7 +274,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderRadius: 999,
+    borderRadius: 18,
     paddingVertical: RFValue(6),
     paddingHorizontal: RFValue(12),
   },
