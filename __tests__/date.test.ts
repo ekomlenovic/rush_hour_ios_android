@@ -9,6 +9,7 @@ import {
   getDaysLeftInWeek,
   getLocalDateString,
   getWeekKey,
+  msUntilNextMinute,
   parseLocalDateString,
 } from '../utils/date';
 
@@ -135,5 +136,13 @@ describe('getMonthGrid', () => {
     expect(october.slice(0, 4)).toEqual([null, null, null, '2026-10-01']);
     expect(october[33]).toBe('2026-10-31');
     expect(october[34]).toBeNull();
+  });
+});
+
+describe('msUntilNextMinute', () => {
+  it('waits until the next whole minute, so the clock reaches midnight on time', () => {
+    expect(msUntilNextMinute(new Date(2026, 9, 14, 23, 59, 30))).toBe(30_000);
+    expect(msUntilNextMinute(new Date(2026, 9, 14, 23, 59, 59, 900))).toBe(100);
+    expect(msUntilNextMinute(new Date(2026, 9, 14, 12, 0, 0, 0))).toBe(60_000);
   });
 });

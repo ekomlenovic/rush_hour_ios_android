@@ -13,8 +13,8 @@ import MultiHeader from '@/components/multi/MultiHeader';
 import { errorCode, multiErrorMessage } from '@/components/multi/errors';
 import { gameKey, selectActiveAccount, useMultiStore, type MultiGame } from '@/store/multiStore';
 import { useMultiApi } from '@/hooks/useMultiApi';
-import { elapsedMs, gameFromStart, playMove, submission } from '@/utils/multi/game';
-import type { SubmitResult } from '@/utils/multi/api';
+import { elapsedMs, gameFromStart, isWon, playMove, submission, wonResult } from '@/utils/multi/game';
+import { MultiApiError, type SubmitResult } from '@/utils/multi/api';
 import IconText from '@/components/IconText';
 
 type Phase = 'loading' | 'playing' | 'sending' | 'send_failed' | 'won' | 'error';
@@ -40,6 +40,8 @@ export default function MultiPlayScreen() {
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [now, setNow] = useState(Date.now());
   const gameRef = useRef<MultiGame | null>(null);
+  /** Sends a win (set below): a game resumed already won is sent again at once */
+  const sendRef = useRef<(finished: MultiGame) => Promise<void>>(async () => {});
 
   const update = useCallback((next: MultiGame) => {
     gameRef.current = next;
@@ -54,15 +56,27 @@ export default function MultiPlayScreen() {
     api.start(params.date).then(start => {
       if (cancelled) return;
       const saved = useMultiStore.getState().games[gameKey(account.url, start.date)];
-      update(gameFromStart(account.url, start, saved, Date.now()));
-      setPhase('playing');
-    }).catch(e => {
+      const resumed = gameFromStart(account.url, start, saved, Date.now());
+      update(resumed);
+      // Won on this phone but never received by the server (network, app closed): sent again
+      if (isWon(resumed)) void sendRef.current(resumed);
+      else setPhase('playing');
+    }).catch(async e => {
+      // Already won: the server took the win but its answer was lost, its result is shown
+      const today = errorCode(e) === 'already_finished' ? await api.today().catch(() => null) : null;
+      const taken = today && wonResult(today, params.date ?? today.date, account.playerId);
       if (cancelled) return;
+      if (taken) {
+        removeGame(account.url, params.date ?? today.date);
+        setResult(taken);
+        setPhase('won');
+        return;
+      }
       setError(e);
       setPhase('error');
     });
     return () => { cancelled = true; };
-  }, [api, account?.url, params.date, update]);
+  }, [api, account?.url, params.date, update, removeGame]);
 
   // The clock on screen
   useEffect(() => {
@@ -91,27 +105,37 @@ export default function MultiPlayScreen() {
     setPhase('sending');
     setError(null);
     const { moves, clientMs, backgroundMs } = submission(finished, Date.now());
-    try {
-      const res = await api.submit(finished.date, moves, clientMs, backgroundMs);
+    const won = (res: SubmitResult) => {
       removeGame(finished.serverUrl, finished.date);
       setResult(res);
       setPhase('won');
       haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       AccessibilityInfo.announceForAccessibility(t('multi.win_a11y', { moves: res.moves, time: formatDuration(res.timeMs), rank: res.rank }));
+    };
+    try {
+      won(await api.submit(finished.date, moves, clientMs, backgroundMs));
     } catch (e) {
       setError(e);
+      // Taken by the server, but its answer was lost: the win it has
+      const taken = errorCode(e) === 'already_finished' && account
+        ? await api.today().then(today => wonResult(today, finished.date, account.playerId)).catch(() => null)
+        : null;
+      if (taken) return won(taken);
       // Network trouble: the win is kept, it can be sent again; otherwise it was refused
       setPhase(['network', 'timeout', 'internal', 'rate_limited', 'bad_response'].includes(errorCode(e)) ? 'send_failed' : 'error');
     }
-  }, [api, removeGame, t]);
+  }, [api, account, removeGame, t]);
+  sendRef.current = send;
 
   const handleMoveEnd = useCallback((vehicleId: string, row: number, col: number) => {
     const current = gameRef.current;
-    if (!current) return;
+    if (!current) return false;
     const played = playMove(current, vehicleId, row, col, Date.now());
-    if (!played) return;
+    // Refused (a move through a vehicle): the block goes back
+    if (!played) return false;
     update(played.game);
     if (played.won) void send(played.game);
+    return true;
   }, [update, send]);
 
   const abandon = () => {
@@ -122,11 +146,15 @@ export default function MultiPlayScreen() {
         text: t('multi.abandon'), style: 'destructive', onPress: async () => {
           try {
             await api.abandon(game.date);
-            removeGame(game.serverUrl, game.date);
-            router.back();
           } catch (e) {
-            Alert.alert(t('common.error'), multiErrorMessage(t, e));
+            // Past its deadline the game is already over (unfinished): nothing left to abandon
+            if (!(e instanceof MultiApiError && e.code === 'too_late')) {
+              Alert.alert(t('common.error'), multiErrorMessage(t, e));
+              return;
+            }
           }
+          removeGame(game.serverUrl, game.date);
+          router.back();
         },
       },
     ]);

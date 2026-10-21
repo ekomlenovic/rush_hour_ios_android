@@ -1,12 +1,16 @@
-import type { ChallengeResult, Level, LevelProgress, LevelSaveState } from './types';
+import type { ChallengeResult, Level, LevelProgress, LevelSaveState, PeriodStats } from './types';
 import { sampleLevels } from '../data/sampleLevels';
 import { recomputeStreak } from './streak';
-import { computeRetroactiveXp } from '../data/progression';
+import { BOSS_WIN_XP, computeRetroactiveXp } from '../data/progression';
+import { isBossLevel } from '../data/bosses';
 import { getStars, starsFromScore } from '../utils/scoring';
-import { compactSavedStates } from './savedStates';
+import { compactSavedStates, compactUndoStacks, dropOldUndoStacks } from './savedStates';
+import { latestSavedDate, latestSavedWeek } from '../utils/challengeDates';
+import { addToPeriod, keptMonths, monthKeyOf } from './periodStats';
+import { getLocalDateString, getWeekStart } from '../utils/date';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 6;
+export const STORE_VERSION = 12;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
@@ -43,7 +47,138 @@ export function migrateState(persistedState: unknown, version: number): Record<s
       state.savedStates = compactSavedStates(state.savedStates as Record<string, LevelSaveState>);
     }
   }
+  if (version < 7) {
+    // v7: a link could open the daily or weekly of any date, won before its day (issue 119): the streak
+    // jumped to that day and the save could no longer be imported. Those wins are taken out of the
+    // challenges (their XP stays) and the streak is rebuilt from the real days
+    Object.assign(state, dropChallengesToCome(state));
+  }
+  if (version < 8) {
+    // v8: a generation that failed left a hole in the ids of the generated levels (issue 120): the
+    // level after it never unlocked. They are numbered again, in order, right after the pack
+    state = renumberGeneratedLevels(state);
+  }
+  if (version < 9) {
+    // v9: the first win of a boss level gives extra XP, credited for the bosses already won
+    const bossWins = Array.isArray(state.progress)
+      ? (state.progress as LevelProgress[]).filter(p => p?.completed && isBossLevel(p.levelId)).length
+      : 0;
+    if (bossWins > 0) state.xp = (typeof state.xp === 'number' ? state.xp : 0) + bossWins * BOSS_WIN_XP;
+  }
+  if (version < 10) {
+    // v10: a "new" badge on each achievement until it is touched in the profile. Those unlocked
+    // before were already shown by their toast: they start seen
+    if (Array.isArray(state.achievements)) state.seenAchievements = [...state.achievements];
+  }
+  if (version < 11) {
+    // v11: the levels left unfinished added up, each with its undo stack of whole boards (up to about
+    // 70 KB), until the save was too big to be read back. Only the 10 played last keep their undo stack,
+    // in a compact form (positions only, undoSteps); the older ones keep their game without it.
+    // Played last: the start of their attempt, saves have no time of their last move before v11
+    if (state.savedStates && typeof state.savedStates === 'object') {
+      state.savedStates = compactUndoStacks(dropOldUndoStacks(state.savedStates as Record<string, LevelSaveState>));
+    }
+  }
+  if (version < 12) {
+    // v12: monthly and yearly recap (issue 125). Only the challenges are dated: their wins are counted
+    // back in their month and year, the rest starts to count now (recapSince). The month an achievement
+    // was unlocked is unknown: it is set to the month of the update
+    Object.assign(state, seedRecap(state));
+  }
   return state;
+}
+
+/** Recap counters rebuilt from the dated challenges, from today on for everything else */
+function seedRecap(state: Record<string, unknown>, now: Date = new Date()): Record<string, unknown> {
+  const monthlyStats: Record<string, PeriodStats> = {};
+  const yearlyStats: Record<string, PeriodStats> = {};
+  const count = (dateKey: string, result: ChallengeResult | undefined) => {
+    if (!result?.completed) return;
+    const win = { wins: 1, perfectWins: result.stars === 3 ? 1 : 0, hardestWinMoves: result.minMoves ?? 0 };
+    const month = dateKey.slice(0, 7);
+    const year = dateKey.slice(0, 4);
+    monthlyStats[month] = addToPeriod(monthlyStats[month], win);
+    yearlyStats[year] = addToPeriod(yearlyStats[year], win);
+  };
+  const results = (value: unknown) => (value && typeof value === 'object' ? Object.entries(value as Record<string, ChallengeResult>) : []);
+  for (const [dateKey, result] of results(state.dailyChallengeProgress)) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) count(dateKey, result);
+  }
+  for (const [weekKey, result] of results(state.weeklyChallengeProgress)) {
+    if (/^\d{4}-W\d{2}$/.test(weekKey)) count(getWeekStart(weekKey), result);
+  }
+  // Archives are keyed by the day replayed, not the day played: left out
+
+  const month = monthKeyOf(now);
+  const achievements = Array.isArray(state.achievements) ? (state.achievements as unknown[]) : [];
+  return {
+    monthlyStats: keptMonths(monthlyStats, now),
+    yearlyStats,
+    achievementMonths: Object.fromEntries(achievements.filter(id => typeof id === 'string').map(id => [id, month])),
+    recapSince: getLocalDateString(now),
+  };
+}
+
+/**
+ * Generated levels numbered from the end of the pack without holes, in the order of their ids,
+ * with the progress, saves and unlocking tied to them. The level after a hole unlocks.
+ */
+function renumberGeneratedLevels(state: Record<string, unknown>): Record<string, unknown> {
+  if (!Array.isArray(state.generatedLevels) || state.generatedLevels.length === 0) return state;
+  const generated = [...(state.generatedLevels as Level[])].sort((a, b) => a.id - b.id);
+  const base = sampleLevels.length;
+  const newIds = new Map(generated.map((l, i) => [l.id, base + 1 + i]));
+  const renumber = (id: number) => newIds.get(id) ?? id;
+
+  const renumbered: Record<string, unknown> = {
+    ...state,
+    generatedLevels: generated.map(l => ({ ...l, id: renumber(l.id) })),
+  };
+  if (Array.isArray(state.progress)) {
+    renumbered.progress = (state.progress as LevelProgress[]).map(p => ({ ...p, levelId: renumber(p.levelId) }));
+  }
+  if (state.savedStates && typeof state.savedStates === 'object') {
+    renumbered.savedStates = Object.fromEntries(Object.entries(state.savedStates as Record<string, LevelSaveState>).map(([key, value]) => {
+      const id = Number(key);
+      return [Number.isInteger(id) ? renumber(id) : key, value];
+    }));
+  }
+  if (typeof state.lastPlayedLevelId === 'number') renumbered.lastPlayedLevelId = renumber(state.lastPlayedLevelId);
+  // Past the pack (the one the generated levels followed, it may have grown since): every generated
+  // level before the next one to play stays unlocked, holes left out
+  const max = state.maxUnlockedLevel;
+  const packEnd = Math.min(base, generated[0].id - 1);
+  if (typeof max === 'number' && max > packEnd && max < MAP_ID_END) {
+    renumbered.maxUnlockedLevel = base + 1 + generated.filter(l => l.id < max).length;
+  }
+  return renumbered;
+}
+
+/**
+ * Daily and weekly results of days that have not come yet (a day of tolerance: a save made
+ * in a time zone further east), and the streak that followed them, rebuilt from the dailies
+ */
+function dropChallengesToCome(state: Record<string, unknown>): Record<string, unknown> {
+  const latestDate = latestSavedDate();
+  const latestWeek = latestSavedWeek();
+  const keep = (results: unknown, isComing: (key: string) => boolean) =>
+    Object.fromEntries(Object.entries(results as Record<string, ChallengeResult>).filter(([key]) => !isComing(key)));
+
+  const fixed: Record<string, unknown> = {};
+  if (state.dailyChallengeProgress && typeof state.dailyChallengeProgress === 'object') {
+    fixed.dailyChallengeProgress = keep(state.dailyChallengeProgress, key => key > latestDate);
+  }
+  if (state.weeklyChallengeProgress && typeof state.weeklyChallengeProgress === 'object') {
+    fixed.weeklyChallengeProgress = keep(state.weeklyChallengeProgress, key => key > latestWeek);
+  }
+  if (typeof state.lastStreakDate === 'string' && state.lastStreakDate > latestDate) {
+    // The best streak never goes down; with no real daily left, the streak starts again
+    const rebuilt = recomputeStreak({ ...state, ...fixed });
+    fixed.currentStreak = rebuilt.currentStreak ?? 0;
+    fixed.bestStreak = rebuilt.bestStreak ?? (Number(state.bestStreak) || 0);
+    fixed.lastStreakDate = rebuilt.lastStreakDate ?? null;
+  }
+  return fixed;
 }
 
 /** Last level before the levels inserted in v5, and how many were inserted */

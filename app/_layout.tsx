@@ -1,12 +1,10 @@
 import React, { useEffect } from 'react';
 import { Alert } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AudioProvider } from '@/context/AudioProvider';
 import AchievementToast from '@/components/AchievementToast';
 import { useReminderSync } from '@/utils/notifications';
-import * as Linking from 'expo-linking';
-import { parseSharedLevel } from '@/utils/sharing';
 import { useGameStore } from '@/store/gameStore';
 import { useMultiStore } from '@/store/multiStore';
 import i18n from '@/utils/i18n';
@@ -15,35 +13,8 @@ import { useTheme, useAppearanceSync } from '@/theme';
 export default function RootLayout() {
   const { colors } = useTheme();
   useAppearanceSync();
-  const router = useRouter();
-  const { addImportedLevel } = useGameStore();
   useReminderSync();
-
-  useEffect(() => {
-    const handleDeepLink = (event: { url: string }) => {
-      const parsed = Linking.parse(event.url);
-      // We look for rush-hours://game?data=...
-      if (parsed.queryParams?.data) {
-        // Checked and solved again: a broken or forged link imports nothing
-        const level = parseSharedLevel(parsed.queryParams.data as string);
-        if (level) {
-          // A link already imported opens the level that is there
-          const id = addImportedLevel(level);
-          router.push(`/game?levelId=${id}`);
-        } else {
-          Alert.alert(i18n.t('common.error'), i18n.t('custom_levels.import_error'));
-        }
-      }
-    };
-
-    const subscription = Linking.addEventListener('url', handleDeepLink);
-
-    Linking.getInitialURL().then(url => {
-      if (url) handleDeepLink({ url });
-    });
-
-    return () => subscription.remove();
-  }, []);
+  // Shared level links (rush-hours://game?data=…) are opened by Expo Router on the game screen (issue 118)
 
   // The save could not be read: the player must know their progress is not gone
   const gameLoadFailed = useGameStore(state => state.saveLoadFailed);

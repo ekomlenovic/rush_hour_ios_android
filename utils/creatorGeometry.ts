@@ -88,3 +88,36 @@ export function findFreeCell(
   }
   return null;
 }
+
+/**
+ * The board after a change of its size: the vehicles that still fit stay where they are,
+ * the target car is pulled back inside the grid and keeps its exit side. `removed` vehicles
+ * no longer fit (or would overlap the target pulled back): the player is asked first.
+ */
+export function resizeBoard(
+  vehicles: Vehicle[],
+  exitRow: number, exitCol: number,
+  gridSize: number, newSize: number,
+): { vehicles: Vehicle[]; exitRow: number; exitCol: number; removed: number } {
+  const side = getExitSide(exitRow, exitCol, gridSize) ?? 'Right';
+  const fits = (v: Pick<Vehicle, 'row' | 'col' | 'orientation' | 'length'>) =>
+    v.row + (v.orientation === 'vertical' ? v.length : 1) <= newSize
+    && v.col + (v.orientation === 'horizontal' ? v.length : 1) <= newSize;
+
+  const target = vehicles.find(v => v.isTarget);
+  const movedTarget = target ? {
+    ...target,
+    row: Math.min(target.row, newSize - (target.orientation === 'vertical' ? target.length : 1)),
+    col: Math.min(target.col, newSize - (target.orientation === 'horizontal' ? target.length : 1)),
+  } : undefined;
+  const kept = vehicles.filter(v => !v.isTarget && fits(v)
+    && !(movedTarget && hasCollision([movedTarget], v.row, v.col, v.orientation, v.length)));
+  const next = movedTarget ? [movedTarget, ...kept] : kept;
+
+  return {
+    vehicles: next,
+    exitRow: side === 'Bottom' ? newSize : side === 'Top' ? 255 : movedTarget?.row ?? exitRow,
+    exitCol: side === 'Right' ? newSize : side === 'Left' ? 255 : movedTarget?.col ?? exitCol,
+    removed: vehicles.length - next.length,
+  };
+}

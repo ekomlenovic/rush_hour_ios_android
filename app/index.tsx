@@ -9,16 +9,21 @@ import { useTranslation } from 'react-i18next';
 import { getLocalDateString, getWeekKey, getDaysLeftInWeek, formatTimeLeft } from '@/utils/date';
 import { getMissionsForDay, countMissionsDone } from '@/data/missions';
 import { getFreezeCapacity, getPlayerLevel, dailyWinXp, weeklyWinXp } from '@/data/progression';
+import { lockedEventCosmetics, seasonalEventOf } from '@/data/cosmetics';
 import { sampleLevels } from '@/data/sampleLevels';
 import { useAppOpenAlert } from '@/hooks/useAppOpenAlert';
+import { useNow } from '@/hooks/useNow';
 import { useTheme, fixedColors } from '@/theme';
 import ChallengeCard from '@/components/home/ChallengeCard';
+import RecapCard from '@/components/home/RecapCard';
+import { pendingRecap, periodLabel, recapKind } from '@/utils/recap';
 import HomeHeader from '@/components/home/HomeHeader';
 import HomeTabBar from '@/components/home/HomeTabBar';
 import MissionsSheet from '@/components/home/MissionsSheet';
 import OptionsSheet from '@/components/settings/OptionsSheet';
 import PlayerLevelBadge from '@/components/progression/PlayerLevelBadge';
 import BoardPreview from '@/components/garage/BoardPreview';
+import { useNewAchievements } from '@/hooks/useNewAchievements';
 import { useCosmetics } from '@/hooks/useCosmetics';
 import { getMapFocusLevel } from '@/utils/mapFocus';
 
@@ -38,7 +43,7 @@ function timeUntilTomorrow(now: Date): string {
 }
 
 export default function HomeScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { colors, isDark, scheme } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -53,20 +58,36 @@ export default function HomeScreen() {
   const lastPlayedLevelId = useGameStore(s => s.lastPlayedLevelId);
   const generatedLevels = useGameStore(s => s.generatedLevels);
   const cosmetics = useGameStore(s => s.cosmetics);
+  const monthlyStats = useGameStore(s => s.monthlyStats);
+  const yearlyStats = useGameStore(s => s.yearlyStats);
+  const achievementMonths = useGameStore(s => s.achievementMonths);
+  const recapSince = useGameStore(s => s.recapSince);
+  const recapsSeen = useGameStore(s => s.recapsSeen);
+  const frozenDates = useGameStore(s => s.frozenDates);
 
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const [isMissionsVisible, setMissionsVisible] = useState(false);
 
-  useAppOpenAlert();
-  const { unseen: newCosmetics } = useCosmetics();
-
-  const now = new Date();
+  // The screen stays mounted under the others: it follows the clock to show the new day
+  const now = useNow();
   const dateStr = getLocalDateString(now);
+  useAppOpenAlert(dateStr);
+  const { unseen: newCosmetics, context: cosmeticContext } = useCosmetics();
+  const newAchievements = useNewAchievements();
+
   const dailyStatus = dailyChallengeProgress[dateStr];
+  // During a seasonal event, the daily challenge tells what it unlocks while there is something left to unlock
+  const seasonalEvent = seasonalEventOf(dateStr);
+  const eventCosmetics = seasonalEvent ? lockedEventCosmetics(seasonalEvent, cosmeticContext).length : 0;
 
   const todayMissions = getMissionsForDay(dailyMissions, dateStr);
   const missionsDone = countMissionsDone(todayMissions);
   const freezeCapacity = getFreezeCapacity(getPlayerLevel(xp));
+
+  // The recap of the month (from the 1st) or of the year (from December 26th), until opened
+  const recapKey = pendingRecap({
+    monthlyStats, yearlyStats, achievementMonths, recapSince, recapsSeen, dailyChallengeProgress, weeklyChallengeProgress, frozenDates,
+  }, now);
 
   const weekKey = getWeekKey(now);
   const weeklyStatus = weeklyChallengeProgress[weekKey];
@@ -75,7 +96,7 @@ export default function HomeScreen() {
   // Play: the tutorial for a brand new player, otherwise the level the map opens on
   const isNewPlayer = progress.length === 0;
   const totalLevels = sampleLevels.length + generatedLevels.length;
-  const focusLevel = getMapFocusLevel(lastPlayedLevelId, maxUnlockedLevel);
+  const focusLevel = getMapFocusLevel(lastPlayedLevelId, maxUnlockedLevel, id => progress.some(p => p.levelId === id && p.completed));
   const playContext = isNewPlayer
     ? t('home.play_tutorial')
     : focusLevel > totalLevels
@@ -95,6 +116,7 @@ export default function HomeScreen() {
             missionsDone={missionsDone}
             missionsTotal={todayMissions.ids.length}
             missionsRewarded={todayMissions.rewarded}
+            newAchievements={newAchievements.length}
             onProfile={() => router.push('/profile')}
             onMissions={() => setMissionsVisible(true)}
             onSettings={() => setSettingsVisible(true)}
@@ -140,8 +162,18 @@ export default function HomeScreen() {
             </View>
           </AnimatedPressable>
 
-          {/* 2. Challenges: same structure, dimmed once won */}
+          {/* 2. Challenges: same structure, dimmed once won; the recap first when it is ready */}
           <View style={styles.challenges}>
+            {recapKey ? (
+              <RecapCard
+                colors={colors}
+                title={recapKind(recapKey) === 'year'
+                  ? t('recap.ready_year', { period: periodLabel(recapKey, i18n.language) })
+                  : t('recap.ready_month', { period: periodLabel(recapKey, i18n.language) })}
+                subtitle={t('recap.ready_desc')}
+                onPress={() => router.push(`/recap?period=${recapKey}`)}
+              />
+            ) : null}
             <ChallengeCard
               colors={colors}
               icon="calendar"
@@ -149,7 +181,9 @@ export default function HomeScreen() {
               done={!!dailyStatus?.completed}
               subtitle={dailyStatus?.completed
                 ? `${t('home.won_stars', { count: dailyStatus.stars })} · ${t('home.daily_next', { time: timeUntilTomorrow(now) })}`
-                : t('home.daily_desc')}
+                : seasonalEvent && eventCosmetics > 0
+                  ? t(`home.daily_event.${seasonalEvent}`, { count: eventCosmetics })
+                  : t('home.daily_desc')}
               reward={t('home.reward_xp', { xp: dailyWinXp(MAX_STARS) })}
               enteringDelay={450}
               onPress={() => router.push(`/game?levelId=daily&date=${dateStr}`)}

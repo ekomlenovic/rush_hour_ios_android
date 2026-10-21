@@ -1,11 +1,14 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, Share, Alert, AccessibilityInfo, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { haptics, Haptics } from '@/utils/haptics';
 import Board from '@/components/Board';
 import { useGameStore } from '@/store/gameStore';
 import type { MissionReward } from '@/data/missions';
+import { isBossLevel } from '@/data/bosses';
+import { newlyUnlockedCosmetics } from '@/data/cosmetics';
 import { checkWin } from '@/utils/collision';
 import { solvePuzzleAsync } from '@/utils/solver.background';
 import { customLevelKind, customLevelTitle } from '@/utils/customLevels';
@@ -14,7 +17,11 @@ import { parseLocalDateString } from '@/utils/date';
 import { buildChallengeShareText } from '@/utils/shareResult';
 import { requestReminderPermission } from '@/utils/notifications';
 import { calculateScore, getStars } from '@/utils/scoring';
-import { resolveLevel, GameRouteParams } from '@/utils/levelResolver';
+import { importSharedLevel, resolveLevel, GameRouteParams } from '@/utils/levelResolver';
+import { isArchiveDateAvailable } from '@/utils/archives';
+import { isDailyOpen, isWeeklyOpen } from '@/utils/challengeDates';
+import { nextMapLevel } from '@/utils/mapFocus';
+import { sampleLevels } from '@/data/sampleLevels';
 import { useActivePlayTime } from '@/hooks/useActivePlayTime';
 import { describeVehicle, getVehicleLetters, getMoveDirection } from '@/utils/accessibility';
 import { useTheme } from '@/theme';
@@ -36,6 +43,7 @@ export default function GameScreen() {
   const winEffect = useGameStore(s => s.cosmetics.effect);
   const winEffectColors = useMemo(() => [board.targetCar, ...board.vehicles.slice(0, 6)], [board]);
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ levelId: string; date?: string; week?: string; data?: string }>();
 
   const currentLevel = useGameStore(s => s.currentLevel);
@@ -48,6 +56,7 @@ export default function GameScreen() {
   const completeLevel = useGameStore(s => s.completeLevel);
   const createdLevels = useGameStore(s => s.createdLevels);
   const importedLevels = useGameStore(s => s.importedLevels);
+  const generatedLevels = useGameStore(s => s.generatedLevels);
   const cancelGeneration = useGameStore(s => s.cancelGeneration);
   const dailyChallengeProgress = useGameStore(s => s.dailyChallengeProgress);
   const weeklyChallengeProgress = useGameStore(s => s.weeklyChallengeProgress);
@@ -61,6 +70,7 @@ export default function GameScreen() {
   const [isHintLoading, setIsHintLoading] = useState(false);
   const [winTimeMs, setWinTimeMs] = useState<number | null>(null);
   const [winUnlocks, setWinUnlocks] = useState<string[]>([]);
+  const [winCosmetics, setWinCosmetics] = useState<string[]>([]);
   const [winMissionReward, setWinMissionReward] = useState<MissionReward | null>(null);
   const [winXpGain, setWinXpGain] = useState<{ from: number; to: number } | null>(null);
   const [winLevelUps, setWinLevelUps] = useState<number[]>([]);
@@ -79,6 +89,12 @@ export default function GameScreen() {
   const isChallengeCompleted = !!challengeResult?.completed;
   // A past daily replayed from the archives: training, played like a map level
   const isArchive = params.levelId === 'archive' && !!params.date;
+
+  /** Back where the level was opened from; home for a level opened by a link at launch (nothing under it) */
+  const goBack = useCallback(() => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/');
+  }, [router]);
 
   // Wordle-like result of the daily / weekly challenge (no spoiler)
   const handleShareResult = async () => {
@@ -111,7 +127,7 @@ export default function GameScreen() {
     // A challenge stays open on its result: going back under the closing modal
     // only happened once it was gone, seconds later (see docs/GAME_DESIGN.md)
     if (challengeKind) setWon(false);
-    else router.back();
+    else goBack();
     const state = useGameStore.getState();
     if (challengeKind !== 'daily' || state.notificationsPrompted || state.notificationsEnabled) return;
     state.markNotificationsPrompted();
@@ -130,6 +146,27 @@ export default function GameScreen() {
     }, 400);
   };
 
+  /** From the win screen straight into the following level of the map: back from it still leads to the map */
+  const handleNextLevel = (levelId: number) => {
+    router.replace(`/game?levelId=${levelId}`);
+  };
+
+  /** From the win screen to the garage, to pick what the win unlocked; back from it leads where Continue goes */
+  const handleOpenGarage = () => {
+    if (challengeKind) {
+      setWon(false);
+      router.push('/garage');
+    } else {
+      router.replace('/garage');
+    }
+  };
+
+  /** A route to a level that can't be played (a broken or outdated link) */
+  const closeUnavailable = () => {
+    Alert.alert(t('common.error'), t('game.load_error'));
+    goBack();
+  };
+
   // Load the level and compute the real minMoves via BFS
   useEffect(() => {
     setLoading(true);
@@ -140,6 +177,25 @@ export default function GameScreen() {
     cancelGeneration();
 
     const timer = setTimeout(async () => {
+      // A shared link (rush-hours://game?data=…): imported, then opened as an imported level
+      if (params.data && !params.levelId) {
+        const id = await importSharedLevel(params.data);
+        if (id !== null) {
+          router.replace(`/game?levelId=${id}`);
+        } else {
+          Alert.alert(t('common.error'), t('custom_levels.import_error'));
+          // Opened by the link at launch: nothing to go back to
+          goBack();
+        }
+        return;
+      }
+      // The daily and the weekly open on their own day and week only (issue 119): a past day is an archive
+      if (params.levelId === 'daily' && !isDailyOpen(params.date ?? '')) {
+        if (params.date && isArchiveDateAvailable(params.date)) return router.replace(`/game?levelId=archive&date=${params.date}`);
+        return closeUnavailable();
+      }
+      if (params.levelId === 'weekly' && !isWeeklyOpen(params.week ?? '')) return closeUnavailable();
+
       const level = await resolveLevel(params as GameRouteParams);
 
       if (level) {
@@ -147,27 +203,24 @@ export default function GameScreen() {
         setComputedMinMoves(level.minMoves > 0 ? level.minMoves : null);
         setLoading(false);
       } else {
-        // If level not found, don't just hang or show empty grid
-        // Redirect back or show error
+        // Never left on the loading screen: a route without a level (a deleted level, a broken link) goes back
         console.error("Level not found for ID:", params.levelId);
-        if (params.levelId) {
-          Alert.alert(t('common.error'), t('game.load_error'));
-          router.back();
-        }
+        closeUnavailable();
       }
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [params.levelId, params.date, params.week, createdLevels, importedLevels]);
+  }, [params.levelId, params.date, params.week, params.data, createdLevels, importedLevels]);
 
   const playTime = useActivePlayTime(!isLoading && !!currentLevel && !won && !isChallengeCompleted);
 
   const handleMoveEnd = useCallback((vehicleId: string, newRow: number, newCol: number) => {
-    if (won || isChallengeCompleted) return;
+    if (won || isChallengeCompleted) return false;
+    // Refused when another vehicle took the room meanwhile (two fingers): the block goes back
+    if (!moveVehicle(vehicleId, newRow, newCol)) return false;
 
     setHintVehicleId(null); // Clear hint highlight on any move
     setHintRemainingMoves(null);
-    moveVehicle(vehicleId, newRow, newCol);
 
     // Check win after store update
     const updatedVehicles = useGameStore.getState().vehicles;
@@ -183,6 +236,7 @@ export default function GameScreen() {
       const stars = getStars(updatedMoveCount, minMoves);
 
       const details = { moves: updatedMoveCount, minMoves, moveLog: useGameStore.getState().moveLog };
+      const before = useGameStore.getState();
       if (challengeKind === 'daily') {
         useGameStore.getState().completeDailyChallenge(params.date!, score, stars, timeMs, details);
       } else if (challengeKind === 'weekly') {
@@ -195,6 +249,7 @@ export default function GameScreen() {
 
       // Unlocked achievements are shown in the win modal instead of the global toast
       setWinUnlocks(useGameStore.getState().consumeUnlockQueue());
+      setWinCosmetics(newlyUnlockedCosmetics(before, useGameStore.getState()));
       setWinMissionReward(useGameStore.getState().consumeMissionReward());
       setWinXpGain(useGameStore.getState().lastXpGain);
       setWinLevelUps(useGameStore.getState().consumeLevelUps());
@@ -202,6 +257,7 @@ export default function GameScreen() {
       setWon(true);
       haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
+    return true;
   }, [won, isChallengeCompleted, moveVehicle, currentLevel, computedMinMoves, completeLevel, challengeKind, isArchive, params.date, params.week, playTime.stop]);
 
   const handleUndo = useCallback(() => {
@@ -238,10 +294,7 @@ export default function GameScreen() {
     const startTime = Date.now();
     setIsHintLoading(true);
 
-    // Give React and UI thread time to render the loading indicator
-    // before the UI thread potentially gets blocked by the solver worklet
-    await new Promise(resolve => setTimeout(resolve, 150));
-
+    // Solved on a thread of its own: the loading indicator keeps turning meanwhile
     try {
       const result = await solvePuzzleAsync(
         vehicles,
@@ -255,6 +308,10 @@ export default function GameScreen() {
       if (duration < 800) {
         await new Promise(resolve => setTimeout(resolve, 800 - duration));
       }
+
+      // A move, an undo or a reset during the search: the hint is for a board that is gone
+      const latest = useGameStore.getState();
+      if (latest.vehicles !== vehicles || latest.currentLevel !== currentLevel) return;
 
       if (result.minMoves > 0 && result.moves.length > 0) {
         setHintRemainingMoves(result.minMoves);
@@ -310,6 +367,10 @@ export default function GameScreen() {
   const levelTitle = !currentLevel ? ''
     : customKind ? customLevelTitle(t, customLevels.find(l => l.id === currentLevel.id) ?? currentLevel, customKind, customLevels)
     : t('game.level_count', { id: currentLevel.id });
+  // A level of the map (campaign or generated) has a next one, until the last one
+  const nextLevelId = currentLevel && !customKind && !challengeKind && !isArchive
+    ? nextMapLevel(currentLevel.id, sampleLevels.length + generatedLevels.length)
+    : null;
 
   if (isLoading || !currentLevel) {
     const isMondayDaily = (params.levelId === 'daily' || isArchive) && !!params.date && parseLocalDateString(params.date).getDay() === 1;
@@ -317,11 +378,12 @@ export default function GameScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]} onTouchStart={handleScreenTouch}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]} onTouchStart={handleScreenTouch}>
       {/* Header */}
       <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
-          <Text style={[styles.backText, { color: colors.textMuted }]} numberOfLines={1}>← {customKind ? t('a11y.back') : t('common.map')}</Text>
+        <Pressable onPress={goBack} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
+          {/* "Map" only where it leads: challenges come from the home screen, archives from the profile */}
+          <Text style={[styles.backText, { color: colors.textMuted }]} numberOfLines={1}>← {customKind || challengeKind || isArchive ? t('a11y.back') : t('common.map')}</Text>
         </Pressable>
         <Text style={[styles.levelTitle, { color: colors.text }]} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
           {challengeKind === 'daily' ? t('home.daily_challenge')
@@ -329,6 +391,7 @@ export default function GameScreen() {
             : isArchive ? t('game.archive_title', {
                 date: parseLocalDateString(params.date!).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' }),
               })
+            : !customKind && isBossLevel(currentLevel.id) ? t('game.level_boss', { id: currentLevel.id })
             : levelTitle}
         </Text>
         <Pressable onPress={() => setShareVisible(true)} style={styles.shareHeaderBtn} accessibilityRole="button" accessibilityLabel={t('a11y.share_level')}>
@@ -371,6 +434,8 @@ export default function GameScreen() {
         score={score}
         timeMs={winTimeMs}
         unlocks={winUnlocks}
+        cosmeticUnlocks={winCosmetics}
+        onOpenGarage={handleOpenGarage}
         missionReward={winMissionReward}
         xpGain={winXpGain}
         levelUps={winLevelUps}
@@ -380,8 +445,9 @@ export default function GameScreen() {
         onShareResult={handleShareResult}
         onShowSolution={() => showSolution(playerMoves ? 'mine' : 'optimal')}
         onRetry={challengeKind ? undefined : handleRetry}
+        onNextLevel={nextLevelId !== null ? () => handleNextLevel(nextLevelId) : undefined}
         onContinue={handleWinContinue}
-        onRequestClose={() => router.back()}
+        onRequestClose={goBack}
       />
 
       {isHintLoading && <HintLoadingPill colors={colors} />}
@@ -396,6 +462,15 @@ export default function GameScreen() {
           onHint={handleHint}
           onReset={handleReset}
         />
+      )}
+
+      {/* A challenge has no hint nor undo: said, so their absence does not look like a bug */}
+      {challengeKind && !won && !isChallengeCompleted && (
+        <Animated.View entering={FadeInDown.delay(450).springify()} style={[styles.rules, challengeKind === 'weekly' && styles.rulesUnderActions]}>
+          <IconText icon="information-circle-outline" color={colors.textMuted} textStyle={styles.rulesText}>
+            {t(challengeKind === 'daily' ? 'game.daily_rules' : 'game.weekly_rules')}
+          </IconText>
+        </Animated.View>
       )}
 
       {/* Scrolls when large text or a small screen leaves too little room under the board */}
@@ -446,7 +521,6 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
     paddingHorizontal: 24,
   },
   header: {
@@ -485,6 +559,18 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: 'center',
     alignItems: 'flex-end',
+  },
+  rules: {
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  rulesUnderActions: {
+    marginTop: 16,
+  },
+  rulesText: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
   },
   goalContainer: {
     marginTop: 20,

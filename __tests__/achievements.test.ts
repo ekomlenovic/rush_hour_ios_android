@@ -4,6 +4,7 @@ import { sampleLevels } from '../data/sampleLevels';
 import en from '../locales/en.json';
 import fr from '../locales/fr.json';
 import { resetStore, setToday, winDaily, winMapLevel } from './helpers';
+import { matchSecretCode } from '../store/stats';
 
 const state = () => useGameStore.getState();
 
@@ -72,6 +73,22 @@ describe('achievements in the store', () => {
     expect(state().achievements).toContain('clean_run');
   });
 
+  it('a perfect zone needs every level of a full zone with 3 stars (#40)', () => {
+    const win = (id: number, stars = 3) => ({ levelId: id, completed: true, bestScore: 300, stars });
+    const zone1 = Array.from({ length: 20 }, (_, i) => win(i + 1));
+    const context = (progress: ReturnType<typeof win>[]) =>
+      buildAchievementContext({ ...useGameStore.getInitialState(), progress });
+
+    expect(context(zone1).perfectZones).toBe(1);
+    expect(context([...zone1.slice(0, 19), win(20, 2)]).perfectZones).toBe(0);
+    // Levels 21-40 won with 3 stars but one missing: the zone does not count
+    expect(context([...zone1, ...Array.from({ length: 19 }, (_, i) => win(i + 21))]).perfectZones).toBe(1);
+    // The last zone of the campaign, still growing, does not count yet
+    const lastFull = Math.floor(sampleLevels.length / 20) * 20;
+    const tail = Array.from({ length: sampleLevels.length - lastFull }, (_, i) => win(lastFull + i + 1));
+    expect(context(tail).perfectZones).toBe(0);
+  });
+
   it('streak achievements are reachable', () => {
     winDaily('2026-10-12');
     winDaily('2026-10-13');
@@ -110,5 +127,20 @@ describe('achievements in the store', () => {
     setToday('2026-10-31');
     winMapLevel();
     expect(state().achievements).toContain('halloween');
+  });
+
+  it('secret: "mafia" typed in the level import unlocks the Mafia skin, palette and win effect', () => {
+    expect(matchSecretCode('  MaFiA ')).toBe('mafia');
+    expect(matchSecretCode('mafia2')).toBeNull();
+    state().recordSecretCode('omerta');
+    expect(state().achievements).not.toContain('mafia');
+    expect(state().selectCosmetic('skin', 'mafia')).toBe(false);
+
+    state().recordSecretCode('mafia');
+    expect(state().achievements).toContain('mafia');
+    expect(state().stats.secretCodes).toEqual({ mafia: 1 });
+    expect(state().selectCosmetic('skin', 'mafia')).toBe(true);
+    expect(state().selectCosmetic('palette', 'mafia')).toBe(true);
+    expect(state().selectCosmetic('effect', 'tommy')).toBe(true);
   });
 });

@@ -8,19 +8,20 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
-  runOnJS,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { haptics, Haptics } from '@/utils/haptics';
 import { Vehicle } from '@/store/gameStore';
 import { stepVehicle } from '@/utils/accessibility';
-import { useTheme } from '@/theme';
+import { useTheme, type VehicleArt } from '@/theme';
+import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
 
 interface BlockProps {
   vehicle: Vehicle;
   allVehicles: Vehicle[];
   gridSize: number;
   cellSize: number;
-  onMoveEnd: (vehicleId: string, newRow: number, newCol: number) => void;
+  onMoveEnd: (vehicleId: string, newRow: number, newCol: number) => boolean | void;
   isHinted?: boolean;
   min: number;
   max: number;
@@ -34,6 +35,8 @@ interface BlockProps {
   letter?: string;
   /** Displayed color (vehicle palette), the level's color if undefined */
   color?: string;
+  /** Drawn vehicle (Mafia or 1800 skin or palette) instead of a colored block */
+  art?: VehicleArt;
 }
 
 export interface BlockA11yStrings {
@@ -58,7 +61,7 @@ const BOUNCE_SPRING = {
   mass: 0.5,
 };
 
-function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, disabled = false, a11yLabel, a11yValue, a11yStrings, letter, color }: BlockProps) {
+function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, disabled = false, a11yLabel, a11yValue, a11yStrings, letter, color, art }: BlockProps) {
 
   const { board } = useTheme();
   const fillColor = vehicle.isTarget ? board.targetCar : color ?? vehicle.color;
@@ -119,9 +122,14 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
 
   const handleMoveEndSync = useCallback(
     (newRow: number, newCol: number) => {
-      onMoveEnd(vehicle.id, newRow, newCol);
+      // Refused (another vehicle dragged at the same time took the room): back to its cell
+      if (onMoveEnd(vehicle.id, newRow, newCol) === false) {
+        translateX.value = withSpring(vehicle.col * cellSize, BOUNCE_SPRING);
+        translateY.value = withSpring(vehicle.row * cellSize, BOUNCE_SPRING);
+        triggerCollisionHaptic();
+      }
     },
-    [onMoveEnd, vehicle.id]
+    [onMoveEnd, vehicle.id, vehicle.row, vehicle.col, cellSize, triggerCollisionHaptic]
   );
 
   const hasHitMin = useSharedValue(false);
@@ -134,7 +142,7 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
       startX.value = translateX.value;
       startY.value = translateY.value;
       scale.value = withSpring(1.05, SPRING_CONFIG);
-      runOnJS(triggerMoveHaptic)();
+      scheduleOnRN(triggerMoveHaptic);
     })
     .onUpdate((event) => {
       'use worklet';
@@ -145,10 +153,10 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
         
         // Dynamic collision haptic
         if (raw < boundsMinPx.value && !hasHitMin.value) {
-          runOnJS(triggerCollisionHaptic)();
+          scheduleOnRN(triggerCollisionHaptic);
           hasHitMin.value = true;
         } else if (raw > boundsMaxPx.value && !hasHitMax.value) {
-          runOnJS(triggerCollisionHaptic)();
+          scheduleOnRN(triggerCollisionHaptic);
           hasHitMax.value = true;
         } else if (raw >= boundsMinPx.value && raw <= boundsMaxPx.value) {
           hasHitMin.value = false;
@@ -161,10 +169,10 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
         const clamped = Math.max(boundsMinPx.value, Math.min(boundsMaxPx.value, raw));
         
         if (raw < boundsMinPx.value && !hasHitMin.value) {
-          runOnJS(triggerCollisionHaptic)();
+          scheduleOnRN(triggerCollisionHaptic);
           hasHitMin.value = true;
         } else if (raw > boundsMaxPx.value && !hasHitMax.value) {
-          runOnJS(triggerCollisionHaptic)();
+          scheduleOnRN(triggerCollisionHaptic);
           hasHitMax.value = true;
         } else if (raw >= boundsMinPx.value && raw <= boundsMaxPx.value) {
           hasHitMin.value = false;
@@ -190,14 +198,14 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
       if (isHorizontal) {
         translateX.value = withSpring(finalCell * cellSize, finalCell !== snappedValue ? BOUNCE_SPRING : SPRING_CONFIG);
         if (finalCell !== vehicle.col) {
-          runOnJS(handleMoveEndSync)(vehicle.row, finalCell);
-          runOnJS(triggerMoveHaptic)();
+          scheduleOnRN(handleMoveEndSync, vehicle.row, finalCell);
+          scheduleOnRN(triggerMoveHaptic);
         }
       } else {
         translateY.value = withSpring(finalCell * cellSize, finalCell !== snappedValue ? BOUNCE_SPRING : SPRING_CONFIG);
         if (finalCell !== vehicle.row) {
-          runOnJS(handleMoveEndSync)(finalCell, vehicle.col);
-          runOnJS(triggerMoveHaptic)();
+          scheduleOnRN(handleMoveEndSync, finalCell, vehicle.col);
+          scheduleOnRN(triggerMoveHaptic);
         }
       }
     }), [isHorizontal, vehicle.id, vehicle.row, vehicle.col, vehicle.length, cellSize, triggerMoveHaptic, triggerCollisionHaptic, handleMoveEndSync]);
@@ -216,7 +224,11 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
       triggerCollisionHaptic();
       return;
     }
-    onMoveEnd(vehicle.id, next.row, next.col);
+    if (onMoveEnd(vehicle.id, next.row, next.col) === false) {
+      AccessibilityInfo.announceForAccessibility(a11yStrings.blocked);
+      triggerCollisionHaptic();
+      return;
+    }
     triggerMoveHaptic();
   }, [vehicle, min, max, onMoveEnd, a11yStrings, triggerCollisionHaptic, triggerMoveHaptic]);
 
@@ -272,9 +284,14 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
             borderColor: board.vehicleBorder,
           },
           vehicle.isTarget && styles.targetBlock,
+          // A drawn vehicle has its own body, chrome and shadow
+          art && styles.drawnBlock,
           animatedStyle,
         ]}
       >
+        {art && (
+          <DrawnVehicle art={art} length={vehicle.length} orientation={vehicle.orientation} color={fillColor} width={width - 4} height={height - 4} />
+        )}
         {isHinted && (
           <Animated.View
             style={[
@@ -304,13 +321,15 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
             />
           </Animated.View>
         )}
-        <View
-          style={[
-            styles.shine,
-            { borderRadius: radius * 0.78, backgroundColor: board.vehicleShine },
-          ]}
-        />
-        {letter === undefined && vehicle.isTarget && board.targetIcon && (
+        {!art && (
+          <View
+            style={[
+              styles.shine,
+              { borderRadius: radius * 0.78, backgroundColor: board.vehicleShine },
+            ]}
+          />
+        )}
+        {letter === undefined && vehicle.isTarget && !art && board.targetIcon && (
           <Text style={{ fontSize: cellSize * 0.5 }} importantForAccessibility="no" accessibilityElementsHidden>{board.targetIcon}</Text>
         )}
         {letter !== undefined && (
@@ -340,6 +359,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 10,
     elevation: 10,
+  },
+  drawnBlock: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   letter: {
     fontWeight: '900',
@@ -375,7 +400,8 @@ function areBlocksEqual(prevProps: BlockProps, nextProps: BlockProps) {
     prevProps.a11yValue === nextProps.a11yValue &&
     prevProps.a11yStrings === nextProps.a11yStrings &&
     prevProps.letter === nextProps.letter &&
-    prevProps.color === nextProps.color
+    prevProps.color === nextProps.color &&
+    prevProps.art === nextProps.art
   );
 }
 

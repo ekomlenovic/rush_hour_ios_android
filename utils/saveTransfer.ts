@@ -1,11 +1,19 @@
 import { useGameStore, type Level, type LevelProgress, type ChallengeResult } from '../store/gameStore';
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from '../store/migrations';
+import { isWellFormedSave } from '../store/savedStates';
+import { initialStats } from '../store/stats';
+import { emptyPeriodStats, keptMonths } from '../store/periodStats';
+import type { PeriodStats, PlayerStats } from '../store/types';
+import { COSMETICS } from '../data/cosmetics';
 import { sampleLevels } from '../data/sampleLevels';
+import { isBossLevel } from '../data/bosses';
 import { ACHIEVEMENTS } from '../data/achievements';
 import {
-  ACHIEVEMENT_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp, REPLAY_XP_FACTOR,
+  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp, REPLAY_XP_FACTOR,
 } from '../data/progression';
-import { getLocalDateString, getWeekKey } from './date';
+import { getLocalDateString } from './date';
+import { starsFromScore } from './scoring';
+import { latestSavedDate, latestSavedWeek } from './challengeDates';
 
 /**
  * Export / import of the player's progress, without any server (see docs/GAME_DESIGN.md, Sauvegarde).
@@ -149,8 +157,8 @@ export function exportProgress(now: Date = new Date()): string {
   for (const field of DEVICE_FIELDS) delete state[field];
 
   // Undo stacks are the bulk of a save: the level in progress is kept, its undo history and move log are not
-  const savedStates = (state.savedStates ?? {}) as Record<string, { history?: unknown[]; moveLog?: unknown[] }>;
-  state.savedStates = Object.fromEntries(Object.entries(savedStates).map(([key, saved]) => [key, { ...saved, history: [], moveLog: [] }]));
+  const savedStates = (state.savedStates ?? {}) as Record<string, { history?: unknown[]; undoSteps?: unknown[]; moveLog?: unknown[] }>;
+  state.savedStates = Object.fromEntries(Object.entries(savedStates).map(([key, saved]) => [key, { ...saved, history: [], undoSteps: [], moveLog: [] }]));
 
   return encodeSave({ version: STORE_VERSION, exportedAt: getLocalDateString(now), state });
 }
@@ -169,10 +177,15 @@ const isStars = (value: unknown) => value === undefined || (Number.isInteger(val
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 const WEEK_KEY = /^\d{4}-W\d{2}$/;
 
-/** Best stars a score allows (score = 100 × optimum − 15 per extra move, see utils/scoring.ts) */
+/**
+ * Best stars a score allows (score = 100 × optimum − 15 per extra move, see utils/scoring.ts), under
+ * the current rule (2 stars within half of the optimum) or the former one (within 3 extra moves),
+ * which challenges won before 1.1 still carry
+ */
 function maxStarsForScore(score: number, minMoves: number): number {
   const best = minMoves * 100;
-  return score >= best ? 3 : score >= best - 3 * 15 ? 2 : 1;
+  const former = score >= best ? 3 : score >= best - 3 * 15 ? 2 : 1;
+  return Math.max(former, starsFromScore(score, minMoves));
 }
 
 /** A challenge result that its own score allows */
@@ -196,8 +209,9 @@ function fixedLevelsOf(state: Record<string, any>): Map<number, Level> {
 
 /** Whether nothing in the save is impossible to reach by playing */
 export function isConsistent(state: Record<string, any>, now: Date = new Date()): boolean {
-  const today = getLocalDateString(now);
-  const thisWeek = getWeekKey(now);
+  // A save made on a phone ahead in time (time zone, trip) can be a day ahead of this one
+  const latestDate = latestSavedDate(now);
+  const latestWeek = latestSavedWeek(now);
   const levels = fixedLevelsOf(state);
 
   const progress = state.progress ?? [];
@@ -214,17 +228,17 @@ export function isConsistent(state: Record<string, any>, now: Date = new Date())
   if (!isRecord(dailies) || !isRecord(weeklies)) return false;
   // Date keys compare as strings: nothing in the future
   for (const [key, result] of Object.entries(dailies)) {
-    if (!DATE_KEY.test(key) || key > today || !isValidResult(result)) return false;
+    if (!DATE_KEY.test(key) || key > latestDate || !isValidResult(result)) return false;
   }
   for (const [key, result] of Object.entries(weeklies)) {
-    if (!WEEK_KEY.test(key) || key > thisWeek || !isValidResult(result)) return false;
+    if (!WEEK_KEY.test(key) || key > latestWeek || !isValidResult(result)) return false;
   }
-  // Archives are past days only: never today
+  // Archives are past days only: never the day of the save
   const archives = state.archiveProgress ?? {};
   const archiveLevels = state.archiveLevels ?? {};
   if (!isRecord(archives) || !isRecord(archiveLevels)) return false;
   for (const [key, result] of Object.entries(archives)) {
-    if (!DATE_KEY.test(key) || key >= today || !isValidResult(result)) return false;
+    if (!DATE_KEY.test(key) || key >= latestDate || !isValidResult(result)) return false;
   }
   for (const [key, level] of Object.entries(archiveLevels)) {
     if (!DATE_KEY.test(key) || !isRecord(level) || !isCount(level.minMoves) || !Array.isArray(level.vehicles)) return false;
@@ -236,12 +250,12 @@ export function isConsistent(state: Record<string, any>, now: Date = new Date())
   if (!isCount(currentStreak) || !isCount(bestStreak) || currentStreak > bestStreak || bestStreak > dailiesWon) return false;
 
   const dates = [state.lastStreakDate, state.lastOpenDate, ...(Array.isArray(state.frozenDates) ? state.frozenDates : [])];
-  if (dates.some(d => d != null && (typeof d !== 'string' || !DATE_KEY.test(d) || d > today))) return false;
+  if (dates.some(d => d != null && (typeof d !== 'string' || !DATE_KEY.test(d) || d > latestDate))) return false;
 
   for (const field of ['xp', 'streakFreezes', 'totalHintsUsed', 'maxUnlockedLevel']) {
     if (state[field] !== undefined && !isCount(state[field])) return false;
   }
-  for (const field of ['achievements', 'generatedLevels', 'createdLevels', 'importedLevels', 'frozenDates', 'seenCosmetics']) {
+  for (const field of ['achievements', 'generatedLevels', 'createdLevels', 'importedLevels', 'frozenDates', 'seenCosmetics', 'seenAchievements']) {
     if (state[field] !== undefined && !Array.isArray(state[field])) return false;
   }
   for (const field of ['stats', 'savedStates', 'cosmetics']) {
@@ -252,12 +266,103 @@ export function isConsistent(state: Record<string, any>, now: Date = new Date())
   return true;
 }
 
+/** The levels in progress that can be resumed: a broken one is dropped (only that game is lost), not the whole save */
+function wellFormedSavedStates(savedStates: Record<string, unknown> = {}): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(savedStates).filter(([, saved]) => isWellFormedSave(saved)));
+}
+
+const isAmount = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0;
+
+/** The known statistics with a valid value: a missing or broken one takes its default */
+function wellFormedStats(stats: Record<string, unknown> = {}): Record<string, unknown> {
+  const clean: Record<string, unknown> = {};
+  for (const [field, initial] of Object.entries(initialStats())) {
+    const value = stats[field];
+    if (isRecord(initial)) {
+      if (isRecord(value)) clean[field] = Object.fromEntries(Object.entries(value).filter(([, count]) => isAmount(count)));
+    } else if (isAmount(value) || (initial === null && value === null)) {
+      clean[field] = value;
+    }
+  }
+  return clean;
+}
+
+const MONTH_KEY = /^\d{4}-\d{2}$/;
+const YEAR_KEY = /^\d{4}$/;
+
+/**
+ * Recap counters of a period, each one capped by its lifetime total: a period never holds more
+ * than the whole game (a broken or missing counter takes 0)
+ */
+function cappedPeriod(period: unknown, caps: Record<keyof PeriodStats, number>): PeriodStats {
+  const clean = emptyPeriodStats();
+  if (!isRecord(period)) return clean;
+  for (const field of Object.keys(clean) as (keyof PeriodStats)[]) {
+    const value = period[field];
+    if (isAmount(value)) clean[field] = Math.min(value, caps[field]);
+  }
+  clean.perfectWins = Math.min(clean.perfectWins, clean.wins);
+  clean.bossWins = Math.min(clean.bossWins, clean.wins);
+  return clean;
+}
+
+/** Periods with a valid key, not in the future */
+function cappedPeriods(periods: unknown, isKey: (key: string) => boolean, caps: Record<keyof PeriodStats, number>): Record<string, PeriodStats> {
+  if (!isRecord(periods)) return {};
+  return Object.fromEntries(Object.entries(periods).filter(([key]) => isKey(key)).map(([key, period]) => [key, cappedPeriod(period, caps)]));
+}
+
+/**
+ * The recap fields checked (issue 125): counters capped by the lifetime totals, months in the window,
+ * nothing in the future. A broken field takes its default: the recap is not worth refusing a save
+ */
+function wellFormedRecap(state: Record<string, any>, now: Date): Record<string, unknown> {
+  const latestDate = latestSavedDate(now);
+  const latestMonth = latestDate.slice(0, 7);
+  const latestYear = latestDate.slice(0, 4);
+  const stats: PlayerStats = { ...initialStats(), ...state.stats };
+  const completed = (state.progress as LevelProgress[]).filter(p => p.completed);
+  const achievements: string[] = state.achievements;
+  const caps: Record<keyof PeriodStats, number> = {
+    wins: stats.totalWins,
+    newLevels: completed.length,
+    starsGained: completed.reduce((sum, p) => sum + (p.stars || 0), 0),
+    perfectWins: stats.totalWins,
+    playTimeMs: stats.totalPlayTimeMs,
+    moves: stats.totalMoves,
+    bossWins: stats.totalWins,
+    hardestWinMoves: stats.hardestWinMoves,
+    nightWins: stats.nightWins,
+    earlyWins: stats.earlyDailyWins,
+    achievements: achievements.length,
+    resultsShared: stats.resultsShared,
+    cosmetics: COSMETICS.length,
+  };
+
+  const months = cappedPeriods(state.monthlyStats, key => MONTH_KEY.test(key) && key <= latestMonth, caps);
+  const achievementMonths = isRecord(state.achievementMonths) ? state.achievementMonths : {};
+  const recapsSeen = isRecord(state.recapsSeen) ? state.recapsSeen : {};
+  return {
+    monthlyStats: keptMonths(months, now),
+    yearlyStats: cappedPeriods(state.yearlyStats, key => YEAR_KEY.test(key) && key <= latestYear, caps),
+    achievementMonths: Object.fromEntries(achievements
+      .filter(id => typeof achievementMonths[id] === 'string' && MONTH_KEY.test(achievementMonths[id]) && achievementMonths[id] <= latestMonth)
+      .map(id => [id, achievementMonths[id]])),
+    recapSince: typeof state.recapSince === 'string' && DATE_KEY.test(state.recapSince) && state.recapSince <= latestDate ? state.recapSince : null,
+    recapsSeen: {
+      ...(typeof recapsSeen.month === 'string' && MONTH_KEY.test(recapsSeen.month) && { month: recapsSeen.month }),
+      ...(typeof recapsSeen.year === 'string' && YEAR_KEY.test(recapsSeen.year) && { year: recapsSeen.year }),
+    },
+  };
+}
+
 /** Most XP the save's wins can have given: first wins at their best stars, every other win as a replay */
 export function maxPlausibleXp(state: Record<string, any>): number {
   const levels = fixedLevelsOf(state);
   const completed = (state.progress as LevelProgress[]).filter(p => p.completed);
   // A custom level (maybe edited or deleted since) is counted as hard as a level can be
   let xp = completed.reduce((sum, p) => sum + levelWinXp(levels.get(p.levelId)?.minMoves ?? 60, p.stars || 1, true), 0);
+  xp += completed.filter(p => isBossLevel(p.levelId)).length * BOSS_WIN_XP;
   const replays = Math.max(0, (state.stats?.totalWins ?? 0) - completed.length);
   xp += replays * levelWinXp(60, 3, true) * REPLAY_XP_FACTOR;
   for (const r of Object.values((state.dailyChallengeProgress ?? {}) as Record<string, ChallengeResult>)) {
@@ -296,11 +401,14 @@ export function parseSave(code: string, now: Date = new Date()): ImportResult {
   state = Object.fromEntries(Object.entries(state).filter(([field]) => persistedFields.has(field)));
   state.progress ??= [];
   if (!isConsistent(state, now)) return { ok: false, error: 'inconsistent' };
+  if (state.savedStates !== undefined) state.savedStates = wellFormedSavedStates(state.savedStates);
+  if (state.stats !== undefined) state.stats = wellFormedStats(state.stats);
 
   const knownAchievements = new Set(ACHIEVEMENTS.map(a => a.id));
   state.achievements = [...new Set((state.achievements ?? []) as string[])].filter(id => knownAchievements.has(id));
   state.xp = Math.min(state.xp ?? 0, maxPlausibleXp(state));
   state.streakFreezes = Math.min(state.streakFreezes ?? 0, getFreezeCapacity(getPlayerLevel(state.xp)));
+  Object.assign(state, wellFormedRecap(state, now));
 
   const completed = (state.progress as LevelProgress[]).filter(p => p.completed);
   return {

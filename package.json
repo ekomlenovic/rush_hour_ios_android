@@ -1,6 +1,6 @@
 {
   "name": "rush_hour_ios",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
@@ -28,6 +28,7 @@
     "expo-localization": "~57.0.2",
     "expo-notifications": "~57.0.22",
     "expo-router": "~57.0.24",
+    "expo-secure-store": "~57.0.4",
     "expo-sharing": "~57.0.22",
     "expo-splash-screen": "~57.0.9",
     "expo-status-bar": "~57.0.1",

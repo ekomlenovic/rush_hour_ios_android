@@ -1,4 +1,4 @@
-import { hasCollision, vehicleCells, getExitSide, moveExitToSide, getNextAvailableColor, findFreeCell } from '../utils/creatorGeometry';
+import { hasCollision, vehicleCells, getExitSide, moveExitToSide, getNextAvailableColor, findFreeCell, resizeBoard } from '../utils/creatorGeometry';
 import type { Vehicle } from '../store/types';
 
 const car = (id: string, row: number, col: number, orientation: Vehicle['orientation'], length = 2): Vehicle =>
@@ -62,5 +62,28 @@ describe('findFreeCell', () => {
   it('returns null when nothing fits', () => {
     const full = [0, 1].map(r => car(`h${r}`, r, 0, 'horizontal'));
     expect(findFreeCell(full, 'horizontal', 2, 2)).toBeNull();
+  });
+});
+
+describe('resizeBoard', () => {
+  it('keeps every vehicle on a bigger board, and the exit on its side', () => {
+    const board = [car('target', 2, 3, 'horizontal'), car('v1', 0, 5, 'vertical', 3), car('v2', 5, 0, 'horizontal', 3)];
+    const result = resizeBoard(board, 2, 6, 6, 8);
+    expect(result.vehicles).toEqual(board);
+    expect([result.exitRow, result.exitCol, result.removed]).toEqual([2, 8, 0]);
+  });
+
+  it('drops the vehicles out of a smaller board and pulls the target car back inside', () => {
+    const board = [car('target', 6, 3, 'vertical'), car('v1', 0, 0, 'horizontal', 3), car('v2', 7, 0, 'horizontal'), car('v3', 4, 3, 'vertical')];
+    // Exit at the bottom of an 8×8 board, shrunk to 6×6: the target goes up to rows 4-5, over v3
+    const result = resizeBoard(board, 8, 3, 8, 6);
+    expect(result.vehicles.map(v => [v.id, v.row, v.col])).toEqual([['target', 4, 3], ['v1', 0, 0]]);
+    expect([result.exitRow, result.exitCol, result.removed]).toEqual([6, 3, 2]);
+  });
+
+  it('keeps an exit on the top or left side', () => {
+    const result = resizeBoard([car('target', 1, 7, 'vertical')], 255, 7, 8, 7);
+    expect(result.vehicles[0]).toMatchObject({ row: 1, col: 6 });
+    expect([result.exitRow, result.exitCol]).toEqual([255, 6]);
   });
 });

@@ -23,6 +23,8 @@ interface LevelNodeProps {
   isUnlocked: boolean;
   isCurrent: boolean;
   isCustom: boolean;
+  /** Much harder than the levels before it: announced so the jump is expected (data/bosses.ts) */
+  isBoss: boolean;
   isPadlockNode: boolean;
   isTutorial: boolean;
   stars: number;
@@ -61,6 +63,7 @@ const LevelNode = React.memo(({
   isUnlocked,
   isCurrent,
   isCustom,
+  isBoss,
   isPadlockNode,
   isTutorial,
   stars,
@@ -88,11 +91,12 @@ const LevelNode = React.memo(({
 
   const isPerfect = stars >= 3 && !isCurrent;
 
-  // "Level 12, 3 stars" / "Level 13, next level" / "Level 14, locked"
+  // "Level 12, 3 stars" / "Level 13, boss, next level" / "Level 14, locked"
   const a11yLabel = isPadlockNode ? t('a11y.map_end')
     : isTutorial ? t('tutorial.title')
     : [
         isCustom ? t('a11y.generated_level', { id: point.id }) : t('a11y.level', { id: point.id }),
+        isBoss ? t('a11y.level_boss') : null,
         stars > 0 ? t('a11y.level_stars', { count: stars }) : null,
         isCurrent ? t('a11y.level_next') : null,
         !isUnlocked && !isCustom ? t('a11y.level_locked') : null,
@@ -120,7 +124,8 @@ const LevelNode = React.memo(({
           onPress={() => onPress(point.id, isUnlocked, isCustom)}
           accessibilityRole="button"
           accessibilityLabel={a11yLabel}
-          accessibilityState={{ disabled: !isPlayable }}
+          // The padlock at the end opens the level generator
+          accessibilityState={{ disabled: !isPlayable && !isPadlockNode }}
           hitSlop={6}
           style={({ pressed }) => ({ transform: [{ translateY: pressed && isPlayable ? DEPTH - 1 : 0 }] })}
         >
@@ -147,6 +152,11 @@ const LevelNode = React.memo(({
               {glyph ? <Ionicons name={glyph} size={labelSize} color={labelColor} /> : label}
             </Text>
           </View>
+          {isBoss && (
+            <View style={[styles.bossBadge, { backgroundColor: colors.levelHard, borderColor: colors.surface }]}>
+              <Ionicons name="skull" size={12} color={fixedColors.onPrimary} />
+            </View>
+          )}
           {isLocked && !isPadlockNode && (
             <View style={[styles.lockBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Ionicons name="lock-closed" size={11} color={colors.textMuted} />
@@ -245,6 +255,18 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+  },
+  bossBadge: {
+    position: 'absolute',
+    left: -4,
+    top: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,

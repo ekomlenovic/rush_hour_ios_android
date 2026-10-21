@@ -4,15 +4,16 @@ import {
   useWindowDimensions, Alert, AccessibilityInfo,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
+import { usePreventRemove } from 'expo-router/react-navigation';
 import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 import { useGameStore, Vehicle, Level } from '@/store/gameStore';
-import { validateLevel } from '@/utils/solver';
+import { validateLevelAsync } from '@/utils/solver.background';
 import { haptics, Haptics } from '@/utils/haptics';
 import {
-  ExitSide, hasCollision as collides, vehicleCells, getExitSide, moveExitToSide, getNextAvailableColor, findFreeCell,
+  ExitSide, hasCollision as collides, vehicleCells, getExitSide, moveExitToSide, getNextAvailableColor, findFreeCell, resizeBoard,
 } from '@/utils/creatorGeometry';
 import { describeVehicle, describePosition, getVehicleLetters } from '@/utils/accessibility';
 import {
@@ -24,7 +25,8 @@ import ExitMarker from '@/components/creator/ExitMarker';
 import PillSelector from '@/components/creator/PillSelector';
 import LevelNameSheet from '@/components/share/LevelNameSheet';
 import { vehicleStyles } from '@/components/creator/vehicleStyles';
-import { useTheme, fixedColors, TARGET_CAR_COLOR } from '@/theme';
+import { useTheme, fixedColors, applyPalette, PALETTE_ART, VEHICLE_PALETTES, TARGET_CAR_COLOR } from '@/theme';
+import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
 
 const BOARD_BORDER = 1.5;
 const EXIT_SIDES = ['Right', 'Left', 'Top', 'Bottom'] as const;
@@ -33,8 +35,9 @@ const EXIT_SIDES = ['Right', 'Left', 'Top', 'Bottom'] as const;
 
 export default function LevelCreatorScreen() {
   const { t } = useTranslation();
-  const { colors: C, board, isDark } = useTheme();
+  const { colors: C, board, palette, isDark } = useTheme();
   const router = useRouter();
+  const navigation = useNavigation();
   const params = useLocalSearchParams<{ levelId: string }>();
   const saveCreatedLevel = useGameStore(s => s.saveCreatedLevel);
   const createdLevels = useGameStore(s => s.createdLevels);
@@ -127,20 +130,23 @@ export default function LevelCreatorScreen() {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
-  // When grid size changes, ensure target car is correctly positioned
+  // Another size keeps the vehicles that still fit: it used to clear the board without a word
   const handleGridSizeChange = (newSize: number) => {
-    setGridSize(newSize);
-    const newTargetRow = Math.floor(newSize / 2) - (newSize % 2 === 0 ? 1 : 0);
-    setExitRow(newTargetRow);
-    setExitCol(newSize);
-    setVehicles(prev => {
-      const target = prev.find(v => v.id === 'target');
-      if (target) {
-        return [{ ...target, row: newTargetRow, col: Math.min(target.col, newSize - target.length), orientation: 'horizontal' }];
-      }
-      return [];
-    });
-    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (newSize === gridSize) return;
+    const resized = resizeBoard(vehicles, exitRow, exitCol, gridSize, newSize);
+    const apply = () => {
+      setGridSize(newSize);
+      setVehicles(resized.vehicles);
+      setExitRow(resized.exitRow);
+      setExitCol(resized.exitCol);
+      haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    };
+    if (resized.removed === 0) return apply();
+    haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(t('creator.resize_title'), t('creator.resize_desc', { count: resized.removed }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('creator.resize_confirm'), style: 'destructive', onPress: apply },
+    ]);
   };
 
   /** Convertit la position centrale du véhicule en ligne/colonne de grille (avec gestion du vrai offset) */
@@ -218,7 +224,8 @@ export default function LevelCreatorScreen() {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [exitCol, exitRow, gridSize]);
 
-  const pivotVehicle = useCallback((id: string) => {
+  // Not memoized: it pivots the target car through handleExitSideChange, which reads the board of this render
+  const pivotVehicle = (id: string) => {
     if (id === 'target') {
       // Toggle orientation by switching exit side
       const currentIsHorizontal = vehicles.find(v => v.id === 'target')?.orientation === 'horizontal';
@@ -251,7 +258,7 @@ export default function LevelCreatorScreen() {
         return prev;
       }
     });
-  }, [gridSize, hasCollision]);
+  };
 
   const placeFromToolbox = useCallback((template: VehicleTemplate, screenX: number, screenY: number) => {
     const lx = screenX - boardPos.current.x;
@@ -289,12 +296,14 @@ export default function LevelCreatorScreen() {
     };
     setVehicles(prev => [...prev, added]);
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const letter = getVehicleLetters([...vehiclesRef.current, added])[added.id];
+    const withAdded = [...vehiclesRef.current, added];
+    const letter = getVehicleLetters(withAdded)[added.id];
+    const color = applyPalette(withAdded, palette).get(added.id) ?? added.color;
     AccessibilityInfo.announceForAccessibility(t('a11y.added', {
-      vehicle: describeVehicle(t, added, letter),
+      vehicle: describeVehicle(t, { ...added, color }, letter),
       position: describePosition(t, added),
     }));
-  }, [gridSize, t]);
+  }, [gridSize, palette, t]);
 
   const removeVehicle = useCallback((id: string) => {
     if (id === 'target') return;
@@ -303,28 +312,52 @@ export default function LevelCreatorScreen() {
   }, []);
 
   // ── Actions ──
-  const handleTest = () => {
-    const minMoves = validateLevel(vehicles, gridSize, exitRow, exitCol);
-    if (minMoves === -1) {
+  // Solved in the background: a big board never freezes the screen; -2: too big to search
+  const handleTest = async () => {
+    const minMoves = await validateLevelAsync(vehicles, gridSize, exitRow, exitCol);
+    if (minMoves === -2) {
+      Alert.alert(t('creator.unsolvable_title'), t('creator.too_complex_desc'));
+    } else if (minMoves === -1) {
       Alert.alert(t('creator.unsolvable_title'), t('creator.unsolvable_desc'));
     } else {
       Alert.alert(t('creator.solvable_title'), t('creator.solvable_desc', { count: minMoves }));
     }
   };
 
+  // The board as loaded or last saved: leaving with another one asks first
+  const [savedBoard, setSavedBoard] = useState<string | null>(null);
+  const boardKey = JSON.stringify({ gridSize, exitRow, exitCol, vehicles });
+  useEffect(() => {
+    // The first board shown is the starting point (the loaded level, or the target car alone)
+    if (savedBoard === null && vehicles.length > 0) setSavedBoard(boardKey);
+  }, [boardKey, vehicles.length, savedBoard]);
+  const hasUnsavedChanges = savedBoard !== null && savedBoard !== boardKey;
+  // usePreventRemove, not a 'beforeRemove' listener: the native stack removed the screen anyway
+  // on a swipe back or the Android back button, and "Cancel" left the player off the creator
+  usePreventRemove(hasUnsavedChanges, ({ data }) => {
+    Alert.alert(t('creator.exit_title'), t('creator.exit_confirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('creator.exit'), style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+    ]);
+  });
+
   // Checked first, then named: the name sheet only opens for a level that can be saved
-  const handleSave = () => {
-    if (validateLevel(vehicles, gridSize, exitRow, exitCol) === -1) {
-      Alert.alert(t('creator.unsolvable_title'), t('creator.fix_before_save'));
+  const checkedMinMoves = useRef(0);
+  const handleSave = async () => {
+    const minMoves = await validateLevelAsync(vehicles, gridSize, exitRow, exitCol);
+    if (minMoves < 0) {
+      Alert.alert(t('creator.unsolvable_title'), t(minMoves === -2 ? 'creator.too_complex_desc' : 'creator.fix_before_save'));
       return;
     }
+    checkedMinMoves.current = minMoves;
     setNaming(true);
   };
 
   // Modifying an imported level creates a level of one's own (in "Created"), the imported one stays as is
   const saveLevel = (name: string) => {
     setNaming(false);
-    const minMoves = validateLevel(vehicles, gridSize, exitRow, exitCol);
+    // The board cannot change while the name sheet is open
+    const minMoves = checkedMinMoves.current;
     const isImported = params.levelId && importedLevels.some(l => l.id === parseInt(params.levelId));
     const newId = isImported ? Date.now() : (params.levelId ? parseInt(params.levelId) : Date.now());
     const existing = createdLevels.find(l => l.id === newId);
@@ -333,6 +366,7 @@ export default function LevelCreatorScreen() {
       ...(existing?.isFavorite ? { isFavorite: true } : {}),
     };
     saveCreatedLevel(newLevel);
+    setSavedBoard(boardKey);
     haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     // After the name sheet has slid away: iOS drops an alert shown during it
     setTimeout(() => Alert.alert(t('common.saved'), isImported ? t('creator.saved_new') : t('creator.level_updated'), [
@@ -342,6 +376,11 @@ export default function LevelCreatorScreen() {
 
   // ── Couleurs Dynamiques ──
   const usedColors = vehicles.map(v => v.color);
+  // Selected palette (cosmetic), as on the game board: the level keeps its own colors
+  const displayColors = useMemo(() => applyPalette(vehicles, palette), [vehicles, palette]);
+  const paletteColors = VEHICLE_PALETTES[palette];
+  /** Palette color the next added vehicle will get, the template's own one with the classic palette */
+  const nextPaletteColor = paletteColors ? paletteColors[vehicles.filter(v => !v.isTarget).length % paletteColors.length] : undefined;
 
   // ── Rendering Data ──
   const ghostCells = useMemo(() => {
@@ -375,7 +414,7 @@ export default function LevelCreatorScreen() {
       <View style={[styles.container, { backgroundColor: C.background }]}>
 
         {/* ── Header ── */}
-        <View style={[styles.header, { backgroundColor: C.background }]}>
+        <View style={[styles.header, { backgroundColor: C.background, paddingTop: insets.top + 8 }]}>
           <Pressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('a11y.back')}>
             <Text style={[styles.backArrow, { color: C.textMuted }]}>←</Text>
           </Pressable>
@@ -430,7 +469,7 @@ export default function LevelCreatorScreen() {
 
             {vehicles.map(v => (
               <BoardVehicle
-                key={v.id} vehicle={v} cellSize={cellSize} isGhost={activeDrag?.id === v.id}
+                key={v.id} vehicle={v} color={displayColors.get(v.id)} cellSize={cellSize} isGhost={activeDrag?.id === v.id}
                 onDragStart={() => {
                   const { cx, cy } = getVehicleVisualCenter(v, 0, 0);
                   updateDrag(v.id, v.orientation, v.length, v.color, cx, cy, v.id);
@@ -448,7 +487,7 @@ export default function LevelCreatorScreen() {
                 }}
                 onRemove={() => removeVehicle(v.id)}
                 onPress={() => pivotVehicle(v.id)}
-                a11yLabel={describeVehicle(t, v, letters[v.id])}
+                a11yLabel={describeVehicle(t, { ...v, color: displayColors.get(v.id) ?? v.color }, letters[v.id])}
                 a11yValue={describePosition(t, v)}
                 a11yStrings={vehicleA11yStrings}
               />
@@ -481,13 +520,25 @@ export default function LevelCreatorScreen() {
               {
                 width: floatW,
                 height: floatH,
-                backgroundColor: floatingTemplate.color,
+                backgroundColor: nextPaletteColor ?? floatingTemplate.color,
                 borderColor: board.dragBorder,
               },
+              PALETTE_ART[palette] && vehicleStyles.drawnBlock,
               floatAnimStyle,
             ]}
           >
-            <View style={[vehicleStyles.vehicleShine, { backgroundColor: board.vehicleShine }, floatingTemplate.orientation === 'vertical' && vehicleStyles.vehicleShineV]} />
+            {PALETTE_ART[palette] ? (
+              <DrawnVehicle
+                art={PALETTE_ART[palette]!}
+                length={floatingTemplate.length}
+                orientation={floatingTemplate.orientation}
+                color={nextPaletteColor ?? floatingTemplate.color}
+                width={floatW}
+                height={floatH}
+              />
+            ) : (
+              <View style={[vehicleStyles.vehicleShine, { backgroundColor: board.vehicleShine }, floatingTemplate.orientation === 'vertical' && vehicleStyles.vehicleShineV]} />
+            )}
           </Animated.View>
         )}
 
@@ -503,6 +554,7 @@ export default function LevelCreatorScreen() {
                 <ToolboxItem
                   key={idx}
                   template={templateWithColor}
+                  displayColor={nextPaletteColor}
                   colors={C}
                   dragX={dragX}
                   dragY={dragY}
@@ -548,7 +600,7 @@ export default function LevelCreatorScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
 
-  header: { flexDirection: 'row', alignItems: 'center', paddingTop: 56, paddingHorizontal: 12, paddingBottom: 10, gap: 6 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 10, gap: 6 },
   backBtn: { width: 44, height: 44, justifyContent: 'center' },
   backArrow: { fontSize: 26, fontWeight: '600' },
   title: { flex: 1, fontSize: 16, fontWeight: '800', letterSpacing: 0.1 },

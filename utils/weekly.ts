@@ -5,7 +5,7 @@ import { COLORS, createPRNG, shuffleWith, transformLevel } from './generator';
 
 /** Campaign levels at least this hard feed the weekly challenge */
 const WEEKLY_MIN_MOVES = 25;
-/** Stride through the pool: consecutive weeks get unrelated levels */
+/** Stride through the pool: consecutive weeks get unrelated levels (the next one coprime with the pool size) */
 const WEEKLY_POOL_STRIDE = 23;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -34,7 +34,8 @@ export async function generateWeeklyLevel(weekKey: string): Promise<Level | null
 
   const weekIndex = getWeekIndex(weekKey);
   // A stride coprime with the pool size visits every level before repeating one
-  const stride = gcd(WEEKLY_POOL_STRIDE, pool.length) === 1 ? WEEKLY_POOL_STRIDE : 1;
+  let stride = WEEKLY_POOL_STRIDE;
+  while (gcd(stride, pool.length) !== 1) stride++;
   const source = pool[(weekIndex * stride) % pool.length];
   // Never the identity, so the level does not look like its campaign version
   const symmetry = 1 + (weekIndex % 7);

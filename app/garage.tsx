@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
@@ -16,15 +15,18 @@ import BoardPreview from '@/components/garage/BoardPreview';
 import WinEffect from '@/components/effects/WinEffect';
 import XpBar from '@/components/progression/XpBar';
 import CosmeticThumb from '@/components/garage/CosmeticThumb';
-import { describeUnlock } from '@/components/garage/describeUnlock';
+import { describeUnlock, describeUnlockShort } from '@/components/garage/describeUnlock';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import type { IoniconName } from '@/utils/icons';
 import IconText from '@/components/IconText';
+import ScreenHeader from '@/components/ScreenHeader';
 
 const KINDS: CosmeticKind[] = ['board', 'skin', 'palette', 'effect'];
+const KIND_ICONS: Record<CosmeticKind, IoniconName> = { board: 'grid', skin: 'car-sport', palette: 'color-palette', effect: 'sparkles' };
 
 /** Customization: board themes, target car skins, vehicle palettes and win effects (#7) */
 export default function GarageScreen() {
   const { t } = useTranslation();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { colors, scheme, board } = useTheme();
@@ -38,21 +40,19 @@ export default function GarageScreen() {
   const [previewed, setPreviewed] = useState<CosmeticDef | null>(null);
   const [effectKey, setEffectKey] = useState(0);
 
-  // "New" badges stay visible during the visit, they are cleared when leaving
-  const unlockedRef = useRef(unlocked);
-  unlockedRef.current = unlocked;
-  const [newKeys] = useState(() => new Set(unseen));
-  useEffect(() => () => markCosmeticsSeen(unlockedRef.current), []);
+  // A new item keeps its badge until it is touched
+  const newKeys = new Set(unseen);
 
   const previewSelection: CosmeticSelection = previewed
     ? { ...selection, [previewed.kind]: previewed.id }
     : selection;
-  const previewSize = Math.min(width - 96, 260);
+  const previewSize = Math.min(width - 96, 210);
 
   const handlePress = (def: CosmeticDef) => {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (isCosmeticUnlocked(def, context)) {
       selectCosmetic(def.kind, def.id);
+      markCosmeticsSeen([cosmeticKey(def)]);
       setPreviewed(null);
     } else {
       setPreviewed(def);
@@ -63,20 +63,17 @@ export default function GarageScreen() {
   const items = COSMETICS.filter(def => def.kind === kind);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
-          <Text style={[styles.backText, { color: colors.textMuted }]}>← {t('common.home')}</Text>
-        </Pressable>
-        <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('cosmetics.garage')}</Text>
-        <Text style={[styles.count, { color: colors.textMuted }]}>
-          {t('cosmetics.unlocked_count', { unlocked: unlocked.length, total: COSMETICS.length })}
-        </Text>
-      </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Also opened from the win screen: back then leads to the map or the challenge, not home */}
+      <ScreenHeader
+        colors={colors}
+        title={t('cosmetics.garage')}
+        backLabel={t('a11y.back')}
+        subtitle={t('cosmetics.unlocked_count', { unlocked: unlocked.length, total: COSMETICS.length })}
+      />
 
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}>
-        <Text style={[styles.desc, { color: colors.textMuted }]}>{t('cosmetics.garage_desc')}</Text>
-
+      {/* The tabs stay at the top while the items scroll */}
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]} stickyHeaderIndices={[1]}>
         <View style={styles.previewWrap}>
           <View>
             <BoardPreview selection={previewSelection} scheme={scheme} size={previewSize} />
@@ -90,15 +87,16 @@ export default function GarageScreen() {
           </View>
           {previewed && (
             <IconText icon="lock-closed" color={colors.warning} textStyle={styles.previewNote}>
-              {t('cosmetics.preview')} : {t(`cosmetics.${previewed.kind}.${previewed.id}`)}
+              {t(`cosmetics.${previewed.kind}.${previewed.id}`)} : {describeUnlock(t, previewed, context)}
             </IconText>
           )}
         </View>
 
+        <View style={[styles.tabsSticky, { backgroundColor: colors.background }]}>
         <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
           {KINDS.map(k => {
             const active = k === kind;
-            const hasNew = COSMETICS.some(def => def.kind === k && newKeys.has(cosmeticKey(def)));
+            const newCount = COSMETICS.filter(def => def.kind === k && newKeys.has(cosmeticKey(def))).length;
             return (
               <Pressable
                 key={k}
@@ -106,13 +104,28 @@ export default function GarageScreen() {
                 style={[styles.tab, active && { backgroundColor: colors.primary }]}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
+                accessibilityLabel={newCount > 0
+                  ? `${t(`cosmetics.kinds.${k}`)}, ${t('cosmetics.new_count', { count: newCount })}`
+                  : t(`cosmetics.kinds.${k}`)}
               >
-                <Text style={[styles.tabText, { color: active ? colors.onPrimary : colors.text }]} numberOfLines={2}>
-                  {t(`cosmetics.kinds.${k}`)}{hasNew ? ' •' : ''}
+                <Ionicons name={KIND_ICONS[k]} size={20} color={active ? colors.onPrimary : colors.primaryText} />
+                <Text
+                  style={[styles.tabText, { color: active ? colors.onPrimary : colors.text }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  {t(`cosmetics.tabs.${k}`)}
                 </Text>
+                {newCount > 0 && (
+                  <View style={[styles.tabCount, { backgroundColor: colors.primary, borderColor: colors.surface }]}>
+                    <Text style={[styles.tabCountText, { color: colors.onPrimary }]}>{newCount}</Text>
+                  </View>
+                )}
               </Pressable>
             );
           })}
+        </View>
         </View>
 
         <View style={styles.grid}>
@@ -122,7 +135,11 @@ export default function GarageScreen() {
             const isSelected = selection[def.kind] === def.id;
             const name = t(`cosmetics.${def.kind}.${def.id}`);
             const condition = describeUnlock(t, def, context);
-            const state = isSelected ? t('cosmetics.selected') : isUnlocked ? t('cosmetics.unlock.default') : `${t('cosmetics.locked')}, ${condition}`;
+            const shortCondition = describeUnlockShort(t, def, context);
+            const isNew = newKeys.has(key);
+            const state = isSelected ? t('cosmetics.selected')
+              : isUnlocked ? (isNew ? `${t('cosmetics.new')}, ${t('cosmetics.unlock.default')}` : t('cosmetics.unlock.default'))
+              : `${t('cosmetics.locked')}, ${condition}`;
             return (
               <Pressable
                 key={key}
@@ -141,10 +158,10 @@ export default function GarageScreen() {
                 {isSelected ? (
                   <Text style={[styles.itemState, { color: colors.primaryText }]}>✓ {t('cosmetics.selected')}</Text>
                 ) : isUnlocked ? (
-                  newKeys.has(key) && <Text style={[styles.itemState, { color: colors.success }]}>{t('cosmetics.new')}</Text>
+                  isNew && <Text style={[styles.itemState, { color: colors.success }]}>{t('cosmetics.new')}</Text>
                 ) : (
                   <>
-                    <IconText icon="lock-closed" color={colors.textMuted} textStyle={styles.itemCondition} numberOfLines={3}>{condition}</IconText>
+                    <Text style={[styles.itemCondition, { color: colors.textMuted }]} numberOfLines={3}>{shortCondition}</Text>
                     <XpBar colors={colors} ratio={unlockProgress(def, context)} height={4} />
                   </>
                 )}
@@ -159,18 +176,26 @@ export default function GarageScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 20, marginBottom: 8 },
-  backButton: { alignSelf: 'flex-start', paddingVertical: 4, marginBottom: 8 },
-  backText: { fontSize: RFValue(15), fontWeight: '600' },
-  title: { fontSize: RFValue(28), fontWeight: '800' },
-  count: { fontSize: RFValue(13), fontWeight: '600', marginTop: 2 },
   content: { paddingHorizontal: 20 },
-  desc: { fontSize: RFValue(14), marginBottom: 16 },
-  previewWrap: { alignItems: 'center', marginBottom: 20, gap: 8 },
+  previewWrap: { alignItems: 'center', marginBottom: 4, gap: 8 },
   previewNote: { fontSize: RFValue(13), fontWeight: '700', textAlign: 'center' },
-  tabs: { flexDirection: 'row', padding: 4, borderRadius: 12, gap: 4, marginBottom: 16 },
-  tab: { flex: 1, paddingVertical: 8, paddingHorizontal: 4, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  tabsSticky: { paddingTop: 8, paddingBottom: 12 },
+  tabs: { flexDirection: 'row', padding: 4, borderRadius: 12, gap: 4 },
+  tab: { flex: 1, paddingVertical: 6, paddingHorizontal: 4, borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 2 },
   tabText: { fontSize: RFValue(12), fontWeight: '700', textAlign: 'center' },
+  tabCount: {
+    position: 'absolute',
+    top: -6,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabCountText: { fontSize: 10, fontWeight: '800' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   item: {
     flexBasis: '47%',
@@ -187,5 +212,5 @@ const styles = StyleSheet.create({
   itemSelected: { borderWidth: 2.5 },
   itemName: { fontSize: RFValue(14), fontWeight: '700' },
   itemState: { fontSize: RFValue(12), fontWeight: '700' },
-  itemCondition: { fontSize: RFValue(11), fontWeight: '500' },
+  itemCondition: { fontSize: RFValue(12), fontWeight: '600' },
 });

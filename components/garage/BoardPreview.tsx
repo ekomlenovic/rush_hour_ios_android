@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import {
-  applyPalette, getSkinnedBoard, CLASSIC_VEHICLE_COLORS, TARGET_CAR_COLOR,
+  applyPalette, getSkinnedBoard, CLASSIC_VEHICLE_COLORS, PALETTE_ART, TARGET_CAR_COLOR,
   type ColorScheme,
 } from '@/theme';
+import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
 import type { CosmeticSelection } from '@/data/cosmetics';
 import type { Level, Vehicle } from '@/store/types';
 import { getExitSide } from '@/utils/creatorGeometry';
@@ -58,12 +59,21 @@ export default function BoardPreview({ selection, scheme, size, level }: Props) 
       {vehicles.map(v => {
         const w = (v.orientation === 'horizontal' ? v.length : 1) * cell - inset * 2;
         const h = (v.orientation === 'vertical' ? v.length : 1) * cell - inset * 2;
+        const color = v.isTarget ? board.targetCar : colors.get(v.id) ?? v.color;
+        const art = v.isTarget ? board.targetArt : PALETTE_ART[selection.palette];
+        if (art) {
+          return (
+            <View key={v.id} style={[styles.drawn, { left: v.col * cell + inset, top: v.row * cell + inset, width: w, height: h }]}>
+              <DrawnVehicle art={art} length={v.length} orientation={v.orientation} color={color} width={w} height={h} />
+            </View>
+          );
+        }
         return (
           <View
             key={v.id}
             style={[styles.vehicle, {
               left: v.col * cell + inset, top: v.row * cell + inset, width: w, height: h, borderRadius: radius,
-              backgroundColor: v.isTarget ? board.targetCar : colors.get(v.id) ?? v.color,
+              backgroundColor: color,
               borderColor: board.vehicleBorder,
             }]}
           >
@@ -94,6 +104,7 @@ const styles = StyleSheet.create({
   lineH: { position: 'absolute', left: 0, right: 0, height: 1 },
   lineV: { position: 'absolute', top: 0, bottom: 0, width: 1 },
   vehicle: { position: 'absolute', borderWidth: 1, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  drawn: { position: 'absolute' },
   shine: { position: 'absolute', top: 2, left: 2, right: 2, height: '45%' },
   exit: { position: 'absolute', borderRadius: 3, borderWidth: 1 },
 });
