@@ -1417,12 +1417,19 @@
       "metric_time": "Fastest",
       "metric_moves": "Fewest moves",
       "metric_time_help": "The first to get the red car out wins.",
-      "metric_moves_help": "The fewest moves to get the red car out wins; on a tie, the fastest. Who finishes first waits for the other.",
+      "metric_moves_help": "The fewest moves to get the red car out wins; the same count is a draw (time does not count). Who finishes first may leave: the result will wait for them.",
       "me_out_one": "Done in {{count}} move, waiting…",
       "me_out_other": "Done in {{count}} moves, waiting…",
       "opponent_out_one": "{{pseudo}} finished in {{count}} move",
       "opponent_out_other": "{{pseudo}} finished in {{count}} moves",
-      "won_on_moves": "Fewest moves wins, the fastest on a tie."
+      "won_on_moves": "Fewest moves wins, time does not count.",
+      "draw_on_moves": "Same number of moves: a draw, time does not count.",
+      "out_title_one": "Done in {{count}} move!",
+      "out_title_other": "Done in {{count}} moves!",
+      "out_can_leave": "{{pseudo}} is still playing. You can leave: your result will wait for you in Duels.",
+      "out_leave": "Leave",
+      "see_result": "Result",
+      "over_short": "finished"
     },
     "errors": {
       "network": "The server does not answer. Check your connection and the server address.",

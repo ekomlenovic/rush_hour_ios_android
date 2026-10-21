@@ -1,8 +1,9 @@
 name: Server
 
-# Multiplayer server (#46): tests on the pull requests, Docker image on GHCR
-# (:multi from the multi branch, :preprod from the version branches X.Y.Z,
-# :latest from main)
+# Multiplayer server (#46): tests on the pull requests, Docker image on GHCR:
+# :latest from main, :preprod from the version branches X.Y.Z, :test from the
+# rest (pull requests of this repository, manual runs on another branch: the
+# last one wins)
 on:
   pull_request:
     paths:
@@ -17,7 +18,7 @@ on:
       - '.dockerignore'
       - '.github/workflows/server.yml'
   push:
-    branches: [main, multi, '[0-9]+.[0-9]+.[0-9]+']
+    branches: [main, '[0-9]+.[0-9]+.[0-9]+']
     paths:
       - 'server/**'
       - 'utils/**'
@@ -69,12 +70,14 @@ jobs:
 
       - name: Image tag
         id: tag
+        env:
+          # A pull request from a fork cannot publish (its token is read only)
+          FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
         run: |
           case "${{ github.ref }}" in
             refs/heads/main) echo "tag=latest" >> "$GITHUB_OUTPUT"; echo "push=true" >> "$GITHUB_OUTPUT" ;;
-            refs/heads/multi) echo "tag=multi" >> "$GITHUB_OUTPUT"; echo "push=true" >> "$GITHUB_OUTPUT" ;;
             refs/heads/[0-9]*.[0-9]*.[0-9]*) echo "tag=preprod" >> "$GITHUB_OUTPUT"; echo "push=true" >> "$GITHUB_OUTPUT" ;;
-            *) echo "tag=test" >> "$GITHUB_OUTPUT"; echo "push=false" >> "$GITHUB_OUTPUT" ;;
+            *) echo "tag=test" >> "$GITHUB_OUTPUT"; if [ "$FORK" = "true" ]; then echo "push=false"; else echo "push=true"; fi >> "$GITHUB_OUTPUT" ;;
           esac
 
       - uses: docker/setup-buildx-action@v3

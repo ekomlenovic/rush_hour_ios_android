@@ -215,7 +215,8 @@ export interface DuelListing {
   difficulty: Difficulty;
   /** Absent on older servers: the time */
   metric?: DuelMetric;
-  status: 'waiting' | 'preparing' | 'playing';
+  /** over: mine, its result waiting for me (I got out and left before the end) */
+  status: 'waiting' | 'preparing' | 'playing' | 'over';
   private: boolean;
   players: { id: number; pseudo: string }[];
   createdAt: number;
