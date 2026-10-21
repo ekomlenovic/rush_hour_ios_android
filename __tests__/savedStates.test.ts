@@ -53,6 +53,20 @@ describe('opening the app', () => {
     expect(state().savedStates).toEqual({ 'archive-2026-11-19': save(3) });
   });
 
+  it("leaves no game behind once yesterday's daily is won after midnight, neither a daily nor an archive", () => {
+    setToday('2026-11-20', 0);
+    useGameStore.setState({ savedStates: { 'daily-2026-11-19': save(3) } });
+    state().setOpenDailyDate('2026-11-19');
+    state().recordAppOpen();
+    state().completeDailyChallenge('2026-11-19', 300, 3);
+    // The game screen is closed: the home records the app open again
+    state().setOpenDailyDate(null);
+    state().recordAppOpen();
+    expect(state().savedStates).toEqual({});
+    expect(state().dailyChallengeProgress['2026-11-19']?.completed).toBe(true);
+    expect(state().archiveProgress).toEqual({});
+  });
+
   it('forgets the archives out of reach (more than 90 days ago)', () => {
     setToday('2027-02-01');
     useGameStore.setState({ savedStates: { 'archive-2026-10-14': save(1), 'archive-2026-12-01': save(2) } });

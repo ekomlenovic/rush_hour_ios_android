@@ -173,6 +173,117 @@ describe('a daily left open past midnight', () => {
     expect(state().recordAppOpen()).toMatchObject({ lostStreak: 5 });
     expect(state().currentStreak).toBe(0);
   });
+
+  it("won past midnight, today's daily then continues the streak", () => {
+    openPastMidnight(0);
+    state().completeDailyChallenge('2026-10-20', 300, 3);
+    // Won, the game screen lets it go: the home records the app open again, nothing to tell
+    state().setOpenDailyDate(null);
+    expect(state().recordAppOpen()).toMatchObject({ frozenDays: 0, lostStreak: 0 });
+
+    state().completeDailyChallenge('2026-10-21', 300, 3);
+    expect(state().currentStreak).toBe(7);
+    expect(state().bestStreak).toBe(7);
+    expect(state().lastStreakDate).toBe('2026-10-21');
+    expect(state().frozenDates).toEqual([]);
+    // 7 days in a row: a freeze earned
+    expect(state().streakFreezes).toBe(1);
+  });
+
+  describe('still open at the next midnight', () => {
+    /** Same, and the home records 10-22 too: 10-21 is really missed */
+    function openPastTwoMidnights(freezes: number) {
+      openPastMidnight(freezes);
+      setToday('2026-10-22', 0);
+      return state().recordAppOpen();
+    }
+
+    it('can still be won, then the day after it uses a freeze once closed', () => {
+      expect(openPastTwoMidnights(1)).toMatchObject({ frozenDays: 0, lostStreak: 0 });
+      state().completeDailyChallenge('2026-10-20', 300, 3);
+      expect(state().currentStreak).toBe(6);
+
+      state().setOpenDailyDate(null);
+      expect(state().recordAppOpen()).toMatchObject({ frozenDays: 1, lostStreak: 0 });
+      expect(state().frozenDates).toEqual(['2026-10-21']);
+      state().completeDailyChallenge('2026-10-22', 300, 3);
+      expect(state().currentStreak).toBe(7);
+    });
+
+    it('without a freeze, the streak it won is lost once closed', () => {
+      openPastTwoMidnights(0);
+      state().completeDailyChallenge('2026-10-20', 300, 3);
+      state().setOpenDailyDate(null);
+      expect(state().recordAppOpen()).toMatchObject({ lostStreak: 6 });
+
+      state().completeDailyChallenge('2026-10-22', 300, 3);
+      expect(state().currentStreak).toBe(1);
+      expect(state().bestStreak).toBe(6);
+    });
+
+    it('once won, it no longer holds back the day after it, even before the game screen lets it go', () => {
+      openPastTwoMidnights(1);
+      state().completeDailyChallenge('2026-10-20', 300, 3);
+      // Still marked open, but won: 10-21 is settled
+      expect(state().recordAppOpen()).toMatchObject({ frozenDays: 1, lostStreak: 0 });
+      expect(state().frozenDates).toEqual(['2026-10-21']);
+    });
+  });
+});
+
+describe('a daily left open past midnight, around a daylight saving change', () => {
+  // The same dates in every zone of the CI (npm run test:tz): a change in one zone, a plain day in the others
+  const changes = [
+    '2026-09-27', // Auckland springs forward
+    '2026-10-25', // Paris falls back
+    '2026-11-01', // New York falls back
+    '2027-03-14', // New York springs forward
+    '2027-03-28', // Paris springs forward
+    '2027-04-04', // Auckland falls back
+  ];
+  // Not Auckland's own change days: getDayNumber (utils/date.ts) rounds their midnight off, daysBetween is one day off across them
+  const changeDays = changes.filter(day => day !== '2026-09-27' && day !== '2027-04-04');
+  // The home records the new day at midnight, a minute later, or back from the background in the morning
+  const homeTimes = ['00:00', '00:01', '08:00'];
+  const cases = [
+    // Open the night before the change: midnight, then the change
+    ...changes.map(change => [addDays(change, -1), change]),
+    // Open on the day of the change itself (23 h or 25 h long)
+    ...changeDays.map(change => [change, addDays(change, 1)]),
+  ].flatMap(([open, next]) => homeTimes.map(time => ({ open, next, time })));
+
+  /** Freezes the clock at a local time ('HH:MM') of a YYYY-MM-DD day */
+  function at(dateKey: string, time: string) {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    const [hour, minute] = time.split(':').map(Number);
+    jest.setSystemTime(new Date(year, month - 1, day, hour, minute));
+  }
+
+  it.each(cases)('the daily of $open open at 23:59, the home on $next at $time', ({ open, next, time }) => {
+    winDays(addDays(open, -5), 5);
+    useGameStore.setState({ streakFreezes: 1 });
+    at(open, '23:59');
+    state().recordAppOpen();
+    state().setOpenDailyDate(open);
+    useGameStore.setState({ savedStates: { [`daily-${open}`]: { vehicles: [], moveCount: 3, history: [] } } });
+
+    // Its day is not missed, no freeze used, its game is still a daily
+    at(next, time);
+    expect(state().recordAppOpen()).toMatchObject({ frozenDays: 0, lostStreak: 0 });
+    expect(state().currentStreak).toBe(5);
+    expect(Object.keys(state().savedStates)).toEqual([`daily-${open}`]);
+
+    // Won, then closed: the home settles again, no game left in the archives
+    state().completeDailyChallenge(open, 300, 3);
+    state().setOpenDailyDate(null);
+    expect(state().recordAppOpen()).toMatchObject({ frozenDays: 0, lostStreak: 0 });
+    expect(state()).toMatchObject({ currentStreak: 6, lastStreakDate: open, streakFreezes: 1, frozenDates: [] });
+    expect(state().savedStates).toEqual({});
+
+    // Today's daily still counts
+    state().completeDailyChallenge(next, 300, 3);
+    expect(state()).toMatchObject({ currentStreak: 7, lastStreakDate: next });
+  });
 });
 
 describe('app open', () => {
