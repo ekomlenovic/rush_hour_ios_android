@@ -8,7 +8,7 @@ import { RFValue } from '@/utils/responsive';
 import type { UiColors } from '@/theme';
 import type { DuelReaction, DuelSide } from '@/utils/multi/duel';
 import {
-  ENCOURAGE_COOLDOWN_MS, REACTION_BURST, reactionOf, reactionPauseMs, reactionsLeft, recentReactions, type ReactionId,
+  ENCOURAGE_COOLDOWN_MS, reactionOf, reactionPauseMs, reactionsLeft, recentReactions, type ReactionId,
 } from '@/utils/multi/reactions';
 
 /** Room the reactions of a spectator take under the boards */
@@ -131,26 +131,6 @@ export type ReactionSender = ReturnType<typeof useReactionSender>;
 /** Seconds of the pause, shown on the buttons */
 export const pauseSeconds = (sender: ReactionSender) => Math.max(1, Math.ceil(sender.pauseMs / 1000));
 
-/** What is left before the pause: a dot for each reaction, or the time of the pause */
-function ReactionCharges({ sender, colors }: { sender: ReactionSender; colors: UiColors }) {
-  const { t } = useTranslation();
-  if (sender.waiting) {
-    return (
-      <View style={styles.charges} accessible accessibilityLabel={t('multi.reactions.pause_a11y', { count: pauseSeconds(sender) })}>
-        <Ionicons name="hourglass-outline" size={RFValue(13)} color={colors.warning} />
-        <Text style={[styles.pauseText, { color: colors.warning }]}>{t('multi.reactions.pause', { count: pauseSeconds(sender) })}</Text>
-      </View>
-    );
-  }
-  return (
-    <View style={styles.charges} accessible accessibilityLabel={t('multi.reactions.left_a11y', { count: sender.left })}>
-      {Array.from({ length: REACTION_BURST }, (_, i) => (
-        <View key={i} style={[styles.charge, { backgroundColor: i < sender.left ? colors.primary : colors.neutralSoft }]} />
-      ))}
-    </View>
-  );
-}
-
 /** The emoji buttons, the teasing ones then the cheering ones */
 function EmojiButtons({ available, target, sender, colors }: {
   available: ReactionId[]; target: DuelSide; sender: ReactionSender; colors: UiColors;
@@ -206,10 +186,16 @@ export function ReactionTray({ target, targetOnTop, available, sender, colors, w
           <Ionicons name={targetOnTop ? 'arrow-up' : 'arrow-down'} size={RFValue(15)} color={colors.primaryText} />
           <View style={styles.trayTargetText}>
             <Text style={[styles.trayTargetName, { color: colors.text }]} numberOfLines={1}>{t('multi.reactions.to', { pseudo: target.pseudo })}</Text>
-            <Text style={[styles.trayHint, { color: colors.textMuted }]} numberOfLines={1}>{t('multi.reactions.change_hint')}</Text>
+            {/* Nothing shown before the pause; during it, its time instead of the hint (the emojis are dimmed) */}
+            <Text
+              style={[styles.trayHint, { color: sender.waiting ? colors.warning : colors.textMuted }]}
+              numberOfLines={1}
+              accessibilityLiveRegion="polite"
+            >
+              {sender.waiting ? t('multi.reactions.pause_hint', { count: pauseSeconds(sender) }) : t('multi.reactions.change_hint')}
+            </Text>
           </View>
         </View>
-        <ReactionCharges sender={sender} colors={colors} />
         {canEncourage && (
           <Pressable
             onPress={() => sender.send(target.id, 'encourage')}
@@ -269,7 +255,6 @@ export function ReactionPicker({ opponent, available, sender, colors, onClose }:
         )}
         <EmojiButtons available={available} target={opponent} sender={sender} colors={colors} />
       </ScrollView>
-      <ReactionCharges sender={sender} colors={colors} />
       <Pressable onPress={onClose} style={styles.emojiButton} accessibilityRole="button" accessibilityLabel={t('multi.reactions.close_a11y')}>
         <Ionicons name="close" size={RFValue(20)} color={colors.textMuted} />
       </Pressable>
@@ -370,22 +355,6 @@ const styles = StyleSheet.create({
   },
   emojiButtonText: {
     fontSize: RFValue(24),
-  },
-  charges: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 4,
-  },
-  charge: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  pauseText: {
-    fontSize: RFValue(12),
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
   },
   separator: {
     width: 1,
