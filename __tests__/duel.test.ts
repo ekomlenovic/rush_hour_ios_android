@@ -213,6 +213,10 @@ describe('duel on the phone', () => {
       type: 'duel', duel: view({ reactions: ['snail'], opponent: { id: 2, pseudo: 'Emma', connected: true, moves: [], wantsRematch: false, seesReactions: true } }),
     }));
     expect(seen.duel!.opponent!.seesReactions).toBe(true);
+    // Back on another app (updated, or an older phone): said with the presence; an older server says nothing, it stays
+    const older = run(seen, message({ type: 'presence', playerId: 2, connected: true, seesReactions: false }));
+    expect(older.duel!.opponent).toMatchObject({ connected: true, seesReactions: false });
+    expect(run(seen, message({ type: 'presence', playerId: 2, connected: false })).duel!.opponent!.seesReactions).toBe(true);
 
     state = run(
       state,

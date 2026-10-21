@@ -185,7 +185,8 @@ export type ServerMessage =
   | { type: 'ready'; player: DuelIdentity; duel: DuelView | null }
   | { type: 'duel'; duel: DuelView }
   | { type: 'move'; playerId: number; move: MoveRecord }
-  | { type: 'presence'; playerId: number; connected: boolean }
+  /** seesReactions: back with an app that shows the reactions, or not (it may have changed) */
+  | { type: 'presence'; playerId: number; connected: boolean; seesReactions?: boolean }
   | { type: 'rematch'; playerId: number }
   /** Someone started or stopped watching */
   | { type: 'spectators'; count: number }
@@ -231,6 +232,11 @@ interface Duel {
 class WindowLimiter<K = number> {
   private readonly hits = new Map<K, number[]>();
   constructor(private readonly max: number, private readonly windowMs: number) {}
+
+  /** Whether one more event would be accepted now, without recording it */
+  allows(key: K, now: number): boolean {
+    return (this.hits.get(key) ?? []).filter(at => now - at < this.windowMs).length < this.max;
+  }
 
   /** Records an event; false once there were `max` of them in the window */
   hit(key: K, now: number): boolean {
@@ -494,11 +500,13 @@ export class Duels {
     // The pseudo, the look and the app may have changed in the meantime
     seat.player = player;
     seat.look = look;
+    // Another app (updated, or another phone): the others know whether to react to them
+    const otherApp = seat.seesReactions !== seesReactions;
     seat.seesReactions = seesReactions;
     const wasAway = seat.disconnectedAt !== null;
     seat.disconnectedAt = null;
     connection.send({ type: 'ready', player, duel: this.view(duel, player.id) });
-    if (wasAway) this.broadcast(duel, { type: 'presence', playerId: player.id, connected: true }, player.id);
+    if (wasAway || otherApp) this.broadcast(duel, { type: 'presence', playerId: player.id, connected: true, seesReactions }, player.id);
   }
 
   private detach(playerId: number, connection: DuelConnection) {
@@ -654,8 +662,11 @@ export class Duels {
     // Watching, or playing (not to themselves)
     const duel = this.watching.get(from.id) ?? this.byPlayer.get(from.id);
     if (!duel || duel.status !== 'playing' || playerId === from.id || !this.seat(duel, playerId)) return 'reaction_refused';
+    // A busy duel: dropped without counting, neither for the duel (it would never relay again) nor for the sender
+    if (!this.duelReactions.allows(duel.code, now)) return 'too_many_reactions';
     if (reaction === 'encourage' && !this.encouragements.hit(`${from.id}:${playerId}`, now)) return 'too_many_reactions';
-    if (!this.reactions.hit(from.id, now) || !this.duelReactions.hit(duel.code, now)) return 'too_many_reactions';
+    if (!this.reactions.hit(from.id, now)) return 'too_many_reactions';
+    this.duelReactions.hit(duel.code, now);
     // Never to an app older than the reactions: it does not know the message
     const message: ServerMessage = { type: 'reaction', from, playerId, reaction };
     for (const seat of duel.seats) if (seat.seesReactions) seat.connection?.send(message);

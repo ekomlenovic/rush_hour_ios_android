@@ -24,8 +24,8 @@ export interface DuelControls {
   move: (vehicleId: string, row: number, col: number) => boolean;
   leave: () => void;
   rematch: () => void;
-  /** A reaction to a player of the duel: either one when watching, the other one when playing */
-  react: (playerId: number, reaction: ReactionId) => void;
+  /** A reaction to a player of the duel: either one when watching, the other one when playing; false if not sent (offline) */
+  react: (playerId: number, reaction: ReactionId) => boolean;
   clearError: () => void;
 }
 
@@ -115,9 +115,12 @@ export function useDuel(account: ServerAccount | null): DuelControls {
     };
   }, [account?.url, account?.token]);
 
+  /** False if the connection is not open: the message is lost */
   const send = useCallback((message: DuelClientMessage) => {
     const socket = socketRef.current;
-    if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
+    if (socket?.readyState !== WebSocket.OPEN) return false;
+    socket.send(JSON.stringify(message));
+    return true;
   }, []);
 
   const move = useCallback((vehicleId: string, row: number, col: number) => {
