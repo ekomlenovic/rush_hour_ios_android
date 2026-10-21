@@ -31,8 +31,8 @@ function setup(generator: PuzzleGenerator = fakeGenerator().generator) {
     authenticate: (token) => (token === 'token-banned' ? 'banned' : PLAYERS[token] ?? null),
   });
 
-  /** A phone connected to the duels: what it received, and how it talks */
-  const connect = (token?: string) => {
+  /** A phone connected to the duels: what it received, and how it talks; an app that knows the reactions, unless `older` */
+  const connect = (token?: string, { older = false } = {}) => {
     const received: ServerMessage[] = [];
     const closed: { code: number; reason: string }[] = [];
     const connection: DuelConnection = {
@@ -41,7 +41,7 @@ function setup(generator: PuzzleGenerator = fakeGenerator().generator) {
     };
     const handlers = duels.connect(connection);
     const send = (message: object) => handlers.onMessage(JSON.stringify(message));
-    if (token) send({ type: 'auth', token });
+    if (token) send(older ? { type: 'auth', token } : { type: 'auth', token, features: ['reactions'] });
     const last = <T extends ServerMessage['type']>(type: T) =>
       [...received].reverse().find(m => m.type === type) as Extract<ServerMessage, { type: T }> | undefined;
     return { received, closed, send, last, handlers, disconnect: () => handlers.onClose() };
@@ -565,15 +565,68 @@ describe('duels', () => {
     expect(noa.last('reaction')).toBeUndefined();
   });
 
-  it('only a spectator reacts, during the game, to one of its players, with a reaction of the list', async () => {
+  it('a player teases or encourages the other one, seen by the spectators too', async () => {
+    const { connect, started } = setup();
+    const { leo, emma } = await started();
+    const sam = connect('token-sam');
+    sam.send({ type: 'watch', code: leo.last('duel')!.duel.code });
+    emma.send({ type: 'react', playerId: 1, reaction: 'popcorn' });
+    const popcorn = { type: 'reaction', from: { id: 2, pseudo: 'Emma' }, playerId: 1, reaction: 'popcorn' };
+    for (const phone of [leo, emma, sam]) expect(phone.last('reaction')).toEqual(popcorn);
+    // Who has finished (duel on moves) may still tease the other one: covered by the same rule, the game goes on
+    leo.send({ type: 'react', playerId: 2, reaction: 'encourage' });
+    expect(emma.last('reaction')).toMatchObject({ from: { id: 1 }, playerId: 2, reaction: 'encourage' });
+  });
+
+  it('an app older than the reactions is never sent one: it would break on it', async () => {
+    const { connect, clock, duels } = setup();
+    // Léo has the old app, Emma the new one
+    const leo = connect('token-leo', { older: true });
+    const emma = connect('token-emma');
+    leo.send({ type: 'create', difficulty: 'HARD' });
+    const code = leo.last('duel')!.duel.code;
+    emma.send({ type: 'join', code });
+    await settle();
+    clock.now += COUNTDOWN_MS;
+    const oldSam = connect('token-sam', { older: true });
+    const zoe = connect('token-zoe');
+    oldSam.send({ type: 'watch', code });
+    zoe.send({ type: 'watch', code });
+    // The others know whose app shows the reactions
+    expect(zoe.last('duel')!.duel).toMatchObject({ me: { id: 1, seesReactions: false }, opponent: { id: 2, seesReactions: true } });
+    expect(duels.duelOf(2)).toMatchObject({ opponent: { seesReactions: false } });
+
+    zoe.send({ type: 'react', playerId: 1, reaction: 'snail' });
+    emma.send({ type: 'react', playerId: 1, reaction: 'yawn' });
+    zoe.send({ type: 'react', playerId: 2, reaction: 'clap' });
+    for (const phone of [leo, oldSam]) expect(phone.received.map(m => m.type)).not.toContain('reaction');
+    expect(emma.received.filter(m => m.type === 'reaction')).toHaveLength(3);
+    expect(zoe.received.filter(m => m.type === 'reaction')).toHaveLength(3);
+
+    // Back with the new app: sent again
+    leo.disconnect();
+    const back = connect('token-leo');
+    expect(back.last('ready')!.duel).toMatchObject({ me: { seesReactions: true } });
+    zoe.send({ type: 'react', playerId: 1, reaction: 'fire' });
+    expect(back.last('reaction')).toMatchObject({ reaction: 'fire' });
+    // Features it does not know, or a list that is not one, are not a reason to refuse the app
+    const newer = connect();
+    newer.send({ type: 'auth', token: 'token-noa', features: ['reactions', 'holograms'] });
+    expect(newer.last('ready')).toMatchObject({ player: { id: 5 } });
+    const odd = connect();
+    odd.send({ type: 'auth', token: 'token-noa', features: 'reactions' });
+    expect(odd.last('ready')).toMatchObject({ player: { id: 5 } });
+  });
+
+  it('a reaction goes during the game, to a player of the duel, from the list only', async () => {
     const { connect, started } = setup();
     const { leo, emma } = await started();
     const code = leo.last('duel')!.duel.code;
     const sam = connect('token-sam');
     sam.send({ type: 'watch', code });
 
-    // A player does not tease the other one
-    leo.send({ type: 'react', playerId: 2, reaction: 'snail' });
+    // A player does not react to themselves
+    leo.send({ type: 'react', playerId: 1, reaction: 'muscle' });
     expect(leo.last('error')).toEqual({ type: 'error', error: 'reaction_refused' });
     expect(emma.last('reaction')).toBeUndefined();
     // Nobody of the duel, no free text

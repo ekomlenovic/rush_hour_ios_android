@@ -8,9 +8,11 @@ import { isReactionId, type ReactionId } from './reactions';
  * duel as the phone sees it. A move of mine shows at once on my board; the server
  * checks it and sends it to both phones. Who wins is chosen at the creation: the first
  * red car out (time), or the fewest moves (moves; the same count is a draw).
- * A spectator gets the same messages, and plays nothing, but reacts to a player (tease,
- * cheer, encourage): everyone in the duel sees it over that player's board. Each board is
- * drawn with the look of its player (board theme, car skin, palette), said when connecting.
+ * A spectator gets the same messages, and plays nothing. Spectators react to a player, and
+ * each player to the other one (tease, cheer, encourage): everyone in the duel sees it over
+ * that player's board. Each board is drawn with the look of its player (board theme, car
+ * skin, palette), said when connecting, with what the app knows ('reactions'): the server
+ * sends no message an app does not know. A message this app does not know changes nothing.
  */
 
 export type DuelDifficulty = 'EASY' | 'NORMAL' | 'HARD' | 'EXPERT' | 'MASTER';
@@ -42,6 +44,8 @@ interface PlayerView {
   id: number; pseudo: string; connected: boolean; moves: MoveRecord[]; wantsRematch: boolean;
   /** Absent from a server older than the looks, null for an app older than them */
   look?: DuelLook | null;
+  /** Their app shows the reactions; absent from a server older than them */
+  seesReactions?: boolean;
 }
 
 export interface DuelView {
@@ -77,7 +81,8 @@ export type DuelServerMessage =
   | { type: 'error'; error: string };
 
 export type DuelClientMessage =
-  | { type: 'auth'; token: string; look: DuelLook }
+  /** features: the messages this app knows beyond the first duels, the server sends it no other */
+  | { type: 'auth'; token: string; look: DuelLook; features: AppFeature[] }
   | { type: 'create'; difficulty: DuelDifficulty; metric: DuelMetric; private: boolean }
   | { type: 'join'; code: string }
   | { type: 'watch'; code: string }
@@ -86,7 +91,11 @@ export type DuelClientMessage =
   | { type: 'rematch' }
   | { type: 'react'; playerId: number; reaction: ReactionId };
 
-/** A reaction of a spectator to a player of the duel, as it came */
+/** What this app knows beyond the first duels, said to the server when connecting */
+export type AppFeature = 'reactions';
+export const APP_FEATURES: AppFeature[] = ['reactions'];
+
+/** A reaction of a spectator or of the other player to a player of the duel, as it came */
 export interface DuelReaction {
   /** In the order they came: the key to draw it */
   seq: number;
@@ -114,6 +123,8 @@ export interface DuelSide {
   wantsRematch: boolean;
   /** Their look; null: drawn as my own board */
   look: DuelLook | null;
+  /** Their app shows the reactions: no use reacting to them otherwise */
+  seesReactions: boolean;
 }
 
 export interface Duel {
@@ -140,7 +151,7 @@ export interface Duel {
   spectating: boolean;
   /** How many watch it */
   spectators: number;
-  /** What a spectator may send: the reactions the server relays and the app knows */
+  /** What a spectator, or a player, may send: the reactions the server relays and the app knows */
   reactions: ReactionId[];
   /** The last reactions that came, the newest last */
   lastReactions: DuelReaction[];
@@ -189,7 +200,7 @@ function positionAfter(level: Level | null, moves: MoveRecord[]): Vehicle[] {
 }
 
 function side(view: PlayerView, level: Level | null): DuelSide {
-  return { ...view, look: view.look ?? null, vehicles: positionAfter(level, view.moves) };
+  return { ...view, look: view.look ?? null, seesReactions: view.seesReactions ?? false, vehicles: positionAfter(level, view.moves) };
 }
 
 function fromView(view: DuelView, now: number, previous: Duel | null): Duel {
@@ -319,6 +330,10 @@ export function duelReducer(state: DuelState, action: DuelAction): DuelState {
           // The watched duel is gone while the connection was lost
           if (duel?.spectating && duel.status !== 'over' && message.error === 'duel_not_found') return { ...state, duel: null, error: message.error };
           return { ...state, error: message.error };
+
+        default:
+          // A message of a newer server: the state stays (returning nothing here broke the screen of 2.0.3)
+          return state;
       }
     }
   }

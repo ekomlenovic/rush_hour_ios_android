@@ -1,5 +1,5 @@
 /**
- * Reactions of the spectators of a duel, aimed at one of its two players: a closed list,
+ * Reactions in a duel, of a spectator to one of its two players or of a player to the other one: a closed list,
  * shared with the server (server/src/core.ts), which relays only these. No free text, so
  * nothing to moderate. Teasing ones annoy a little, always kindly; the others cheer.
  * `encourage` is a word of support, not an emoji: the player reads who encourages them.
@@ -42,10 +42,10 @@ export const isReactionId = (id: unknown): id is ReactionId => typeof id === 'st
 
 export const reactionOf = (id: ReactionId): typeof REACTIONS[number] => REACTIONS.find(r => r.id === id)!;
 
-/** Reactions of one spectator in REACTIONS_WINDOW_MS at most, on the server: the others are dropped */
+/** Reactions of one person (spectator or player) in REACTIONS_WINDOW_MS at most, on the server: the others are dropped */
 export const MAX_REACTIONS = 5;
 export const REACTIONS_WINDOW_MS = 10_000;
-/** One encouragement of a spectator to a player in this time at most: it stays a real word of support */
+/** One encouragement of a person to a same player in this time at most: it stays a real word of support */
 export const ENCOURAGE_COOLDOWN_MS = 30_000;
 /** Between two reactions of the phone: under the limit of the server, whatever the delays of the network */
 export const REACTION_COOLDOWN_MS = 2500;
