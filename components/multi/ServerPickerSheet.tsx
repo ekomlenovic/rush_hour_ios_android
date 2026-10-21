@@ -16,11 +16,13 @@ interface Props {
   isDark: boolean;
   onSelect: (url: string) => void;
   onAdd: () => void;
+  /** Opens the guide to host one's own server */
+  onCreate: () => void;
   onClose: () => void;
 }
 
-/** The servers joined, one identity on each: pick the one to play on, or add one */
-export default function ServerPickerSheet({ visible, accounts, activeUrl, colors, isDark, onSelect, onAdd, onClose }: Props) {
+/** The servers joined, one identity on each: pick the one to play on, add one, or create one */
+export default function ServerPickerSheet({ visible, accounts, activeUrl, colors, isDark, onSelect, onAdd, onCreate, onClose }: Props) {
   const { t } = useTranslation();
   return (
     <BottomSheet visible={visible} title={t('multi.servers')} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose}>
@@ -45,6 +47,9 @@ export default function ServerPickerSheet({ visible, accounts, activeUrl, colors
       })}
       <Pressable onPress={onAdd} style={[styles.add, { borderColor: colors.border }]} accessibilityRole="button">
         <Text style={[styles.addText, { color: colors.primaryText }]}>＋ {t('multi.add_server')}</Text>
+      </Pressable>
+      <Pressable onPress={onCreate} style={styles.create} accessibilityRole="button">
+        <Text style={[styles.createText, { color: colors.primaryText }]}>{t('multi.create_server')}</Text>
       </Pressable>
     </BottomSheet>
   );
@@ -78,6 +83,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   addText: {
+    fontSize: RFValue(15),
+    fontWeight: '700',
+  },
+  create: {
+    alignItems: 'center',
+    padding: RFValue(14),
+    marginTop: RFValue(4),
+  },
+  createText: {
     fontSize: RFValue(15),
     fontWeight: '700',
   },
