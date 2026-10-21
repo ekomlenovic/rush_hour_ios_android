@@ -358,6 +358,13 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
   useEffect(() => {
     if (!canReact || sender.waiting) setPicking(false);
   }, [canReact, sender.waiting]);
+  // A touch anywhere else closes the row, without taking the touch: a move on my board is still played
+  const inPicker = useRef(false);
+  const touchedPicker = () => { inPicker.current = true; };
+  const closePickerOutside = () => {
+    if (picking && !inPicker.current) setPicking(false);
+    inPicker.current = false;
+  };
   const [opponentBottom, setOpponentBottom] = useState(0);
   const onOpponentLayout = (e: LayoutChangeEvent) => setOpponentBottom(e.nativeEvent.layout.y + e.nativeEvent.layout.height);
   const pickerWidth = Math.min(width - RFValue(32), 440);
@@ -381,7 +388,7 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
   }, [duel.lastReactions, duel.code, muted, duel.spectating, duel.me.id, blocked, t]);
 
   return (
-    <View style={styles.arena} onLayout={onLayout}>
+    <View style={styles.arena} onLayout={onLayout} onTouchStart={closePickerOutside}>
       {height > 0 && opponent && (
         <>
           <DuelPlayerBar
@@ -440,6 +447,7 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
             </View>
             {canReact && (
               <Pressable
+                onTouchStart={touchedPicker}
                 onPress={() => setPicking(p => !p)}
                 disabled={sender.waiting}
                 style={[styles.muteButton, { backgroundColor: picking ? colors.primarySoft : colors.card }]}
@@ -529,7 +537,7 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
             />
           )}
           {canReact && picking && opponentBottom > 0 && (
-            <View style={[styles.pickerSlot, { top: Math.max(0, opponentBottom - REACTION_PICKER_HEIGHT - RFValue(6)), left: (width - pickerWidth) / 2, width: pickerWidth }]}>
+            <View onTouchStart={touchedPicker} style={[styles.pickerSlot, { top: Math.max(0, opponentBottom - REACTION_PICKER_HEIGHT - RFValue(6)), left: (width - pickerWidth) / 2, width: pickerWidth }]}>
               <ReactionPicker opponent={opponent} available={duel.reactions} sender={sender} colors={colors} onClose={() => setPicking(false)} />
             </View>
           )}
