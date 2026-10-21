@@ -23,6 +23,7 @@ import { isDailyOpen, isWeeklyOpen } from '@/utils/challengeDates';
 import { nextMapLevel } from '@/utils/mapFocus';
 import { sampleLevels } from '@/data/sampleLevels';
 import { useActivePlayTime } from '@/hooks/useActivePlayTime';
+import { useOpenDaily } from '@/hooks/useOpenDaily';
 import { describeVehicle, getVehicleLetters, getMoveDirection } from '@/utils/accessibility';
 import { useTheme } from '@/theme';
 import GameLoading from '@/components/game/GameLoading';
@@ -215,13 +216,7 @@ export default function GameScreen() {
   const playTime = useActivePlayTime(!isLoading && !!currentLevel && !won && !isChallengeCompleted);
 
   // A daily left open past midnight can still be won: while it is open, its day is not missed (see docs/GAME_DESIGN.md)
-  const setOpenDailyDate = useGameStore(s => s.setOpenDailyDate);
-  const openDaily = challengeKind === 'daily' && !isLoading && !isChallengeCompleted ? params.date! : null;
-  useEffect(() => {
-    if (!openDaily) return;
-    setOpenDailyDate(openDaily);
-    return () => setOpenDailyDate(null);
-  }, [openDaily, setOpenDailyDate]);
+  useOpenDaily(challengeKind === 'daily' && !isLoading && !isChallengeCompleted ? params.date! : null);
 
   const handleMoveEnd = useCallback((vehicleId: string, newRow: number, newCol: number) => {
     if (won || isChallengeCompleted) return false;
