@@ -102,11 +102,12 @@ describe('API client', () => {
     }));
   });
 
-  it('sends JSON bodies, rounds the times', async () => {
+  it('sends JSON bodies, rounds the times, with the look of my board', async () => {
     const fetchMock = respond(200, { status: 'won' });
-    await multiApi('https://s.example.com', 'tok', fetchMock as never).submit('2026-10-16', [{ vehicleId: 'a', delta: 1, t: 10 }], 1234.6, 0.4);
+    const look = { board: 'wood', skin: 'taxi', palette: 'ocean' };
+    await multiApi('https://s.example.com', 'tok', fetchMock as never).submit('2026-10-16', [{ vehicleId: 'a', delta: 1, t: 10 }], 1234.6, 0.4, look);
     const [, init] = fetchMock.mock.calls[0];
-    expect(JSON.parse(init.body)).toEqual({ date: '2026-10-16', moves: [{ vehicleId: 'a', delta: 1, t: 10 }], clientMs: 1235, backgroundMs: 0 });
+    expect(JSON.parse(init.body)).toEqual({ date: '2026-10-16', moves: [{ vehicleId: 'a', delta: 1, t: 10 }], clientMs: 1235, backgroundMs: 0, look });
     expect(init.headers['Content-Type']).toBe('application/json');
   });
 
@@ -114,7 +115,7 @@ describe('API client', () => {
     const api = multiApi('https://s.example.com', undefined, respond(409, { error: 'pseudo_taken' }) as never);
     await expect(api.join('code', 'Léo')).rejects.toEqual(new MultiApiError('pseudo_taken', 409));
     const invalid = multiApi('https://s.example.com', 't', respond(400, { error: 'invalid_moves', reason: 'blocked', index: 3 }) as never);
-    await expect(invalid.submit('d', [], 0, 0)).rejects.toMatchObject({ code: 'invalid_moves', details: { reason: 'blocked', index: 3 } });
+    await expect(invalid.submit('d', [], 0, 0, { board: 'classic', skin: 'classic', palette: 'classic' })).rejects.toMatchObject({ code: 'invalid_moves', details: { reason: 'blocked', index: 3 } });
   });
 
   it('a page that is not JSON is not a Rush Hours server', async () => {

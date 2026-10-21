@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { formatDuration } from '@/utils/date';
-import { useTheme } from '@/theme';
+import { toBoardLook, useTheme } from '@/theme';
 import Board from '@/components/Board';
 import MultiHeader from '@/components/multi/MultiHeader';
 import DuelPlayerBar from '@/components/multi/DuelPlayerBar';
@@ -59,6 +59,8 @@ export default function DuelReplayScreen() {
     return mine === 0 ? [replay.players[1], replay.players[0]] : replay.players;
   }, [replay, account?.playerId]);
   const steps = useMemo(() => mergeDuelMoves(players), [players]);
+  // Each board as its player saw it
+  const looks = useMemo(() => players.map(p => toBoardLook(p.look)), [players]);
   const timeline = useMemo(() => steps.map(s => s.move), [steps]);
   const total = steps.length;
 
@@ -121,7 +123,7 @@ export default function DuelReplayScreen() {
           <>
             <DuelPlayerBar name={name(top)} moves={counts[0]} colors={colors} width={topSize} winner={finished && replay.winnerId === top.id} />
             <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-              <Board gridSize={replay.level.gridSize} vehicles={boards[0]} exitRow={replay.level.exitRow} exitCol={replay.level.exitCol} onMoveEnd={noop} readOnly size={topSize} />
+              <Board gridSize={replay.level.gridSize} vehicles={boards[0]} exitRow={replay.level.exitRow} exitCol={replay.level.exitCol} onMoveEnd={noop} readOnly size={topSize} look={looks[0]} />
             </View>
 
             <View style={[styles.clock, { backgroundColor: colors.card }]} accessible accessibilityLabel={t('multi.time_a11y', { time: formatDuration(timeAt(timeline, step)) })}>
@@ -136,7 +138,7 @@ export default function DuelReplayScreen() {
 
             <DuelPlayerBar name={name(bottom)} moves={counts[1]} colors={colors} width={bottomSize} isMe={bottom.id === account?.playerId} winner={finished && replay.winnerId === bottom.id} />
             <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-              <Board gridSize={replay.level.gridSize} vehicles={boards[1]} exitRow={replay.level.exitRow} exitCol={replay.level.exitCol} onMoveEnd={noop} readOnly size={bottomSize} />
+              <Board gridSize={replay.level.gridSize} vehicles={boards[1]} exitRow={replay.level.exitRow} exitCol={replay.level.exitCol} onMoveEnd={noop} readOnly size={bottomSize} look={looks[1]} />
             </View>
 
             <View style={[styles.track, { width: bottomSize, backgroundColor: colors.card }]}>

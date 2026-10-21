@@ -189,6 +189,24 @@ describe('replays', () => {
     expect(replay.level.minMoves).toBe(2);
   });
 
+  it("with the look of the player's board; an invalid one never refuses the win", async () => {
+    const { join, play, request } = open();
+    const leo = await join('Léo');
+    const mia = await join('Mia');
+    const zoe = await join('Zoé');
+    const look = { board: 'wood', skin: 'ufo', palette: 'fleet' };
+    expect((await play(leo.token, SOLUTION, 30_000, { look })).body.status).toBe('won');
+    expect((await play(mia.token, SOLUTION, 30_000, { look: { board: 'Wood<script>', skin: 'ufo', palette: 'fleet' } })).body.status).toBe('won');
+    // An app older than the looks
+    expect((await play(zoe.token)).body.status).toBe('won');
+    const rows = await dayRows(zoe.token);
+    const lookOf = async (pseudo: string) =>
+      (await request('GET', `/replay/${rows.find(r => r.pseudo === pseudo)!.attemptId}`, zoe.token)).body.look;
+    expect(await lookOf('Léo')).toEqual(look);
+    expect(await lookOf('Mia')).toBeNull();
+    expect(await lookOf('Zoé')).toBeNull();
+  });
+
   it('everyone can watch once the challenge is closed, the admin always', async () => {
     const { join, joinAdmin, play, request, clock } = open();
     const admin = await joinAdmin();

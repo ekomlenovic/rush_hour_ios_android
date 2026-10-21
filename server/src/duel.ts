@@ -63,7 +63,7 @@ export interface DuelRecord {
   endedAt: number;
   reason: EndReason;
   winnerId: number | null;
-  players: { id: number; moves: MoveRecord[] }[];
+  players: { id: number; moves: MoveRecord[]; look: DuelLook | null }[];
 }
 
 /** Wins of each of two players against the other, and their draws */
@@ -234,7 +234,7 @@ export const normalizeDuelCode = (input: string) => input.toUpperCase().replace(
 const LOOK_ID = /^[a-z0-9_-]{1,24}$/;
 
 /** The look said by the app, or null if it is not one (never a reason to refuse the player) */
-function parseLook(data: unknown): DuelLook | null {
+export function parseLook(data: unknown): DuelLook | null {
   if (!data || typeof data !== 'object') return null;
   const { board, skin, palette } = data as Record<string, unknown>;
   const ok = (id: unknown): id is string => typeof id === 'string' && LOOK_ID.test(id);
@@ -675,7 +675,7 @@ export class Duels {
       try {
         saved = this.deps.save?.({
           difficulty: duel.difficulty, metric: duel.metric, level: duel.level, startedAt: duel.startsAt, endedAt: now, reason, winnerId,
-          players: duel.seats.map(s => ({ id: s.player.id, moves: s.moves })),
+          players: duel.seats.map(s => ({ id: s.player.id, moves: s.moves, look: s.look })),
         }) ?? null;
       } catch (err) {
         this.deps.log?.error({ err }, 'duel not saved');
