@@ -221,7 +221,11 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add sidestore-source.json
-          git commit -m "chore: update update sources for ${VERSION} [skip ci]"
-          git push
+          git diff --cached --quiet || git commit -m "chore: update update sources for ${VERSION} [skip ci]"
+          # The branch may have moved since the build started (a merge, or a re-run, which
+          # checks out the original commit): replay the sources commit on its current head.
+          # On a conflict (another sources commit), this build's values win.
+          git pull --rebase -X theirs origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
