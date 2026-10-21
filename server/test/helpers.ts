@@ -88,7 +88,7 @@ export function testServer(options: {
   };
 
   /** Starts the current challenge and wins it with `moves` after `ms` */
-  const play = async (token: string, moves = SOLUTION, ms = 30_000, extra: { clientMs?: number; backgroundMs?: number } = {}) => {
+  const play = async (token: string, moves = SOLUTION, ms = 30_000, extra: { clientMs?: number; backgroundMs?: number; look?: unknown } = {}) => {
     const start = await request('POST', '/challenge/start', token, {});
     clock.now += ms;
     return request('POST', '/challenge/submit', token, { date: start.body.date, moves, ...extra });

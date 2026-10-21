@@ -114,6 +114,13 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE challenges ADD COLUMN variant_of INTEGER;
   ALTER TABLE challenges ADD COLUMN generation_ms INTEGER;
   `,
+  // The look of each player's board (their cosmetics in the app), for the replays:
+  // null for the games before this step and from apps older than the looks
+  `
+  ALTER TABLE duels ADD COLUMN look1_json TEXT;
+  ALTER TABLE duels ADD COLUMN look2_json TEXT;
+  ALTER TABLE attempts ADD COLUMN look_json TEXT;
+  `,
 ];
 
 export function openDatabase(path: string): Database {

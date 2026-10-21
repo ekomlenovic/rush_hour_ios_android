@@ -13,7 +13,7 @@ import { loadSettings, resetSettings, SettingsError, updateSettings } from './se
 import { deletePage } from './deletePage';
 import { newInviteCode, newRecoveryCode, newToken, normalizeRecoveryCode, secretEquals, sha256 } from './secrets';
 import { addDays, isValidDate, localDate, periodBounds } from './time';
-import { AUTH_TIMEOUT_MS, DUEL_METRICS, Duels, type ServerMessage } from './duel';
+import { AUTH_TIMEOUT_MS, DUEL_METRICS, Duels, parseLook, type DuelLook, type ServerMessage } from './duel';
 import { DuelStore, rankDuels } from './duelStore';
 import { PuzzlePool } from './puzzlePool';
 
@@ -59,6 +59,7 @@ interface AttemptRow {
   moves_json: string | null;
   flags_json: string | null;
   verdict: 'cheater' | 'cleared' | null;
+  look_json: string | null;
 }
 
 declare module 'fastify' {
@@ -461,7 +462,7 @@ export function buildApp(deps: AppDeps) {
         };
       });
 
-      auth.post<{ Body: { date: string; moves: MoveRecord[]; clientMs?: number; backgroundMs?: number } }>('/challenge/submit', {
+      auth.post<{ Body: { date: string; moves: MoveRecord[]; clientMs?: number; backgroundMs?: number; look?: unknown } }>('/challenge/submit', {
         schema: {
           body: {
             type: 'object', required: ['date', 'moves'],
@@ -476,11 +477,14 @@ export function buildApp(deps: AppDeps) {
               },
               clientMs: { type: 'number', minimum: 0 },
               backgroundMs: { type: 'number', minimum: 0 },
+              // The look of the player's board, for the replay: checked below, never a reason to refuse a win
+              look: { type: 'object' },
             },
           },
         },
       }, async (request) => {
         const { date, moves, clientMs, backgroundMs } = request.body;
+        const look = parseLook(request.body.look);
         const attempt = getAttempt(request.player.id, date);
         if (!attempt) throw new ApiError(404, 'no_game');
         const status = statusOf(attempt);
@@ -498,10 +502,11 @@ export function buildApp(deps: AppDeps) {
         const client = clientMs === undefined ? null : Math.round(clientMs);
         const flags = analyzeGame({ moves: moveLog, minMoves: row.min_moves, serverMs, clientMs: client }, settings().thresholds);
         db.prepare(`
-          UPDATE attempts SET status = 'won', finished_at = ?, move_count = ?, server_ms = ?, client_ms = ?, background_ms = ?, moves_json = ?, flags_json = ?
+          UPDATE attempts SET status = 'won', finished_at = ?, move_count = ?, server_ms = ?, client_ms = ?, background_ms = ?, moves_json = ?, flags_json = ?,
+            look_json = ?
           WHERE id = ? AND status = 'playing'
         `).run(finishedAt, replay.moveCount, serverMs, client, backgroundMs === undefined ? null : Math.round(backgroundMs),
-          JSON.stringify(moveLog), flags.length ? JSON.stringify(flags) : null, attempt.id);
+          JSON.stringify(moveLog), flags.length ? JSON.stringify(flags) : null, look ? JSON.stringify(look) : null, attempt.id);
 
         const mine = dayRanking(date).find(r => r.playerId === request.player.id)!;
         return {
@@ -559,6 +564,8 @@ export function buildApp(deps: AppDeps) {
           number: challenges.number(attempt.date),
           level: challenges.level(row),
           moves: JSON.parse(attempt.moves_json) as MoveRecord[],
+          // null: a game before the looks were kept, or from an app older than them
+          look: attempt.look_json ? JSON.parse(attempt.look_json) as DuelLook : null,
           timeMs: attempt.server_ms,
           verdict: verdictOf(attempt),
           reasons: verdictOf(attempt) === 'suspect' ? flagsOf(attempt) : [],
