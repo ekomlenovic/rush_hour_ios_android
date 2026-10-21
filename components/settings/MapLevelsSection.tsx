@@ -13,6 +13,10 @@ import { settingsStyles as styles } from './styles';
 /** A level this long to generate (Expert, Master) freezes the app: confirmed first */
 const LONG_LEVEL_MS = 60_000;
 
+/** Levels to generate at once; the default is one of them, so a choice is selected from the start */
+const GENERATION_AMOUNTS = [1, 3, 10];
+const DEFAULT_GENERATION_AMOUNT = 3;
+
 const REQUEST_LEVELS_URL = 'https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?title=Request:%20New%20Complex%20Levels&body=I%20would%20like%20to%20see%20more%20high-difficulty%20levels%21';
 
 interface Props {
@@ -30,7 +34,7 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
   const unlockAllLevels = useGameStore(s => s.unlockAllLevels);
   const startGeneration = useLevelGenerator();
 
-  const [genAmount, setGenAmount] = useState<number>(3);
+  const [genAmount, setGenAmount] = useState<number>(DEFAULT_GENERATION_AMOUNT);
   const [genDifficulty, setGenDifficulty] = useState<DifficultyKey>('NORMAL');
   const [genGridSize, setGenGridSize] = useState<number>(6);
 
@@ -132,7 +136,7 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
       <View style={{ marginBottom: 20 }}>
         <Text style={[styles.settingLabel, { color: colors.text }]}>{t('map.amount_to_create', { amount: genAmount })}</Text>
         <View style={styles.segmentGroup}>
-          {[1, 5, 10, 20].map(amt => segment(amt, genAmount, String(amt), () => setGenAmount(amt)))}
+          {GENERATION_AMOUNTS.map(amt => segment(amt, genAmount, String(amt), () => setGenAmount(amt)))}
         </View>
       </View>
 
