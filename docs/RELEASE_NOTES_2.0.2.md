@@ -1,4 +1,4 @@
-# Rush Hours 2.0.2 (versionCode 14)
+# Rush Hours 2.0.2 (versionCode 15)
 
 Mise à jour de la **2.0.1 (versionCode 13)** : une campagne de 734 niveaux, les récaps du mois et de l'année, un onglet Hebdo revu, de nouveaux styles, les événements Halloween et Noël, et beaucoup de corrections.
 
