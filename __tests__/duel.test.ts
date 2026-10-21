@@ -70,6 +70,12 @@ describe('duel on the phone', () => {
     expect(state.duel!.me.vehicles.find(v => v.id === 'v1')).toMatchObject({ row: 3 });
   });
 
+  it('no move while the connection is down: the server would never see it', () => {
+    const state = run(playing(), { type: 'connection', status: 'offline' });
+    expect(run(state, { type: 'local_move', move: { vehicleId: 'v1', delta: 2, t: 100 } })).toBe(state);
+    expect(state.duel!.pending).toEqual([]);
+  });
+
   it('a blocked move is not played', () => {
     const state = playing();
     expect(run(state, { type: 'local_move', move: { vehicleId: 'target', delta: 4, t: 0 } })).toBe(state);

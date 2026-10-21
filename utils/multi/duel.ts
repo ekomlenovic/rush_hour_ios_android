@@ -214,7 +214,8 @@ export function duelReducer(state: DuelState, action: DuelAction): DuelState {
 
     case 'local_move': {
       const duel = state.duel;
-      if (!duel?.level || duel.status !== 'playing') return state;
+      // Offline (reconnecting), the move would never reach the server, which would put the board back: refused
+      if (!duel?.level || duel.status !== 'playing' || state.connection !== 'online') return state;
       const replay = applyMoves({ ...duel.level, vehicles: duel.me.vehicles }, [action.move]);
       if (!replay.ok) return state;
       return { ...state, duel: { ...duel, me: { ...duel.me, vehicles: replay.vehicles }, pending: [...duel.pending, action.move] } };
