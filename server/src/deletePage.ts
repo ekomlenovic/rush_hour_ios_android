@@ -76,7 +76,11 @@ ${message?.ok ? '' : `<p>${t.intro}</p>
 `;
 }
 
-export async function deletePage(app: FastifyInstance, { db, serverName }: { db: Database; serverName: () => string }) {
+export async function deletePage(app: FastifyInstance, { db, serverName, onDeleted }: {
+  db: Database; serverName: () => string;
+  /** Called with the id of a deleted player, to end what they are still doing on the server (their duel) */
+  onDeleted: (playerId: number) => void;
+}) {
   await app.register(rateLimit, {
     max: 10,
     timeWindow: '15 minutes',
@@ -108,10 +112,11 @@ export async function deletePage(app: FastifyInstance, { db, serverName }: { db:
   app.post<{ Body: { code?: string } }>('/delete-account', async (request, reply) => {
     const lang = langOf(request.headers['accept-language']);
     const code = typeof request.body?.code === 'string' ? request.body.code : '';
-    const result = code
-      ? db.prepare('DELETE FROM players WHERE recovery_hash = ?').run(sha256(normalizeRecoveryCode(code)))
-      : { changes: 0 };
-    const deleted = Number(result.changes) > 0;
+    const row = code
+      ? db.prepare('DELETE FROM players WHERE recovery_hash = ? RETURNING id').get(sha256(normalizeRecoveryCode(code))) as { id: number } | undefined
+      : undefined;
+    const deleted = !!row;
+    if (row) onDeleted(Number(row.id));
     return reply
       .status(deleted ? 200 : 403)
       .type('text/html; charset=utf-8')

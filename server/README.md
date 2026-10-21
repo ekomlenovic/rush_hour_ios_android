@@ -122,7 +122,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 
 | Route | Rôle |
 |---|---|
-| `GET /info` | nom, `apiVersion`, `minAppVersion`, `features` (`["duel"]`) |
+| `GET /info` | nom, `apiVersion`, `minAppVersion`, `features` (`["duel", "ranking_range"]`) |
 | `POST /join` `{ inviteCode, pseudo }` | crée un compte → `{ token, recoveryCode, player }` |
 | `POST /recover` `{ recoveryCode }` | nouveau jeton pour un compte (l'ancien téléphone est déconnecté) |
 | `GET /me`, `PATCH /me` `{ pseudo }`, `DELETE /me` | mon compte ; supprimer efface aussi mes parties |
@@ -132,18 +132,18 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 | `POST /challenge/start` `{ date? }` | commence le défi en cours, ou reprend une partie → le puzzle (sans son optimum) |
 | `POST /challenge/submit` `{ date, moves, clientMs?, backgroundMs? }` | envoie les coups `{ vehicleId, delta, t }` d'une victoire → coups, temps, rang, points |
 | `POST /challenge/abandon` `{ date }` | abandonne la partie |
-| `GET /leaderboard?period=day\|week\|month&date=` | classement : coups puis temps pour un jour ; points pour une semaine ou un mois (10, 8, 6, 5, 4, 3, 2, puis 1 par victoire). Chaque partie a son `verdict` (`suspect` avec ses `reasons`, `cheater`) |
+| `GET /leaderboard?period=day\|week\|month&date=` ou `?period=range&from=&to=` | classement : coups puis temps pour un jour ; points pour une semaine, un mois ou les jours entre deux dates (10, 8, 6, 5, 4, 3, 2, puis 1 par victoire). Chaque partie a son `verdict` (`suspect` avec ses `reasons`, `cheater`) |
 | `GET /replay/:id` | les coups d'une partie gagnée, avec leurs temps : seulement une fois ma partie du jour terminée, ou le défi fermé |
 | `POST /reports` `{ playerId, reason? }` | signaler un pseudo à l'admin |
 | `POST /admin/claim` `{ adminToken }` | devenir admin |
 | `GET /admin/games?filter=suspects\|all`, `POST /admin/games/:id/verdict` `{ verdict }` | parties à revoir ; `cheater`, `cleared` ou `null` |
-| `GET /admin/players`, `PATCH /admin/players/:id` `{ pseudo?, banned? }`, `POST /admin/players/:id/transfer` | joueurs, renommer, exclure, nouveau code de récupération |
+| `GET /admin/players`, `PATCH /admin/players/:id` `{ pseudo?, banned? }`, `POST /admin/players/:id/transfer`, `DELETE /admin/players/:id` | joueurs, renommer, exclure, nouveau code de récupération, supprimer le compte |
 | `GET /admin/reports`, `DELETE /admin/reports/:id` | signalements |
 | `POST /admin/invite` | nouveau code d'invitation |
 | `GET /admin/settings`, `PATCH /admin/settings` | nom, heure de sortie (`release_too_soon` si le prochain défi sortirait dans moins d'une heure), délai de grâce, pré-génération, inscriptions, invitations, difficulté, conservation des replays, seuils. La réponse donne aussi `timeZone` et `nextReleaseAt` |
 | `POST /admin/settings/reset` | retour aux variables d'environnement (sauf le code d'invitation) |
 | `GET /duels` | les duels du serveur : ouverts (avec leur code, pour les rejoindre sans qu'on le donne) et en cours (avec leur code, pour les regarder, et leur nombre de `spectators`) ; les duels privés n'y sont que pour leur joueur. `ready` : puzzles prêts par niveau ; `metrics` : les vainqueurs possibles d'un duel (`["time", "moves"]`) |
-| `GET /duels/leaderboard?period=day\|week\|month\|all&date=` | classement des duels : victoires, puis moins de défaites |
+| `GET /duels/leaderboard?period=day\|week\|month\|all&date=` ou `?period=range&from=&to=` | classement des duels : victoires, puis moins de défaites |
 | `GET /duels/history` | mes derniers duels, et mon score contre chaque adversaire |
 | `GET /duels/:id` | un duel avec les coups des deux joueurs (replay) : pour ses joueurs et l'admin |
 | `POST /admin/reset` `{ from?, to?, playerIds?, challenges, duels, dryRun? }` | efface les parties des défis et/ou les duels entre deux jours (sinon tout), de certains joueurs (sinon tous) ; `dryRun` compte sans effacer |

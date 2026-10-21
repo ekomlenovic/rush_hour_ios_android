@@ -1,27 +1,42 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import AchievementIcon from './AchievementIcon';
 import { useGameStore } from '@/store/gameStore';
 import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, AchievementCategory, AchievementContext, AchievementDef } from '@/data/achievements';
 import { RFValue } from '@/utils/responsive';
+import { useNewAchievements } from '@/hooks/useNewAchievements';
 import type { UiColors } from '@/theme';
 
 /** Locked achievements shown first, by share of their target already done */
 const CLOSEST_COUNT = 3;
+/** Longest word that fits the width of a medal on a small phone: a longer one ("Perfectionniste") was cut in two, it gets a smaller font */
+const LONGEST_FITTING_WORD = 12;
+const hasLongWord = (name: string) => name.split(/\s+/).some(word => word.length > LONGEST_FITTING_WORD);
 
 interface Props {
   colors: UiColors;
   context: AchievementContext;
+  /** Achievement whose detail is shown (see AchievementSheet) */
+  selected: string | null;
+  /** `badge`: the medal touched, so the screen can keep it in view above the sheet */
+  onSelect: (id: string | null, badge?: View | null) => void;
 }
 
 /** Achievements of the profile: the closest ones, then a grid of badges per category */
-export default function AchievementsSection({ colors, context }: Props) {
+export default function AchievementsSection({ colors, context, selected, onSelect }: Props) {
   const { t } = useTranslation();
   const unlocked = useGameStore((state) => state.achievements || []);
   const unlockedSet = useMemo(() => new Set(unlocked), [unlocked]);
-  const [openCategories, setOpenCategories] = useState<Set<AchievementCategory>>(() => new Set([ACHIEVEMENT_CATEGORIES[0]]));
-  const [selected, setSelected] = useState<string | null>(null);
+  const newAchievements = useNewAchievements();
+  const newSet = useMemo(() => new Set(newAchievements), [newAchievements]);
+  const markAchievementSeen = useGameStore((state) => state.markAchievementSeen);
+  // The first category, and those with something new to see
+  const badgeRefs = useRef(new Map<string, View | null>());
+  const [openCategories, setOpenCategories] = useState<Set<AchievementCategory>>(() => new Set([
+    ACHIEVEMENT_CATEGORIES[0],
+    ...ACHIEVEMENTS.filter(a => newSet.has(a.id)).map(a => a.category),
+  ]));
 
   const progressOf = (ach: AchievementDef) => Math.min(ach.value(context), ach.target);
   const closest = useMemo(() => ACHIEVEMENTS
@@ -57,8 +72,8 @@ export default function AchievementsSection({ colors, context }: Props) {
       {ACHIEVEMENT_CATEGORIES.map(category => {
         const list = ACHIEVEMENTS.filter(a => a.category === category);
         const done = list.filter(a => unlockedSet.has(a.id)).length;
+        const newCount = list.filter(a => newSet.has(a.id)).length;
         const open = openCategories.has(category);
-        const detail = open ? list.find(a => a.id === selected) : undefined;
         return (
           <View key={category} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Pressable
@@ -66,8 +81,18 @@ export default function AchievementsSection({ colors, context }: Props) {
               style={styles.categoryHeader}
               accessibilityRole="button"
               accessibilityState={{ expanded: open }}
+              accessibilityLabel={newCount > 0
+                ? `${t(`achievements.categories.${category}`)}, ${t('profile.new_achievements', { count: newCount })}`
+                : undefined}
             >
-              <Text style={[styles.categoryTitle, { color: colors.text }]}>{t(`achievements.categories.${category}`)}</Text>
+              <View style={styles.categoryTitleLine}>
+                <Text style={[styles.categoryTitle, { color: colors.text }]}>{t(`achievements.categories.${category}`)}</Text>
+                {newCount > 0 && (
+                  <View style={[styles.countPill, { backgroundColor: colors.primary }]}>
+                    <Text style={[styles.countPillText, { color: colors.onPrimary }]}>{newCount}</Text>
+                  </View>
+                )}
+              </View>
               <Text style={[styles.categoryCount, { color: colors.textMuted }]}>{done}/{list.length}  {open ? '⌃' : '⌄'}</Text>
             </Pressable>
 
@@ -78,14 +103,19 @@ export default function AchievementsSection({ colors, context }: Props) {
                   const isSecret = !!ach.hidden && !isUnlocked;
                   const name = isSecret ? '???' : t(`achievements.${ach.id}`);
                   const desc = isSecret ? t('achievements.secret_desc') : t(`achievements.${ach.id}_desc`);
+                  const isNew = newSet.has(ach.id);
                   return (
                     <Pressable
                       key={ach.id}
-                      onPress={() => setSelected(id => id === ach.id ? null : ach.id)}
+                      ref={(node) => { badgeRefs.current.set(ach.id, node); }}
+                      onPress={() => {
+                        if (isNew) markAchievementSeen(ach.id);
+                        onSelect(selected === ach.id ? null : ach.id, badgeRefs.current.get(ach.id));
+                      }}
                       style={styles.badge}
                       accessibilityRole="button"
                       accessibilityState={{ selected: selected === ach.id }}
-                      accessibilityLabel={t(isUnlocked ? 'profile.achievement_a11y_unlocked' : 'profile.achievement_a11y_locked', { name, desc })}
+                      accessibilityLabel={`${isNew ? `${t('cosmetics.new')}, ` : ''}${t(isUnlocked ? 'profile.achievement_a11y_unlocked' : 'profile.achievement_a11y_locked', { name, desc })}`}
                     >
                       <View style={[
                         styles.badgeCircle,
@@ -95,23 +125,15 @@ export default function AchievementsSection({ colors, context }: Props) {
                         selected === ach.id && { borderColor: colors.primaryText },
                       ]}>
                         <AchievementIcon icon={isSecret ? 'lock-closed' : ach.icon} count={isSecret ? 1 : ach.iconCount} size={RFValue(24)} color={isUnlocked ? colors.primaryText : colors.textMuted} style={!isUnlocked && styles.locked} />
+                        {isNew && <View style={[styles.newDot, { backgroundColor: colors.primary, borderColor: colors.surface }]} />}
                       </View>
-                      <Text style={[styles.badgeName, { color: isUnlocked ? colors.text : colors.textMuted }]} numberOfLines={2}>{name}</Text>
+                      <Text style={[styles.badgeName, hasLongWord(name) && styles.badgeNameLong, { color: isUnlocked ? colors.text : colors.textMuted }]} numberOfLines={2}>{name}</Text>
                     </Pressable>
                   );
                 })}
               </View>
             )}
 
-            {detail && (
-              <View style={[styles.detail, { backgroundColor: colors.card }]}>
-                {!detail.hidden || unlockedSet.has(detail.id) ? (
-                  <ProgressRow colors={colors} ach={detail} current={progressOf(detail)} unlocked={unlockedSet.has(detail.id)} />
-                ) : (
-                  <Text style={[styles.rowDesc, { color: colors.textMuted }]}>{t('achievements.secret_desc')}</Text>
-                )}
-              </View>
-            )}
           </View>
         );
       })}
@@ -181,6 +203,32 @@ const styles = StyleSheet.create({
     minHeight: 44,
     marginVertical: RFValue(-8),
   },
+  categoryTitleLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(8),
+  },
+  countPill: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  newDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: RFValue(14),
+    height: RFValue(14),
+    borderRadius: RFValue(7),
+    borderWidth: 2,
+  },
   categoryTitle: {
     fontSize: RFValue(16),
     fontWeight: '700',
@@ -215,9 +263,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 2,
   },
-  detail: {
-    borderRadius: RFValue(12),
-    padding: RFValue(12),
+  badgeNameLong: {
+    fontSize: RFValue(9.5),
   },
   row: {
     flexDirection: 'row',

@@ -94,9 +94,10 @@ describe('export then import', () => {
     useGameStore.setState({ savedStates: { ...store().savedStates, [key]: { ...inProgress, moveLog: [{ vehicleId: 'v1', delta: 1, t: 800 }] } } });
     const result = parseSave(exportProgress());
     if (!result.ok) throw new Error(result.error);
-    const saved = (result.state.savedStates as Record<string, { moveCount: number; history: unknown[]; moveLog: unknown[] }>)[sampleLevels[2].id];
+    const saved = (result.state.savedStates as Record<string, { moveCount: number; history: unknown[]; undoSteps: unknown[]; moveLog: unknown[] }>)[sampleLevels[2].id];
     expect(saved.moveCount).toBe(1);
     expect(saved.history).toEqual([]);
+    expect(saved.undoSteps).toEqual([]);
     expect(saved.moveLog).toEqual([]);
   });
 
@@ -145,6 +146,25 @@ describe('export then import', () => {
     expect(parseSave(code).ok).toBe(true);
   });
 
+  it('accepts a win with 2 stars far from the optimum (2 stars within half of the optimum)', () => {
+    playSomeDays();
+    const level = sampleLevels.find(l => l.minMoves >= 12)!;
+    winLevel(level, 5);
+    expect(store().progress.find(p => p.levelId === level.id)!.stars).toBe(2);
+    const code = forge(s => {
+      s.weeklyChallengeProgress = { '2026-W41': { completed: true, score: 20 * 100 - 8 * 15, stars: 2, moves: 28, minMoves: 20 } };
+    });
+    expect(parseSave(code).ok).toBe(true);
+  });
+
+  it('accepts a challenge won under the former rule (2 stars within 3 extra moves), kept without its moves', () => {
+    playSomeDays();
+    const code = forge(s => {
+      s.archiveProgress['2026-10-08'] = { completed: true, score: 2 * 100 - 3 * 15, stars: 2, minMoves: 2 };
+    });
+    expect(parseSave(code).ok).toBe(true);
+  });
+
   it('migrates a save made by an older version of the app', () => {
     // v2: no XP yet, it is credited from the progress
     const code = encodeSave({
@@ -154,6 +174,37 @@ describe('export then import', () => {
     });
     const result = parseSave(code);
     expect(result.ok && result.state.xp).toBeGreaterThan(0);
+  });
+
+  it('counts the achievements of a save made before the "new" badges as seen', () => {
+    const code = encodeSave({
+      version: 9,
+      exportedAt: '2026-10-01',
+      state: { progress: [{ levelId: 1, completed: true, bestScore: sampleLevels[0].minMoves * 100, stars: 3 }], achievements: ['first_win'] },
+    });
+    const result = parseSave(code);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state.seenAchievements).toEqual(['first_win']);
+  });
+
+  it('imports a save made before the challenge results had their own entry, with its levels in progress', () => {
+    const board = [{ id: 'X', row: 2, col: 1, length: 2, orientation: 'horizontal', isTarget: true, color: '#f00' }];
+    const inProgress = { vehicles: board, moveCount: 4, history: [], moveLog: [], attempt: { hints: 0, undos: 0, resets: 0, elapsedMs: 3000 }, startedAt: 1760000000000 };
+    const daily = { completed: true, score: 1200, stars: 3, moves: 12, minMoves: 12 };
+    const code = encodeSave({
+      version: 10,
+      exportedAt: '2026-10-12',
+      state: {
+        progress: [{ levelId: 1, completed: true, bestScore: sampleLevels[0].minMoves * 100, stars: 3 }],
+        maxUnlockedLevel: 3,
+        dailyChallengeProgress: { '2026-10-11': daily },
+        savedStates: { [sampleLevels[2].id]: inProgress },
+      },
+    });
+    const result = parseSave(code);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state.dailyChallengeProgress).toEqual({ '2026-10-11': daily });
+    expect((result.state.savedStates as Record<string, unknown>)[sampleLevels[2].id]).toEqual(inProgress);
   });
 });
 
@@ -177,6 +228,21 @@ describe('import refuses', () => {
     expect(parseSave(code)).toEqual({ ok: false, error: 'too_new' });
   });
 
+  it('accepts a save made a day ahead, on a phone in a time zone further east', () => {
+    // Exported in Auckland on the 13th, imported in New York where it is still the 12th
+    setToday('2026-10-13');
+    playSomeDays();
+    winDaily('2026-10-13');
+    const code = exportProgress();
+    resetStore();
+    setToday('2026-10-12');
+    const result = parseSave(code);
+    expect(result.ok).toBe(true);
+    // Two days ahead is not a trip any more
+    setToday('2026-10-11');
+    expect(parseSave(code)).toEqual({ ok: false, error: 'inconsistent' });
+  });
+
   describe('a save with a valid checksum but impossible data', () => {
     beforeEach(playSomeDays);
 
@@ -185,8 +251,8 @@ describe('import refuses', () => {
       ['more stars than the score allows', (s: any) => { s.progress[1].stars = 3; }],
       ['2 stars with a score of 1 star', (s: any) => { s.progress[1].bestScore = 0; }],
       ['4 stars', (s: any) => { s.progress[0].stars = 4; }],
-      ['a daily won in the future', (s: any) => { s.dailyChallengeProgress['2026-10-13'] = { completed: true, score: 100, stars: 3 }; }],
-      ['an archive won today', (s: any) => { s.archiveProgress['2026-10-12'] = { completed: true, score: 100, stars: 3 }; }],
+      ['a daily won in the future', (s: any) => { s.dailyChallengeProgress['2026-10-14'] = { completed: true, score: 100, stars: 3 }; }],
+      ['an archive of a day not over yet', (s: any) => { s.archiveProgress['2026-10-13'] = { completed: true, score: 100, stars: 3 }; }],
       ['a broken archive level', (s: any) => { s.archiveLevels = { '2026-10-09': 'level' }; }],
       ['a weekly won in the future', (s: any) => { s.weeklyChallengeProgress['2026-W45'] = { completed: true, score: 100, stars: 3 }; }],
       ['a streak longer than the dailies won', (s: any) => { s.currentStreak = 30; s.bestStreak = 30; }],
@@ -218,6 +284,14 @@ describe('import recomputes rather than trusts', () => {
     expect(result.ok && result.state.xp).toBe(xp);
   });
 
+  it('keeps the extra XP of a boss won', () => {
+    winLevel(sampleLevels[29], 0);
+    const xp = store().xp;
+    const result = parseSave(exportProgress());
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state.xp).toBe(xp);
+  });
+
   it('caps the freezes to the stock allowed at the player level', () => {
     const result = parseSave(forge(s => { s.streakFreezes = 50; }));
     if (!result.ok) throw new Error(result.error);
@@ -241,5 +315,126 @@ describe('import recomputes rather than trusts', () => {
     if (!result.ok) throw new Error(result.error);
     store().importProgress(result.state);
     expect(store().cosmetics.board).not.toBe('neon');
+  });
+});
+
+describe('recap counters (issue 125)', () => {
+  beforeEach(playSomeDays);
+
+  it('travel with the save', () => {
+    const before = { monthlyStats: store().monthlyStats, yearlyStats: store().yearlyStats, achievementMonths: store().achievementMonths };
+    expect(before.monthlyStats['2026-10'].wins).toBeGreaterThan(0);
+    const code = exportProgress();
+    resetStore();
+    const result = parseSave(code);
+    if (!result.ok) throw new Error(result.error);
+    store().importProgress(result.state);
+    expect(store()).toMatchObject(before);
+  });
+
+  it('are capped by the lifetime totals, and a period in the future or out of the window is dropped', () => {
+    const result = parseSave(forge(s => {
+      s.monthlyStats['2026-10'].wins = 1_000_000;
+      s.monthlyStats['2026-10'].perfectWins = 999;
+      s.monthlyStats['2026-10'].moves = 'many';
+      s.monthlyStats['2030-01'] = { wins: 1 };
+      s.monthlyStats['2024-01'] = { wins: 1 };
+      s.monthlyStats.broken = { wins: 1 };
+      s.yearlyStats['2026'].playTimeMs = 1e12;
+      s.achievementMonths.unknown = '2026-10';
+      s.achievementMonths.first_win = '2099-01';
+      s.recapSince = '2099-01-01';
+      s.recapsSeen = { month: 12, year: '2026' };
+    }));
+    if (!result.ok) throw new Error(result.error);
+    const stats = result.state.stats as Record<string, number>;
+    const months = result.state.monthlyStats as Record<string, Record<string, number>>;
+    expect(Object.keys(months)).toEqual(['2026-10']);
+    expect(months['2026-10'].wins).toBe(stats.totalWins);
+    expect(months['2026-10'].perfectWins).toBeLessThanOrEqual(months['2026-10'].wins);
+    expect(months['2026-10'].moves).toBe(0);
+    expect((result.state.yearlyStats as Record<string, Record<string, number>>)['2026'].playTimeMs).toBe(stats.totalPlayTimeMs);
+    expect(result.state.achievementMonths).not.toHaveProperty('unknown');
+    expect(result.state.achievementMonths).not.toHaveProperty('first_win');
+    expect(result.state.recapSince).toBeNull();
+    expect(result.state.recapsSeen).toEqual({ year: '2026' });
+  });
+
+  it('a broken recap field never refuses the save', () => {
+    const result = parseSave(forge(s => { s.monthlyStats = 'broken'; s.yearlyStats = [1]; s.achievementMonths = null; }));
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state).toMatchObject({ monthlyStats: {}, yearlyStats: {}, achievementMonths: {} });
+  });
+
+  it('a save from before the recap (v11) gets its challenges counted back, the rest from the import', () => {
+    const v11 = decodeSave(exportProgress()) as Exclude<ReturnType<typeof decodeSave>, string>;
+    for (const field of ['monthlyStats', 'yearlyStats', 'achievementMonths', 'recapSince', 'recapsSeen']) delete v11.state[field];
+    const result = parseSave(encodeSave({ ...v11, version: 11 }));
+    if (!result.ok) throw new Error(result.error);
+    // The 3 dailies of October, no more than the lifetime wins (the dailies here are won without being played)
+    const totalWins = (result.state.stats as { totalWins: number }).totalWins;
+    expect(totalWins).toBe(2);
+    expect((result.state.monthlyStats as Record<string, { wins: number }>)['2026-10'].wins).toBe(2);
+    expect((result.state.yearlyStats as Record<string, { wins: number }>)['2026'].wins).toBe(2);
+    expect(result.state.recapSince).toBe('2026-10-12');
+    expect(Object.keys(result.state.achievementMonths as object).sort()).toEqual([...(result.state.achievements as string[])].sort());
+  });
+});
+
+describe('import drops what it cannot read', () => {
+  beforeEach(playSomeDays);
+
+  it.each([
+    ['no vehicles', { moveCount: 2, history: [] }],
+    ['a broken vehicle', { vehicles: [{ id: 'v1', row: 'top' }], moveCount: 2, history: [] }],
+    ['a negative move count', { vehicles: [], moveCount: -1, history: [] }],
+    ['a broken undo history', { vehicles: [], moveCount: 2, history: 'none' }],
+    ['a broken move log', { vehicles: [], moveCount: 2, history: [], moveLog: 'none' }],
+    ['not a save at all', 'level'],
+  ])('a level in progress with %s, keeping the rest of the save', (_, broken) => {
+    const key = String(sampleLevels[4].id);
+    const result = parseSave(forge(s => { s.savedStates[key] = broken; }));
+    if (!result.ok) throw new Error(result.error);
+    const savedStates = result.state.savedStates as Record<string, unknown>;
+    expect(savedStates).not.toHaveProperty(key);
+    expect(savedStates).toHaveProperty(String(sampleLevels[2].id));
+
+    store().importProgress(result.state);
+    expect(() => store().loadLevel(sampleLevels[4])).not.toThrow();
+    expect(store().moveCount).toBe(0);
+  });
+
+  it('statistics that are not numbers, which take their default', () => {
+    const result = parseSave(forge(s => {
+      s.stats = { ...s.stats, totalMoves: 'many', totalUndos: null, totalResets: -3, nightWins: 2, winsByGridSize: { 6: 'x', 7: 4 }, fastestWinMs: null, cheat: 1 };
+    }));
+    if (!result.ok) throw new Error(result.error);
+    store().importProgress(result.state);
+    const { stats } = store();
+    expect(stats).toMatchObject({ totalMoves: 0, totalUndos: 0, totalResets: 0, nightWins: 2, winsByGridSize: { 7: 4 }, fastestWinMs: null });
+    expect(stats).not.toHaveProperty('cheat');
+    expect(maxPlausibleXp(result.state)).not.toBeNaN();
+  });
+
+  it('a save from before the secret codes, which gets none, and keeps the codes of a newer one', () => {
+    const old = parseSave(forge(s => { delete s.stats.secretCodes; }));
+    if (!old.ok) throw new Error(old.error);
+    store().importProgress(old.state);
+    expect(store().stats.secretCodes).toEqual({});
+
+    const withCode = parseSave(forge(s => { s.stats.secretCodes = { mafia: 1, broken: 'x' }; }));
+    if (!withCode.ok) throw new Error(withCode.error);
+    store().importProgress(withCode.state);
+    expect(store().stats.secretCodes).toEqual({ mafia: 1 });
+  });
+});
+
+describe('a level in progress broken on the phone', () => {
+  it('starts the level fresh rather than crashing', () => {
+    const level = sampleLevels[4];
+    useGameStore.setState({ savedStates: { [level.id]: { moveCount: 3 } as never } });
+    expect(() => store().loadLevel(level)).not.toThrow();
+    expect(store().moveCount).toBe(0);
+    expect(store().savedStates).not.toHaveProperty(String(level.id));
   });
 });

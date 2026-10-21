@@ -44,6 +44,20 @@ Le seul contenu des joueurs est leur **pseudo**, et le signalement. Ce que Googl
 
 [`Privacy_Policy.md`](../Privacy_Policy.md), section 4 « Multiplayer Mode ».
 
+## Public cible : enfants compris (programme Familles)
+
+L'app vise **tous les âges, enfants compris** : dans « Public cible et contenu », cocher aussi des tranches de moins de 13 ans. Elle doit alors respecter le [règlement Familles](https://support.google.com/googleplay/android-developer/answer/9893335) de Google Play :
+
+| Exigence | Où |
+|---|---|
+| Politique de confidentialité qui parle des enfants | [`Privacy_Policy.md`](../Privacy_Policy.md), sections 7 « Children's Privacy » et 10 « Contact » |
+| Pas de publicité, ou seulement des SDK certifiés Familles | aucune publicité, aucun SDK de pub ni d'analytics (`package.json`) |
+| Pas d'identifiant de l'appareil ni de localisation envoyés | rien n'est envoyé hors multijoueur ; en multijoueur, pseudo et parties vers un serveur choisi par le joueur (adresse IP vue comme par tout site web) |
+| Données des enfants : le moins possible, et supprimables | pseudo seulement (pas de vrai nom conseillé) ; suppression dans l'app ou sur `https://<serveur>/delete-account` |
+| Interactions entre joueurs encadrées | multijoueur désactivé par défaut, sur invitation, sans chat ; signaler, bloquer, modération par l'admin du serveur |
+
+Le multijoueur passe par des serveurs que le développeur ne contrôle pas : la politique demande qu'un parent décide si un enfant rejoint un serveur. Google peut demander plus (par exemple un contrôle parental avant d'ouvrir le multijoueur) : à ajouter dans l'app si la revue le demande.
+
 ## Message « Mise à jour disponible » (Android)
 
 L'app compare sa version à `android-source.json` **sur `main`** (`utils/updateChecker.ts`) et renvoie vers la fiche Google Play. Ce fichier doit donc annoncer **uniquement la version en ligne sur le Play Store**, sinon les joueurs voient une mise à jour qu'ils ne peuvent pas installer.

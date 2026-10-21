@@ -2,7 +2,7 @@
   "expo": {
     "name": "Rush Hours",
     "slug": "rush-hours",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.rushhours.app",
-      "versionCode": 14,
+      "versionCode": 15,
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "backgroundColor": "#1A2B4C",
@@ -40,6 +40,12 @@
           "image": "./assets/splash-icon.png",
           "resizeMode": "contain",
           "backgroundColor": "#1A2B4C"
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
         }
       ],
       "./plugins/withoutPushEntitlement",

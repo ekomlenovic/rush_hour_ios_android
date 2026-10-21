@@ -8,7 +8,8 @@ import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
 import type { Level } from '@/store/types';
 import { haptics, Haptics } from '@/utils/haptics';
-import { LEVEL_NAME_MAX_LENGTH, parseSharedLevel } from '@/utils/sharing';
+import { decodeSharedLevel, LEVEL_NAME_MAX_LENGTH, withOptimum } from '@/utils/sharing';
+import { validateLevelAsync } from '@/utils/solver.background';
 import { customLevelTitle, type CustomLevelKind } from '@/utils/customLevels';
 import BoardPreview from '@/components/garage/BoardPreview';
 import BottomSheet from '@/components/home/BottomSheet';
@@ -16,7 +17,9 @@ import ShareIcon from '@/components/share/ShareIcon';
 import ShareLevelSheet from '@/components/share/ShareLevelSheet';
 import LevelNameSheet from '@/components/share/LevelNameSheet';
 import KeyboardScreen from '@/components/KeyboardScreen';
+import ScreenHeader from '@/components/ScreenHeader';
 import { useTheme, type UiColors } from '@/theme';
+import { matchSecretCode } from '@/store/stats';
 
 type Tab = CustomLevelKind | 'favorites';
 
@@ -30,6 +33,8 @@ interface Entry {
 const THUMB = 64;
 /** iOS drops an alert or a sheet shown while another sheet is sliding away */
 const AFTER_SHEET_MS = 350;
+/** Pause in the typing before a pasted or typed link is solved */
+const SOLVE_DELAY_MS = 300;
 
 export default function CustomLevelsScreen() {
     const { t } = useTranslation();
@@ -39,7 +44,7 @@ export default function CustomLevelsScreen() {
     const importedLevels = useGameStore(s => s.importedLevels);
     const progress = useGameStore(s => s.progress);
     const cosmetics = useGameStore(s => s.cosmetics);
-    const { addImportedLevel, deleteCustomLevel, toggleFavorite, renameCustomLevel } = useGameStore.getState();
+    const { addImportedLevel, deleteCustomLevel, toggleFavorite, renameCustomLevel, recordSecretCode } = useGameStore.getState();
     const [activeTab, setActiveTab] = useState<Tab>('created');
     const [importText, setImportText] = useState('');
     const [importName, setImportName] = useState('');
@@ -58,9 +63,30 @@ export default function CustomLevelsScreen() {
 
     const data = entries[activeTab];
 
-    // Checked as it is typed or pasted: the board and the name of the link show before importing
-    const pending = useMemo(() => (importText.trim() ? parseSharedLevel(importText.trim()) : null), [importText]);
-    const pendingInvalid = importText.trim().length > 0 && !pending;
+    // A secret code typed instead of a link (e.g. "mafia"): the achievement toast says the rest
+    useEffect(() => {
+        const code = matchSecretCode(importText);
+        if (!code) return;
+        setImportText('');
+        recordSecretCode(code);
+        haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }, [importText, recordSecretCode]);
+
+    // Checked as it is typed or pasted: the board and the name of the link show before importing.
+    // Decoding is instant; solving waits for the typing to pause and runs in the background
+    const decoded = useMemo(() => (importText.trim() ? decodeSharedLevel(importText.trim()) : null), [importText]);
+    const [solved, setSolved] = useState<{ level: Level; result: Level | null } | null>(null);
+    useEffect(() => {
+        if (!decoded) return;
+        let cancelled = false;
+        const timer = setTimeout(() => {
+            validateLevelAsync(decoded.vehicles, decoded.gridSize, decoded.exitRow, decoded.exitCol)
+                .then(minMoves => { if (!cancelled) setSolved({ level: decoded, result: withOptimum(decoded, minMoves) }); });
+        }, SOLVE_DELAY_MS);
+        return () => { cancelled = true; clearTimeout(timer); };
+    }, [decoded]);
+    const pending = decoded && solved?.level === decoded ? solved.result : null;
+    const pendingInvalid = importText.trim().length > 0 && (!decoded || (solved?.level === decoded && !solved.result));
     // The name of the link is suggested, the player can change or clear it
     useEffect(() => setImportName(pending?.name ?? ''), [pending]);
 
@@ -127,12 +153,11 @@ export default function CustomLevelsScreen() {
 
     return (
         <KeyboardScreen style={{ backgroundColor: colors.background }}>
-            <View style={styles.header}>
-                <Pressable onPress={() => router.back()} style={styles.headerSide} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
-                    <Text style={[styles.backText, { color: colors.textMuted }]}>← {t('common.home')}</Text>
-                </Pressable>
-                <Text style={[styles.headerTitle, { color: colors.text }]} accessibilityRole="header" numberOfLines={1}>{t('home.my_levels')}</Text>
-                <View style={[styles.headerSide, styles.headerRight]}>
+            <ScreenHeader
+                colors={colors}
+                title={t('home.my_levels')}
+                backLabel={t('common.home')}
+                right={(
                     <Pressable
                         onPress={() => router.push('/creator')}
                         style={[styles.newBtn, { backgroundColor: colors.primarySoft, borderColor: colors.primaryBorder }]}
@@ -142,8 +167,8 @@ export default function CustomLevelsScreen() {
                     >
                         <Ionicons name="add" size={22} color={colors.primaryText} />
                     </Pressable>
-                </View>
-            </View>
+                )}
+            />
 
             <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
                 {tabs.map(tab => {
@@ -417,19 +442,6 @@ function MenuRow({ icon, label, color, colors, onPress }: MenuRowProps) {
 }
 
 const styles = StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingTop: 60,
-        paddingHorizontal: 20,
-        marginBottom: 16,
-    },
-    // Same width on both sides: the title stays centered
-    headerSide: { width: 90, height: 44, justifyContent: 'center' },
-    headerRight: { alignItems: 'flex-end' },
-    backText: { fontSize: 16, fontWeight: '700' },
-    headerTitle: { flex: 1, textAlign: 'center', fontSize: 24, fontWeight: '800' },
     newBtn: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
     tabs: { flexDirection: 'row', marginHorizontal: 20, marginBottom: 16, padding: 4, borderRadius: 14 },
     tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 9, borderRadius: 10 },

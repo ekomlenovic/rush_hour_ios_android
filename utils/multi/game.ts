@@ -1,6 +1,6 @@
 import type { MultiGame } from '../../store/multiStore';
-import type { StartResult } from './api';
-import { checkWin } from '../collision';
+import type { StartResult, SubmitResult, Today } from './api';
+import { checkWin, isLegalMove } from '../collision';
 import { toMoveRecord } from '../moveLog';
 
 /**
@@ -46,11 +46,31 @@ export function playMove(game: MultiGame, vehicleId: string, row: number, col: n
   const last = game.moveLog[game.moveLog.length - 1];
   // Never back in time, even if the phone clock is changed
   const record = vehicle && toMoveRecord(vehicle, row, col, Math.max(last?.t ?? 0, Math.round(elapsedMs(game, now))));
-  if (!record) return null;
+  // The red car is out: the game is over, a move after it would make the server refuse the win.
+  // A move through a vehicle (two dragged at once) would make it refuse the win too
+  if (!record || isWon(game) || !isLegalMove(game.vehicles, vehicleId, row, col, game.level.gridSize)) return null;
   const vehicles = game.vehicles.map(v => (v.id === vehicleId ? { ...v, row, col } : v));
   return {
     game: { ...game, vehicles, moveLog: [...game.moveLog, record] },
     won: checkWin(vehicles, game.level.exitRow, game.level.exitCol, game.level.gridSize),
+  };
+}
+
+/** Is the red car out? A game won but not sent yet (network, app closed) is sent again, never played on */
+export const isWon = (game: MultiGame): boolean =>
+  checkWin(game.vehicles, game.level.exitRow, game.level.exitCol, game.level.gridSize);
+
+/**
+ * My win as the server has it, from the challenge of the day: a win it took whose answer
+ * was lost on the way (sent again, it answers "already finished"). Null if it has none.
+ */
+export function wonResult(today: Today, date: string, playerId: number): SubmitResult | null {
+  if (today.date !== date || today.me?.status !== 'won' || today.me.moves === null || today.me.timeMs === null) return null;
+  const row = today.results.find(r => r.playerId === playerId);
+  if (!row || row.rank === null) return null;
+  return {
+    status: 'won', moves: today.me.moves, timeMs: today.me.timeMs, minMoves: today.me.minMoves ?? 0,
+    rank: row.rank, points: row.points, verdict: row.verdict,
   };
 }
 

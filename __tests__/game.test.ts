@@ -1,7 +1,7 @@
 import { useGameStore, DAILY_LEVEL_ID, isSaveForLevel } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
-import { solvePuzzle, getHint } from '../utils/solver';
-import { checkWin } from '../utils/collision';
+import { GENERATOR_MAX_STATES, solvePuzzle, getHint } from '../utils/solver';
+import { checkWin, getMoveBounds, isLegalMove } from '../utils/collision';
 import { resetStore, setToday } from './helpers';
 
 const state = () => useGameStore.getState();
@@ -33,6 +33,40 @@ describe('solver', () => {
     const result = solvePuzzle(level.vehicles, level.gridSize, level.exitRow, level.exitCol);
     expect(getHint(level.vehicles, level.gridSize, level.exitRow, level.exitCol)).toEqual(result.moves[0]);
   });
+
+  it('a board that cannot be won is not solvable', () => {
+    // The red car on row 2, two trucks filling the column in front of it
+    const blocked = [
+      { ...level.vehicles.find(v => v.isTarget)!, row: 2, col: 0, length: 2, orientation: 'horizontal' as const },
+      { id: 'a', row: 0, col: 4, length: 3, orientation: 'vertical' as const, isTarget: false, color: '#000' },
+      { id: 'b', row: 3, col: 4, length: 3, orientation: 'vertical' as const, isTarget: false, color: '#000' },
+    ];
+    expect(solvePuzzle(blocked, 6, 2, 6)).toEqual({ solvable: false, minMoves: -1, moves: [] });
+  });
+
+  it('gives up past the positions it may go through (generator: GENERATOR_MAX_STATES)', () => {
+    const l = sampleLevels[300];
+    expect(solvePuzzle(l.vehicles, l.gridSize, l.exitRow, l.exitCol, 200, 100)).toEqual({ solvable: false, minMoves: -1, moves: [], tooComplex: true });
+    expect(solvePuzzle(l.vehicles, l.gridSize, l.exitRow, l.exitCol, 200, GENERATOR_MAX_STATES).minMoves).toBe(l.minMoves);
+  });
+});
+
+describe('isLegalMove: two vehicles dragged at once never overlap', () => {
+  const car = (id: string, col: number) => ({ id, row: 0, col, length: 2, orientation: 'horizontal' as const, isTarget: false, color: '#000' });
+  const board = [car('a', 0), car('b', 4)];
+
+  it('lets a vehicle slide along its axis while the way is free', () => {
+    expect(isLegalMove(board, 'a', 0, 2, 6)).toBe(true);
+    expect(isLegalMove(board, 'b', 0, 2, 6)).toBe(true);
+  });
+
+  it('refuses the second of two drags ending on the same cells, a move off its axis, an unknown vehicle', () => {
+    const afterA = board.map(v => (v.id === 'a' ? { ...v, col: 2 } : v));
+    expect(isLegalMove(afterA, 'b', 0, 2, 6)).toBe(false);
+    expect(isLegalMove(afterA, 'b', 0, 3, 6)).toBe(false);
+    expect(isLegalMove(board, 'a', 1, 0, 6)).toBe(false);
+    expect(isLegalMove(board, 'nope', 0, 0, 6)).toBe(false);
+  });
 });
 
 describe('map levels: training mode (rules in docs/GAME_DESIGN.md)', () => {
@@ -45,6 +79,20 @@ describe('map levels: training mode (rules in docs/GAME_DESIGN.md)', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+  });
+
+  it('a move through another vehicle is refused and changes nothing', () => {
+    // A vehicle stopped by another one before the edge of the grid, moved past it
+    const blocked = level.vehicles.find(v => {
+      const { max } = getMoveBounds(v, level.vehicles, level.gridSize);
+      return max < level.gridSize - v.length;
+    })!;
+    const { max } = getMoveBounds(blocked, level.vehicles, level.gridSize);
+    const horizontal = blocked.orientation === 'horizontal';
+    expect(state().moveVehicle(blocked.id, horizontal ? blocked.row : max + 1, horizontal ? max + 1 : blocked.col)).toBe(false);
+    expect(state().moveCount).toBe(0);
+    expect(state().vehicles).toEqual(level.vehicles);
+    expect(state().moveVehicle(mover.id, mover.row, mover.col)).toBe(true);
   });
 
   it('undo counts as a move', () => {
@@ -165,5 +213,30 @@ describe('hardReset', () => {
     expect(s).toMatchObject({ currentStreak: 0, bestStreak: 0, streakFreezes: 0, achievements: [], dailyChallengeProgress: {}, dailyMissions: null });
     expect(s.stats).toEqual(useGameStore.getInitialState().stats);
     jest.useRealTimers();
+  });
+});
+
+describe('resetting the generated levels', () => {
+  it('takes their progress, games in progress and map focus with them, nothing else', () => {
+    resetStore();
+    const base = sampleLevels.length;
+    const generated = { ...level, id: base + 1 };
+    useGameStore.setState({
+      generatedLevels: [generated],
+      progress: [{ levelId: 1, completed: true, bestScore: 300, stars: 3 }, { levelId: base + 1, completed: true, bestScore: 300, stars: 3 }],
+      maxUnlockedLevel: base + 2,
+      savedStates: {
+        2: { vehicles: level.vehicles, moveCount: 1, history: [] },
+        [base + 1]: { vehicles: level.vehicles, moveCount: 3, history: [] },
+        'daily-2026-10-14': { vehicles: level.vehicles, moveCount: 2, history: [] },
+      },
+      lastPlayedLevelId: base + 1,
+    });
+    state().purgeCustomLevels(base);
+    expect(state().generatedLevels).toEqual([]);
+    expect(state().progress.map(p => p.levelId)).toEqual([1]);
+    expect(state().maxUnlockedLevel).toBe(base + 1);
+    expect(Object.keys(state().savedStates).sort()).toEqual(['2', 'daily-2026-10-14']);
+    expect(state().lastPlayedLevelId).toBeNull();
   });
 });

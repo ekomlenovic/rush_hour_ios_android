@@ -4,7 +4,8 @@ import { useRouter } from 'expo-router';
 import { haptics, Haptics } from '@/utils/haptics';
 import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
-import { getMapFocusLevel } from '@/utils/mapFocus';
+import { getMapFocusLevel, isMapLevelUnlocked } from '@/utils/mapFocus';
+import { isBossLevel } from '@/data/bosses';
 import { useTheme } from '@/theme';
 import { createMapLayout, generateRoadSegments } from '@/components/map/path';
 import { buildZones, zoneOf } from '@/components/map/zones';
@@ -14,6 +15,7 @@ import ZoneLayer from '@/components/map/ZoneLayer';
 import MapHeader from '@/components/map/MapHeader';
 import JumpButton from '@/components/map/JumpButton';
 import GenerationPill from '@/components/map/GenerationPill';
+import { isGenerationActive } from '@/hooks/useLevelGenerator';
 import OptionsSheet from '@/components/settings/OptionsSheet';
 
 /** Height of the blurred header over the map */
@@ -73,16 +75,18 @@ export default function MapScreen() {
     return { starsById: byId, zoneStars: perZone, totalStars: total };
   }, [progress, zones]);
 
+  // Level the map opens on, chosen once: a win or a level replayed further down does not move the map under the player
+  const [focusLevel] = useState(() => getMapFocusLevel(lastPlayedLevelId, maxUnlockedLevel, id => progress.some(p => p.levelId === id && p.completed)));
+
   // Synchronously calculate initial scroll position to avoid "teleportation"
   const initialY = useMemo(() => {
-    const targetId = getMapFocusLevel(lastPlayedLevelId, maxUnlockedLevel);
-    const targetNode = pathPoints.find(p => p.id === targetId);
+    const targetNode = pathPoints.find(p => p.id === focusLevel);
     if (targetNode) {
       return Math.max(0, targetNode.y - screenHeight / 2 + 50);
     }
     // Fallback to BOTTOM of map (where level 1 is) if target not found
     return Math.max(0, totalHeight - screenHeight);
-  }, [pathPoints, lastPlayedLevelId, maxUnlockedLevel, screenHeight]);
+  }, [pathPoints, focusLevel, screenHeight, totalHeight]);
 
   // Set initial scroll state
   useEffect(() => {
@@ -110,8 +114,9 @@ export default function MapScreen() {
   }, [maxUnlockedLevel]);
 
   useEffect(() => {
-    // Reset generation state on mount to prevent stuck "Canceling..." state
-    setGenerationState({ isRunning: false, shouldCancel: false, estimatedRemainingSeconds: 0 });
+    // A generation left over by a closed app (the state is saved) is not running any more;
+    // one still going on keeps its state: starting another would give the same ids (issue 120)
+    if (!isGenerationActive()) setGenerationState({ isRunning: false, shouldCancel: false, estimatedRemainingSeconds: 0 });
   }, []);
 
   const minY = scrollY - DRAW_MARGIN;
@@ -143,6 +148,12 @@ export default function MapScreen() {
       router.push('/tutorial');
       return;
     }
+    // The padlock after the last level: no level there (it opened a game that could not load), the generator is in the options
+    if (levelId > levels.length) {
+      haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setSettingsVisible(true);
+      return;
+    }
     // Custom generated levels are ALWAYS accessible regardless of progression lock
     if (!isUnlocked && !isCustom) {
       haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -150,7 +161,7 @@ export default function MapScreen() {
     }
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push(`/game?levelId=${levelId}`);
-  }, [router]);
+  }, [router, levels.length]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -202,7 +213,7 @@ export default function MapScreen() {
               // find level data by matching point.id with level.id
               const levelData = isTutorial || isPadlockNode ? null : levels.find(l => l.id === point.id);
 
-              const isUnlocked = isTutorial || point.id <= maxUnlockedLevel;
+              const isUnlocked = isTutorial || isMapLevelUnlocked(point.id, maxUnlockedLevel);
               const isCurrent = point.id === maxUnlockedLevel;
               const isCustom = !isTutorial && !isPadlockNode && point.id > sampleLevels.length;
 
@@ -214,6 +225,7 @@ export default function MapScreen() {
                   isUnlocked={isUnlocked}
                   isCurrent={isCurrent}
                   isCustom={isCustom}
+                  isBoss={!isPadlockNode && isBossLevel(point.id)}
                   isPadlockNode={isPadlockNode}
                   isTutorial={isTutorial}
                   stars={starsById.get(point.id) ?? 0}
@@ -228,7 +240,7 @@ export default function MapScreen() {
       </ScrollView>
 
       {isReady && (nextAbove || nextBelow) && !isGenerating && (
-        <JumpButton levelId={nextNode.id} below={nextBelow} colors={colors} onPress={jumpToNext} />
+        <JumpButton levelId={nextNode.id} isEnd={nextNode.id > levels.length} below={nextBelow} colors={colors} onPress={jumpToNext} />
       )}
 
       <OptionsSheet

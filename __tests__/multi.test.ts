@@ -4,6 +4,7 @@ import { gameKey, selectActiveAccount, useMultiStore, type MultiGame, type Serve
 import { useGameStore } from '../store/gameStore';
 import { exportProgress, parseSave } from '../utils/saveTransfer';
 import { sampleLevels } from '../data/sampleLevels';
+import { mondayOf, showsWeekRecap, weekCells } from '../utils/multi/week';
 
 describe('server address', () => {
   it.each([
@@ -210,7 +211,7 @@ describe('servers and games of the player', () => {
 });
 
 describe('a multiplayer game on the phone', () => {
-  const { elapsedMs, gameFromStart, playMove, submission } = require('../utils/multi/game') as typeof import('../utils/multi/game');
+  const { elapsedMs, gameFromStart, isWon, playMove, submission, wonResult } = require('../utils/multi/game') as typeof import('../utils/multi/game');
   const { applyMoves } = require('../utils/moveLog') as typeof import('../utils/moveLog');
   const { solvePuzzle } = require('../utils/solver') as typeof import('../utils/solver');
   const level = { ...sampleLevels[0], minMoves: 0 };
@@ -248,6 +249,15 @@ describe('a multiplayer game on the phone', () => {
     expect(playMove(game, 'nope', 0, 0, 1_001_000)).toBeNull();
   });
 
+  it('a move through a vehicle is never played: the server would refuse the win', () => {
+    const { getMoveBounds } = require('../utils/collision') as typeof import('../utils/collision');
+    const game = gameFromStart(URL, start, undefined, 1_000_500);
+    const blocked = level.vehicles.find(v => getMoveBounds(v, level.vehicles, level.gridSize).max < level.gridSize - v.length)!;
+    const { max } = getMoveBounds(blocked, level.vehicles, level.gridSize);
+    const horizontal = blocked.orientation === 'horizontal';
+    expect(playMove(game, blocked.id, horizontal ? blocked.row : max + 1, horizontal ? max + 1 : blocked.col, 1_001_000)).toBeNull();
+  });
+
   it('times never go back, even if the phone clock does', () => {
     const v = level.vehicles.find(x => !x.isTarget && x.orientation === 'horizontal')!;
     let game = gameFromStart(URL, start, undefined, 1_000_500);
@@ -268,20 +278,56 @@ describe('a multiplayer game on the phone', () => {
     // Another day: the saved game is not this one
     expect(gameFromStart(URL, { ...start, date: '2026-10-17' }, saved, 1_099_000).moveLog).toEqual([]);
   });
+
+  it('a game won but not sent is resumed won, and takes no more moves (#117)', () => {
+    let game = gameFromStart(URL, start, undefined, 1_000_500);
+    for (const move of solvePuzzle(level.vehicles, level.gridSize, level.exitRow, level.exitCol).moves) {
+      game = playMove(game, move.vehicleId, move.toRow, move.toCol, 1_002_000)!.game;
+    }
+    // The phone closed before the server answered: the saved game comes back as it was
+    const resumed = gameFromStart(URL, { ...start, serverNow: 1_100_000 }, game, 1_100_000);
+    expect(isWon(resumed)).toBe(true);
+    expect(isWon(gameFromStart(URL, start, undefined, 1_000_500))).toBe(false);
+    // A move after the win would make the server refuse the whole game
+    const other = level.vehicles.find(v => !v.isTarget)!;
+    for (const delta of [-2, -1, 1, 2]) {
+      const row = other.orientation === 'vertical' ? resumed.vehicles.find(v => v.id === other.id)!.row + delta : other.row;
+      const col = other.orientation === 'horizontal' ? resumed.vehicles.find(v => v.id === other.id)!.col + delta : other.col;
+      expect(playMove(resumed, other.id, row, col, 1_101_000)).toBeNull();
+    }
+    expect(applyMoves(level, resumed.moveLog)).toMatchObject({ ok: true, won: true });
+  });
+
+  it('a win the server took but whose answer was lost is read back from the day (#117)', () => {
+    const today = {
+      date: '2026-10-16', number: 3, status: 'ready' as const, releasedAt: 0, closesAt: 0, serverNow: 0, pending: null,
+      me: { status: 'won' as const, startedAt: 0, deadline: 0, moves: 12, timeMs: 42_000, minMoves: 10 },
+      results: [{ playerId: 7, pseudo: 'Léa', date: '2026-10-16', status: 'won' as const, rank: 2, moves: 12, timeMs: 42_000, points: 8, attemptId: 1, verdict: null, reasons: [] }],
+    };
+    expect(wonResult(today, '2026-10-16', 7)).toEqual({ status: 'won', moves: 12, timeMs: 42_000, minMoves: 10, rank: 2, points: 8, verdict: null });
+    // Another day, another player, or not won: nothing to show
+    expect(wonResult(today, '2026-10-15', 7)).toBeNull();
+    expect(wonResult(today, '2026-10-16', 8)).toBeNull();
+    expect(wonResult({ ...today, me: { ...today.me, status: 'abandoned' as const } }, '2026-10-16', 7)).toBeNull();
+  });
 });
 
 describe('translations of the multiplayer mode', () => {
   const { MULTI_ERROR_CODES } = require('../components/multi/errors') as typeof import('../components/multi/errors');
+  const { ADMIN_SECTIONS } = require('../components/multi/admin/sections') as typeof import('../components/multi/admin/sections');
   const locales = { en: require('../locales/en.json'), fr: require('../locales/fr.json') };
 
   it.each(Object.entries(locales))('%s has the keys built at runtime', (_, strings) => {
     const multi = strings.multi;
     expect(MULTI_ERROR_CODES.filter(code => typeof multi.errors[code] !== 'string')).toEqual([]);
     expect(Object.keys(multi.status).sort()).toEqual(['abandoned', 'playing', 'unfinished', 'won']);
-    expect(Object.keys(multi.period).sort()).toEqual(['day', 'month', 'week']);
+    expect(Object.keys(multi.ranking_mode).sort()).toEqual(['all', 'dates', 'month', 'week']);
+    expect(Object.keys(multi.ranking_mode_desc).sort()).toEqual(['all', 'dates', 'month', 'week']);
     expect(typeof multi.my_abandoned).toBe('string');
     expect(typeof multi.my_unfinished).toBe('string');
-    expect(Object.keys(multi.admin_tab).sort()).toEqual(['games', 'players', 'reports', 'reset', 'settings']);
+    // A title for each page of the admin panel
+    expect(ADMIN_SECTIONS.filter(section => typeof multi.admin_home[section] !== 'string')).toEqual([]);
+    expect(['scratch', 'catalog'].filter(kind => typeof multi[`admin_puzzles_working_${kind}`] !== 'string')).toEqual([]);
     expect(Object.keys(multi.admin_reset_preset).sort()).toEqual(['all', 'dates', 'month', 'today', 'week']);
     expect(Object.keys(multi.duel).filter(k => /^(outcome|reason_short)_/.test(k)).sort()).toEqual([
       'outcome_draw', 'outcome_loss', 'outcome_win', 'reason_short_disconnected', 'reason_short_forfeit', 'reason_short_timeout', 'reason_short_won',
@@ -456,5 +502,112 @@ describe('admin reset', () => {
   it('chosen days in any order', () => {
     expect(resetRange('dates', '2026-10-17', dates)).toEqual(dates);
     expect(resetRange('dates', '2026-10-17', { from: '2026-10-05', to: '2026-10-01' })).toEqual(dates);
+  });
+});
+
+describe('admin panel', () => {
+  const { matchesPseudo } = require('../utils/multi/format') as typeof import('../utils/multi/format');
+  const { isAdminSection } = require('../components/multi/admin/sections') as typeof import('../components/multi/admin/sections');
+
+  it('finds a player without case nor accents', () => {
+    expect(matchesPseudo('Léo', 'leo')).toBe(true);
+    expect(matchesPseudo('Léo', 'LÉ')).toBe(true);
+    expect(matchesPseudo('Chloé', ' OE ')).toBe(true);
+    expect(matchesPseudo('Chloé', 'eo')).toBe(false);
+    expect(matchesPseudo('Chloé', 'loé')).toBe(true);
+    expect(matchesPseudo('Mia', '')).toBe(true);
+    expect(matchesPseudo('Mia', 'léo')).toBe(false);
+  });
+
+  it('opens only its own pages', () => {
+    expect(isAdminSection('games')).toBe(true);
+    expect(isAdminSection('settings')).toBe(false);
+    expect(isAdminSection(undefined)).toBe(false);
+  });
+});
+
+describe('week of the challenges', () => {
+  it('starts on Monday', () => {
+    expect(mondayOf('2026-10-19')).toBe('2026-10-19');
+    expect(mondayOf('2026-10-25')).toBe('2026-10-19');
+    expect(mondayOf('2026-11-01')).toBe('2026-10-26');
+  });
+
+  it('shows the recap of last week from Monday to Wednesday', () => {
+    expect(['2026-10-19', '2026-10-20', '2026-10-21'].map(showsWeekRecap)).toEqual([true, true, true]);
+    expect(['2026-10-22', '2026-10-25'].map(showsWeekRecap)).toEqual([false, false]);
+  });
+
+  it('fills the days of a player up to the challenge being played', () => {
+    const days = [
+      { date: '2026-10-19', points: 10, status: 'won' as const },
+      { date: '2026-10-20', points: 0, status: 'abandoned' as const },
+      { date: '2026-10-22', points: 0, status: 'playing' as const },
+    ];
+    expect(weekCells('2026-10-19', days, '2026-10-22').map(c => (c.kind === 'points' ? c.points : c.kind))).toEqual([
+      10, 0, 'missed', 'playing', 'upcoming', 'upcoming', 'upcoming',
+    ]);
+    // Today's challenge not started yet: still to come
+    expect(weekCells('2026-10-19', [], '2026-10-21').map(c => c.kind)).toEqual([
+      'missed', 'missed', 'upcoming', 'upcoming', 'upcoming', 'upcoming', 'upcoming',
+    ]);
+  });
+});
+
+describe('weekly rankings period', () => {
+  const { rankingQuery, rankingDays, isPeriodOver, shiftMonth, stripOffsets } = require('../utils/multi/rankingPeriod') as typeof import('../utils/multi/rankingPeriod');
+  const { rankingParams } = require('../utils/multi/api') as typeof import('../utils/multi/api');
+  const dates = { from: '2026-10-05', to: '2026-10-01' };
+  const view = (mode: 'week' | 'month' | 'dates' | 'all', offset = 0) => ({ mode, offset, dates });
+  // A Monday, early in the month
+  const today = '2026-10-19';
+
+  it('asks the server for a week or a month back from this one, or two dates in order', () => {
+    expect(rankingQuery(view('week'), today)).toEqual({ period: 'week' });
+    expect(rankingQuery(view('week', -1), today)).toEqual({ period: 'week', date: '2026-10-12' });
+    expect(rankingQuery(view('week', -3), today)).toEqual({ period: 'week', date: '2026-09-28' });
+    expect(rankingQuery(view('month'), today)).toEqual({ period: 'month' });
+    expect(rankingQuery(view('month', -1), today)).toEqual({ period: 'month', date: '2026-09-01' });
+    expect(rankingQuery(view('month', -1), '2026-01-15')).toEqual({ period: 'month', date: '2025-12-01' });
+    expect(rankingQuery(view('dates'), today)).toEqual({ period: 'range', from: '2026-10-01', to: '2026-10-05' });
+    expect(rankingQuery(view('all'), today)).toEqual({ period: 'all' });
+  });
+
+  it('offers the weeks and the months back from the current one', () => {
+    expect(stripOffsets('week').slice(0, 3)).toEqual([0, -1, -2]);
+    expect(stripOffsets('week')).toHaveLength(53);
+    expect(stripOffsets('month').at(-1)).toBe(-36);
+  });
+
+  it('steps months across the years', () => {
+    expect(shiftMonth('2026-10-19', 0)).toBe('2026-10-01');
+    expect(shiftMonth('2026-01-31', -1)).toBe('2025-12-01');
+    expect(shiftMonth('2026-03-31', -13)).toBe('2025-02-01');
+    expect(shiftMonth('2025-12-01', 1)).toBe('2026-01-01');
+  });
+
+  it('shows the days covered', () => {
+    expect(rankingDays(view('week'), today)).toEqual({ from: '2026-10-19', to: '2026-10-25' });
+    expect(rankingDays(view('week', -1), today)).toEqual({ from: '2026-10-12', to: '2026-10-18' });
+    expect(rankingDays(view('month'), today)).toEqual({ from: '2026-10-01', to: '2026-10-31' });
+    expect(rankingDays(view('month', -1), today)).toEqual({ from: '2026-09-01', to: '2026-09-30' });
+    expect(rankingDays(view('dates'), today)).toEqual({ from: '2026-10-01', to: '2026-10-05' });
+    expect(rankingDays(view('all'), today)).toBeNull();
+  });
+
+  it('a period over has a final ranking', () => {
+    expect(isPeriodOver(view('week'), today)).toBe(false);
+    expect(isPeriodOver(view('week', -1), today)).toBe(true);
+    expect(isPeriodOver(view('month'), today)).toBe(false);
+    expect(isPeriodOver(view('month', -1), today)).toBe(true);
+    expect(isPeriodOver(view('dates'), today)).toBe(true);
+    expect(isPeriodOver({ mode: 'dates', offset: 0, dates: { from: '2026-10-12', to: today } }, today)).toBe(false);
+    expect(isPeriodOver(view('all'), today)).toBe(false);
+  });
+
+  it('builds the query string of the server', () => {
+    expect(rankingParams({ period: 'day' })).toBe('period=day');
+    expect(rankingParams({ period: 'week', date: '2026-10-12' })).toBe('period=week&date=2026-10-12');
+    expect(rankingParams({ period: 'range', from: '2026-10-01', to: '2026-10-05' })).toBe('period=range&from=2026-10-01&to=2026-10-05');
   });
 });

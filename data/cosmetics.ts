@@ -9,7 +9,7 @@ import { getPlayerLevel } from './progression';
  */
 
 export type CosmeticKind = 'board' | 'skin' | 'palette' | 'effect';
-export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed';
+export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed' | 'bubbles' | 'greenlight' | 'tommy' | 'broadside' | 'bats' | 'gifts';
 
 export interface CosmeticSelection {
   board: BoardThemeId;
@@ -29,10 +29,30 @@ export type UnlockRule =
   | { type: 'default' }
   | { type: 'level'; level: number }
   | { type: 'stars'; count: number }
+  /** Levels of the map won (campaign and generated) */
+  | { type: 'levels'; count: number }
   | { type: 'weeklies'; count: number }
   | { type: 'achievement'; id: string }
   /** A daily challenge won in December, January or February */
-  | { type: 'winter' };
+  | { type: 'winter' }
+  /** A daily challenge won during a seasonal event (SEASONAL_EVENTS) */
+  | { type: 'event'; event: SeasonalEventId };
+
+/** Seasonal events, persisted nowhere: computed from the dates of the daily challenges won */
+export type SeasonalEventId = 'halloween' | 'christmas';
+
+/** Days of each event, MM-DD, both included, every year */
+export const SEASONAL_EVENTS: Record<SeasonalEventId, { from: string; to: string }> = {
+  halloween: { from: '10-25', to: '10-31' },
+  christmas: { from: '12-19', to: '12-25' },
+};
+
+/** The event of a local date key YYYY-MM-DD, if any (read from the key, never with new Date()) */
+export function seasonalEventOf(dateKey: string): SeasonalEventId | null {
+  const day = dateKey.slice(5, 10);
+  const ids = Object.keys(SEASONAL_EVENTS) as SeasonalEventId[];
+  return ids.find(id => day >= SEASONAL_EVENTS[id].from && day <= SEASONAL_EVENTS[id].to) ?? null;
+}
 
 export interface CosmeticDef {
   kind: CosmeticKind;
@@ -50,7 +70,11 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'board', id: 'neon', icon: '🌃', unlock: { type: 'level', level: 10 } },
   { kind: 'board', id: 'pixel', icon: '👾', unlock: { type: 'stars', count: 500 } },
   { kind: 'board', id: 'snow', icon: '❄️', unlock: { type: 'winter' } },
+  { kind: 'board', id: 'pumpkin', icon: '🎃', unlock: { type: 'event', event: 'halloween' } },
+  { kind: 'board', id: 'christmas', icon: '🎄', unlock: { type: 'event', event: 'christmas' } },
   { kind: 'board', id: 'fire', icon: '🔥', unlock: { type: 'achievement', id: 'streak_30' } },
+  { kind: 'board', id: 'beach', icon: '🏖️', unlock: { type: 'stars', count: 1200 } },
+  { kind: 'board', id: 'space', icon: '🌌', unlock: { type: 'achievement', id: 'zone_perfect_10' } },
 
   // Target car skins
   { kind: 'skin', id: 'classic', icon: '🚗', unlock: { type: 'default' } },
@@ -60,6 +84,10 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'skin', id: 'rocket', icon: '🚀', unlock: { type: 'level', level: 25 } },
   { kind: 'skin', id: 'sport', icon: '🏎️', unlock: { type: 'level', level: 35 } },
   { kind: 'skin', id: 'gold', icon: '👑', unlock: { type: 'stars', count: 800 } },
+  { kind: 'skin', id: 'tractor', icon: '🚜', unlock: { type: 'achievement', id: 'zone_perfect_1' } },
+  { kind: 'skin', id: 'ufo', icon: '🛸', unlock: { type: 'stars', count: 2000 } },
+  { kind: 'skin', id: 'mafia', icon: '🎩', unlock: { type: 'achievement', id: 'mafia' } },
+  { kind: 'skin', id: 'flagship', icon: '⛵', unlock: { type: 'weeklies', count: 30 } },
 
   // Vehicle palettes
   { kind: 'palette', id: 'classic', icon: '🎨', unlock: { type: 'default' } },
@@ -68,12 +96,22 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'palette', id: 'earth', icon: '🍂', unlock: { type: 'weeklies', count: 5 } },
   { kind: 'palette', id: 'neon', icon: '💡', unlock: { type: 'level', level: 30 } },
   { kind: 'palette', id: 'candy', icon: '🍬', unlock: { type: 'achievement', id: 'daily_100' } },
+  { kind: 'palette', id: 'lava', icon: '🌋', unlock: { type: 'achievement', id: 'optimal_hard_50' } },
+  { kind: 'palette', id: 'jungle', icon: '🌴', unlock: { type: 'stars', count: 1600 } },
+  { kind: 'palette', id: 'mafia', icon: '🎩', unlock: { type: 'achievement', id: 'mafia' } },
+  { kind: 'palette', id: 'fleet', icon: '🚢', unlock: { type: 'weeklies', count: 30 } },
 
   // Win effects
   { kind: 'effect', id: 'none', icon: '⏹️', unlock: { type: 'default' } },
+  { kind: 'effect', id: 'greenlight', icon: '🚦', unlock: { type: 'levels', count: 3 } },
   { kind: 'effect', id: 'confetti', icon: '🎊', unlock: { type: 'stars', count: 100 } },
   { kind: 'effect', id: 'fireworks', icon: '🎆', unlock: { type: 'level', level: 20 } },
   { kind: 'effect', id: 'speed', icon: '💨', unlock: { type: 'weeklies', count: 10 } },
+  { kind: 'effect', id: 'bubbles', icon: '💧', unlock: { type: 'achievement', id: 'perfect_250' } },
+  { kind: 'effect', id: 'tommy', icon: '💥', unlock: { type: 'achievement', id: 'mafia' } },
+  { kind: 'effect', id: 'broadside', icon: '⚓', unlock: { type: 'weeklies', count: 30 } },
+  { kind: 'effect', id: 'bats', icon: '🦇', unlock: { type: 'event', event: 'halloween' } },
+  { kind: 'effect', id: 'gifts', icon: '🎁', unlock: { type: 'event', event: 'christmas' } },
 ];
 
 export const cosmeticKey = (def: Pick<CosmeticDef, 'kind' | 'id'>): string => `${def.kind}:${def.id}`;
@@ -92,22 +130,30 @@ export interface CosmeticSource {
 export interface CosmeticContext {
   playerLevel: number;
   totalStars: number;
+  levelsWon: number;
   weeklies: number;
   achievements: Set<string>;
   winterDaily: boolean;
+  /** Events during which a daily challenge was won */
+  events: Set<SeasonalEventId>;
 }
 
 const WINTER_MONTHS = ['12', '01', '02'];
+/** Ids from this one up are challenges or custom levels (timestamps), not levels of the map */
+const MAP_ID_END = 900000;
 
 export function buildCosmeticContext(s: CosmeticSource): CosmeticContext {
   const dailyKeys = Object.entries(s.dailyChallengeProgress).filter(([, r]) => r?.completed).map(([k]) => k);
   return {
     playerLevel: getPlayerLevel(s.xp),
     totalStars: s.progress.reduce((sum, p) => sum + (p.completed ? p.stars || 0 : 0), 0),
+    levelsWon: s.progress.filter(p => p.completed && p.levelId < MAP_ID_END).length,
     weeklies: Object.values(s.weeklyChallengeProgress).filter(r => r?.completed).length,
     achievements: new Set(s.achievements),
     // Date keys are local YYYY-MM-DD: the month is read from the key, never with new Date()
     winterDaily: dailyKeys.some(k => WINTER_MONTHS.includes(k.slice(5, 7))),
+    // Only the daily of the day itself: an archive won later is kept apart (archiveProgress)
+    events: new Set(dailyKeys.map(seasonalEventOf).filter((id): id is SeasonalEventId => id !== null)),
   };
 }
 
@@ -117,9 +163,11 @@ export function isCosmeticUnlocked(def: CosmeticDef, c: CosmeticContext): boolea
     case 'default': return true;
     case 'level': return c.playerLevel >= rule.level;
     case 'stars': return c.totalStars >= rule.count;
+    case 'levels': return c.levelsWon >= rule.count;
     case 'weeklies': return c.weeklies >= rule.count;
     case 'achievement': return c.achievements.has(rule.id);
     case 'winter': return c.winterDaily;
+    case 'event': return c.events.has(rule.event);
   }
 }
 
@@ -129,6 +177,7 @@ export function unlockProgress(def: CosmeticDef, c: CosmeticContext): number {
   switch (rule.type) {
     case 'level': return Math.min(1, c.playerLevel / rule.level);
     case 'stars': return Math.min(1, c.totalStars / rule.count);
+    case 'levels': return Math.min(1, c.levelsWon / rule.count);
     case 'weeklies': return Math.min(1, c.weeklies / rule.count);
     default: return isCosmeticUnlocked(def, c) ? 1 : 0;
   }
@@ -136,6 +185,17 @@ export function unlockProgress(def: CosmeticDef, c: CosmeticContext): number {
 
 export function getUnlockedCosmetics(c: CosmeticContext): string[] {
   return COSMETICS.filter(def => isCosmeticUnlocked(def, c)).map(cosmeticKey);
+}
+
+/** Cosmetics unlocked between two states of the progress, e.g. by a win ('kind:id', in garage order) */
+export function newlyUnlockedCosmetics(before: CosmeticSource, after: CosmeticSource): string[] {
+  const known = new Set(getUnlockedCosmetics(buildCosmeticContext(before)));
+  return getUnlockedCosmetics(buildCosmeticContext(after)).filter(key => !known.has(key));
+}
+
+/** Cosmetics of an event still to unlock (the home screen calls for the daily challenge during the event) */
+export function lockedEventCosmetics(event: SeasonalEventId, c: CosmeticContext): CosmeticDef[] {
+  return COSMETICS.filter(def => def.unlock.type === 'event' && def.unlock.event === event && !isCosmeticUnlocked(def, c));
 }
 
 /** Cosmetics given as the reward of reaching a player level */

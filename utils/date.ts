@@ -98,3 +98,23 @@ export function getMonthGrid(month: string): (string | null)[] {
 export function getDaysLeftInWeek(d: Date = new Date()): number {
   return 7 - ((d.getDay() + 6) % 7);
 }
+
+/** Milliseconds until the next whole minute: the clock of the screens ticks on it. */
+export function msUntilNextMinute(now: Date = new Date()): number {
+  return 60_000 - (now.getTime() % 60_000);
+}
+
+/** Monday of an ISO week key ('2026-W42' → '2026-10-12'), as a YYYY-MM-DD key. */
+export function getWeekStart(weekKey: string): string {
+  const [year, week] = weekKey.split('-W').map(Number);
+  // January 4th is always in week 1
+  const jan4 = new Date(year, 0, 4);
+  const monday = new Date(year, 0, 4 - ((jan4.getDay() || 7) - 1) + (week - 1) * 7);
+  return getLocalDateString(monday);
+}
+
+/** YYYY-MM key of a month shifted by a number of months ('2026-01', -1 → '2025-12'). */
+export function addMonths(monthKey: string, months: number): string {
+  const [year, month] = monthKey.split('-').map(Number);
+  return getLocalDateString(new Date(year, month - 1 + months, 1)).slice(0, 7);
+}

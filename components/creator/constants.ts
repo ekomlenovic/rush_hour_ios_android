@@ -1,7 +1,7 @@
 import { CLASSIC_VEHICLE_COLORS } from '../../theme/board';
 
 export const BOARD_PADDING = 32;
-export const MINI_CELL = 30;
+export const MINI_CELL = 24;
 
 export const GRID_SIZES = [6, 7, 8];
 /** Vehicle colors of the creator */

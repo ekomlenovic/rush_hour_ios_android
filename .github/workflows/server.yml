@@ -1,7 +1,8 @@
 name: Server
 
 # Multiplayer server (#46): tests on the pull requests, Docker image on GHCR
-# (:multi from the multi branch, :latest from main)
+# (:multi from the multi branch, :preprod from the version branches X.Y.Z,
+# :latest from main)
 on:
   pull_request:
     paths:
@@ -11,10 +12,12 @@ on:
       - 'store/levelIds.ts'
       - 'theme/**'
       - 'data/sampleLevels.ts'
+      - 'data/campaignPack.ts'
+      - 'data/levelCodec.ts'
       - '.dockerignore'
       - '.github/workflows/server.yml'
   push:
-    branches: [main, multi]
+    branches: [main, multi, '[0-9]+.[0-9]+.[0-9]+']
     paths:
       - 'server/**'
       - 'utils/**'
@@ -22,6 +25,8 @@ on:
       - 'store/levelIds.ts'
       - 'theme/**'
       - 'data/sampleLevels.ts'
+      - 'data/campaignPack.ts'
+      - 'data/levelCodec.ts'
       - '.dockerignore'
       - '.github/workflows/server.yml'
   workflow_dispatch:
@@ -68,6 +73,7 @@ jobs:
           case "${{ github.ref }}" in
             refs/heads/main) echo "tag=latest" >> "$GITHUB_OUTPUT"; echo "push=true" >> "$GITHUB_OUTPUT" ;;
             refs/heads/multi) echo "tag=multi" >> "$GITHUB_OUTPUT"; echo "push=true" >> "$GITHUB_OUTPUT" ;;
+            refs/heads/[0-9]*.[0-9]*.[0-9]*) echo "tag=preprod" >> "$GITHUB_OUTPUT"; echo "push=true" >> "$GITHUB_OUTPUT" ;;
             *) echo "tag=test" >> "$GITHUB_OUTPUT"; echo "push=false" >> "$GITHUB_OUTPUT" ;;
           esac
 

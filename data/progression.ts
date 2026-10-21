@@ -71,6 +71,9 @@ export function levelWinXp(minMoves: number, stars: number, firstWin: boolean): 
   return Math.max(1, Math.round(xp));
 }
 
+/** Extra XP for the first win of a boss level of the map (data/bosses.ts) */
+export const BOSS_WIN_XP = 50;
+
 export const dailyWinXp = (stars: number): number => 60 + 20 * stars;
 export const weeklyWinXp = (stars: number): number => 150 + 50 * stars;
 /** A past daily replayed from the archives: XP of a replayed level, so years of archives can't be farmed */

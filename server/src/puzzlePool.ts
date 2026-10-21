@@ -20,9 +20,43 @@ export const VARIANTS_PER_LEVEL: Partial<Record<Difficulty, number>> = { EXPERT:
 /** Bumped when the variants change: the catalog is prepared again */
 const CATALOG_VERSION = 1;
 
+/** Size of the campaign when the catalog was keyed by a hash of all its levels */
+const LEGACY_CAMPAIGN_SIZE = 309;
+
+/** What the catalog of a difficulty was prepared from (setting duel_variants_<difficulty>) */
+interface CatalogState {
+  settings: string;
+  /** catalogLevelKey of each level */
+  levels: string[];
+}
+
+/** What the variants of a level depend on */
+function catalogLevelKey(level: Level): string {
+  return `${level.id}:${level.minMoves}:${level.vehicles.length}`;
+}
+
 /** Where a duel gets its puzzle */
 export interface PuzzleSource {
   take(difficulty: Difficulty): Promise<Level | null>;
+}
+
+/** What the pool holds and does, for the admin */
+export interface PoolOverview {
+  difficulties: {
+    difficulty: Difficulty;
+    /** Puzzles from scratch kept ready (0: none generated ahead), how many by default, and how many are */
+    size: number;
+    defaultSize: number;
+    ready: number;
+    /** Variants of the catalog, and the ones not played yet; null without a catalog */
+    catalog: { total: number; fresh: number } | null;
+    /** Left aside after a generation too long, until then */
+    asideUntil: number | null;
+  }[];
+  /** Being generated now (the pool and the catalog); null when all is ready */
+  working: { difficulty: Difficulty; kind: 'scratch' | 'catalog'; since: number } | null;
+  /** The puzzles from scratch, in the order the duels take them */
+  puzzles: { id: number; difficulty: Difficulty; createdAt: number; level: Level }[];
 }
 
 interface Logger { info: (obj: object, msg: string) => void; error: (obj: object, msg: string) => void }
@@ -47,7 +81,8 @@ export interface PuzzlePoolOptions {
    */
   fillGenerator?: PuzzleGenerator;
   log?: Logger;
-  sizes?: Record<Difficulty, number>;
+  /** How many from scratch by difficulty; read again at each step (the admin changes them) */
+  sizes?: Record<Difficulty, number> | (() => Record<Difficulty, number>);
   variantsPerLevel?: Partial<Record<Difficulty, number>>;
   /** The levels the variants come from: the levels of the app */
   levels?: readonly Level[];
@@ -64,20 +99,26 @@ export class PuzzlePool implements PuzzleSource {
   private readonly generator: PuzzleGenerator;
   private readonly fillGenerator: PuzzleGenerator;
   private readonly log?: Logger;
-  private readonly sizes: Record<Difficulty, number>;
+  private readonly sizesOf: () => Record<Difficulty, number>;
   private readonly variantsPerLevel: Partial<Record<Difficulty, number>>;
   private readonly levels: readonly Level[];
   private readonly now: () => number;
   private readonly fillTimeoutMs: number;
   /** Difficulties left aside after a generation too long, until then */
   private readonly givenUp = new Map<Difficulty, number>();
+  private working: PoolOverview['working'] = null;
+  /** Stops the generation from scratch going on (it is no longer wanted) */
+  private abortCurrent: (() => void) | null = null;
+  /** Asked to fill while filling: once more after */
+  private fillAgain = false;
 
   constructor(options: PuzzlePoolOptions) {
     this.db = options.db;
     this.generator = options.generator;
     this.fillGenerator = options.fillGenerator ?? options.generator;
     this.log = options.log;
-    this.sizes = options.sizes ?? POOL_SIZES;
+    const sizes = options.sizes ?? POOL_SIZES;
+    this.sizesOf = typeof sizes === 'function' ? sizes : () => sizes;
     this.variantsPerLevel = options.variantsPerLevel ?? VARIANTS_PER_LEVEL;
     this.levels = options.levels ?? sampleLevels;
     this.now = options.now ?? Date.now;
@@ -101,6 +142,41 @@ export class PuzzlePool implements PuzzleSource {
   catalogSize(): Partial<Record<Difficulty, number>> {
     const rows = this.db.prepare('SELECT difficulty, COUNT(*) AS n FROM duel_variants GROUP BY difficulty').all() as { difficulty: Difficulty; n: number }[];
     return Object.fromEntries(rows.map(r => [r.difficulty, Number(r.n)]));
+  }
+
+  /** Everything the pool holds, for the admin panel */
+  overview(): PoolOverview {
+    const scratch = this.scratchCounts();
+    const sizes = this.sizesOf();
+    const catalog = Object.fromEntries((this.db.prepare(
+      'SELECT difficulty, COUNT(*) AS n, SUM(used_at IS NULL) AS fresh FROM duel_variants GROUP BY difficulty',
+    ).all() as { difficulty: Difficulty; n: number; fresh: number }[]).map(r => [r.difficulty, { total: Number(r.n), fresh: Number(r.fresh) }]));
+    const rows = this.db.prepare('SELECT id, difficulty, level_json, created_at FROM puzzle_pool ORDER BY id').all() as
+      { id: number; difficulty: Difficulty; level_json: string; created_at: number }[];
+    return {
+      difficulties: DIFFICULTIES.map(difficulty => ({
+        difficulty,
+        size: sizes[difficulty],
+        defaultSize: POOL_SIZES[difficulty],
+        ready: scratch[difficulty],
+        catalog: this.hasCatalog(difficulty) ? catalog[difficulty] ?? { total: 0, fresh: 0 } : null,
+        asideUntil: this.isAside(difficulty) ? this.givenUp.get(difficulty)! : null,
+      })),
+      working: this.working,
+      puzzles: rows.map(r => ({
+        id: Number(r.id), difficulty: r.difficulty, createdAt: Number(r.created_at), level: JSON.parse(r.level_json) as Level,
+      })),
+    };
+  }
+
+  /** Runs a generation, shown to the admin meanwhile */
+  private async work<T>(difficulty: Difficulty, kind: 'scratch' | 'catalog', run: () => Promise<T>): Promise<T> {
+    this.working = { difficulty, kind, since: this.now() };
+    try {
+      return await run();
+    } finally {
+      this.working = null;
+    }
   }
 
   /**
@@ -173,15 +249,36 @@ export class PuzzlePool implements PuzzleSource {
     this.stopped = true;
   }
 
-  /** One job at a time (single flight) */
+  /** One job at a time (single flight); asked meanwhile, once more after */
   fill(): Promise<void> {
-    if (!this.filling) {
-      const run = this.fillLoop();
-      this.filling = run;
-      // Cleared once over, even when there was nothing to do (over at once)
-      void run.finally(() => { if (this.filling === run) this.filling = null; });
+    if (this.filling) {
+      this.fillAgain = true;
+      return this.filling;
     }
+    const run = this.fillLoop();
+    this.filling = run;
+    // Cleared once over, even when there was nothing to do (over at once)
+    void run.finally(() => {
+      if (this.filling !== run) return;
+      this.filling = null;
+      if (this.fillAgain && !this.stopped) {
+        this.fillAgain = false;
+        void this.fill();
+      }
+    });
     return this.filling;
+  }
+
+  /**
+   * The admin changed how many to keep: a generation no longer wanted stops (a master
+   * one can hold the worker for an hour), and the pool fills up to the new sizes.
+   */
+  resized(): void {
+    const working = this.working;
+    if (working?.kind === 'scratch' && this.scratchCounts()[working.difficulty] >= this.sizesOf()[working.difficulty]) {
+      this.abortCurrent?.();
+    }
+    if (this.started) void this.fill();
   }
 
   /**
@@ -203,10 +300,13 @@ export class PuzzlePool implements PuzzleSource {
     let failures = 0;
     while (!this.stopped && failures < TRIES) {
       const counts = this.scratchCounts();
-      const next = difficulties.find(d => counts[d] < this.sizes[d] && !this.isAside(d));
+      const sizes = this.sizesOf();
+      const next = difficulties.find(d => counts[d] < sizes[d] && !this.isAside(d));
       if (!next) return;
-      const level = await this.generateForPool(next);
+      const level = await this.work(next, 'scratch', () => this.generateForPool(next));
       if (this.stopped) return;
+      // No longer wanted (the admin lowered its size meanwhile): not kept, nothing failed
+      if (level === 'aborted') continue;
       if (level === 'timeout') {
         this.log?.info({ difficulty: next }, 'duel puzzle too long to generate: left aside for now');
         continue;
@@ -230,30 +330,60 @@ export class PuzzlePool implements PuzzleSource {
   }
 
   /**
+   * Removes the variants that no longer match: all of them when the way of making variants
+   * changes, those of a level that changed or left otherwise. Levels added at the end of the
+   * campaign keep the catalog (and its marks), only their variants are prepared.
+   */
+  private dropStaleVariants(difficulty: Difficulty, perLevel: number, sources: Level[]): void {
+    const key = `duel_variants_${difficulty}`;
+    const settings = JSON.stringify([CATALOG_VERSION, perLevel]);
+    const levels = sources.map(catalogLevelKey);
+    const stored = getSetting(this.db, key);
+
+    let previous: CatalogState | undefined;
+    if (stored?.startsWith('{')) {
+      previous = JSON.parse(stored) as CatalogState;
+    } else if (stored) {
+      // Before, the setting was a hash of the whole list of levels: it matches the levels of the
+      // campaign of that time when nothing else changed
+      const legacy = sources.filter(l => l.id <= LEGACY_CAMPAIGN_SIZE);
+      const hash = createHash('sha256')
+        .update(JSON.stringify([CATALOG_VERSION, perLevel, legacy.map(l => [l.id, l.minMoves, l.vehicles.length])]))
+        .digest('hex');
+      if (hash === stored) previous = { settings, levels: legacy.map(catalogLevelKey) };
+    }
+
+    if (!previous || previous.settings !== settings) {
+      this.db.prepare('DELETE FROM duel_variants WHERE difficulty = ?').run(difficulty);
+    } else {
+      const current = new Set(levels);
+      const remove = this.db.prepare('DELETE FROM duel_variants WHERE difficulty = ? AND source_id = ?');
+      for (const level of previous.levels) {
+        if (!current.has(level)) remove.run(difficulty, Number(level.split(':')[0]));
+      }
+    }
+    setSetting(this.db, key, JSON.stringify({ settings, levels } satisfies CatalogState));
+  }
+
+  /**
    * The variants of every hard level of the app, prepared once and kept: a level at a
-   * time, so that a restart goes on where it stopped. Prepared again when the levels or
-   * the way of making variants change.
+   * time, so that a restart goes on where it stopped. Prepared again when the way of
+   * making variants changes; a level that changes has its variants made again.
    */
   private async prepareCatalog(): Promise<void> {
     // The hardest first: a master puzzle is the longest to generate from scratch
     for (const difficulty of DIFFICULTIES.filter(d => this.hasCatalog(d)).reverse()) {
       const perLevel = this.variantsPerLevel[difficulty]!;
       const sources = variantSources(this.levels, DIFFICULTY_LEVELS[difficulty]);
-      const version = createHash('sha256')
-        .update(JSON.stringify([CATALOG_VERSION, perLevel, sources.map(l => [l.id, l.minMoves, l.vehicles.length])]))
-        .digest('hex');
-      const key = `duel_variants_${difficulty}`;
-      if (getSetting(this.db, key) !== version) {
-        this.db.prepare('DELETE FROM duel_variants WHERE difficulty = ?').run(difficulty);
-        setSetting(this.db, key, version);
-      }
+      this.dropStaleVariants(difficulty, perLevel, sources);
       const done = new Set((this.db.prepare('SELECT DISTINCT source_id AS id FROM duel_variants WHERE difficulty = ?').all(difficulty) as { id: number }[])
         .map(r => Number(r.id)));
       let added = 0;
       for (const source of sources) {
         if (this.stopped) return;
         if (done.has(source.id)) continue;
-        const variants = await this.fillGenerator.variants(source.id, difficulty, perLevel, randomBytes(8).toString('hex'));
+        const variants = await this.work(difficulty, 'catalog',
+          () => this.fillGenerator.variants(source.id, difficulty, perLevel, randomBytes(8).toString('hex')));
         if (this.stopped) return;
         const insert = this.db.prepare('INSERT INTO duel_variants (difficulty, source_id, level_json) VALUES (?, ?, ?)');
         this.db.exec('BEGIN');
@@ -272,22 +402,36 @@ export class PuzzlePool implements PuzzleSource {
 
   /**
    * A puzzle from scratch for the pool. With a worker of its own, a generation too long
-   * stops that worker: the next one starts afresh.
+   * stops that worker: the next one starts afresh; so does one no longer wanted.
    */
-  private async generateForPool(difficulty: Difficulty): Promise<Level | null | 'timeout'> {
-    if (this.fillGenerator === this.generator) return this.generate(this.fillGenerator, difficulty);
+  private async generateForPool(difficulty: Difficulty): Promise<Level | null | 'timeout' | 'aborted'> {
     const cancel = { cancelled: false };
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<'timeout'>(resolve => { timer = setTimeout(() => resolve('timeout'), this.fillTimeoutMs); });
-    const result = await Promise.race([this.generate(this.fillGenerator, difficulty, cancel), timeout]);
-    clearTimeout(timer);
-    if (result === 'timeout') {
-      // No other try behind our back, and the worker busy with it is stopped
+    let abort: () => void = () => {};
+    const aborted = new Promise<'aborted'>(resolve => { abort = () => resolve('aborted'); });
+    this.abortCurrent = () => {
       cancel.cancelled = true;
-      this.givenUp.set(difficulty, this.now() + GIVE_UP_MS);
-      await this.fillGenerator.close();
+      abort();
+    };
+    try {
+      // The generator of the daily challenges cannot be stopped: its puzzle is only dropped
+      if (this.fillGenerator === this.generator) {
+        const level = await this.generate(this.fillGenerator, difficulty, cancel);
+        return cancel.cancelled ? 'aborted' : level;
+      }
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<'timeout'>(resolve => { timer = setTimeout(() => resolve('timeout'), this.fillTimeoutMs); });
+      const result = await Promise.race([this.generate(this.fillGenerator, difficulty, cancel), timeout, aborted]);
+      clearTimeout(timer);
+      if (result === 'timeout' || result === 'aborted') {
+        // No other try behind our back, and the worker busy with it is stopped
+        cancel.cancelled = true;
+        if (result === 'timeout') this.givenUp.set(difficulty, this.now() + GIVE_UP_MS);
+        await this.fillGenerator.close();
+      }
+      return result;
+    } finally {
+      this.abortCurrent = null;
     }
-    return result;
   }
 
   /** A random puzzle from scratch; a seed that gives nothing is replaced by another */

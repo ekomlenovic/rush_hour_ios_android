@@ -108,7 +108,8 @@ export const fixedColors = {
   levelTutorial: '#3B82F6',
   levelCustom: '#5A4FE0',
   mapNodeDepth: 'rgba(0,0,0,0.28)',
-  mapZoneAccents: ['#6366F1', '#10B981', '#06B6D4', '#16A34A', '#F59E0B', '#64748B', '#38BDF8', '#EC4899', '#8B5CF6'],
+  mapZoneAccents: ['#6366F1', '#10B981', '#06B6D4', '#16A34A', '#F59E0B', '#64748B', '#38BDF8', '#EC4899', '#8B5CF6',
+    '#EAB308', '#84CC16', '#059669', '#EA580C', '#3B82F6', '#14B8A6', '#F43F5E', '#A855F7'],
   overlay: 'rgba(0,0,0,0.5)',
   overlayStrong: 'rgba(0,0,0,0.6)',
   shadow: '#000000',
@@ -121,6 +122,45 @@ export const fixedColors = {
   textShadow: 'rgba(0,0,0,0.4)',
   neutralSoft: 'rgba(128,128,128,0.1)',
 } satisfies Partial<UiColors>;
+
+/** Full-screen slides of the recap (issue 125): a gradient each, white text, same in light and dark */
+export const recapSlideColors = {
+  intro: ['#1E1B4B', '#4338CA'],
+  levels: ['#431407', '#C2410C'],
+  time: ['#042F2E', '#0F766E'],
+  challenges: ['#052E16', '#15803D'],
+  feats: ['#4C0519', '#BE123C'],
+  unlocks: ['#422006', '#A16207'],
+  share: ['#0F0F1A', '#312E81'],
+} as const;
+
+/** Text and chips on the recap slides */
+export const recapSlideText = {
+  text: '#FFFFFF',
+  muted: 'rgba(255,255,255,0.8)',
+  chip: 'rgba(255,255,255,0.14)',
+  track: 'rgba(255,255,255,0.3)',
+};
+
+/** The recap image shared (issue 125): it leaves the app, same colors in light and dark */
+export const recapImageColors = {
+  top: '#1E1B4B',
+  bottom: '#4338CA',
+  text: '#FFFFFF',
+  muted: '#C7D2FE',
+  box: 'rgba(255,255,255,0.12)',
+  accent: '#FACC15',
+  /** Text on the accent fill (profile pill) */
+  onAccent: '#1E1B4B',
+  /** Faint cells of a board behind everything */
+  gridLine: 'rgba(255,255,255,0.05)',
+  shadow: 'rgba(0,0,0,0.35)',
+  /** Speed lines of the car getting out */
+  speed: 'rgba(255,255,255,0.55)',
+  road: '#1F2937',
+  roadEdge: 'rgba(255,255,255,0.7)',
+  roadLine: '#FACC15',
+};
 
 export const darkColors: UiColors = {
   ...fixedColors,
@@ -159,6 +199,8 @@ export const darkColors: UiColors = {
     'rgba(99,102,241,0.08)', 'rgba(16,185,129,0.07)', 'rgba(6,182,212,0.08)', 'rgba(22,163,74,0.08)',
     'rgba(245,158,11,0.07)', 'rgba(148,163,184,0.07)', 'rgba(56,189,248,0.08)', 'rgba(236,72,153,0.08)',
     'rgba(139,92,246,0.08)',
+    'rgba(234,179,8,0.07)', 'rgba(132,204,22,0.07)', 'rgba(5,150,105,0.08)', 'rgba(234,88,12,0.08)',
+    'rgba(59,130,246,0.08)', 'rgba(20,184,166,0.08)', 'rgba(244,63,94,0.07)', 'rgba(168,85,247,0.08)',
   ],
 };
 
@@ -199,6 +241,8 @@ export const lightColors: UiColors = {
     'rgba(99,102,241,0.07)', 'rgba(16,185,129,0.07)', 'rgba(6,182,212,0.08)', 'rgba(22,163,74,0.07)',
     'rgba(245,158,11,0.08)', 'rgba(100,116,139,0.07)', 'rgba(56,189,248,0.08)', 'rgba(236,72,153,0.06)',
     'rgba(139,92,246,0.07)',
+    'rgba(234,179,8,0.08)', 'rgba(132,204,22,0.08)', 'rgba(5,150,105,0.07)', 'rgba(234,88,12,0.07)',
+    'rgba(59,130,246,0.07)', 'rgba(20,184,166,0.07)', 'rgba(244,63,94,0.06)', 'rgba(168,85,247,0.07)',
   ],
 };
 

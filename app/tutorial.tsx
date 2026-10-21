@@ -1,12 +1,13 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown, FadeOut, Layout, ZoomIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Board from '@/components/Board';
 import { Vehicle, useGameStore } from '@/store/gameStore';
-import { checkWin } from '@/utils/collision';
+import { checkWin, isLegalMove } from '@/utils/collision';
 import { fixedColors, useTheme, CLASSIC_VEHICLE_COLORS, TARGET_CAR_COLOR } from '@/theme';
 
 const TUTORIAL_STEPS = [
@@ -40,6 +41,7 @@ export default function TutorialScreen() {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [step, setStep] = useState(0);
   const [vehicles, setVehicles] = useState<Vehicle[]>(TUTORIAL_VEHICLES);
@@ -52,6 +54,17 @@ export default function TutorialScreen() {
   // At step 0, it is ALWAYS locked because step 0 is pure presentation
   const isBoardLocked = step === 0 || !dialogDismissed;
 
+  // A new player skipping goes to the map: back home, Play would open the tutorial again.
+  // Opened again from the options, it goes back there
+  const isFirstTime = useRef(useGameStore.getState().progress.length === 0).current;
+  const skip = () => {
+    if (isFirstTime) router.replace('/map');
+    else if (router.canGoBack()) router.back();
+    else router.replace('/');
+  };
+  // To the map, the one under the tutorial when it was opened from its node (not a second one)
+  const startPlaying = () => router.dismissTo('/map');
+
   const handleDismissDialog = () => {
     if (step === 0) {
       setStep(1);
@@ -61,15 +74,19 @@ export default function TutorialScreen() {
     }
   };
 
+  // The board as moved so far: two drags ending at once both check against the latest one
+  const vehiclesRef = useRef(vehicles);
   const handleMoveEnd = useCallback((vehicleId: string, newRow: number, newCol: number) => {
-    const updatedVehicles = vehicles.map(v => v.id === vehicleId ? { ...v, row: newRow, col: newCol } : v);
+    if (!isLegalMove(vehiclesRef.current, vehicleId, newRow, newCol, 6)) return false;
+    const updatedVehicles = vehiclesRef.current.map(v => v.id === vehicleId ? { ...v, row: newRow, col: newCol } : v);
+    vehiclesRef.current = updatedVehicles;
     setVehicles(updatedVehicles);
     
     // Always check if the target car reached the exit
     if (checkWin(updatedVehicles, 2, 6, 6)) {
       setCompleted(true);
       useGameStore.getState().completeLevel(0, 300, 3);
-      return;
+      return true;
     }
 
     // Step 1: v1 (green bus) must move down enough to clear row 2
@@ -78,13 +95,14 @@ export default function TutorialScreen() {
       setStep(2);
       setDialogDismissed(false); // Lock board again for step 2 dialog
     }
-  }, [step, vehicles]);
+    return true;
+  }, [step]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]}>
       {/* Header */}
        <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" hitSlop={8}>
+        <Pressable onPress={skip} style={styles.backButton} accessibilityRole="button" hitSlop={8}>
           <Text style={[styles.backText, { color: colors.textMuted }]}>{t('tutorial.skip')}</Text>
         </Pressable>
         <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('tutorial.title')}</Text>
@@ -176,7 +194,7 @@ export default function TutorialScreen() {
       </Animated.View>
 
       {/* Completion Overlay */}
-      <Modal visible={completed} transparent animationType="fade" onRequestClose={() => router.replace('/map')}>
+      <Modal visible={completed} transparent animationType="fade" onRequestClose={startPlaying}>
         <View style={styles.overlay}>
           <View style={[styles.winCard, { backgroundColor: colors.surface }]}>
             <Ionicons name="trophy" size={48} color={colors.warning} style={styles.winIcon} />
@@ -184,7 +202,7 @@ export default function TutorialScreen() {
             <Text style={[styles.winDesc, { color: colors.text }]}>{t('tutorial.ready_desc')}</Text>
             <Pressable 
               style={[styles.playBtn, { backgroundColor: colors.primary }]}
-              onPress={() => router.replace('/map')}
+              onPress={startPlaying}
               accessibilityRole="button"
             >
               <Text style={styles.playBtnText}>{t('tutorial.start_playing')}</Text>
@@ -199,7 +217,6 @@ export default function TutorialScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
     paddingHorizontal: 24,
   },
   header: {

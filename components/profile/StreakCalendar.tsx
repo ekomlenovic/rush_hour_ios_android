@@ -98,17 +98,18 @@ export default function StreakCalendar({ colors }: Props) {
             });
             const content = <Text style={[styles.dayNumber, { color: textColor }]}>{dayNumber}</Text>;
 
-            if (!playable) {
+            // Today is the daily challenge itself, never an archive: touching it opens the challenge
+            if (!playable && !isToday) {
               return <View key={dateKey} style={cellStyle} accessible accessibilityLabel={label}>{content}</View>;
             }
             return (
               <Pressable
                 key={dateKey}
-                onPress={() => router.push(`/game?levelId=archive&date=${dateKey}`)}
+                onPress={() => router.push(isToday ? `/game?levelId=daily&date=${dateKey}` : `/game?levelId=archive&date=${dateKey}`)}
                 style={({ pressed }) => [...cellStyle, pressed && { opacity: 0.6 }]}
                 accessibilityRole="button"
                 accessibilityLabel={label}
-                accessibilityHint={t('archives.day_hint')}
+                accessibilityHint={t(isToday ? 'archives.today_hint' : 'archives.day_hint')}
               >
                 {content}
               </Pressable>

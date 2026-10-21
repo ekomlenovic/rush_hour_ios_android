@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 import { createGuardedStorage } from './guardedStorage';
+import { createSecureAccountStorage } from './secureAccounts';
 import type { Level, MoveRecord, Vehicle } from './types';
 
 /**
@@ -16,6 +17,7 @@ export interface ServerAccount {
   name: string;
   playerId: number;
   pseudo: string;
+  /** Token and recovery code are kept in the secure storage, not in the save (store/secureAccounts.ts) */
   token: string;
   recoveryCode: string;
   joinedAt: number;
@@ -71,7 +73,9 @@ interface MultiState {
 
 export const gameKey = (serverUrl: string, date: string) => `${serverUrl}|${date}`;
 
-const multiStorage = createGuardedStorage();
+const multiStorage = createGuardedStorage<Partial<MultiState>>();
+/** Token and recovery code kept apart, in the secure storage (#84) */
+const accountStorage = createSecureAccountStorage(multiStorage.storage);
 
 export const useMultiStore = create<MultiState>()(
   persist(
@@ -122,8 +126,12 @@ export const useMultiStore = create<MultiState>()(
     }),
     {
       name: 'rush-hours-multi',
-      version: 1,
-      storage: createJSONStorage(() => multiStorage.storage),
+      version: 2,
+      // v2: token and recovery code move to the secure storage (#84). The storage puts them back
+      // in the accounts when it reads the save, and moves those of a v1 save at its first write
+      // (right after loading): the accounts read here are already complete, nothing to convert.
+      migrate: (persisted) => persisted as MultiState,
+      storage: accountStorage,
       // Accounts (token, recovery code) are only written once read back: never overwritten by an empty list
       onRehydrateStorage: () => (state, error) => {
         if (error || !state) {

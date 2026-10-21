@@ -7,5 +7,7 @@
 !theme/
 # The levels of the app: the hardest ones are the base of the hardest duels
 !data/sampleLevels.ts
+!data/campaignPack.ts
+!data/levelCodec.ts
 server/node_modules
 server/dist

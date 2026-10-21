@@ -5,8 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { fixedColors, type UiColors } from '@/theme';
 
 /** Floating pill bringing the next level back on screen, pointing where it is */
-export default function JumpButton({ levelId, below, colors, onPress }: {
+export default function JumpButton({ levelId, isEnd = false, below, colors, onPress }: {
   levelId: number;
+  /** Every level is won: the padlock at the end, not a level with a number */
+  isEnd?: boolean;
   /** The level is under the visible part of the map */
   below: boolean;
   colors: UiColors;
@@ -18,13 +20,13 @@ export default function JumpButton({ levelId, below, colors, onPress }: {
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={t('a11y.map_jump', { id: levelId })}
+        accessibilityLabel={isEnd ? t('a11y.map_jump_end') : t('a11y.map_jump', { id: levelId })}
         style={({ pressed }) => [
           styles.pill,
           { backgroundColor: colors.primary, shadowColor: colors.primary, transform: [{ scale: pressed ? 0.95 : 1 }] },
         ]}
       >
-        <Text style={styles.text}>{below ? '↓' : '↑'}  {t('map.jump_to', { id: levelId })}</Text>
+        <Text style={styles.text}>{below ? '↓' : '↑'}  {isEnd ? t('map.jump_end') : t('map.jump_to', { id: levelId })}</Text>
       </Pressable>
     </Animated.View>
   );
