@@ -129,6 +129,30 @@ describe('export then import', () => {
     expect(store().bestStreak).toBe(3);
   });
 
+  // Guard: openDailyDate is never saved nor exported (a game screen open on another phone means nothing here)
+  it('never carries the daily left open past midnight: imported, its day is missed and its game is an archive', () => {
+    winDaily('2026-10-18');
+    winDaily('2026-10-19');
+    useGameStore.setState({ streakFreezes: 0 });
+    // The daily of the 20th, still open on the game screen after midnight
+    setToday('2026-10-20', 23);
+    useGameStore.setState({ savedStates: { 'daily-2026-10-20': { vehicles: [], moveCount: 3, history: [] } } });
+    store().setOpenDailyDate('2026-10-20');
+    setToday('2026-10-21', 0);
+    store().recordAppOpen();
+    const code = exportProgress();
+    // Nor kept on the phone: an app killed with the game open settles its day at the next launch
+    expect(useGameStore.persist.getOptions().partialize!(store())).not.toHaveProperty('openDailyDate');
+
+    resetStore();
+    const result = parseSave(code);
+    if (!result.ok) throw new Error(result.error);
+    store().importProgress(result.state);
+    expect(store().openDailyDate).toBeNull();
+    expect(store().savedStates).toEqual({ 'archive-2026-10-20': expect.objectContaining({ moveCount: 3 }) });
+    expect(store().currentStreak).toBe(0);
+  });
+
   it('survives a code copied on several lines', () => {
     playSomeDays();
     const code = exportProgress();

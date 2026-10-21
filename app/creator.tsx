@@ -319,6 +319,8 @@ export default function LevelCreatorScreen() {
       Alert.alert(t('creator.unsolvable_title'), t('creator.too_complex_desc'));
     } else if (minMoves === -1) {
       Alert.alert(t('creator.unsolvable_title'), t('creator.unsolvable_desc'));
+    } else if (minMoves === 0) {
+      Alert.alert(t('creator.already_solved_title'), t('creator.already_solved_desc'));
     } else {
       Alert.alert(t('creator.solvable_title'), t('creator.solvable_desc', { count: minMoves }));
     }
@@ -347,6 +349,11 @@ export default function LevelCreatorScreen() {
     const minMoves = await validateLevelAsync(vehicles, gridSize, exitRow, exitCol);
     if (minMoves < 0) {
       Alert.alert(t('creator.unsolvable_title'), t(minMoves === -2 ? 'creator.too_complex_desc' : 'creator.fix_before_save'));
+      return;
+    }
+    // Already solved: nothing to play, and its link would be refused by the import (1 move at least)
+    if (minMoves === 0) {
+      Alert.alert(t('creator.already_solved_title'), t('creator.already_solved_desc'));
       return;
     }
     checkedMinMoves.current = minMoves;

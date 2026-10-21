@@ -494,7 +494,8 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
               exitRow={level.exitRow}
               exitCol={level.exitCol}
               onMoveEnd={duel.spectating ? noop : onMove}
-              readOnly={duel.spectating || countdown > 0 || won || duel.status !== 'playing'}
+              // Frozen while reconnecting: the server would never see the moves
+              readOnly={duel.spectating || countdown > 0 || won || duel.status !== 'playing' || offline}
               size={mySize}
               look={firstLook}
             />
