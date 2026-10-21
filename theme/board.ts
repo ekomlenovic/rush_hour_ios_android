@@ -446,6 +446,16 @@ export const PALETTE_ART: Partial<Record<VehiclePaletteId, VehicleArt>> = {
   fleet: 'ship',
 };
 
+/** How a board looks: its theme, the skin of the target car and the palette of the others */
+export interface BoardLook { board: BoardThemeId; skin: CarSkinId; palette: VehiclePaletteId }
+
+/** Ids from another player's app (multiplayer): one this app does not know is the classic look */
+export function toBoardLook(look: { board: string; skin: string; palette: string } | null | undefined): BoardLook | undefined {
+  if (!look) return undefined;
+  const known = <T extends string>(id: string, all: Record<T, unknown>): T => (Object.hasOwn(all, id) ? id as T : 'classic' as T);
+  return { board: known(look.board, BOARD_THEMES), skin: known(look.skin, CAR_SKINS), palette: known(look.palette, VEHICLE_PALETTES) };
+}
+
 /** Board colors with the target car skin applied */
 export function getSkinnedBoard(id: BoardThemeId, skin: CarSkinId, scheme: ColorScheme): BoardColors {
   const board = getBoardColors(id, scheme);
