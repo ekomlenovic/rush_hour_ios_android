@@ -6,7 +6,7 @@ import { checkWin } from '../collision';
  * Duel 1v1 in real time (server/src/duel.ts): the messages of the WebSocket, and the
  * duel as the phone sees it. A move of mine shows at once on my board; the server
  * checks it and sends it to both phones. Who wins is chosen at the creation: the first
- * red car out (time), or the fewest moves (moves; the fastest on a tie).
+ * red car out (time), or the fewest moves (moves; the same count is a draw).
  * A spectator gets the same messages, and plays nothing.
  */
 

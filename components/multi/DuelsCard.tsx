@@ -157,19 +157,22 @@ function PlayingRow({ duel, colors, myPlayerId, serverNow, disabled, onOpen, onW
   const [first, second] = duel.players;
   const name = (p: { id: number; pseudo: string }) => (p.id === myPlayerId ? t('multi.duel.me') : p.pseudo);
   const versus = second ? t('multi.duel.vs', { a: name(first), b: name(second) }) : name(first);
-  const time = duel.startsAt !== null && serverNow > duel.startsAt ? formatDuration(serverNow - duel.startsAt) : null;
+  // Mine, finished while I was away: its result waits for me
+  const over = duel.status === 'over';
+  const time = !over && duel.startsAt !== null && serverNow > duel.startsAt ? formatDuration(serverNow - duel.startsAt) : null;
+  const back = over ? t('multi.duel.see_result') : t('multi.duel.back_to_it');
   const difficulty = `${t(`difficulty.${duel.difficulty}`)} · ${t(`multi.duel.metric_${duel.metric ?? 'time'}`)}`;
   // Someone else's duel: watched (a server older than the spectators gives no code)
   const watchable = !duel.mine && duel.code !== null;
   const spectators = duel.spectators ?? 0;
-  const action = duel.mine ? `, ${t('multi.duel.back_to_it')}` : watchable ? `, ${t('multi.duel.watch')}` : '';
+  const action = duel.mine ? `, ${back}` : watchable ? `, ${t('multi.duel.watch')}` : '';
   return (
     <Pressable
       onPress={() => (duel.mine ? onOpen(null) : duel.code && onWatch(duel.code))}
       disabled={!(duel.mine || watchable) || disabled}
-      style={[styles.row, { backgroundColor: duel.mine ? colors.warningSoft : 'transparent' }]}
+      style={[styles.row, { backgroundColor: duel.mine ? (over ? colors.successSoft : colors.warningSoft) : 'transparent' }]}
       accessibilityRole={duel.mine || watchable ? 'button' : 'text'}
-      accessibilityLabel={`${versus}, ${difficulty}, ${t('multi.duel.playing_short')}${spectators > 0 ? `, ${t('multi.duel.spectators', { count: spectators })}` : ''}${action}`}
+      accessibilityLabel={`${versus}, ${difficulty}, ${over ? t('multi.duel.over_short') : t('multi.duel.playing_short')}${spectators > 0 ? `, ${t('multi.duel.spectators', { count: spectators })}` : ''}${action}`}
     >
       <View style={styles.pair}>
         <Avatar pseudo={first.pseudo} colors={colors} mine={first.id === myPlayerId} />
@@ -177,11 +180,11 @@ function PlayingRow({ duel, colors, myPlayerId, serverNow, disabled, onOpen, onW
       </View>
       <View style={styles.rowMain}>
         <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{versus}</Text>
-        <Text style={[styles.detail, { color: colors.textMuted }]}>{difficulty}{time ? ` · ${time}` : ''}{spectators > 0 && <> · <Ionicons name="eye-outline" size={13} color={colors.textMuted} /> {spectators}</>}</Text>
+        <Text style={[styles.detail, { color: colors.textMuted }]}>{difficulty}{over ? ` · ${t('multi.duel.over_short')}` : ''}{time ? ` · ${time}` : ''}{spectators > 0 && <> · <Ionicons name="eye-outline" size={13} color={colors.textMuted} /> {spectators}</>}</Text>
       </View>
       {duel.mine ? (
-        <View style={[styles.action, { backgroundColor: colors.warning }]}>
-          <Text style={[styles.actionText, { color: colors.onPrimary }]}>{t('multi.duel.back_to_it')}</Text>
+        <View style={[styles.action, { backgroundColor: over ? colors.success : colors.warning }]}>
+          <Text style={[styles.actionText, { color: colors.onPrimary }]}>{back}</Text>
         </View>
       ) : watchable ? (
         <View style={[styles.action, styles.watch, { backgroundColor: colors.neutralSoft }]}>
