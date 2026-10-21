@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { AppState } from 'react-native';
 import type { ServerAccount } from '@/store/multiStore';
+import { useGameStore } from '@/store/gameStore';
 import { multiApi } from '@/utils/multi/api';
 import {
   duelReducer, duelSocketUrl, initialDuelState, myMove,
@@ -57,7 +58,9 @@ export function useDuel(account: ServerAccount | null): DuelControls {
         everOpened = true;
         attempt = 0;
         setUnreachable(null);
-        socket.send(JSON.stringify({ type: 'auth', token: account.token } satisfies DuelClientMessage));
+        // My look, for the opponent and the spectators to see my board as I do
+        const { board, skin, palette } = useGameStore.getState().cosmetics;
+        socket.send(JSON.stringify({ type: 'auth', token: account.token, look: { board, skin, palette } } satisfies DuelClientMessage));
       };
       socket.onmessage = (event) => {
         let message: DuelServerMessage;
