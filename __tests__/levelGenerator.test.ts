@@ -1,6 +1,7 @@
 import { useGameStore } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
 import { formatGenerationTime, isGenerationActive, startLevelGeneration } from '../hooks/useLevelGenerator';
+import { resolveLevel } from '../utils/levelResolver';
 import { resetStore } from './helpers';
 
 // A generation that fails one level out of three, instantly
@@ -48,6 +49,14 @@ describe('map levels generation (issue 120)', () => {
     startLevelGeneration({ amount: 2, difficulty: 'NORMAL', gridSize: 6 });
     await jest.runAllTimersAsync();
     expect(state().generatedLevels.map(l => l.id)).toEqual([base + 1, base + 2]);
+  });
+
+  it('a link to a map level not generated yet opens nothing: never generated on the fly, with a hole before it', async () => {
+    const pending = resolveLevel({ levelId: String(base + 10) });
+    await jest.runAllTimersAsync();
+    expect(await pending).toBeNull();
+    expect(mockCalls).toBe(0);
+    expect(state().generatedLevels).toEqual([]);
   });
 });
 
