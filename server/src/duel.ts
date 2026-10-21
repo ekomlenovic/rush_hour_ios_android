@@ -15,8 +15,9 @@ import type { PuzzleSource } from './puzzlePool';
  *   not count). Who got out first waits for the other, unless the other can no longer
  *   do as well; they may leave meanwhile, and find the result when they come back.
  * Other players of the server can watch a duel live (spectators): they see both boards,
- * and play nothing, but they may react to a player (tease, cheer, encourage: a closed
- * list, no free text), seen over that player's board by everyone in the duel. Each board
+ * and play nothing. Spectators react to a player, and each player to the other one (tease,
+ * cheer, encourage: a closed list, no free text), seen over that player's board by everyone
+ * in the duel whose app knows the reactions (said when connecting). Each board
  * is drawn with the look of its player (their board theme, car skin and palette in the
  * app), said when they connect. Nothing is stored: a duel lives in memory, for as long as it is played.
  */
@@ -95,8 +96,11 @@ export interface DuelConnection {
 }
 
 export type ClientMessage =
-  /** look: absent from apps older than it */
-  | { type: 'auth'; token: string; look?: DuelLook }
+  /**
+   * look: absent from apps older than it. features: the messages the app knows beyond the
+   * first duels ('reactions'); an app sent none it does not know: it would break on them
+   */
+  | { type: 'auth'; token: string; look?: DuelLook; features?: AppFeature[] }
   /** private: only who has the code can join; otherwise the duel is listed for everyone on the server */
   | { type: 'create'; difficulty?: Difficulty; metric?: DuelMetric; private?: boolean }
   | { type: 'join'; code: string }
@@ -105,8 +109,12 @@ export type ClientMessage =
   | { type: 'move'; vehicleId: string; delta: number }
   | { type: 'leave' }
   | { type: 'rematch' }
-  /** A spectator reacts to one of the two players (playerId) */
+  /** A spectator reacts to one of the two players (playerId), a player to the other one */
   | { type: 'react'; playerId: number; reaction: ReactionId };
+
+/** What an app knows beyond the first duels, said with auth */
+export type AppFeature = 'reactions';
+const APP_FEATURES: readonly AppFeature[] = ['reactions'];
 
 export type EndReason = 'won' | 'forfeit' | 'disconnected' | 'timeout';
 
@@ -114,6 +122,8 @@ export interface DuelPlayerView {
   id: number; pseudo: string; connected: boolean; moves: MoveRecord[]; wantsRematch: boolean;
   /** null: an app older than the looks, its board is drawn as the viewer's own */
   look: DuelLook | null;
+  /** Their app shows the reactions: false for an app older than them, no use reacting to them */
+  seesReactions: boolean;
 }
 
 /**
@@ -137,7 +147,7 @@ export interface DuelView {
   spectating: boolean;
   /** How many watch it */
   spectators: number;
-  /** The reactions this server relays: a spectator may send these */
+  /** The reactions this server relays: a spectator, or a player, may send these */
   reactions: readonly ReactionId[];
 }
 
@@ -179,7 +189,7 @@ export type ServerMessage =
   | { type: 'rematch'; playerId: number }
   /** Someone started or stopped watching */
   | { type: 'spectators'; count: number }
-  /** A spectator (from) reacted to a player of the duel (playerId) */
+  /** A spectator or the other player (from) reacted to a player of the duel (playerId); only to the apps that know it */
   | { type: 'reaction'; from: DuelIdentity; playerId: number; reaction: ReactionId }
   | { type: 'end'; result: DuelResult; level: Level }
   | { type: 'closed' }
@@ -195,6 +205,8 @@ interface Seat {
   solved: boolean;
   wantsRematch: boolean;
   look: DuelLook | null;
+  /** The app of the player knows the reactions */
+  seesReactions: boolean;
 }
 
 interface Duel {
@@ -267,7 +279,9 @@ function parseMessage(raw: string): ClientMessage | null {
     case 'auth': {
       if (typeof m.token !== 'string' || m.token.length > 200) return null;
       const look = parseLook(m.look);
-      return look ? { type: 'auth', token: m.token, look } : { type: 'auth', token: m.token };
+      // Unknown features (a newer app) are left out; a list that is not one gives none
+      const features = Array.isArray(m.features) ? APP_FEATURES.filter(f => (m.features as unknown[]).includes(f)) : [];
+      return { type: 'auth', token: m.token, ...(look && { look }), features };
     }
     case 'create':
       if (m.difficulty !== undefined && !DIFFICULTIES.includes(m.difficulty as Difficulty)) return null;
@@ -300,6 +314,8 @@ export class Duels {
   private readonly connections = new Map<number, DuelConnection>();
   /** The look of each connected player */
   private readonly looks = new Map<number, DuelLook>();
+  /** The connected players whose app knows the reactions: the others are never sent one */
+  private readonly seeReactions = new Set<number>();
   private readonly wrongCodes = new WindowLimiter(MAX_WRONG_CODES - 1, WRONG_CODES_WINDOW_MS);
   private readonly creates = new WindowLimiter(MAX_CREATES, CREATES_WINDOW_MS);
   /** Reactions of each spectator, of each duel (by code), and encouragements of a spectator to a player */
@@ -339,7 +355,7 @@ export class Duels {
         const found = this.deps.authenticate(message.token);
         if (!found || found === 'banned') return refuse(4001, found === 'banned' ? 'banned' : 'unauthorized');
         player = found;
-        this.attach(player, connection, message.look ?? null);
+        this.attach(player, connection, message.look ?? null, message.features?.includes('reactions') ?? false);
         return;
       }
 
@@ -387,6 +403,7 @@ export class Duels {
     const connection = this.connections.get(playerId);
     this.connections.delete(playerId);
     this.looks.delete(playerId);
+    this.seeReactions.delete(playerId);
     connection?.close(4003, reason);
   }
 
@@ -460,21 +477,24 @@ export class Duels {
 
   // ── Connections ────────────────────────────────────────────────────────────
 
-  private attach(player: DuelIdentity, connection: DuelConnection, look: DuelLook | null) {
+  private attach(player: DuelIdentity, connection: DuelConnection, look: DuelLook | null, seesReactions: boolean) {
     // The same player on another phone (or a reconnection): the old connection goes
     const previous = this.connections.get(player.id);
     if (previous && previous !== connection) previous.close(4000, 'replaced');
     this.connections.set(player.id, connection);
     if (look) this.looks.set(player.id, look);
     else this.looks.delete(player.id);
+    if (seesReactions) this.seeReactions.add(player.id);
+    else this.seeReactions.delete(player.id);
 
     const duel = this.byPlayer.get(player.id);
     if (!duel) return connection.send({ type: 'ready', player, duel: null });
     const seat = this.seat(duel, player.id)!;
     seat.connection = connection;
-    // The pseudo, and the look, may have changed in the meantime
+    // The pseudo, the look and the app may have changed in the meantime
     seat.player = player;
     seat.look = look;
+    seat.seesReactions = seesReactions;
     const wasAway = seat.disconnectedAt !== null;
     seat.disconnectedAt = null;
     connection.send({ type: 'ready', player, duel: this.view(duel, player.id) });
@@ -485,6 +505,7 @@ export class Duels {
     if (this.connections.get(playerId) !== connection) return;
     this.connections.delete(playerId);
     this.looks.delete(playerId);
+    this.seeReactions.delete(playerId);
     // A spectator watches again once connected again (the app asks)
     this.unwatch(playerId);
     const duel = this.byPlayer.get(playerId);
@@ -625,15 +646,20 @@ export class Duels {
   }
 
   /**
-   * A spectator reacts to one of the players: everyone in the duel sees it over that
-   * player's board. Only during the game; a few at most, the others are dropped.
+   * A spectator reacts to one of the players, a player to the other one: everyone in the
+   * duel sees it over that player's board. Only during the game; a few at most, the others
+   * are dropped.
    */
   private react(from: DuelIdentity, playerId: number, reaction: ReactionId, now: number): string | null {
-    const duel = this.watching.get(from.id);
-    if (!duel || duel.status !== 'playing' || !this.seat(duel, playerId)) return 'reaction_refused';
+    // Watching, or playing (not to themselves)
+    const duel = this.watching.get(from.id) ?? this.byPlayer.get(from.id);
+    if (!duel || duel.status !== 'playing' || playerId === from.id || !this.seat(duel, playerId)) return 'reaction_refused';
     if (reaction === 'encourage' && !this.encouragements.hit(`${from.id}:${playerId}`, now)) return 'too_many_reactions';
     if (!this.reactions.hit(from.id, now) || !this.duelReactions.hit(duel.code, now)) return 'too_many_reactions';
-    this.broadcast(duel, { type: 'reaction', from, playerId, reaction });
+    // Never to an app older than the reactions: it does not know the message
+    const message: ServerMessage = { type: 'reaction', from, playerId, reaction };
+    for (const seat of duel.seats) if (seat.seesReactions) seat.connection?.send(message);
+    for (const id of duel.spectators) if (this.seeReactions.has(id)) this.connections.get(id)?.send(message);
     return null;
   }
 
@@ -651,7 +677,7 @@ export class Duels {
   private newSeat(player: DuelIdentity): Seat {
     return {
       player, connection: this.connections.get(player.id) ?? null, disconnectedAt: null, vehicles: [], moves: [], solved: false,
-      wantsRematch: false, look: this.looks.get(player.id) ?? null,
+      wantsRematch: false, look: this.looks.get(player.id) ?? null, seesReactions: this.seeReactions.has(player.id),
     };
   }
 
@@ -774,7 +800,10 @@ export class Duels {
   }
 
   private playerView(seat: Seat): DuelPlayerView {
-    return { ...seat.player, connected: seat.connection !== null, moves: seat.moves, wantsRematch: seat.wantsRematch, look: seat.look };
+    return {
+      ...seat.player, connected: seat.connection !== null, moves: seat.moves, wantsRematch: seat.wantsRematch, look: seat.look,
+      seesReactions: seat.seesReactions,
+    };
   }
 
   private view(duel: Duel, playerId: number): DuelView {

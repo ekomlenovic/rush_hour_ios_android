@@ -5,7 +5,7 @@ import { useGameStore } from '@/store/gameStore';
 import { multiApi } from '@/utils/multi/api';
 import type { ReactionId } from '@/utils/multi/reactions';
 import {
-  duelReducer, duelSocketUrl, initialDuelState, myMove,
+  APP_FEATURES, duelReducer, duelSocketUrl, initialDuelState, myMove,
   type DuelClientMessage, type DuelDifficulty, type DuelMetric, type DuelServerMessage, type DuelState,
 } from '@/utils/multi/duel';
 
@@ -24,7 +24,7 @@ export interface DuelControls {
   move: (vehicleId: string, row: number, col: number) => boolean;
   leave: () => void;
   rematch: () => void;
-  /** A spectator reacts to a player of the duel watched */
+  /** A reaction to a player of the duel: either one when watching, the other one when playing */
   react: (playerId: number, reaction: ReactionId) => void;
   clearError: () => void;
 }
@@ -61,9 +61,11 @@ export function useDuel(account: ServerAccount | null): DuelControls {
         everOpened = true;
         attempt = 0;
         setUnreachable(null);
-        // My look, for the opponent and the spectators to see my board as I do
+        // My look, for the opponent and the spectators to see my board as I do, and what this app knows
         const { board, skin, palette } = useGameStore.getState().cosmetics;
-        socket.send(JSON.stringify({ type: 'auth', token: account.token, look: { board, skin, palette } } satisfies DuelClientMessage));
+        socket.send(JSON.stringify({
+          type: 'auth', token: account.token, look: { board, skin, palette }, features: APP_FEATURES,
+        } satisfies DuelClientMessage));
       };
       socket.onmessage = (event) => {
         let message: DuelServerMessage;

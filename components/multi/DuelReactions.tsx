@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import Animated, { FadeInDown, FadeOut, Keyframe } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut, Keyframe } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { haptics } from '@/utils/haptics';
 import { RFValue } from '@/utils/responsive';
@@ -11,6 +11,8 @@ import { ENCOURAGE_COOLDOWN_MS, REACTION_COOLDOWN_MS, reactionOf, type ReactionI
 
 /** Room the reactions of a spectator take under the boards */
 export const REACTION_TRAY_HEIGHT = RFValue(108);
+/** Height of the row of reactions a player opens over the board of the other one */
+export const REACTION_PICKER_HEIGHT = 52;
 
 /** Where the emojis rise over the board, in turn (% of its width): never all at the same place */
 const LANES = [14, 58, 34, 78, 46, 22, 68, 40];
@@ -27,15 +29,15 @@ interface OverlayProps {
   reactions: DuelReaction[];
   /** The player of the board; null: my own board */
   target: string | null;
-  /** Me, when I watch: my own reactions say "you" */
+  /** Me: my own reactions say "you" */
   myId: number | null;
   colors: UiColors;
 }
 
 /**
- * The reactions of the spectators aimed at the player of a board, over it: the emojis
- * rise with who sent them, the last encouragement is said at the top. Nothing to touch:
- * the board under it is played as usual, and the screen reader reads the board, not this.
+ * The reactions aimed at the player of a board, over it: the emojis rise with who sent
+ * them, the last encouragement is said at the top. Nothing to touch: the board under it is
+ * played as usual, and the screen reader reads the board, not this.
  */
 export function ReactionOverlay({ reactions, target, myId, colors }: OverlayProps) {
   const { t } = useTranslation();
@@ -66,9 +68,63 @@ export function ReactionOverlay({ reactions, target, myId, colors }: OverlayProp
   );
 }
 
+/**
+ * Sends the reactions of the phone: a short wait between two of them (the server drops the
+ * extra ones), a longer one between two encouragements of the same player.
+ */
+export function useReactionSender(onReact: (playerId: number, reaction: ReactionId) => void, now: number) {
+  const [waitUntil, setWaitUntil] = useState(0);
+  const [encouragedAt, setEncouragedAt] = useState<Record<number, number>>({});
+  const isEncouraged = (playerId: number, at = now) => at - (encouragedAt[playerId] ?? -Infinity) < ENCOURAGE_COOLDOWN_MS;
+
+  /** False if it has to wait */
+  const send = (playerId: number, reaction: ReactionId) => {
+    const at = Date.now();
+    if (at < waitUntil || (reaction === 'encourage' && isEncouraged(playerId, at))) return false;
+    if (reaction === 'encourage') setEncouragedAt(previous => ({ ...previous, [playerId]: at }));
+    setWaitUntil(at + REACTION_COOLDOWN_MS);
+    haptics.selectionAsync();
+    onReact(playerId, reaction);
+    return true;
+  };
+
+  return { send, waiting: now < waitUntil, isEncouraged };
+}
+
+type Sender = ReturnType<typeof useReactionSender>;
+
+/** The emoji buttons, the teasing ones then the cheering ones */
+function EmojiButtons({ available, target, sender, colors, onSent }: {
+  available: ReactionId[]; target: DuelSide; sender: Sender; colors: UiColors; onSent?: () => void;
+}) {
+  const { t } = useTranslation();
+  const emojis = available.map(reactionOf).filter(r => r.emoji);
+  return (
+    <>
+      {emojis.map((reaction, i) => (
+        <React.Fragment key={reaction.id}>
+          {i > 0 && emojis[i - 1].kind !== reaction.kind && <View style={[styles.separator, { backgroundColor: colors.border }]} />}
+          <Pressable
+            onPress={() => sender.send(target.id, reaction.id) && onSent?.()}
+            disabled={sender.waiting}
+            style={({ pressed }) => [styles.emojiButton, { backgroundColor: pressed ? colors.neutralSoft : 'transparent', opacity: sender.waiting ? 0.4 : 1 }]}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: sender.waiting }}
+            accessibilityLabel={t('multi.reactions.send_a11y', { reaction: t(`multi.reactions.names.${reaction.id}`), pseudo: target.pseudo })}
+          >
+            <Text style={styles.emojiButtonText}>{reaction.emoji}</Text>
+          </Pressable>
+        </React.Fragment>
+      ))}
+    </>
+  );
+}
+
 interface TrayProps {
-  /** The two players, the one of the board at the top first */
-  players: [DuelSide, DuelSide];
+  /** Who the reactions go to: chosen by touching their board or their bar */
+  target: DuelSide;
+  /** Their board is the one at the top */
+  targetOnTop: boolean;
   /** What the server relays */
   available: ReactionId[];
   colors: UiColors;
@@ -79,60 +135,32 @@ interface TrayProps {
 }
 
 /**
- * What a spectator sends to a player: who (the board at the top or at the bottom), then
- * an emoji to tease or cheer them, or a word of encouragement. A short wait between two
- * reactions (the server drops the extra ones), a longer one between two encouragements
- * of the same player.
+ * What a spectator sends to the player chosen above (their board is framed): an emoji to
+ * tease or cheer them, or a word of encouragement.
  */
-export function ReactionTray({ players, available, colors, width, now, onReact }: TrayProps) {
+export function ReactionTray({ target, targetOnTop, available, colors, width, now, onReact }: TrayProps) {
   const { t } = useTranslation();
-  const [targetId, setTargetId] = useState(players[0].id);
-  const [waitUntil, setWaitUntil] = useState(0);
-  const [encouragedAt, setEncouragedAt] = useState<Record<number, number>>({});
-  const target = players.find(p => p.id === targetId) ?? players[0];
-  const waiting = now < waitUntil;
-  const encouraged = now - (encouragedAt[target.id] ?? -Infinity) < ENCOURAGE_COOLDOWN_MS;
-  const emojis = available.map(reactionOf).filter(r => r.emoji);
+  const sender = useReactionSender(onReact, now);
+  const encouraged = sender.isEncouraged(target.id);
   const canEncourage = available.includes('encourage');
-
-  const send = (reaction: ReactionId) => {
-    const at = Date.now();
-    if (at < waitUntil) return;
-    if (reaction === 'encourage') {
-      if (at - (encouragedAt[target.id] ?? -Infinity) < ENCOURAGE_COOLDOWN_MS) return;
-      setEncouragedAt(previous => ({ ...previous, [target.id]: at }));
-    }
-    setWaitUntil(at + REACTION_COOLDOWN_MS);
-    haptics.selectionAsync();
-    onReact(target.id, reaction);
-  };
 
   return (
     <View style={[styles.tray, { width, backgroundColor: colors.card }]}>
       <View style={styles.trayRow}>
-        {players.map((player, i) => {
-          const selected = player.id === target.id;
-          return (
-            <Pressable
-              key={player.id}
-              onPress={() => setTargetId(player.id)}
-              style={[styles.target, { backgroundColor: selected ? colors.primary : colors.neutralSoft }]}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              accessibilityLabel={t('multi.reactions.target_a11y', { pseudo: player.pseudo })}
-            >
-              <Ionicons name={i === 0 ? 'arrow-up' : 'arrow-down'} size={RFValue(13)} color={selected ? colors.onPrimary : colors.textMuted} />
-              <Text style={[styles.targetText, { color: selected ? colors.onPrimary : colors.text }]} numberOfLines={1}>{player.pseudo}</Text>
-            </Pressable>
-          );
-        })}
+        <View style={styles.trayTarget} accessible accessibilityLiveRegion="polite" accessibilityLabel={t('multi.reactions.to', { pseudo: target.pseudo })}>
+          <Ionicons name={targetOnTop ? 'arrow-up' : 'arrow-down'} size={RFValue(15)} color={colors.primaryText} />
+          <View style={styles.trayTargetText}>
+            <Text style={[styles.trayTargetName, { color: colors.text }]} numberOfLines={1}>{t('multi.reactions.to', { pseudo: target.pseudo })}</Text>
+            <Text style={[styles.trayHint, { color: colors.textMuted }]} numberOfLines={1}>{t('multi.reactions.change_hint')}</Text>
+          </View>
+        </View>
         {canEncourage && (
           <Pressable
-            onPress={() => send('encourage')}
-            disabled={waiting || encouraged}
-            style={[styles.encourage, { backgroundColor: colors.primarySoft, opacity: waiting || encouraged ? 0.5 : 1 }]}
+            onPress={() => sender.send(target.id, 'encourage')}
+            disabled={sender.waiting || encouraged}
+            style={[styles.encourage, { backgroundColor: colors.primarySoft, opacity: sender.waiting || encouraged ? 0.5 : 1 }]}
             accessibilityRole="button"
-            accessibilityState={{ disabled: waiting || encouraged }}
+            accessibilityState={{ disabled: sender.waiting || encouraged }}
             accessibilityLabel={t(encouraged ? 'multi.reactions.encouraged_a11y' : 'multi.reactions.encourage_a11y', { pseudo: target.pseudo })}
           >
             <Ionicons name={encouraged ? 'checkmark' : 'megaphone-outline'} size={RFValue(15)} color={colors.primaryText} />
@@ -143,23 +171,52 @@ export function ReactionTray({ players, available, colors, width, now, onReact }
         )}
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.emojiRow}>
-        {emojis.map((reaction, i) => (
-          <React.Fragment key={reaction.id}>
-            {i > 0 && emojis[i - 1].kind !== reaction.kind && <View style={[styles.separator, { backgroundColor: colors.border }]} />}
-            <Pressable
-              onPress={() => send(reaction.id)}
-              disabled={waiting}
-              style={({ pressed }) => [styles.emojiButton, { backgroundColor: pressed ? colors.neutralSoft : 'transparent', opacity: waiting ? 0.4 : 1 }]}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: waiting }}
-              accessibilityLabel={t('multi.reactions.send_a11y', { reaction: t(`multi.reactions.names.${reaction.id}`), pseudo: target.pseudo })}
-            >
-              <Text style={styles.emojiButtonText}>{reaction.emoji}</Text>
-            </Pressable>
-          </React.Fragment>
-        ))}
+        <EmojiButtons available={available} target={target} sender={sender} colors={colors} />
       </ScrollView>
     </View>
+  );
+}
+
+interface PickerProps {
+  /** The other player: the reactions go to them */
+  opponent: DuelSide;
+  available: ReactionId[];
+  sender: Sender;
+  colors: UiColors;
+  onClose: () => void;
+}
+
+/**
+ * The reactions of a player for the other one, in a row over the board of the other one
+ * (mine stays free to play): one touch sends it and closes the row.
+ */
+export function ReactionPicker({ opponent, available, sender, colors, onClose }: PickerProps) {
+  const { t } = useTranslation();
+  const encouraged = sender.isEncouraged(opponent.id);
+  return (
+    <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(150)} style={[styles.picker, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.emojiRow} style={styles.pickerScroll}>
+        {available.includes('encourage') && (
+          <>
+            <Pressable
+              onPress={() => sender.send(opponent.id, 'encourage') && onClose()}
+              disabled={sender.waiting || encouraged}
+              style={[styles.emojiButton, { opacity: sender.waiting || encouraged ? 0.4 : 1 }]}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: sender.waiting || encouraged }}
+              accessibilityLabel={t(encouraged ? 'multi.reactions.encouraged_a11y' : 'multi.reactions.encourage_a11y', { pseudo: opponent.pseudo })}
+            >
+              <Ionicons name={encouraged ? 'checkmark' : 'megaphone-outline'} size={RFValue(22)} color={colors.primaryText} />
+            </Pressable>
+            <View style={[styles.separator, { backgroundColor: colors.border }]} />
+          </>
+        )}
+        <EmojiButtons available={available} target={opponent} sender={sender} colors={colors} onSent={onClose} />
+      </ScrollView>
+      <Pressable onPress={onClose} style={styles.emojiButton} accessibilityRole="button" accessibilityLabel={t('multi.reactions.close_a11y')}>
+        <Ionicons name="close" size={RFValue(20)} color={colors.textMuted} />
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -211,24 +268,27 @@ const styles = StyleSheet.create({
   trayRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: RFValue(6),
+    gap: RFValue(8),
   },
-  target: {
-    flexShrink: 1,
+  trayTarget: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    borderRadius: 999,
-    paddingVertical: RFValue(6),
-    paddingHorizontal: RFValue(10),
+    gap: 6,
+    paddingLeft: RFValue(4),
   },
-  targetText: {
-    flexShrink: 1,
-    fontSize: RFValue(13),
+  trayTargetText: {
+    flex: 1,
+  },
+  trayTargetName: {
+    fontSize: RFValue(14),
     fontWeight: '800',
   },
+  trayHint: {
+    fontSize: RFValue(11),
+    fontWeight: '600',
+  },
   encourage: {
-    marginLeft: 'auto',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -258,5 +318,16 @@ const styles = StyleSheet.create({
     width: 1,
     height: 24,
     marginHorizontal: 4,
+  },
+  picker: {
+    height: REACTION_PICKER_HEIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 4,
+  },
+  pickerScroll: {
+    flex: 1,
   },
 });

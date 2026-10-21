@@ -2,7 +2,7 @@ import type { Level } from '../store/types';
 import en from '../locales/en.json';
 import fr from '../locales/fr.json';
 import {
-  MAX_KEPT_REACTIONS, REACTION_SHOWN_MS,
+  APP_FEATURES, MAX_KEPT_REACTIONS, REACTION_SHOWN_MS,
   countdownMs, duelElapsedMs, duelReducer, duelSocketUrl, iHaveWon, initialDuelState, myMove, normalizeDuelCode, opponentHasWon, outcome,
   reactionsFor, winnerOf,
   type DuelAction, type DuelServerMessage, type DuelState, type DuelView,
@@ -144,6 +144,15 @@ describe('duel on the phone', () => {
     expect(state.duel!.me.wantsRematch).toBe(false);
   });
 
+  it('a message of a newer server changes nothing (2.0.3 lost the duel state on one, and the screen broke)', () => {
+    const state = playing();
+    const unknown = { type: 'hologram', playerId: 2 } as unknown as DuelServerMessage;
+    expect(run(state, message(unknown))).toBe(state);
+    expect(run(initialDuelState, message(unknown))).toBe(initialDuelState);
+    // The app says what it knows: the server sends it nothing else
+    expect(APP_FEATURES).toEqual(['reactions']);
+  });
+
   it('shows the errors of the server, except a move out of step', () => {
     const state = playing();
     expect(run(state, message({ type: 'error', error: 'invalid_moves' }))).toBe(state);
@@ -198,6 +207,12 @@ describe('duel on the phone', () => {
     expect(state.duel!.reactions).toEqual(['snail', 'encourage']);
     // A server older than the reactions: none
     expect(playing().duel!.reactions).toEqual([]);
+    // Whose app shows them: no use reacting to an older one
+    expect(playing().duel!.opponent!.seesReactions).toBe(false);
+    const seen = run(initialDuelState, message({
+      type: 'duel', duel: view({ reactions: ['snail'], opponent: { id: 2, pseudo: 'Emma', connected: true, moves: [], wantsRematch: false, seesReactions: true } }),
+    }));
+    expect(seen.duel!.opponent!.seesReactions).toBe(true);
 
     state = run(
       state,
