@@ -290,6 +290,32 @@ describe('duels', () => {
     expect(emma.last('end')!.result).toMatchObject({ winnerId: 1, reason: 'won' });
   });
 
+  it('each board has the look of its player, for the opponent and the spectators', async () => {
+    const { connect, clock } = setup();
+    const leo = connect();
+    leo.send({ type: 'auth', token: 'token-leo', look: { board: 'neon', skin: 'taxi', palette: 'ocean' } });
+    // Not a look: the player still plays, drawn as the viewer's own board
+    const emma = connect();
+    emma.send({ type: 'auth', token: 'token-emma', look: { board: 'NEON!', skin: 'taxi', palette: 'ocean' } });
+    expect(emma.last('ready')).toBeDefined();
+    leo.send({ type: 'create', metric: 'time' });
+    emma.send({ type: 'join', code: leo.last('duel')!.duel.code });
+    await settle();
+    clock.now += COUNTDOWN_MS;
+    expect(emma.last('duel')!.duel.opponent).toMatchObject({ id: 1, look: { board: 'neon', skin: 'taxi', palette: 'ocean' } });
+    expect(leo.last('duel')!.duel.opponent).toMatchObject({ id: 2, look: null });
+
+    const sam = connect('token-sam');
+    sam.send({ type: 'watch', code: leo.last('duel')!.duel.code });
+    expect(sam.last('duel')!.duel).toMatchObject({ me: { id: 1, look: { skin: 'taxi' } }, opponent: { id: 2, look: null } });
+
+    // Back with another look: the new one
+    leo.disconnect();
+    const back = connect();
+    back.send({ type: 'auth', token: 'token-leo', look: { board: 'wood', skin: 'bus', palette: 'classic' } });
+    expect(back.last('ready')!.duel!.me.look).toEqual({ board: 'wood', skin: 'bus', palette: 'classic' });
+  });
+
   it('refuses an unknown metric', () => {
     const { connect } = setup();
     const leo = connect('token-leo');

@@ -37,6 +37,17 @@ describe('duel on the phone', () => {
     expect(normalizeDuelCode(' ab-c d3 ')).toBe('ABCD3');
   });
 
+  it("keeps each player's look for their board, through the moves", () => {
+    const look = { board: 'neon', skin: 'taxi', palette: 'ocean' };
+    let state = run(initialDuelState, message({
+      type: 'duel', duel: view({ opponent: { id: 2, pseudo: 'Emma', connected: true, moves: [], wantsRematch: false, look } }),
+    }));
+    // A server older than the looks: my own look for both
+    expect(state.duel!.me.look).toBeNull();
+    state = run(state, message({ type: 'move', playerId: 2, move: { vehicleId: 'v1', delta: 2, t: 4000 } }));
+    expect(state.duel!.opponent!.look).toEqual(look);
+  });
+
   it('follows the clock of the server: countdown, then time since the start', () => {
     const { duel } = playing();
     expect(duel!.clockOffset).toBe(1_000_000);

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { darkColors, lightColors, resolveScheme, type UiColors } from '../theme/ui';
-import { BOARD_THEMES } from '../theme/board';
+import { BOARD_THEMES, toBoardLook } from '../theme/board';
 import { contrastRatio } from '../theme/contrast';
 
 const SCHEMES: [string, UiColors][] = [['dark', darkColors], ['light', lightColors]];
@@ -64,5 +64,21 @@ describe('hardcoded colors', () => {
         .filter(({ line }) => COLOR.test(line))
         .map(({ at, line }) => `${at}  ${line.trim()}`));
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('toBoardLook', () => {
+  it("draws another player's board with their cosmetics", () => {
+    expect(toBoardLook({ board: 'neon', skin: 'taxi', palette: 'ocean' })).toEqual({ board: 'neon', skin: 'taxi', palette: 'ocean' });
+  });
+
+  it('draws what this app does not know (a newer cosmetic) as the classic look', () => {
+    expect(toBoardLook({ board: 'volcano', skin: 'taxi', palette: 'rainbow' })).toEqual({ board: 'classic', skin: 'taxi', palette: 'classic' });
+    expect(toBoardLook({ board: 'toString', skin: 'constructor', palette: '__proto__' })).toEqual({ board: 'classic', skin: 'classic', palette: 'classic' });
+  });
+
+  it('no look (an older app or server): my own board', () => {
+    expect(toBoardLook(null)).toBeUndefined();
+    expect(toBoardLook(undefined)).toBeUndefined();
   });
 });

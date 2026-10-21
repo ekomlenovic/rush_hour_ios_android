@@ -7,7 +7,8 @@ import { checkWin } from '../collision';
  * duel as the phone sees it. A move of mine shows at once on my board; the server
  * checks it and sends it to both phones. Who wins is chosen at the creation: the first
  * red car out (time), or the fewest moves (moves; the same count is a draw).
- * A spectator gets the same messages, and plays nothing.
+ * A spectator gets the same messages, and plays nothing. Each board is drawn with the
+ * look of its player (board theme, car skin, palette), said when connecting.
  */
 
 export type DuelDifficulty = 'EASY' | 'NORMAL' | 'HARD' | 'EXPERT' | 'MASTER';
@@ -32,7 +33,14 @@ export interface DuelResult {
   score: HeadToHead | null;
 }
 
-interface PlayerView { id: number; pseudo: string; connected: boolean; moves: MoveRecord[]; wantsRematch: boolean }
+/** How a player's board looks in their app: ids of their cosmetics */
+export interface DuelLook { board: string; skin: string; palette: string }
+
+interface PlayerView {
+  id: number; pseudo: string; connected: boolean; moves: MoveRecord[]; wantsRematch: boolean;
+  /** Absent from a server older than the looks, null for an app older than them */
+  look?: DuelLook | null;
+}
 
 export interface DuelView {
   code: string;
@@ -64,7 +72,7 @@ export type DuelServerMessage =
   | { type: 'error'; error: string };
 
 export type DuelClientMessage =
-  | { type: 'auth'; token: string }
+  | { type: 'auth'; token: string; look: DuelLook }
   | { type: 'create'; difficulty: DuelDifficulty; metric: DuelMetric; private: boolean }
   | { type: 'join'; code: string }
   | { type: 'watch'; code: string }
@@ -81,6 +89,8 @@ export interface DuelSide {
   moves: MoveRecord[];
   vehicles: Vehicle[];
   wantsRematch: boolean;
+  /** Their look; null: drawn as my own board */
+  look: DuelLook | null;
 }
 
 export interface Duel {
@@ -152,7 +162,7 @@ function positionAfter(level: Level | null, moves: MoveRecord[]): Vehicle[] {
 }
 
 function side(view: PlayerView, level: Level | null): DuelSide {
-  return { ...view, vehicles: positionAfter(level, view.moves) };
+  return { ...view, look: view.look ?? null, vehicles: positionAfter(level, view.moves) };
 }
 
 function fromView(view: DuelView, now: number, previous: Duel | null): Duel {

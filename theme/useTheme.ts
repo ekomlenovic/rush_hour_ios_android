@@ -1,8 +1,8 @@
-import { useEffect, useMemo } from 'react';
+import { createContext, useContext, useEffect, useMemo } from 'react';
 import { Appearance, useColorScheme } from 'react-native';
 import { useGameStore } from '@/store/gameStore';
 import { getUiColors, resolveScheme, type ColorScheme, type UiColors } from './ui';
-import { getSkinnedBoard, type BoardColors, type VehiclePaletteId } from './board';
+import { getSkinnedBoard, type BoardColors, type BoardLook, type VehiclePaletteId } from './board';
 
 export interface Theme {
   scheme: ColorScheme;
@@ -13,6 +13,19 @@ export interface Theme {
   board: BoardColors;
   /** Selected palette of the other vehicles */
   palette: VehiclePaletteId;
+}
+
+/** Another player's look for the board inside it (and its vehicles) */
+const BoardLookContext = createContext<BoardLook | null>(null);
+export const BoardLookProvider = BoardLookContext.Provider;
+
+/** The colors and the palette of a board: another player's look (multiplayer), or the selected cosmetics */
+export function useBoardTheme(look?: BoardLook): { board: BoardColors; palette: VehiclePaletteId } {
+  const { scheme, board, palette } = useTheme();
+  const inherited = useContext(BoardLookContext);
+  const override = look ?? inherited;
+  const skinned = useMemo(() => override && getSkinnedBoard(override.board, override.skin, scheme), [override, scheme]);
+  return override && skinned ? { board: skinned, palette: override.palette } : { board, palette };
 }
 
 /** Applies the player's choice to the native UI too (alerts, switches, keyboard): call once at the root */
