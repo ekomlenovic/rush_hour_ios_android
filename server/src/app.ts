@@ -25,7 +25,8 @@ export const MIN_APP_VERSION = '1.1.6';
 export const MAX_MOVES = 1000;
 /** What this server can do beyond the daily challenge: the app hides what an older server lacks */
 /** 'ranking_range': rankings between two dates chosen by the player (period=range&from=…&to=…) */
-export const FEATURES = ['duel', 'ranking_range'];
+/** 'reactions': the spectators of a duel react to its players (the duel says which reactions, DuelView.reactions) */
+export const FEATURES = ['duel', 'ranking_range', 'reactions'];
 /** A WebSocket that does not answer a ping in this time is closed (phone gone, network lost) */
 const PING_INTERVAL_MS = 25_000;
 /** Open duel WebSockets from one address at most */

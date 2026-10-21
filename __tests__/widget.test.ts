@@ -105,6 +105,26 @@ describe('home screen widget (rules in docs/GAME_DESIGN.md, issue 151)', () => {
     expect(data.days.length).toBeLessThanOrEqual(10);
   });
 
+  it('shows the day as missed while its daily is left open in the app past midnight: the app shows the same once it is closed without the win', () => {
+    useGameStore.setState({ currentStreak: 4, lastStreakDate: '2026-10-19', streakFreezes: 0 });
+    setToday('2026-10-21', 0);
+    // The widget cannot know whether the app is still open: it never shows a streak the app may show at 0
+    state().setOpenDailyDate('2026-10-20');
+    expect(shown('2026-10-21').streak).toBe(0);
+
+    state().setOpenDailyDate(null);
+    state().recordAppOpen();
+    expect(state().currentStreak).toBe(0);
+  });
+
+  it('shows the streak going on as soon as that daily is won after midnight', () => {
+    useGameStore.setState({ currentStreak: 4, lastStreakDate: '2026-10-19', streakFreezes: 0 });
+    setToday('2026-10-21', 0);
+    state().setOpenDailyDate('2026-10-20');
+    state().completeDailyChallenge('2026-10-20', 300, 3);
+    expect(shown('2026-10-21')).toEqual({ streak: 5, freezes: 0, done: false, stars: 0 });
+  });
+
   it('shows a streak never started at 0, with the daily to do', () => {
     setToday('2026-10-21');
     expect(shown('2026-10-21')).toEqual({ streak: 0, freezes: 0, done: false, stars: 0 });
