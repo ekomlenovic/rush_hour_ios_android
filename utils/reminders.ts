@@ -11,6 +11,9 @@ const WEEKLY_REMINDER_HOUR = 10;
 const RECAP_REMINDER_HOUR = 11;
 const YEAR_RECAP_DAY = '12-26';
 
+/** Hour of the "streak in danger" reminder, also when the widget says so */
+export const streakDangerHour = (reminderHour: number): number => Math.min(reminderHour + STREAK_DANGER_DELAY_HOURS, 23);
+
 export interface ReminderInput {
   now: Date;
   reminderHour: number;
@@ -65,7 +68,7 @@ export function planReminders(t: TFunction, input: ReminderInput): PlannedRemind
     const day = completedDailies.has(today) ? addDays(today, 1) : today;
     reminders.push({
       id: `streak-${day}`,
-      date: at(day, Math.min(reminderHour + STREAK_DANGER_DELAY_HOURS, 23)),
+      date: at(day, streakDangerHour(reminderHour)),
       title: t('reminders.streak_title'),
       body: t('reminders.streak_body', { count: currentStreak }),
     });

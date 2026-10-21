@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ionicons "star" (MIT), as in the app: generated from the font of @expo/vector-icons -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <path
+        android:fillColor="@color/rush_widget_star"
+        android:pathData="M248 34Q248 34 248 34Q253 32 259.5 33Q266 34 269 38Q271 41 300 132Q300 132 320 192H402Q484 192 488 194Q495 198 496 206Q496 214 491 219Q489 222 424.5 266Q360 310 359.5 310.5Q359 311 384.5 385.5Q410 460 410 464Q410 472 404 476.5Q398 481 390 479Q387 479 321.5 431.5Q256 384 256 384Q256 384 190.5 431.5Q125 479 121 480Q115 481 108.5 476.5Q102 472 102 465Q102 461 128 386Q128 386 153 311L151 309Q149 308 85.5 264Q22 220 19 217Q15 212 16.5 205Q18 198 23 195Q23 195 27 192H110H192L212 133Q237 56 240.5 46.5Q244 37 248 34Z" />
+</vector>

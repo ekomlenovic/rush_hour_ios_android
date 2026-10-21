@@ -75,6 +75,18 @@ jobs:
             -allowProvisioningUpdates \
             | xcbeautify
 
+      # An unsigned build carries no entitlements: SideStore would not register the app group
+      # the home screen widget shares with the app (issue 151). ldid writes them in the binaries.
+      - name: Embed entitlements (app group of the widget)
+        run: |
+          brew install ldid
+          APP=build/RushHours.xcarchive/Products/Applications/RushHours.app
+          ldid -Sios/RushHours/RushHours.entitlements "$APP/RushHours"
+          ldid -Sios/.targets/widget/generated.entitlements "$APP/PlugIns/widget.appex/widget"
+          for BINARY in "$APP/RushHours" "$APP/PlugIns/widget.appex/widget"; do
+            ldid -e "$BINARY" | grep -q "group.com.rushhours.app" || { echo "No app group in $BINARY"; exit 1; }
+          done
+
       - name: Package unsigned IPA
         run: |
           mkdir -p build/ipa/Payload

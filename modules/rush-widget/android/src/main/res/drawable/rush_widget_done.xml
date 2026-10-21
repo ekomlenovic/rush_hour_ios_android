@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ionicons "checkmark-circle" (MIT), as in the app: generated from the font of @expo/vector-icons -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <path
+        android:fillColor="@color/rush_widget_success"
+        android:pathData="M242 49Q312 44 370 82Q387 94 403 110Q453 159 463 232Q464 239 464 256Q464 273 463 280Q453 353 403 403Q353 453 280 463Q273 464 256 464Q239 464 232 463Q159 453 109 403Q59 353 50 281Q40 206 82 142Q110 101 151.5 76.5Q193 52 242 49ZM359 162Q359 162 359 162Q352 159 345 162Q342 164 274 244Q220 308 218.5 310Q217 312 194.5 287Q172 262 168.5 259Q165 256 160.5 256Q156 256 154 257Q148 259 145 265Q144 267 144 272Q144 277 146 279Q148 284 178 316.5Q208 349 210 350Q214 352 217 352Q223 352 232 342.5Q241 333 296 267Q365 186 366 183Q369 177 367 171Q365 165 359 162Z" />
+</vector>
