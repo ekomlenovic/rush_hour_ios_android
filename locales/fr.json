@@ -232,6 +232,8 @@
     "solvable_desc": "Minimum {{count}} coups pour terminer.",
     "fix_before_save": "Répare le niveau avant de sauvegarder.",
     "too_complex_desc": "Trop de positions possibles à explorer pour trouver la solution. Retire quelques véhicules ou réduis la grille.",
+    "already_solved_title": "Déjà résolu",
+    "already_solved_desc": "La voiture cible est déjà à la sortie : éloigne-la pour créer un puzzle.",
     "saved_new": "Sauvegardé comme nouveau niveau.",
     "level_updated": "Niveau mis à jour.",
     "hint_text": "Fais glisser pour déplacer · Appuie pour faire pivoter · Appui long pour supprimer",
