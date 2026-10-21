@@ -17,7 +17,7 @@ import Board from '@/components/Board';
 import MultiHeader from '@/components/multi/MultiHeader';
 import DuelPlayerBar from '@/components/multi/DuelPlayerBar';
 import {
-  REACTION_PICKER_HEIGHT, REACTION_TRAY_HEIGHT, ReactionOverlay, ReactionPicker, ReactionTray, useReactionSender,
+  REACTION_PICKER_HEIGHT, REACTION_TRAY_HEIGHT, ReactionOverlay, ReactionPicker, ReactionTray, pauseSeconds, useReactionSender,
   type ReactionSender,
 } from '@/components/multi/DuelReactions';
 import { multiErrorMessage } from '@/components/multi/errors';
@@ -354,9 +354,10 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
   // Playing: to the other one, if their app shows them, from a row over their board
   const canReact = !duel.spectating && duel.reactions.length > 0 && duel.status === 'playing' && !!opponent?.seesReactions;
   const [picking, setPicking] = useState(false);
+  // Closed at the pause: the button next to the clock counts it down
   useEffect(() => {
-    if (!canReact) setPicking(false);
-  }, [canReact]);
+    if (!canReact || sender.waiting) setPicking(false);
+  }, [canReact, sender.waiting]);
   const [opponentBottom, setOpponentBottom] = useState(0);
   const onOpponentLayout = (e: LayoutChangeEvent) => setOpponentBottom(e.nativeEvent.layout.y + e.nativeEvent.layout.height);
   const pickerWidth = Math.min(width - RFValue(32), 440);
@@ -440,14 +441,18 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
             {canReact && (
               <Pressable
                 onPress={() => setPicking(p => !p)}
-                disabled={sender.waiting && !picking}
-                style={[styles.muteButton, { backgroundColor: picking ? colors.primarySoft : colors.card, opacity: sender.waiting && !picking ? 0.4 : 1 }]}
+                disabled={sender.waiting}
+                style={[styles.muteButton, { backgroundColor: picking ? colors.primarySoft : colors.card }]}
                 accessibilityRole="button"
-                accessibilityState={{ expanded: picking, disabled: sender.waiting && !picking }}
-                accessibilityLabel={t('multi.reactions.target_a11y', { pseudo: opponent.pseudo })}
+                accessibilityState={{ expanded: picking, disabled: sender.waiting }}
+                accessibilityLabel={sender.waiting
+                  ? t('multi.reactions.pause_a11y', { count: pauseSeconds(sender) })
+                  : t('multi.reactions.target_a11y', { pseudo: opponent.pseudo })}
                 hitSlop={6}
               >
-                <Ionicons name={picking ? 'happy' : 'happy-outline'} size={RFValue(19)} color={picking ? colors.primaryText : colors.text} />
+                {sender.waiting
+                  ? <Text style={[styles.pauseCount, { color: colors.warning }]}>{pauseSeconds(sender)}</Text>
+                  : <Ionicons name={picking ? 'happy' : 'happy-outline'} size={RFValue(19)} color={picking ? colors.primaryText : colors.text} />}
               </Pressable>
             )}
             {canMute && (
@@ -964,6 +969,11 @@ const styles = StyleSheet.create({
   },
   pickerSlot: {
     position: 'absolute',
+  },
+  pauseCount: {
+    fontSize: RFValue(15),
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
   },
   muteButton: {
     width: RFValue(34),

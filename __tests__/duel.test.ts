@@ -7,7 +7,10 @@ import {
   reactionsFor, winnerOf,
   type DuelAction, type DuelServerMessage, type DuelState, type DuelView,
 } from '../utils/multi/duel';
-import { REACTIONS, REACTION_IDS, isReactionId } from '../utils/multi/reactions';
+import {
+  MAX_REACTIONS, REACTIONS, REACTIONS_WINDOW_MS, REACTION_BURST, REACTION_BURST_WINDOW_MS, REACTION_IDS,
+  isReactionId, reactionPauseMs, reactionsLeft,
+} from '../utils/multi/reactions';
 
 /** The puzzle of the server tests: v1 goes down 2 cells, then the red car leaves */
 const LEVEL: Level = {
@@ -274,6 +277,35 @@ describe('reactions of the spectators', () => {
     expect(new Set(REACTION_IDS).size).toBe(REACTION_IDS.length);
     expect(isReactionId('snail')).toBe(true);
     expect(isReactionId('Tu es nul')).toBe(false);
+  });
+
+  it('a few in a row, then a pause: one more each time the first of them is old enough', () => {
+    expect(REACTION_BURST).toBe(3);
+    const sent = [0, 100, 200];
+    expect(reactionsLeft([], 0)).toBe(REACTION_BURST);
+    expect(reactionsLeft(sent.slice(0, 2), 150)).toBe(1);
+    expect(reactionsLeft(sent, 300)).toBe(0);
+    expect(reactionPauseMs(sent, 300)).toBe(REACTION_BURST_WINDOW_MS - 300);
+    expect(reactionsLeft(sent, REACTION_BURST_WINDOW_MS)).toBe(1);
+    expect(reactionPauseMs(sent, REACTION_BURST_WINDOW_MS)).toBe(0);
+    // One every 2 s never waits
+    const steady: number[] = [];
+    for (let at = 0; at < 60_000; at += 2000) {
+      expect(reactionsLeft(steady, at)).toBeGreaterThan(0);
+      steady.push(at);
+    }
+  });
+
+  it('the phone never sends more than the server relays, whatever the delays of the network', () => {
+    // A phone that sends as soon as it may, for a minute
+    const sent: number[] = [];
+    for (let at = 0; at < 60_000; at += 50) if (reactionsLeft(sent, at) > 0) sent.push(at);
+    expect(sent.length).toBeGreaterThan(20);
+    // Each one may reach the server up to 1 s sooner or later than the others
+    const late = 1000;
+    for (const start of sent) {
+      expect(sent.filter(at => at >= start && at < start + REACTIONS_WINDOW_MS + 2 * late).length).toBeLessThanOrEqual(MAX_REACTIONS);
+    }
   });
 
   it('an emoji for each one, except the encouragement, said in words', () => {

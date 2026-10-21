@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Animated, { FadeIn, FadeInDown, FadeOut, Keyframe } from 'react-native-reanimated';
@@ -7,7 +7,9 @@ import { haptics } from '@/utils/haptics';
 import { RFValue } from '@/utils/responsive';
 import type { UiColors } from '@/theme';
 import type { DuelReaction, DuelSide } from '@/utils/multi/duel';
-import { ENCOURAGE_COOLDOWN_MS, REACTION_COOLDOWN_MS, reactionOf, type ReactionId } from '@/utils/multi/reactions';
+import {
+  ENCOURAGE_COOLDOWN_MS, REACTION_BURST, reactionOf, reactionPauseMs, reactionsLeft, recentReactions, type ReactionId,
+} from '@/utils/multi/reactions';
 
 /** Room the reactions of a spectator take under the boards */
 export const REACTION_TRAY_HEIGHT = RFValue(108);
@@ -95,35 +97,63 @@ function Bubble({ reaction, label, size, colors }: { reaction: DuelReaction; lab
 }
 
 /**
- * Sends the reactions of the phone: a short wait between two of them (the server drops the
- * extra ones), a longer one between two encouragements of the same player. Kept by the
- * screen of the duel, through the rematches, as the server keeps its own waits; a reaction
- * not sent (offline) starts no wait.
+ * Sends the reactions of the phone: a few in a row, then a pause (the server drops the extra
+ * ones), and a longer wait between two encouragements of the same player. Kept by the screen
+ * of the duel, through the rematches, as the server keeps its own waits; a reaction not sent
+ * (offline) counts for nothing.
  */
 export function useReactionSender(onReact: (playerId: number, reaction: ReactionId) => boolean, now: number) {
-  const [waitUntil, setWaitUntil] = useState(0);
-  const [encouragedAt, setEncouragedAt] = useState<Record<number, number>>({});
-  const isEncouraged = (playerId: number, at = now) => at - (encouragedAt[playerId] ?? -Infinity) < ENCOURAGE_COOLDOWN_MS;
+  // Read at once by the next touch, before the screen is drawn again
+  const sentAt = useRef<number[]>([]);
+  const encouragedAt = useRef<Record<number, number>>({});
+  const [, redraw] = useState(0);
+  const isEncouraged = (playerId: number, at = now) => at - (encouragedAt.current[playerId] ?? -Infinity) < ENCOURAGE_COOLDOWN_MS;
 
   /** False if it has to wait */
   const send = (playerId: number, reaction: ReactionId) => {
     const at = Date.now();
-    if (at < waitUntil || (reaction === 'encourage' && isEncouraged(playerId, at))) return false;
+    if (reactionsLeft(sentAt.current, at) === 0 || (reaction === 'encourage' && isEncouraged(playerId, at))) return false;
     if (!onReact(playerId, reaction)) return false;
-    if (reaction === 'encourage') setEncouragedAt(previous => ({ ...previous, [playerId]: at }));
-    setWaitUntil(at + REACTION_COOLDOWN_MS);
+    sentAt.current = [...recentReactions(sentAt.current, at), at];
+    if (reaction === 'encourage') encouragedAt.current = { ...encouragedAt.current, [playerId]: at };
+    redraw(n => n + 1);
     haptics.selectionAsync();
     return true;
   };
 
-  return { send, waiting: now < waitUntil, isEncouraged };
+  // The clock of the screen, a little late: never more left than really are
+  const left = Math.min(reactionsLeft(sentAt.current, now), reactionsLeft(sentAt.current, Date.now()));
+  return { send, left, waiting: left === 0, pauseMs: reactionPauseMs(sentAt.current, now), isEncouraged };
 }
 
 export type ReactionSender = ReturnType<typeof useReactionSender>;
 
+/** Seconds of the pause, shown on the buttons */
+export const pauseSeconds = (sender: ReactionSender) => Math.max(1, Math.ceil(sender.pauseMs / 1000));
+
+/** What is left before the pause: a dot for each reaction, or the time of the pause */
+function ReactionCharges({ sender, colors }: { sender: ReactionSender; colors: UiColors }) {
+  const { t } = useTranslation();
+  if (sender.waiting) {
+    return (
+      <View style={styles.charges} accessible accessibilityLabel={t('multi.reactions.pause_a11y', { count: pauseSeconds(sender) })}>
+        <Ionicons name="hourglass-outline" size={RFValue(13)} color={colors.warning} />
+        <Text style={[styles.pauseText, { color: colors.warning }]}>{t('multi.reactions.pause', { count: pauseSeconds(sender) })}</Text>
+      </View>
+    );
+  }
+  return (
+    <View style={styles.charges} accessible accessibilityLabel={t('multi.reactions.left_a11y', { count: sender.left })}>
+      {Array.from({ length: REACTION_BURST }, (_, i) => (
+        <View key={i} style={[styles.charge, { backgroundColor: i < sender.left ? colors.primary : colors.neutralSoft }]} />
+      ))}
+    </View>
+  );
+}
+
 /** The emoji buttons, the teasing ones then the cheering ones */
-function EmojiButtons({ available, target, sender, colors, onSent }: {
-  available: ReactionId[]; target: DuelSide; sender: ReactionSender; colors: UiColors; onSent?: () => void;
+function EmojiButtons({ available, target, sender, colors }: {
+  available: ReactionId[]; target: DuelSide; sender: ReactionSender; colors: UiColors;
 }) {
   const { t } = useTranslation();
   const emojis = available.map(reactionOf).filter(r => r.emoji);
@@ -133,7 +163,7 @@ function EmojiButtons({ available, target, sender, colors, onSent }: {
         <React.Fragment key={reaction.id}>
           {i > 0 && emojis[i - 1].kind !== reaction.kind && <View style={[styles.separator, { backgroundColor: colors.border }]} />}
           <Pressable
-            onPress={() => sender.send(target.id, reaction.id) && onSent?.()}
+            onPress={() => sender.send(target.id, reaction.id)}
             disabled={sender.waiting}
             style={({ pressed }) => [styles.emojiButton, { backgroundColor: pressed ? colors.neutralSoft : 'transparent', opacity: sender.waiting ? 0.4 : 1 }]}
             accessibilityRole="button"
@@ -162,7 +192,7 @@ interface TrayProps {
 
 /**
  * What a spectator sends to the player chosen above (their board is framed): an emoji to
- * tease or cheer them, or a word of encouragement.
+ * tease or cheer them, or a word of encouragement; a few in a row, then a short pause.
  */
 export function ReactionTray({ target, targetOnTop, available, sender, colors, width }: TrayProps) {
   const { t } = useTranslation();
@@ -179,6 +209,7 @@ export function ReactionTray({ target, targetOnTop, available, sender, colors, w
             <Text style={[styles.trayHint, { color: colors.textMuted }]} numberOfLines={1}>{t('multi.reactions.change_hint')}</Text>
           </View>
         </View>
+        <ReactionCharges sender={sender} colors={colors} />
         {canEncourage && (
           <Pressable
             onPress={() => sender.send(target.id, 'encourage')}
@@ -213,7 +244,7 @@ interface PickerProps {
 
 /**
  * The reactions of a player for the other one, in a row over the board of the other one
- * (mine stays free to play): one touch sends it and closes the row.
+ * (mine stays free to play): a few in a row; the row closes at the pause (the screen does).
  */
 export function ReactionPicker({ opponent, available, sender, colors, onClose }: PickerProps) {
   const { t } = useTranslation();
@@ -224,7 +255,7 @@ export function ReactionPicker({ opponent, available, sender, colors, onClose }:
         {available.includes('encourage') && (
           <>
             <Pressable
-              onPress={() => sender.send(opponent.id, 'encourage') && onClose()}
+              onPress={() => sender.send(opponent.id, 'encourage')}
               disabled={sender.waiting || encouraged}
               style={[styles.emojiButton, { opacity: sender.waiting || encouraged ? 0.4 : 1 }]}
               accessibilityRole="button"
@@ -236,8 +267,9 @@ export function ReactionPicker({ opponent, available, sender, colors, onClose }:
             <View style={[styles.separator, { backgroundColor: colors.border }]} />
           </>
         )}
-        <EmojiButtons available={available} target={opponent} sender={sender} colors={colors} onSent={onClose} />
+        <EmojiButtons available={available} target={opponent} sender={sender} colors={colors} />
       </ScrollView>
+      <ReactionCharges sender={sender} colors={colors} />
       <Pressable onPress={onClose} style={styles.emojiButton} accessibilityRole="button" accessibilityLabel={t('multi.reactions.close_a11y')}>
         <Ionicons name="close" size={RFValue(20)} color={colors.textMuted} />
       </Pressable>
@@ -338,6 +370,22 @@ const styles = StyleSheet.create({
   },
   emojiButtonText: {
     fontSize: RFValue(24),
+  },
+  charges: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 4,
+  },
+  charge: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  pauseText: {
+    fontSize: RFValue(12),
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
   },
   separator: {
     width: 1,
