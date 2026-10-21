@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ionicons "play" (MIT), as in the app: generated from the font of @expo/vector-icons -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <path
+        android:fillColor="@color/rush_widget_primary"
+        android:pathData="M128 73Q128 73 128 73Q139 71 148 76Q152 78 276 152Q400 226 405 230Q416 240 416 255.5Q416 271 405 281Q401 286 275.5 361Q150 436 147 437Q126 446 108 430Q101 422 98 412Q96 407 96 256Q96 105 98 100Q101 90 108 82Q117 74 128 73Z" />
+</vector>

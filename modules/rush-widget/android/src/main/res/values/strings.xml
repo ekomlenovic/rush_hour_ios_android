@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The widget shows the texts written by the app, in its language (locales/*.json, widget.*).
+  These are for the widget picker and until the app has been opened once.
+-->
+<resources>
+    <string name="rush_widget_small_name">Streak and daily challenge</string>
+    <string name="rush_widget_small_description">Your streak, your freezes and today\'s challenge</string>
+    <string name="rush_widget_medium_name">Streak and countdown</string>
+    <string name="rush_widget_medium_description">Your streak, your freezes, today\'s challenge and the time left before the next one</string>
+    <string name="rush_widget_daily">Daily challenge</string>
+    <string name="rush_widget_todo">To do</string>
+    <string name="rush_widget_done">Done</string>
+    <string name="rush_widget_unit">day streak</string>
+    <plurals name="rush_widget_days">
+        <item quantity="one">day streak</item>
+        <item quantity="other">day streak</item>
+    </plurals>
+    <string name="rush_widget_empty_label">0-day streak, daily challenge to do</string>
+    <string name="rush_widget_next_in">Next challenge in</string>
+    <string name="rush_widget_danger">Streak in danger</string>
+    <string name="rush_widget_time_left">Time left</string>
+    <string name="rush_widget_play">Tap to play</string>
+</resources>

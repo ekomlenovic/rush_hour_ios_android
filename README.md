@@ -29,6 +29,8 @@ The game is **not on the App Store**. The `.ipa` file is published in the **[Git
 
 4. Remember to refresh the app in SideStore at least once every 7 days (Apple's limit for free accounts).
 
+> **Home screen widget** (streak and daily challenge): it is an app extension. With a free Apple account it uses one more App ID (Apple allows 10 a week). If SideStore offers to remove the app's extensions, keep them to get the widget.
+
 #### With SideStore + LiveContainer
 
 [LiveContainer](https://github.com/LiveContainer/LiveContainer) runs apps inside a single app installed by SideStore: handy if you have already reached SideStore's 3-app limit, and only LiveContainer needs refreshing.
@@ -37,6 +39,8 @@ The game is **not on the App Store**. The `.ipa` file is published in the **[Git
 2. Download `rush-hours-unsigned.ipa` from the [latest release](https://github.com/ekomlenovic/rush_hour_ios_android/releases/latest).
 3. In LiveContainer, tap **+** and pick the `.ipa` file.
 4. Launch Rush Hours from LiveContainer.
+
+> An app run inside LiveContainer has no home screen widget: install Rush Hours with SideStore to get it.
 
 > Your progress stays on your phone. To switch devices or installation methods, use **Options → Save → Export my progress**, then import it on the new install.
 
@@ -103,6 +107,8 @@ Le jeu **n'est pas sur l'App Store**. Le fichier `.ipa` est publié dans les **[
 
 4. Pense à rafraîchir l'app dans SideStore au moins une fois tous les 7 jours (limite d'Apple pour les comptes gratuits).
 
+> **Widget d'écran d'accueil** (streak et défi du jour) : c'est une extension de l'app. Avec un compte Apple gratuit, elle utilise un App ID de plus (Apple en permet 10 par semaine). Si SideStore propose de retirer les extensions de l'app, garde-les pour avoir le widget.
+
 #### Avec SideStore + LiveContainer
 
 [LiveContainer](https://github.com/LiveContainer/LiveContainer) fait tourner des apps à l'intérieur d'une seule app installée par SideStore : pratique si tu as déjà atteint la limite de 3 apps de SideStore, et seule LiveContainer est à rafraîchir.
@@ -111,6 +117,8 @@ Le jeu **n'est pas sur l'App Store**. Le fichier `.ipa` est publié dans les **[
 2. Télécharge `rush-hours-unsigned.ipa` depuis la [dernière release](https://github.com/ekomlenovic/rush_hour_ios_android/releases/latest).
 3. Dans LiveContainer, touche **+** et choisis le fichier `.ipa`.
 4. Lance Rush Hours depuis LiveContainer.
+
+> Une app lancée dans LiveContainer n'a pas de widget d'écran d'accueil : installe Rush Hours avec SideStore pour l'avoir.
 
 > Ta progression reste sur ton téléphone. Pour changer d'appareil ou de méthode d'installation, utilise **Options → Sauvegarde → Exporter ma progression**, puis importe-la sur la nouvelle installation.
 

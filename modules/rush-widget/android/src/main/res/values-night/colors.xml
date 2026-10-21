@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark theme of the app (theme/ui.ts, darkColors) -->
+<resources>
+    <color name="rush_widget_background">#1A1A2E</color>
+    <color name="rush_widget_text">#FFFFFF</color>
+    <color name="rush_widget_muted">#8E8EA0</color>
+    <color name="rush_widget_divider">#2D2D3A</color>
+    <color name="rush_widget_flame">#F59E0B</color>
+    <color name="rush_widget_frozen">#7DD3FC</color>
+    <color name="rush_widget_on_frozen">#0F0F1A</color>
+    <color name="rush_widget_success">#10B981</color>
+    <color name="rush_widget_danger">#EF4444</color>
+    <color name="rush_widget_star">#FFD700</color>
+    <color name="rush_widget_primary">#8B85FF</color>
+</resources>

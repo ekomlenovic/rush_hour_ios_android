@@ -1,0 +1,31 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Home screen widgets (issue 151): 2×2, and 4×2 with the countdown -->
+        <receiver
+            android:name="expo.modules.rushwidget.StreakWidgetProvider"
+            android:exported="false"
+            android:label="@string/rush_widget_small_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/rush_widget_small_info" />
+        </receiver>
+        <receiver
+            android:name="expo.modules.rushwidget.StreakWidgetWideProvider"
+            android:exported="false"
+            android:label="@string/rush_widget_medium_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/rush_widget_medium_info" />
+        </receiver>
+    </application>
+</manifest>

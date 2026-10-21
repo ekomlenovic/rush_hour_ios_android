@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AudioProvider } from '@/context/AudioProvider';
 import AchievementToast from '@/components/AchievementToast';
 import { useReminderSync } from '@/utils/notifications';
+import { useWidgetSync } from '@/hooks/useWidgetSync';
 import { useGameStore } from '@/store/gameStore';
 import { useMultiStore } from '@/store/multiStore';
 import i18n from '@/utils/i18n';
@@ -14,6 +15,7 @@ export default function RootLayout() {
   const { colors } = useTheme();
   useAppearanceSync();
   useReminderSync();
+  useWidgetSync();
   // Shared level links (rush-hours://game?data=…) are opened by Expo Router on the game screen (issue 118)
 
   // The save could not be read: the player must know their progress is not gone
