@@ -1,6 +1,6 @@
 # Rush Hours 2.0.2 (versionCode 14)
 
-Mise à jour de la **2.0.1 (versionCode 13)** : des niveaux difficiles moins bloquants, les événements Halloween et Noël, et des corrections.
+Mise à jour de la **2.0.1 (versionCode 13)** : une campagne de 734 niveaux, les récaps du mois et de l'année, un onglet Hebdo revu, de nouveaux styles, les événements Halloween et Noël, et beaucoup de corrections.
 
 ## Play Store (500 caractères max par langue)
 
@@ -9,39 +9,74 @@ Mise à jour de la **2.0.1 (versionCode 13)** : des niveaux difficiles moins blo
 ```
 <fr-FR>
 Nouveautés :
-• Halloween et Noël : réussis le défi du jour de l'événement pour gagner un plateau et un effet
-• Carte : les 2 niveaux après le prochain sont jouables
-• Niveaux boss annoncés sur la carte, avec 50 XP de plus
-• Nouvel effet « Feu vert », dès 3 niveaux réussis
-• Garage et succès : chaque nouveauté garde sa pastille jusqu'à ce que tu la touches
+• 734 niveaux, 8 nouvelles zones et de nouveaux succès
+• Halloween et Noël : gagne un plateau et un effet avec le défi du jour
+• Récap du mois et de l'année, à partager
+• Hebdo revu : classements des semaines et mois passés
+• Carte : 3 niveaux jouables d'avance, niveaux boss
+• Nouveaux styles, bouton « Niveau suivant »
 Corrections :
-• Le défi du jour change à minuit, même si l'app est restée ouverte
-• Multijoueur : le nouveau défi s'affiche dès sa sortie
+• Le défi du jour change à minuit, même app ouverte
+• Sauvegarde plus légère et plus sûre
+• Nombreuses corrections d'affichage
 </fr-FR>
 <en-US>
 New:
-• Halloween and Christmas: win the daily challenge during the event to get a board and a win effect
-• Map: the 2 levels after the next one are playable
-• Boss levels are shown on the map and give 50 extra XP
-• New "Green light" win effect, after 3 levels won
-• Garage and achievements: each new item keeps its badge until you tap it
+• 734 levels, 8 new zones and new achievements
+• Halloween and Christmas: win a board and an effect with the daily challenge
+• Monthly and yearly recap, to share
+• Weekly tab revamped: rankings of past weeks and months
+• Map: 3 levels playable ahead, boss levels
+• New styles, "Next level" button
 Fixes:
-• The daily challenge now updates at midnight, even if the app stayed open
-• Multiplayer: the new challenge shows up as soon as it's out
+• The daily challenge updates at midnight, even with the app open
+• Lighter, safer save
+• Many display fixes
 </en-US>
 ```
 
 ## Détail
 
-- **3 niveaux jouables d'avance** sur la carte : le prochain et les 2 suivants. La campagne a des sauts de difficulté (niveaux 46-48, 101, 286-308) ; un joueur bloqué continue et revient plus tard.
-- **Niveaux boss** : un niveau à 8 coups ou plus au-dessus de la médiane des 5 précédents (43 aujourd'hui). Badge sur la carte, « Niveau N · Boss » en titre, 50 XP de plus à la première victoire.
-- **Nouveautés à acquitter** : dans le Garage, chaque cosmétique débloqué garde sa mention « Nouveau » jusqu'à ce qu'on le touche (avant, une simple visite effaçait tout) ; chaque onglet et le lien de l'accueil comptent les nouveautés. Dans le profil, chaque succès débloqué a une pastille bleue jusqu'à ce qu'on le touche, sa catégorie s'ouvre et compte ses nouveautés, le bouton profil de l'accueil les compte aussi.
-- **Événements Halloween et Noël** : un défi du jour réussi du **25 au 31 octobre** débloque le plateau **Citrouilles** et l'effet de victoire **Chauves-souris** (une citrouille s'allume en bas de l'écran, une nuée de chauves-souris en sort et s'envole) ; du **19 au 25 décembre**, le plateau **Noël** et l'effet **Pluie de cadeaux** (des paquets tombent en tournoyant et rebondissent en bas, avec des étincelles). C'est gagné pour de bon, et l'événement revient chaque année pour ceux qui l'ont manqué. Pendant l'événement, la carte du défi du jour sur l'accueil annonce ce qu'il reste à débloquer. Une archive d'un jour de l'événement, jouée plus tard, ne compte pas.
-- **Effet de victoire « Feu vert »** : trois feux tricolores passent de l'orange au vert dès la victoire, avec des étincelles. Débloqué après 3 niveaux de la carte réussis, pour découvrir le Garage dès la première partie.
+### Contenu
 
-- L'accueil restait sur la veille si l'app était ouverte (ou en arrière-plan) au passage de minuit : défi du jour affiché comme gagné, missions et compte à rebours de la veille, défi hebdo de la semaine passée le lundi. L'accueil suit maintenant l'horloge (chaque minute et au retour au premier plan), et la série et les gels sont réglés au changement de jour comme à une ouverture de l'app.
-- Multijoueur : le défi du jour n'était rechargé qu'à l'ouverture de l'écran ou en tirant pour rafraîchir ; à la sortie du suivant, le compte à rebours restait sur « < 1 min ». Il est maintenant rechargé à l'heure de sortie (heure du serveur) et au retour au premier plan.
+- **Campagne de 734 niveaux** (309 avant) : niveaux 310 à 734 en deux lots, avec une courbe de difficulté par zone de 20 niveaux (respiration, rampe, boss en dernier). **8 nouveaux thèmes de zones** (bord de mer, ferme, jungle, volcan, lac, aéroport, fête foraine, base spatiale) ; les 16 premières zones gardent leurs thèmes.
+- **Nouveaux succès** : 700 niveaux, 250 et 500 victoires parfaites, 50 et 100 optimums en difficile, série « zone parfaite » (1, 10, 25 zones à 3 étoiles partout).
+- **3 niveaux jouables d'avance** sur la carte : le prochain et les 2 suivants. Un joueur bloqué continue et revient plus tard.
+- **Niveaux boss** : un niveau à 8 coups ou plus au-dessus de la médiane des 5 précédents. Badge sur la carte, « Niveau N · Boss » en titre, 50 XP de plus à la première victoire.
+- **Récap « Wrapped » mensuel et annuel** : cartes à faire défiler (niveaux, temps, défis, exploits, succès et styles, comparaison avec la période d'avant), annoncé sur l'accueil en début de mois et à la fin de l'année, récaps passés dans Profil → Mes récaps. Partage en image 9:16 dessinée sur le téléphone ou en texte.
+- **Événements Halloween et Noël** : un défi du jour réussi du **25 au 31 octobre** débloque le plateau **Citrouilles** et l'effet de victoire **Chauves-souris** ; du **19 au 25 décembre**, le plateau **Noël** et l'effet **Pluie de cadeaux**. C'est gagné pour de bon, et l'événement revient chaque année. Une archive d'un jour de l'événement, jouée plus tard, ne compte pas.
+- **Nouveaux styles** : effet « Feu vert » (dès 3 niveaux réussis) ; skin « Goélette amirale », palette « Flotte de 1800 » et effet « Bordée » (30 défis hebdo) ; un style secret à trouver. Toutes les voitures cibles du Garage sont dessinées en pseudo-3D.
+- **Multijoueur, onglet Hebdo** : une carte par classement, semaine / mois / dates choisies (et depuis toujours pour les duels), périodes passées navigables jusqu'à 3 ans, médailles et « Ta place » sur une période terminée, semaine des défis jour par jour, bandeau « Semaine dernière terminée ».
+
+### Confort
+
+- Écran de victoire : bouton **« Niveau suivant »**, « Parfait ! » au minimum de coups, styles débloqués annoncés et équipables sur place, XP plus claire.
+- Garage et succès : chaque nouveauté garde sa pastille jusqu'à ce qu'on la touche ; le détail d'un succès s'ouvre dans un panneau en bas de l'écran.
+- En-tête commun pour Profil, Récaps, Progression, Garage et Mes niveaux.
+- Carte : confirmation avant une génération Expert ou Maître et avant de supprimer des niveaux générés, durée de génération en minutes et heures, « Fin de la carte » après le dernier niveau.
+
+### Corrections
+
+- L'accueil restait sur la veille si l'app était ouverte au passage de minuit (défi, missions, défi hebdo). Il suit maintenant l'horloge.
+- Multijoueur : le défi suivant est chargé dès sa sortie ; une victoire non reçue par le serveur est renvoyée au lieu d'être perdue ; le jeton et le code de récupération sont rangés dans le stockage sécurisé du téléphone.
+- Sauvegarde : écritures regroupées, carte infinie et archives dans leur propre entrée, piles d'annulation compactes (150 coups pour les 10 dernières parties), pour rester sous la limite d'Android. Import plus tolérant (parties ou statistiques mal formées, un jour d'avance pour un autre fuseau).
+- Un lien ne peut plus ouvrir le défi du jour d'une autre date ; les niveaux générés sont numérotés sans trou.
+- Solveur 5 à 8× plus rapide, hors du thread d'affichage, borné pour les niveaux reçus par lien (un lien forgé figeait l'app).
+- Deux véhicules glissés en même temps ne se chevauchent plus ; boutons qui débordaient, indice périmé, retour.
+- Tutoriel : « Passer » ne fait plus tourner en rond un nouveau joueur ; « Jouer » mène au prochain niveau une fois le dernier réussi.
+- Créateur : skins et palettes équipés, pivot de la voiture cible, taille de grille, « Annuler » en quittant.
 
 ## Données des joueurs
 
-Le calcul de l'XP change (bonus des boss) : `STORE_VERSION` passe à **9**, l'étape v9 de `migrateState` crédite 50 XP par boss déjà gagné. Rien n'est retiré, `maxUnlockedLevel` garde son sens, les anciennes sauvegardes s'importent toujours (le plafond d'XP de l'import compte le bonus). `STORE_VERSION` passe ensuite à **10** : nouveau champ `seenAchievements`, rempli par l'étape v10 avec les succès déjà débloqués (pas de pastille sur des dizaines de succès anciens). Le nouvel effet est un identifiant de cosmétique ajouté, débloqué à partir de la progression : pas de migration pour lui. Même chose pour les cosmétiques d'Halloween et de Noël (`board:pumpkin`, `effect:bats`, `board:christmas`, `effect:gifts`) : ils sont calculés à partir des dates des défis du jour déjà réussis (`dailyChallengeProgress`), rien de nouveau n'est sauvegardé.
+Toutes les étapes convertissent, aucune ne retire de progression ; les anciennes sauvegardes s'importent toujours (`__tests__/saveTransfer.test.ts`).
+
+- `STORE_VERSION` **6 → 12** (`store/migrations.ts`) :
+  - **v7** : les victoires de défis d'un jour ou d'une semaine à venir (ouverts par un lien) sortent des défis, leur XP reste, la série est recalculée sur les vrais jours.
+  - **v8** : les niveaux générés sont renumérotés sans trou juste après le pack.
+  - **v9** : 50 XP crédités par boss déjà gagné.
+  - **v10** : `seenAchievements` rempli avec les succès déjà débloqués (pas de pastille sur les anciens).
+  - **v11** : seules les 10 dernières parties en cours gardent leur pile d'annulation, en forme compacte ; les autres gardent leur partie.
+  - **v12** : compteurs des récaps (`monthlyStats`, `yearlyStats`) reconstruits à partir des défis datés.
+- Store multijoueur `version` **1 → 2** : jeton et code de récupération déplacés dans SecureStore à la première écriture.
+- Serveur : nouvelle étape de `server/src/db.ts` (`challenges.variant_of`, `challenges.generation_ms`, nullables).
+- Nouveaux identifiants de cosmétiques et de succès seulement ajoutés ; leurs règles de déblocage sont calculées à partir de la progression existante (pas de migration). Nouveau champ `stats.secretCodes`, avec sa valeur par défaut fusionnée au chargement et à l'import.
