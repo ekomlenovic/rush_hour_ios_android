@@ -467,6 +467,7 @@ export default function MultiplayerScreen() {
         isDark={isDark}
         onSelect={(url) => { setActive(url); setPickerVisible(false); }}
         onAdd={() => { setPickerVisible(false); router.push('/multi/join'); }}
+        onCreate={() => { setPickerVisible(false); router.push('/multi/create'); }}
         onClose={() => setPickerVisible(false)}
       />
       {api && (
