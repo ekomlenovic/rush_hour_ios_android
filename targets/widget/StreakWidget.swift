@@ -17,8 +17,10 @@ struct StreakEntry: TimelineEntry {
   let extra: WidgetExtra
   /// Next local midnight: the next daily challenge
   let midnight: Date
+  /// Shown instead of the streak when the app has written nothing the widget can read
+  let message: String?
 
-  init(date: Date, data: WidgetData) {
+  init(date: Date, data: WidgetData, message: String? = nil) {
     let day = data.day(for: localDateKey(date))
     let hour = widgetCalendar.component(.hour, from: date)
     let startOfDay = widgetCalendar.startOfDay(for: date)
@@ -27,6 +29,7 @@ struct StreakEntry: TimelineEntry {
     self.day = day
     self.extra = day.done ? .next : (day.danger && hour >= data.dangerHour ? .danger : .play)
     self.midnight = widgetCalendar.date(byAdding: .day, value: 1, to: startOfDay) ?? startOfDay.addingTimeInterval(86_400)
+    self.message = message
   }
 }
 
@@ -44,12 +47,15 @@ struct StreakProvider: TimelineProvider {
   }
 
   func getSnapshot(in context: Context, completion: @escaping (StreakEntry) -> Void) {
-    completion(StreakEntry(date: Date(), data: WidgetData.load() ?? (context.isPreview ? WidgetData.preview : WidgetData.empty)))
+    completion(entry(at: Date(), preview: context.isPreview))
   }
 
   func getTimeline(in context: Context, completion: @escaping (Timeline<StreakEntry>) -> Void) {
-    let data = WidgetData.load() ?? WidgetData.empty
     let now = Date()
+    // Nothing to show yet: the app redraws the widget as soon as it writes
+    guard let data = WidgetData.load() else {
+      return completion(Timeline(entries: [entry(at: now, preview: false)], policy: .never))
+    }
     var dates = [now]
     var day = widgetCalendar.startOfDay(for: now)
     for _ in 0..<daysAhead {
@@ -61,6 +67,14 @@ struct StreakProvider: TimelineProvider {
       day = next
     }
     completion(Timeline(entries: dates.map { StreakEntry(date: $0, data: data) }, policy: .atEnd))
+  }
+
+  /// The app's data, or why there is none (never a streak at 0 that would be wrong); a sample in the gallery
+  private func entry(at date: Date, preview: Bool) -> StreakEntry {
+    if let data = WidgetData.load() { return StreakEntry(date: date, data: data) }
+    if preview { return StreakEntry(date: date, data: WidgetData.preview) }
+    let message = RushAppGroup.identifier == nil ? WidgetStrings.noAccess : WidgetStrings.openApp
+    return StreakEntry(date: date, data: WidgetData.preview, message: message)
   }
 }
 
@@ -200,13 +214,33 @@ struct ExtraColumn: View {
   }
 }
 
+/// No streak to show yet: says why rather than showing a streak at 0
+struct MessageView: View {
+  let message: String
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Image(systemName: "flame.fill")
+        .font(.system(size: 22, weight: .semibold))
+        .foregroundStyle(Color("rushMuted"))
+      Text(message)
+        .font(.footnote)
+        .foregroundStyle(Color("rushText"))
+        .minimumScaleFactor(0.8)
+      Spacer(minLength: 0)
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+  }
+}
+
 struct StreakWidgetView: View {
   @Environment(\.widgetFamily) private var family
   let entry: StreakEntry
 
   /// Read in one go by VoiceOver
   private var label: String {
-    family == .systemMedium && entry.extra == .danger ? "\(entry.day.label). \(entry.data.texts.danger)" : entry.day.label
+    if let message = entry.message { return message }
+    return family == .systemMedium && entry.extra == .danger ? "\(entry.day.label). \(entry.data.texts.danger)" : entry.day.label
   }
 
   var body: some View {
@@ -220,7 +254,9 @@ struct StreakWidgetView: View {
 
   @ViewBuilder
   private var content: some View {
-    if family == .systemMedium {
+    if let message = entry.message {
+      MessageView(message: message)
+    } else if family == .systemMedium {
       HStack(spacing: 12) {
         StreakColumn(entry: entry)
         Divider()

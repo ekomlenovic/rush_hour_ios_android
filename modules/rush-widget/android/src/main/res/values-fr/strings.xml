@@ -8,11 +8,7 @@
     <string name="rush_widget_todo">À faire</string>
     <string name="rush_widget_done">Fait</string>
     <string name="rush_widget_unit">jours de streak</string>
-    <plurals name="rush_widget_days">
-        <item quantity="one">jour de streak</item>
-        <item quantity="other">jours de streak</item>
-    </plurals>
-    <string name="rush_widget_empty_label">Streak de 0 jour, défi du jour à faire</string>
+    <string name="rush_widget_open_app">Ouvre Rush Hours pour afficher ton streak.</string>
     <string name="rush_widget_next_in">Prochain défi dans</string>
     <string name="rush_widget_danger">Streak en danger</string>
     <string name="rush_widget_time_left">Il te reste</string>
