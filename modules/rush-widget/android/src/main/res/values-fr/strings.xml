@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rush_widget_small_name">Streak et défi du jour</string>
+    <string name="rush_widget_small_description">Ton streak, tes gels et le défi du jour</string>
+    <string name="rush_widget_medium_name">Streak et compte à rebours</string>
+    <string name="rush_widget_medium_description">Ton streak, tes gels, le défi du jour et le temps avant le prochain</string>
+    <string name="rush_widget_daily">Défi du jour</string>
+    <string name="rush_widget_todo">À faire</string>
+    <string name="rush_widget_done">Fait</string>
+    <string name="rush_widget_unit">jours de streak</string>
+    <string name="rush_widget_open_app">Ouvre Rush Hours pour afficher ton streak.</string>
+    <string name="rush_widget_next_in">Prochain défi dans</string>
+    <string name="rush_widget_danger">Streak en danger</string>
+    <string name="rush_widget_time_left">Il te reste</string>
+    <string name="rush_widget_play">Touche pour jouer</string>
+</resources>

@@ -47,6 +47,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@bacons/apple-targets": "^5.0.0",
     "@react-native/jest-preset": "^0.86.3",
     "@types/jest": "^29.5.14",
     "@types/node": "^26.6.4",
@@ -67,5 +68,12 @@
     "modulePathIgnorePatterns": [
       "<rootDir>/server/"
     ]
+  },
+  "expo": {
+    "autolinking": {
+      "exclude": [
+        "@bacons/apple-targets"
+      ]
+    }
   }
 }

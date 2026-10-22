@@ -597,6 +597,24 @@
     "recap_month_body": "Découvre tes chiffres du mois ({{month}}) et partage-les !",
     "recap_year_body": "Ton année {{year}} sur Rush Hours t'attend : découvre-la et partage-la !"
   },
+  "widget": {
+    "daily": "Défi du jour",
+    "todo": "À faire",
+    "done": "Fait",
+    "streak_days_one": "jour de streak",
+    "streak_days_other": "jours de streak",
+    "next_in": "Prochain défi dans",
+    "danger": "Streak en danger",
+    "time_left": "Il te reste",
+    "play": "Touche pour jouer",
+    "a11y_streak_one": "Streak de {{count}} jour",
+    "a11y_streak_other": "Streak de {{count}} jours",
+    "a11y_freezes_one": "{{count}} gel",
+    "a11y_freezes_other": "{{count}} gels",
+    "a11y_todo": "défi du jour à faire",
+    "a11y_done_one": "défi du jour fait, {{count}} étoile",
+    "a11y_done_other": "défi du jour fait, {{count}} étoiles"
+  },
   "a11y": {
     "target_car": "Voiture rouge, celle à faire sortir",
     "car": "Voiture {{letter}} ({{color}})",

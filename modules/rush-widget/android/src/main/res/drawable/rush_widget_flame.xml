@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ionicons "flame" (MIT), as in the app: generated from the font of @expo/vector-icons -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <path
+        android:fillColor="@color/rush_widget_flame"
+        android:pathData="M201 34Q212 28 242 38Q286 52 326 93Q396 162 412 267Q420 317 413 351Q401 410 353 447Q296 491 225 477Q172 466 136.5 425.5Q101 385 97 332Q94 305 104 276Q113 249 145 199Q158 179 165 168Q203 106 194 58Q191 46 193.5 41Q196 36 201 34ZM251 268Q251 268 251 268Q245 264 241 268Q239 270 236 279Q233 288 225 306Q208 343 208 368Q208 403 225 419Q237 432 256 432Q291 432 301 394Q303 385 303 370Q303 355 301 346Q295 322 280 299Q265 277 251 268Z" />
+</vector>

@@ -597,6 +597,24 @@
     "recap_month_body": "See your numbers of the month ({{month}}) and share them!",
     "recap_year_body": "Your {{year}} on Rush Hours is waiting: see it and share it!"
   },
+  "widget": {
+    "daily": "Daily challenge",
+    "todo": "To do",
+    "done": "Done",
+    "streak_days_one": "day streak",
+    "streak_days_other": "day streak",
+    "next_in": "Next challenge in",
+    "danger": "Streak in danger",
+    "time_left": "Time left",
+    "play": "Tap to play",
+    "a11y_streak_one": "{{count}}-day streak",
+    "a11y_streak_other": "{{count}}-day streak",
+    "a11y_freezes_one": "{{count}} freeze",
+    "a11y_freezes_other": "{{count}} freezes",
+    "a11y_todo": "daily challenge to do",
+    "a11y_done_one": "daily challenge done, {{count}} star",
+    "a11y_done_other": "daily challenge done, {{count}} stars"
+  },
   "a11y": {
     "target_car": "Red car, the one to get out",
     "car": "Car {{letter}} ({{color}})",
