@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A freeze in stock, as in the profile (StreakCard) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/rush_widget_frozen" />
+    <corners android:radius="5dp" />
+</shape>

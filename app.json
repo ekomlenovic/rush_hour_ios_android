@@ -9,7 +9,12 @@
     "scheme": "rush-hours",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.rushhours.app"
+      "bundleIdentifier": "com.rushhours.app",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.rushhours.app"
+        ]
+      }
     },
     "android": {
       "package": "com.rushhours.app",
@@ -48,6 +53,7 @@
           "faceIDPermission": false
         }
       ],
+      "@bacons/apple-targets",
       "./plugins/withoutPushEntitlement",
       [
         "expo-notifications",
