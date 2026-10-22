@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   The widget shows the texts written by the app, in its language (locales/*.json, widget.*).
-  These are for the widget picker and until the app has been opened once.
+  These are for the widget picker and while the app has written nothing.
 -->
 <resources>
     <string name="rush_widget_small_name">Streak and daily challenge</string>
@@ -12,11 +12,7 @@
     <string name="rush_widget_todo">To do</string>
     <string name="rush_widget_done">Done</string>
     <string name="rush_widget_unit">day streak</string>
-    <plurals name="rush_widget_days">
-        <item quantity="one">day streak</item>
-        <item quantity="other">day streak</item>
-    </plurals>
-    <string name="rush_widget_empty_label">0-day streak, daily challenge to do</string>
+    <string name="rush_widget_open_app">Open Rush Hours to show your streak.</string>
     <string name="rush_widget_next_in">Next challenge in</string>
     <string name="rush_widget_danger">Streak in danger</string>
     <string name="rush_widget_time_left">Time left</string>

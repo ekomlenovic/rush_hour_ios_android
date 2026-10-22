@@ -1,10 +1,12 @@
+import fs from 'fs';
+import path from 'path';
 import i18next, { TFunction } from 'i18next';
 import fr from '../locales/fr.json';
 import en from '../locales/en.json';
 import { useGameStore } from '../store/gameStore';
 import { addDays, getLocalDateString } from '../utils/date';
 import { todayDailyHref } from '../utils/challengeDates';
-import { buildWidgetData, widgetDayFor, widgetExtra, widgetInput, WIDGET_DAILY_LINK } from '../utils/widget';
+import { buildWidgetData, widgetDayFor, widgetExtra, widgetInput, WIDGET_DAILY_LINK, WIDGET_DATA_VERSION } from '../utils/widget';
 import { resetStore, setToday, winDaily } from './helpers';
 
 // Level-up rewards also give freezes: kept out of the comparison with the app open
@@ -196,5 +198,27 @@ describe('home screen widget (rules in docs/GAME_DESIGN.md, issue 151)', () => {
       timeLeft: 'Time left',
       play: 'Tap to play',
     });
+  });
+});
+
+// The widgets are native: what they share with the app is checked here, they cannot be run in the tests
+describe('native widgets', () => {
+  const read = (file: string) => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+  const ANDROID = 'modules/rush-widget/android/src/main/java/expo/modules/rushwidget';
+
+  it('read the data format and the key the app writes', () => {
+    expect(read('targets/widget/WidgetData.swift')).toContain(`static let currentVersion = ${WIDGET_DATA_VERSION}`);
+    expect(read(`${ANDROID}/WidgetData.kt`)).toContain(`private const val VERSION = ${WIDGET_DATA_VERSION}`);
+    expect(read('targets/widget/WidgetData.swift')).toContain('static let dataKey = "widgetData"');
+    expect(read('modules/rush-widget/ios/RushWidgetModule.swift')).toContain('static let dataKey = "widgetData"');
+  });
+
+  it('use the same app group in the app and in the iOS widget (SideStore renames it)', () => {
+    expect(read('targets/widget/RushAppGroup.swift')).toBe(read('modules/rush-widget/ios/RushAppGroup.swift'));
+  });
+
+  it('open the same dateless link when the app has written nothing', () => {
+    expect(read(`${ANDROID}/StreakWidgets.kt`)).toContain(`DAILY_LINK = "${WIDGET_DAILY_LINK}"`);
+    expect(read('targets/widget/WidgetData.swift')).toContain(`link: "${WIDGET_DAILY_LINK}"`);
   });
 });

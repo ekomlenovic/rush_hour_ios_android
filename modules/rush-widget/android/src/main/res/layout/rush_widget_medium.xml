@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/rush_widget_background"
     android:clipToOutline="true"
-    android:contentDescription="@string/rush_widget_empty_label"
+    android:contentDescription="@string/rush_widget_open_app"
     android:orientation="horizontal"
     android:padding="14dp">
 

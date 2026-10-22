@@ -38,9 +38,6 @@ class WidgetData(
   companion object {
     /** WIDGET_DATA_VERSION: data in another format is ignored until the app writes it again */
     private const val VERSION = 1
-    private const val DAILY_LINK = "rush-hours://game?levelId=daily"
-    private const val BASE_FREEZE_SLOTS = 2
-    private const val DEFAULT_DANGER_HOUR = 21
 
     fun parse(json: String?): WidgetData? {
       if (json == null) return null
@@ -78,34 +75,6 @@ class WidgetData(
       } catch (e: JSONException) {
         null
       }
-    }
-
-    /** Until the app has been opened once: no streak yet, in the phone's language */
-    fun empty(context: Context): WidgetData {
-      val res = context.resources
-      return WidgetData(
-        capacity = BASE_FREEZE_SLOTS,
-        dangerHour = DEFAULT_DANGER_HOUR,
-        link = DAILY_LINK,
-        daily = res.getString(R.string.rush_widget_daily),
-        nextIn = res.getString(R.string.rush_widget_next_in),
-        danger = res.getString(R.string.rush_widget_danger),
-        timeLeft = res.getString(R.string.rush_widget_time_left),
-        play = res.getString(R.string.rush_widget_play),
-        days = listOf(
-          WidgetDay(
-            date = localDateKey(Calendar.getInstance()),
-            streak = 0,
-            freezes = 0,
-            done = false,
-            stars = 0,
-            unit = res.getQuantityString(R.plurals.rush_widget_days, 0),
-            status = res.getString(R.string.rush_widget_todo),
-            label = res.getString(R.string.rush_widget_empty_label),
-            danger = false,
-          ),
-        ),
-      )
     }
   }
 }

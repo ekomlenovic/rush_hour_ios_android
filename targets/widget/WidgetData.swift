@@ -32,19 +32,12 @@ struct WidgetData: Codable {
 
   /// WIDGET_DATA_VERSION: data in another format is ignored until the app writes it again
   static let currentVersion = 1
-  /// Same key and app group as the app (modules/rush-widget/ios/RushWidgetModule.swift)
+  /// Same key as the app (modules/rush-widget/ios/RushWidgetModule.swift)
   static let dataKey = "widgetData"
-  static let defaultAppGroup = "group.com.rushhours.app"
 
-  /// SideStore registers the app group under the player's team ("group.com.rushhours.app.TEAMID")
-  /// and writes the real identifier in the Info.plist (ALTAppGroups)
-  static let appGroup: String = {
-    let groups = Bundle.main.object(forInfoDictionaryKey: "ALTAppGroups") as? [String] ?? []
-    return groups.first { $0.hasPrefix(defaultAppGroup) } ?? defaultAppGroup
-  }()
-
+  /// What the app wrote last, in the app group (RushAppGroup.swift)
   static func load() -> WidgetData? {
-    guard let json = UserDefaults(suiteName: appGroup)?.string(forKey: dataKey),
+    guard let json = RushAppGroup.defaults?.string(forKey: dataKey),
           let data = try? JSONDecoder().decode(WidgetData.self, from: Data(json.utf8)),
           data.version == currentVersion,
           !data.days.isEmpty
@@ -56,11 +49,6 @@ struct WidgetData: Codable {
   func day(for dateKey: String) -> WidgetDay {
     if let day = days.first(where: { $0.date == dateKey }) { return day }
     return dateKey > days[days.count - 1].date ? days[days.count - 1] : days[0]
-  }
-
-  /// Until the app has been opened once: no streak yet, in the phone's language
-  static var empty: WidgetData {
-    sample(streak: 0, freezes: 0, capacity: 2, unit: WidgetStrings.unitOne, label: WidgetStrings.emptyLabel)
   }
 
   /// The widget gallery's preview
@@ -111,7 +99,7 @@ func localDateKey(_ date: Date) -> String {
   return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
 }
 
-/// The app writes its texts in its own language; these are for the gallery and until it has been opened
+/// The app writes its texts in its own language; these are for the gallery and while it has written nothing
 enum WidgetStrings {
   static let french = Locale.preferredLanguages.first?.hasPrefix("fr") ?? false
 
@@ -122,11 +110,15 @@ enum WidgetStrings {
   static let daily = french ? "Défi du jour" : "Daily challenge"
   static let todo = french ? "À faire" : "To do"
   static let unit = french ? "jours de streak" : "day streak"
-  static let unitOne = french ? "jour de streak" : "day streak"
   static let nextIn = french ? "Prochain défi dans" : "Next challenge in"
   static let danger = french ? "Streak en danger" : "Streak in danger"
   static let timeLeft = french ? "Il te reste" : "Time left"
   static let play = french ? "Touche pour jouer" : "Tap to play"
-  static let emptyLabel = french ? "Streak de 0 jour, défi du jour à faire" : "0-day streak, daily challenge to do"
+  /// Nothing written yet: an update not opened yet, never a streak at 0 that would be wrong
+  static let openApp = french ? "Ouvre Rush Hours pour afficher ton streak." : "Open Rush Hours to show your streak."
+  /// No app group: this install cannot share the app's data with the widget
+  static let noAccess = french
+    ? "Le widget ne peut pas lire les données de Rush Hours sur cette installation."
+    : "The widget cannot read Rush Hours' data on this install."
   static let previewLabel = french ? "Streak de 7 jours, 2 gels, défi du jour à faire" : "7-day streak, 2 freezes, daily challenge to do"
 }
