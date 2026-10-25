@@ -11,9 +11,13 @@ export function parseLocalDateString(dateKey: string): Date {
   return new Date(year, month - 1, day);
 }
 
-/** Days since 1970 for a YYYY-MM-DD key; rounding absorbs daylight saving shifts. */
+/**
+ * Days since 1970 for a YYYY-MM-DD key, from the calendar alone: never shifted by the time zone
+ * (Auckland's local midnight falls exactly half a day off UTC in winter, rounding it broke the streak: issue 153).
+ */
 export function getDayNumber(dateKey: string): number {
-  return Math.round(parseLocalDateString(dateKey).getTime() / 86400000);
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return Date.UTC(year, month - 1, day) / 86400000;
 }
 
 /** YYYY-MM-DD key shifted by a number of days. */
