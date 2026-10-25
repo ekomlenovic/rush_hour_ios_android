@@ -231,6 +231,23 @@ describe('a daily left open past midnight', () => {
   });
 });
 
+describe('around Auckland’s daylight saving changes (#153)', () => {
+  it.each([
+    ['falls back', '2027-04-01'],
+    ['springs forward', '2027-09-23'],
+  ])('continues when it %s, without using a freeze', (_, start) => {
+    winDays(start, 4);
+    useGameStore.setState({ streakFreezes: 2 });
+    const next = addDays(start, 4);
+    setToday(next);
+    expect(state().recordAppOpen()).toMatchObject({ frozenDays: 0, lostStreak: 0 });
+    state().completeDailyChallenge(next, 300, 3);
+    expect(state().currentStreak).toBe(5);
+    expect(state().streakFreezes).toBe(2);
+    expect(state().frozenDates).toEqual([]);
+  });
+});
+
 describe('a daily left open past midnight, around a daylight saving change', () => {
   // The same dates in every zone of the CI (npm run test:tz): a change in one zone, a plain day in the others
   const changes = [
@@ -241,15 +258,13 @@ describe('a daily left open past midnight, around a daylight saving change', () 
     '2027-03-28', // Paris springs forward
     '2027-04-04', // Auckland falls back
   ];
-  // Not Auckland's own change days: getDayNumber (utils/date.ts) rounds their midnight off, daysBetween is one day off across them
-  const changeDays = changes.filter(day => day !== '2026-09-27' && day !== '2027-04-04');
   // The home records the new day at midnight, a minute later, or back from the background in the morning
   const homeTimes = ['00:00', '00:01', '08:00'];
   const cases = [
     // Open the night before the change: midnight, then the change
     ...changes.map(change => [addDays(change, -1), change]),
     // Open on the day of the change itself (23 h or 25 h long)
-    ...changeDays.map(change => [change, addDays(change, 1)]),
+    ...changes.map(change => [change, addDays(change, 1)]),
   ].flatMap(([open, next]) => homeTimes.map(time => ({ open, next, time })));
 
   /** Freezes the clock at a local time ('HH:MM') of a YYYY-MM-DD day */
