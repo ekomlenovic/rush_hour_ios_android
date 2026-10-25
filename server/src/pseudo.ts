@@ -6,7 +6,7 @@ export const PSEUDO_MAX = 20;
  * filler): they are letters by Unicode category, so they pass the shape
  * filter but render as blank.
  */
-const FILLER = /[\u115f\u1160\u3164\ufafa]/u;
+const FILLER = /[\u115f\u1160\u3164\uffa0]/u;
 
 /**
  * A valid nickname, cleaned up, or null: letters (any alphabet), digits,
