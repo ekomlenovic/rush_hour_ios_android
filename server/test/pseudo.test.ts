@@ -10,6 +10,10 @@ describe('cleanPseudo', () => {
     expect(cleanPseudo(FILLER + FILLER)).toBe(null);
   });
 
+  it('refuses a nickname made only of halfwidth Hangul fillers', () => {
+    expect(cleanPseudo('\uffa0\uffa0')).toBe(null);
+  });
+
   it('refuses a nickname made only of combining marks', () => {
     expect(cleanPseudo(COMBINING + COMBINING + COMBINING)).toBe(null);
   });
