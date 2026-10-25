@@ -6,7 +6,7 @@ import { getSetting, setSetting, type Database } from './db';
 import { Challenges, type ChallengeRow } from './challenges';
 import type { PuzzleGenerator } from './generation';
 import { applyMoves, type MoveRecord } from './core';
-import { cleanPseudo, pseudoKey, PSEUDO_MAX } from './pseudo';
+import { cleanPseudo, lookAlikeKey, pseudoKey, PSEUDO_MAX } from './pseudo';
 import { rankDay, rankPeriod, type GameResult, type GameStatus, type Verdict } from './leaderboard';
 import { analyzeGame, type Flag } from './cheat';
 import { loadSettings, resetSettings, SettingsError, updateSettings } from './settings';
@@ -153,6 +153,18 @@ export function buildApp(deps: AppDeps) {
 
   const isPseudoTaken = (pseudo: string, exceptId = 0) =>
     !!db.prepare('SELECT 1 FROM players WHERE pseudo_key = ? AND id != ?').get(pseudoKey(pseudo), exceptId);
+
+  /**
+   * True if another player's nickname is a look-alike of this one (same after
+   * case, accents and confusables are folded: 'Lе́o' looks like 'Léo'). The
+   * player list of an invitation server is short, so comparing in JavaScript
+   * is enough and needs no schema change.
+   */
+  const isLookAlikeTaken = (pseudo: string, exceptId = 0) => {
+    const key = lookAlikeKey(pseudo);
+    const rows = db.prepare('SELECT id, pseudo FROM players WHERE id != ?').all(exceptId) as { id: number; pseudo: string }[];
+    return rows.some(r => lookAlikeKey(r.pseudo) === key);
+  };
 
   const publicPlayer = (p: Player) => ({ id: p.id, pseudo: p.pseudo, createdAt: p.created_at, isAdmin: !!p.is_admin });
 
@@ -312,6 +324,7 @@ export function buildApp(deps: AppDeps) {
       if (!secretEquals(request.body.inviteCode.trim(), inviteCode(db, config).code)) throw new ApiError(403, 'invalid_invite');
       const pseudo = pseudoOrThrow(request.body.pseudo);
       if (isPseudoTaken(pseudo)) throw new ApiError(409, 'pseudo_taken');
+      if (isLookAlikeTaken(pseudo)) throw new ApiError(409, 'pseudo_taken');
       const token = newToken();
       const recoveryCode = newRecoveryCode();
       const result = db.prepare('INSERT INTO players (pseudo, pseudo_key, token_hash, recovery_hash, created_at) VALUES (?, ?, ?, ?, ?)')
@@ -348,6 +361,7 @@ export function buildApp(deps: AppDeps) {
       }, async (request) => {
         const pseudo = pseudoOrThrow(request.body.pseudo);
         if (isPseudoTaken(pseudo, request.player.id)) throw new ApiError(409, 'pseudo_taken');
+        if (isLookAlikeTaken(pseudo, request.player.id)) throw new ApiError(409, 'pseudo_taken');
         db.prepare('UPDATE players SET pseudo = ?, pseudo_key = ? WHERE id = ?').run(pseudo, pseudoKey(pseudo), request.player.id);
         return publicPlayer({ ...request.player, pseudo });
       });
@@ -664,6 +678,7 @@ export function buildApp(deps: AppDeps) {
           if (request.body.pseudo !== undefined) {
             const pseudo = pseudoOrThrow(request.body.pseudo);
             if (isPseudoTaken(pseudo, target.id)) throw new ApiError(409, 'pseudo_taken');
+            if (isLookAlikeTaken(pseudo, target.id)) throw new ApiError(409, 'pseudo_taken');
             db.prepare('UPDATE players SET pseudo = ?, pseudo_key = ? WHERE id = ?').run(pseudo, pseudoKey(pseudo), target.id);
           }
           if (request.body.banned !== undefined) {
