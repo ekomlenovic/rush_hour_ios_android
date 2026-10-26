@@ -228,6 +228,13 @@ Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dan
 | L'écran de victoire liste les styles que la victoire vient de débloquer (« Nouveau dans le Garage », vignette, nom, onglet) avec un bouton secondaire **« Équiper »** : le style est sélectionné sur place (un effet de victoire se joue aussitôt) et n'est plus « Nouveau ». Un lien « Voir au Garage » y mène ; depuis un niveau de la carte, le retour du Garage ramène à la carte, depuis un défi à son écran | `newlyUnlockedCosmetics` (`data/cosmetics.ts`), `WinModal`, `handleOpenGarage` (`app/game.tsx`) |
 | Chaque nouveauté garde sa mention verte **« Nouveau »** dans le Garage jusqu'à ce qu'on la **touche** (ce qui la sélectionne) ; chaque onglet compte les siennes, le lien Garage de l'accueil compte le total. Quitter le Garage n'acquitte rien | `seenCosmetics`, `markCosmeticsSeen` (`app/garage.tsx`) |
 
+## Musique
+
+| Règle | Implémentation |
+|---|---|
+| La musique du jeu (activée par défaut, coupable dans les options) **se mélange** à l'audio du joueur : elle n'interrompt **jamais** sa musique ni son podcast, ni à l'ouverture ni au retour dans l'app (#189). La session audio est réglée **avant** la première lecture : catégorie `ambient` sur iOS, aucune demande de focus audio sur Android | `MUSIC_AUDIO_MODE` (`interruptionMode: 'mixWithOthers'`), `setAudioModeAsync` (`context/AudioProvider.tsx`) |
+| Elle se tait comme le téléphone : **muette en mode silencieux** (bouton silencieux sur iOS, mode silencieux ou vibreur sur Android), en pause en arrière-plan, et reprend au retour au premier plan | `playsInSilentMode: false`, `shouldPlayInBackground: false` |
+
 ## Sauvegarde (export / import)
 
 Pour changer de téléphone sans perdre sa progression, **sans serveur ni compte** (marche aussi pour les builds SideStore et APK).

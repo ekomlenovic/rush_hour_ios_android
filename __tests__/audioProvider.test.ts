@@ -2,6 +2,7 @@ import React from 'react';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { AppState } from 'react-native';
 import { useGameStore } from '../store/gameStore';
+import { setAudioModeAsync } from 'expo-audio';
 import { AudioProvider } from '../context/AudioProvider';
 
 // A player that counts every access to its native properties (on Android each getter blocks
@@ -9,7 +10,12 @@ import { AudioProvider } from '../context/AudioProvider';
 const mockCalls: Record<string, number> = {};
 const mockBump = (k: string) => { mockCalls[k] = (mockCalls[k] || 0) + 1; };
 let mockPlayer: any;
+let mockAudioMode: { resolve: () => void; reject: (e: Error) => void } | null = null;
 jest.mock('expo-audio', () => ({
+  setAudioModeAsync: jest.fn(() => {
+    mockBump('setAudioModeAsync()');
+    return new Promise<void>((resolve, reject) => { mockAudioMode = { resolve, reject }; });
+  }),
   useAudioPlayer: () => {
     if (mockPlayer) return mockPlayer;
     const listeners = new Set<(status: any) => void>();
@@ -47,6 +53,8 @@ let renderer: ReactTestRenderer | null = null;
 beforeEach(() => {
   jest.useFakeTimers();
   mockPlayer = undefined;
+  mockAudioMode = null;
+  (setAudioModeAsync as jest.Mock).mockClear();
   reset();
   (AppState as any).currentState = 'active';
 });
@@ -58,14 +66,51 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-function mount(musicEnabled: boolean) {
+// Mounts the provider and lets the audio session set-up resolve
+async function mount(musicEnabled: boolean) {
   act(() => { useGameStore.setState({ isMusicEnabled: musicEnabled }); });
   act(() => { renderer = create(React.createElement(AudioProvider, null, null)); });
+  await act(async () => { mockAudioMode?.resolve(); });
 }
 
 describe('AudioProvider', () => {
-  it('never touches the player nor keeps a timer when the music is off', () => {
-    mount(false);
+  it('mixes with the player\'s audio, set up before the first play()', async () => {
+    act(() => { useGameStore.setState({ isMusicEnabled: true }); });
+    act(() => { renderer = create(React.createElement(AudioProvider, null, null)); });
+    expect(setAudioModeAsync).toHaveBeenCalledTimes(1);
+    expect(setAudioModeAsync).toHaveBeenCalledWith({
+      interruptionMode: 'mixWithOthers',
+      playsInSilentMode: false,
+      shouldPlayInBackground: false,
+    });
+    // Not a sound until the audio session is set up (exclusive by default)
+    advance(1000);
+    expect(mockCalls['play()']).toBeUndefined();
+    await act(async () => { mockAudioMode!.resolve(); });
+    expect(mockCalls['play()']).toBe(1);
+  });
+
+  it('still plays the music if the audio session set-up fails', async () => {
+    act(() => { useGameStore.setState({ isMusicEnabled: true }); });
+    act(() => { renderer = create(React.createElement(AudioProvider, null, null)); });
+    await act(async () => { mockAudioMode!.reject(new Error('session')); });
+    expect(mockCalls['play()']).toBe(1);
+  });
+
+  it('sets the audio session up once, not on each return to the foreground', async () => {
+    let onChange: (state: string) => void = () => { };
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((_, cb: any) => {
+      onChange = cb;
+      return { remove: () => { } } as any;
+    });
+    await mount(true);
+    act(() => onChange('background'));
+    act(() => onChange('active'));
+    expect(setAudioModeAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('never touches the player nor keeps a timer when the music is off', async () => {
+    await mount(false);
     advance(1000);
     reset();
     advance(3000);
@@ -73,8 +118,8 @@ describe('AudioProvider', () => {
     expect(jest.getTimerCount()).toBe(0);
   });
 
-  it('starts the music with its fade in when enabled', () => {
-    mount(true);
+  it('starts the music with its fade in when enabled', async () => {
+    await mount(true);
     expect(mockCalls['play()']).toBe(1);
     // The track starts: the volume follows the 3 s fade in up to 0.4
     status(0, true);
@@ -88,8 +133,8 @@ describe('AudioProvider', () => {
     expect(mockPlayer._v).toBeCloseTo(0.4);
   });
 
-  it('reads no native property and stays quiet between the fades', () => {
-    mount(true);
+  it('reads no native property and stays quiet between the fades', async () => {
+    await mount(true);
     status(0, true);
     for (let t = 1; t <= 10; t++) { advance(1000); status(t); }
     reset();
@@ -101,8 +146,8 @@ describe('AudioProvider', () => {
     expect(jest.getTimerCount()).toBe(1);
   });
 
-  it('fades out at the end of the track and back in after the loop', () => {
-    mount(true);
+  it('fades out at the end of the track and back in after the loop', async () => {
+    await mount(true);
     status(110, true);
     advance(1500);
     expect(mockPlayer._v).toBeCloseTo(0.4);
@@ -116,8 +161,8 @@ describe('AudioProvider', () => {
     expect(mockCalls['pause()']).toBeUndefined();
   });
 
-  it('fades out then pauses when the music is turned off, then goes silent', () => {
-    mount(true);
+  it('fades out then pauses when the music is turned off, then goes silent', async () => {
+    await mount(true);
     status(10, true);
     advance(2000);
     act(() => { useGameStore.setState({ isMusicEnabled: false }); });
@@ -137,13 +182,13 @@ describe('AudioProvider', () => {
     expect(mockPlayer._v).toBeCloseTo(0.4);
   });
 
-  it('pauses in the background and resumes when back to the foreground', () => {
+  it('pauses in the background and resumes when back to the foreground', async () => {
     let onChange: (state: string) => void = () => { };
     jest.spyOn(AppState, 'addEventListener').mockImplementation((_, cb: any) => {
       onChange = cb;
       return { remove: () => { } } as any;
     });
-    mount(true);
+    await mount(true);
     status(10, true);
     advance(2000);
     act(() => onChange('background'));
