@@ -6,6 +6,9 @@ import { useGameStore, whenSaveLoaded } from '@/store/gameStore';
 /**
  * Records the app open (settles the streak) and tells the player what happened
  * while away: comeback after 3+ days, freezes used, streak lost.
+ * Mounted by the root layout, not the home screen: an app launched by the widget or a reminder
+ * opens a challenge with no home screen underneath, and must record its open too (issue 188).
+ * Shown at the open, before the challenge is won: never over its victory.
  * Done again when `today` changes, for an app left open past midnight, and when a daily
  * is opened or closed: one left open past midnight kept its day out of the streak until then.
  */
