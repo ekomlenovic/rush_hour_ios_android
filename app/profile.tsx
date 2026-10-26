@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
+import type { HostInstance, ScrollViewInstance } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,11 +37,11 @@ export default function ProfileScreen() {
   const [selectedAchievement, setSelectedAchievement] = useState<string | null>(null);
   const [sheetHeight, setSheetHeight] = useState(0);
   const closeSheet = useCallback(() => setSelectedAchievement(null), []);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const scrollY = useRef(0);
-  const selectedBadge = useRef<View | null>(null);
+  const selectedBadge = useRef<HostInstance | null>(null);
   const { height: windowHeight } = useWindowDimensions();
-  const selectAchievement = useCallback((id: string | null, badge?: View | null) => {
+  const selectAchievement = useCallback((id: string | null, badge?: HostInstance | null) => {
     selectedBadge.current = badge ?? null;
     setSelectedAchievement(id);
   }, []);

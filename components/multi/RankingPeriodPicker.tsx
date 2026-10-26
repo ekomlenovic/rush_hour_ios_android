@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import BottomSheet from '@/components/home/BottomSheet';
@@ -33,7 +34,7 @@ interface Props {
 export default function RankingPeriodPicker({ colors, isDark, today, view, onView, datesSupported }: Props) {
   const { t, i18n } = useTranslation();
   const [isSheetVisible, setSheetVisible] = useState(false);
-  const strip = useRef<ScrollView>(null);
+  const strip = useRef<ScrollViewInstance>(null);
   const chipX = useRef<Record<number, number>>({});
 
   const locale = dateLocale(i18n.language);

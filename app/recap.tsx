@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, Pressable, ScrollView, Share, Alert, PixelRatio, Platform, useWindowDimensions,
   type AccessibilityActionEvent, type GestureResponderEvent, type NativeScrollEvent, type NativeSyntheticEvent,
 } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -63,7 +64,7 @@ export default function RecapScreen() {
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
   const { width, height } = useWindowDimensions();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const svgRef = useRef<Svg>(null);
   const [page, setPage] = useState(0);
 
