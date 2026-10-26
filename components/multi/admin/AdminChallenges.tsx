@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, Switch, StyleSheet } from 'react-native';
+import { View, Text, Switch, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { useTheme, type UiColors } from '@/theme';
@@ -11,6 +11,7 @@ import { errorCode, multiErrorMessage } from '../errors';
 import { useAdminRefresh } from './AdminPage';
 import { adminStyles as styles } from './styles';
 import { dateLocale } from '@/utils/date';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 const THUMB = 72;
 
@@ -75,7 +76,7 @@ export default function AdminChallenges({ api, colors, timeZone }: Props) {
   const day = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString(dateLocale(i18n.language), { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
 
   if (error && !challenges) return <Text style={[styles.muted, { color: colors.textMuted }]}>{error}</Text>;
-  if (!challenges) return <ActivityIndicator color={colors.primary} />;
+  if (!challenges) return <LoadingIndicator />;
 
   const statusLine = (c: AdminChallenge): { text: string; color: string } => {
     switch (c.status) {

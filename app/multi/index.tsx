@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, RefreshControl, Alert, ActivityIndicator, AppState } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, RefreshControl, Alert, AppState } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Constants from 'expo-constants';
@@ -32,6 +32,7 @@ import { joinableCount, useServerDuels } from '@/hooks/useServerDuels';
 import { DuelCodeSheet, NewDuelSheet } from '@/components/multi/DuelSheets';
 import { errorCode, multiErrorMessage } from '@/components/multi/errors';
 import IconText from '@/components/IconText';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 
@@ -275,7 +276,7 @@ export default function MultiplayerScreen() {
         {/* The challenge of the day */}
         {tab === 'challenge' && <>
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          {!today && loading && <ActivityIndicator color={colors.primary} style={styles.cardState} />}
+          {!today && loading && <LoadingIndicator style={styles.cardState} />}
 
           {!today && !loading && !!error && (
             <View style={styles.cardState}>

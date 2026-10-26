@@ -655,6 +655,7 @@
     "dir_down": "vers le bas",
     "win": "{{title}} {{stars}} sur 3 étoiles. {{stats}}",
     "back": "Retour",
+    "loading": "Chargement",
     "close": "Fermer",
     "settings": "Options",
     "share_level": "Partager ce niveau",

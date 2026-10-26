@@ -27,6 +27,7 @@ import {
   DUEL_DIFFICULTIES, DUEL_METRICS, countdownMs, duelElapsedMs, iHaveWon, normalizeDuelCode, opponentHasWon, outcome, reactionsFor, winnerOf,
   type Duel, type DuelDifficulty, type DuelMetric, type DuelSide, type HeadToHead,
 } from '@/utils/multi/duel';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 /** Room for the two player bars and the clock around the boards */
 const BARS_HEIGHT = RFValue(150);
@@ -183,7 +184,7 @@ export default function DuelScreen() {
     // Opened to go back to my duel, which ended meanwhile
     body = <Notice icon="flag" text={multiErrorMessage(t, 'no_duel')} colors={colors} onBack={goBack} />;
   } else if (!duel) {
-    body = <ActivityIndicator color={colors.primary} style={styles.center} />;
+    body = <LoadingIndicator fill />;
   } else if (duel.status === 'waiting' && !duel.spectating) {
     body = <Waiting duel={duel} colors={colors} serverName={account.name} onCancel={goBack} />;
   } else if (duel.status === 'waiting' || duel.status === 'preparing') {

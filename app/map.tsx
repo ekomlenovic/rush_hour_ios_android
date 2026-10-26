@@ -19,6 +19,7 @@ import JumpButton from '@/components/map/JumpButton';
 import GenerationPill from '@/components/map/GenerationPill';
 import { isGenerationActive } from '@/hooks/useLevelGenerator';
 import OptionsSheet from '@/components/settings/OptionsSheet';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 /** Height of the blurred header over the map */
 const HEADER_HEIGHT = 140;
@@ -250,6 +251,8 @@ export default function MapScreen() {
           </Animated.View>
         )}
       </ScrollView>
+
+      {!isReady && <LoadingIndicator size="large" fill style={StyleSheet.absoluteFill} />}
 
       {isReady && (nextAbove || nextBelow) && !isGenerating && (
         <JumpButton levelId={nextNode.id} isEnd={nextNode.id > levels.length} below={nextBelow} colors={colors} onPress={jumpToNext} />
