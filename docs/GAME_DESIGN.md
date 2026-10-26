@@ -462,6 +462,7 @@ Les emojis ne restent que là où une icône ne peut pas s'afficher ou n'a pas d
 ## Retour du joueur
 
 - Après **3 jours ou plus** d'absence : message de bienvenue (`recordAppOpen`, `hooks/useAppOpenAlert.ts`).
+- **Toute ouverture** de l'app est enregistrée, quel que soit le premier écran : l'accueil, ou un défi ouvert par le widget ou un rappel sans accueil dessous (#188). Le hook est monté par la racine (`app/_layout.tsx`), pas par l'accueil : pas de faux « Bon retour » pour un joueur qui ne passe que par le widget, et un gel consommé ou un streak perdu est annoncé **à l'ouverture qui le constate**, avant la victoire du défi, jamais par-dessus elle.
 
 ## Roadmap
 
