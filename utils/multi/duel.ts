@@ -1,14 +1,18 @@
 import type { Level, MoveRecord, Vehicle } from '../../store/types';
 import { applyMoves, toMoveRecord } from '../moveLog';
 import { checkWin } from '../collision';
+import { isReactionId, type ReactionId } from './reactions';
 
 /**
  * Duel 1v1 in real time (server/src/duel.ts): the messages of the WebSocket, and the
  * duel as the phone sees it. A move of mine shows at once on my board; the server
  * checks it and sends it to both phones. Who wins is chosen at the creation: the first
  * red car out (time), or the fewest moves (moves; the same count is a draw).
- * A spectator gets the same messages, and plays nothing. Each board is drawn with the
- * look of its player (board theme, car skin, palette), said when connecting.
+ * A spectator gets the same messages, and plays nothing. Spectators react to a player, and
+ * each player to the other one (tease, cheer, encourage): everyone in the duel sees it over
+ * that player's board. Each board is drawn with the look of its player (board theme, car
+ * skin, palette), said when connecting, with what the app knows ('reactions'): the server
+ * sends no message an app does not know. A message this app does not know changes nothing.
  */
 
 export type DuelDifficulty = 'EASY' | 'NORMAL' | 'HARD' | 'EXPERT' | 'MASTER';
@@ -40,6 +44,8 @@ interface PlayerView {
   id: number; pseudo: string; connected: boolean; moves: MoveRecord[]; wantsRematch: boolean;
   /** Absent from a server older than the looks, null for an app older than them */
   look?: DuelLook | null;
+  /** Their app shows the reactions; absent from a server older than them */
+  seesReactions?: boolean;
 }
 
 export interface DuelView {
@@ -58,27 +64,54 @@ export interface DuelView {
   /** Absent from a server older than the spectators */
   spectating?: boolean;
   spectators?: number;
+  /** The reactions the server relays; absent from a server older than them */
+  reactions?: string[];
 }
 
 export type DuelServerMessage =
   | { type: 'ready'; player: { id: number; pseudo: string }; duel: DuelView | null }
   | { type: 'duel'; duel: DuelView }
   | { type: 'move'; playerId: number; move: MoveRecord }
-  | { type: 'presence'; playerId: number; connected: boolean }
+  /** seesReactions: back with an app that shows the reactions, or not; absent from a server older than them */
+  | { type: 'presence'; playerId: number; connected: boolean; seesReactions?: boolean }
   | { type: 'rematch'; playerId: number }
   | { type: 'spectators'; count: number }
+  | { type: 'reaction'; from: { id: number; pseudo: string }; playerId: number; reaction: string }
   | { type: 'end'; result: DuelResult; level: Level }
   | { type: 'closed' }
   | { type: 'error'; error: string };
 
 export type DuelClientMessage =
-  | { type: 'auth'; token: string; look: DuelLook }
+  /** features: the messages this app knows beyond the first duels, the server sends it no other */
+  | { type: 'auth'; token: string; look: DuelLook; features: AppFeature[] }
   | { type: 'create'; difficulty: DuelDifficulty; metric: DuelMetric; private: boolean }
   | { type: 'join'; code: string }
   | { type: 'watch'; code: string }
   | { type: 'move'; vehicleId: string; delta: number }
   | { type: 'leave' }
-  | { type: 'rematch' };
+  | { type: 'rematch' }
+  | { type: 'react'; playerId: number; reaction: ReactionId };
+
+/** What this app knows beyond the first duels, said to the server when connecting */
+export type AppFeature = 'reactions';
+export const APP_FEATURES: AppFeature[] = ['reactions'];
+
+/** A reaction of a spectator or of the other player to a player of the duel, as it came */
+export interface DuelReaction {
+  /** In the order they came: the key to draw it */
+  seq: number;
+  from: { id: number; pseudo: string };
+  /** Aimed at this player: it shows over their board */
+  playerId: number;
+  reaction: ReactionId;
+  /** When it came, phone clock */
+  at: number;
+}
+
+/** How long a reaction stays over the board */
+export const REACTION_SHOWN_MS = 3000;
+/** The last reactions kept: more at once would hide the board */
+export const MAX_KEPT_REACTIONS = 8;
 
 /** One player of the duel on the phone, with the position of their board */
 export interface DuelSide {
@@ -91,6 +124,8 @@ export interface DuelSide {
   wantsRematch: boolean;
   /** Their look; null: drawn as my own board */
   look: DuelLook | null;
+  /** Their app shows the reactions: no use reacting to them otherwise */
+  seesReactions: boolean;
 }
 
 export interface Duel {
@@ -117,6 +152,10 @@ export interface Duel {
   spectating: boolean;
   /** How many watch it */
   spectators: number;
+  /** What a spectator, or a player, may send: the reactions the server relays and the app knows */
+  reactions: ReactionId[];
+  /** The last reactions that came, the newest last */
+  lastReactions: DuelReaction[];
 }
 
 export interface DuelState {
@@ -162,7 +201,7 @@ function positionAfter(level: Level | null, moves: MoveRecord[]): Vehicle[] {
 }
 
 function side(view: PlayerView, level: Level | null): DuelSide {
-  return { ...view, look: view.look ?? null, vehicles: positionAfter(level, view.moves) };
+  return { ...view, look: view.look ?? null, seesReactions: view.seesReactions ?? false, vehicles: positionAfter(level, view.moves) };
 }
 
 function fromView(view: DuelView, now: number, previous: Duel | null): Duel {
@@ -183,6 +222,9 @@ function fromView(view: DuelView, now: number, previous: Duel | null): Duel {
     opponentLeft: previous?.code === view.code && view.status === 'over' ? previous.opponentLeft : false,
     spectating: view.spectating ?? false,
     spectators: view.spectators ?? 0,
+    reactions: (view.reactions ?? []).filter(isReactionId),
+    // A rematch, or the duel sent again: the reactions on screen stay
+    lastReactions: previous?.code === view.code ? previous.lastReactions : [],
   };
 }
 
@@ -214,7 +256,8 @@ export function duelReducer(state: DuelState, action: DuelAction): DuelState {
 
     case 'local_move': {
       const duel = state.duel;
-      if (!duel?.level || duel.status !== 'playing') return state;
+      // Offline (reconnecting), the move would never reach the server, which would put the board back: refused
+      if (!duel?.level || duel.status !== 'playing' || state.connection !== 'online') return state;
       const replay = applyMoves({ ...duel.level, vehicles: duel.me.vehicles }, [action.move]);
       if (!replay.ok) return state;
       return { ...state, duel: { ...duel, me: { ...duel.me, vehicles: replay.vehicles }, pending: [...duel.pending, action.move] } };
@@ -230,7 +273,11 @@ export function duelReducer(state: DuelState, action: DuelAction): DuelState {
           const next = message.duel ? fromView(message.duel, now, duel)
             : duel?.status === 'over' ? { ...duel, opponentLeft: true }
               : duel?.spectating ? duel : null;
-          return { ...state, connection: 'online', player: message.player, duel: next };
+          // My duel gone while the connection was lost (ended without me, or my room closed): told, not a wait without end
+          const gone = !message.duel && duel && duel.status !== 'over' && !duel.spectating
+            ? duel.status === 'waiting' ? 'room_closed' : 'duel_ended_offline'
+            : null;
+          return { ...state, connection: 'online', player: message.player, duel: next, error: gone ?? state.error };
         }
 
         case 'duel':
@@ -250,12 +297,23 @@ export function duelReducer(state: DuelState, action: DuelAction): DuelState {
 
         case 'presence': {
           if (!duel) return state;
-          const mark = (player: DuelSide) => (player.id === message.playerId ? { ...player, connected: message.connected } : player);
+          const { seesReactions } = message;
+          const mark = (player: DuelSide) => (player.id === message.playerId
+            ? { ...player, connected: message.connected, seesReactions: seesReactions ?? player.seesReactions }
+            : player);
           return { ...state, duel: { ...duel, me: mark(duel.me), opponent: duel.opponent && mark(duel.opponent) } };
         }
 
         case 'spectators':
           return duel ? { ...state, duel: { ...duel, spectators: message.count } } : state;
+
+        case 'reaction': {
+          // A reaction this app does not know (a newer one) is not shown
+          if (!duel || !isReactionId(message.reaction) || ![duel.me.id, duel.opponent?.id].includes(message.playerId)) return state;
+          const seq = (duel.lastReactions[duel.lastReactions.length - 1]?.seq ?? 0) + 1;
+          const reaction: DuelReaction = { seq, from: message.from, playerId: message.playerId, reaction: message.reaction, at: now };
+          return { ...state, duel: { ...duel, lastReactions: [...duel.lastReactions, reaction].slice(-MAX_KEPT_REACTIONS) } };
+        }
 
         case 'rematch': {
           if (!duel) return state;
@@ -275,11 +333,16 @@ export function duelReducer(state: DuelState, action: DuelAction): DuelState {
           return duel.status === 'over' ? { ...state, duel: { ...duel, opponentLeft: true } } : { ...state, duel: null, error: state.error ?? 'opponent_left' };
 
         case 'error':
-          // A move out of step: the server sends the real position, nothing to tell the player
-          if (message.error === 'invalid_moves' || message.error === 'not_started') return state;
+          // A move out of step: the server sends the real position, nothing to tell the player;
+          // a reaction dropped (too many, or the game just ended): nothing either
+          if (['invalid_moves', 'not_started', 'reaction_refused', 'too_many_reactions'].includes(message.error)) return state;
           // The watched duel is gone while the connection was lost
           if (duel?.spectating && duel.status !== 'over' && message.error === 'duel_not_found') return { ...state, duel: null, error: message.error };
           return { ...state, error: message.error };
+
+        default:
+          // A message of a newer server: the state stays (returning nothing here broke the screen of 2.0.3)
+          return state;
       }
     }
   }
@@ -289,6 +352,11 @@ export function duelReducer(state: DuelState, action: DuelAction): DuelState {
 export function myMove(duel: Duel, vehicleId: string, row: number, col: number, now: number): MoveRecord | null {
   const vehicle = duel.me.vehicles.find(v => v.id === vehicleId);
   return vehicle ? toMoveRecord(vehicle, row, col, Math.max(0, Math.round(serverTime(duel, now) - (duel.startsAt ?? 0)))) : null;
+}
+
+/** The reactions to show over the board of a player now, without those of the players I blocked */
+export function reactionsFor(duel: Duel, playerId: number, now: number, blocked: readonly number[] = []): DuelReaction[] {
+  return duel.lastReactions.filter(r => r.playerId === playerId && now - r.at < REACTION_SHOWN_MS && !blocked.includes(r.from.id));
 }
 
 /** Now on the clock of the server */

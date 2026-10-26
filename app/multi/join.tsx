@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { useRouter } from '@/hooks/useRouter';
 import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
@@ -12,6 +13,7 @@ import MultiHeader from '@/components/multi/MultiHeader';
 import KeyboardScreen from '@/components/KeyboardScreen';
 import { multiErrorMessage } from '@/components/multi/errors';
 import IconText from '@/components/IconText';
+import QrScanner from '@/components/QrScanner';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 
@@ -37,6 +39,7 @@ export default function JoinScreen() {
   const [pseudo, setPseudo] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const [scanning, setScanning] = useState(false);
 
   // A whole link pasted in the address field fills the form
   const onServerChange = (text: string) => {
@@ -53,6 +56,14 @@ export default function JoinScreen() {
     } else {
       setServer(text);
     }
+  };
+
+  // A scanned invitation or recovery QR code fills the form like a pasted link
+  const onScanned = (data: string) => {
+    if (!parseInviteLink(data) && !parseRecoveryLink(data)) return false;
+    onServerChange(data);
+    setError(null);
+    return true;
   };
 
   const canSubmit = !busy && server.trim() !== '' && (mode === 'join' ? inviteCode.trim() !== '' && pseudo.trim() !== '' : recoveryCode.trim() !== '');
@@ -107,6 +118,16 @@ export default function JoinScreen() {
       <MultiHeader title={mode === 'join' ? t('multi.join_title') : t('multi.recover_title')} colors={colors} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={[styles.intro, { color: colors.textMuted }]}>{mode === 'join' ? t('multi.join_desc') : t('multi.recover_desc')}</Text>
+
+        <Pressable
+          onPress={() => setScanning(true)}
+          style={[styles.scan, { backgroundColor: colors.primarySoft, borderColor: colors.primaryBorder }]}
+          accessibilityRole="button"
+        >
+          <IconText icon="qr-code-outline" color={colors.primaryText} size={RFValue(20)} textStyle={[styles.scanText, { color: colors.primaryText }]}>
+            {t('multi.scan_qr')}
+          </IconText>
+        </Pressable>
 
         <Text style={[styles.label, { color: colors.text }]}>{t('multi.server_address')}</Text>
         <TextInput
@@ -180,6 +201,14 @@ export default function JoinScreen() {
           <IconText icon="bulb-outline" color={colors.textMuted} size={RFValue(16)} style={styles.tipRow} textStyle={styles.tipText}>{t('multi.join_tip')}</IconText>
         </View>
       </ScrollView>
+      <QrScanner
+        visible={scanning}
+        title={t('multi.scan_qr')}
+        hint={t('multi.scan_hint')}
+        colors={colors}
+        onClose={() => setScanning(false)}
+        onScanned={onScanned}
+      />
     </KeyboardScreen>
   );
 }
@@ -196,6 +225,17 @@ const styles = StyleSheet.create({
     fontSize: RFValue(14),
     lineHeight: RFValue(20),
     marginBottom: RFValue(8),
+  },
+  scan: {
+    marginTop: RFValue(8),
+    paddingVertical: RFValue(13),
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  scanText: {
+    fontSize: RFValue(16),
+    fontWeight: '800',
   },
   label: {
     fontSize: RFValue(14),

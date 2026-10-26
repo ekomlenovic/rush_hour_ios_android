@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
 import en from '../locales/en.json';
 import fr from '../locales/fr.json';
+import sr from '../locales/sr.json';
 import { resetStore, setToday, winDaily, winMapLevel } from './helpers';
 import { matchSecretCode } from '../store/stats';
 
@@ -13,7 +14,7 @@ describe('achievement definitions', () => {
     expect(new Set(ACHIEVEMENTS.map(a => a.id)).size).toBe(ACHIEVEMENTS.length);
   });
 
-  it.each([['en', en], ['fr', fr]] as const)('are translated in %s', (_, locale) => {
+  it.each([['en', en], ['fr', fr], ['sr', sr]] as const)('are translated in %s', (_, locale) => {
     const strings = (locale as Record<string, any>).achievements;
     for (const a of ACHIEVEMENTS) {
       expect(strings[a.id]).toEqual(expect.any(String));

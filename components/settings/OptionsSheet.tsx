@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Switch, Alert, Modal, ScrollView } from 'react-native';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/hooks/useRouter';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -133,7 +133,7 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
     </View>
   );
 
-  const languageButton = (lang: 'en' | 'fr') => {
+  const languageButton = (lang: 'en' | 'fr' | 'sr') => {
     const selected = i18n.language === lang;
     return (
       <Pressable
@@ -191,11 +191,12 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
             <View style={settingsStyles.settingRow}>
               <View style={settingsStyles.settingText}>
                 <Text style={[settingsStyles.settingLabel, { color: colors.text }]}>{t('common.language')}</Text>
-                <Text style={[settingsStyles.settingSub, { color: colors.textMuted }]}>{i18n.language === 'en' ? t('common.en') : t('common.fr')}</Text>
+                <Text style={[settingsStyles.settingSub, { color: colors.textMuted }]}>{t(`common.${i18n.language === 'fr' || i18n.language === 'sr' ? i18n.language : 'en'}`)}</Text>
               </View>
               <View style={styles.languageBtns}>
                 {languageButton('en')}
                 {languageButton('fr')}
+                {languageButton('sr')}
               </View>
             </View>
 

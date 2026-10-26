@@ -367,6 +367,7 @@ describe('settings', () => {
     expect((await request('GET', '/admin/settings', admin.token)).body).toMatchObject({
       joinOpen: true, invitesAdminOnly: false, replayRetentionDays: 7,
       difficultyByWeekday: ['NORMAL', 'HARD', 'NORMAL', 'NORMAL', 'NORMAL', 'NORMAL', 'NORMAL'],
+      minMovesByWeekday: [null, null, null, null, null, null, null],
       serverName: 'Rush Hours', releaseTime: '12:00', timeZone: 'Europe/Paris',
       gracePeriodMs: 3_600_000, pregenerateAheadMs: 48 * 3_600_000, nextReleaseAt: paris('2026-10-17', '12:00'),
     });
@@ -377,6 +378,11 @@ describe('settings', () => {
     [{ joinOpen: 'yes' }, 'joinOpen'],
     [{ difficultyByWeekday: ['HARD'] }, 'difficultyByWeekday'],
     [{ difficultyByWeekday: Array(7).fill('IMPOSSIBLE') }, 'difficultyByWeekday'],
+    [{ minMovesByWeekday: [12] }, 'minMovesByWeekday'],
+    [{ minMovesByWeekday: Array(7).fill(0) }, 'minMovesByWeekday'],
+    [{ minMovesByWeekday: Array(7).fill(12.5) }, 'minMovesByWeekday'],
+    [{ minMovesByWeekday: Array(7).fill(101) }, 'minMovesByWeekday'],
+    [{ minMovesByWeekday: Array(7).fill('12') }, 'minMovesByWeekday'],
     [{ replayRetentionDays: -1 }, 'replayRetentionDays'],
     [{ thresholds: { minMsPerMove: -5 } }, 'thresholds.minMsPerMove'],
     [{ thresholds: { unknown: 1 } }, 'thresholds.unknown'],
@@ -404,6 +410,19 @@ describe('settings', () => {
     await challenges.tick();
     expect(challenges.get('2026-10-16')!.difficulty).toBe('NORMAL');
     expect(challenges.get('2026-10-17')!.difficulty).toBe('EXPERT');
+  });
+
+  it('an exact optimum for a day regenerates its puzzle not released yet, with that optimum', async () => {
+    const { joinAdmin, request, challenges, calls } = open({ env: { PREGENERATE_AHEAD: '24h' } });
+    const admin = await joinAdmin();
+    await challenges.pregenerate();
+    // Saturday 17th: 14 moves; the other days as usual
+    const days = [null, null, null, null, null, null, 14];
+    expect((await request('PATCH', '/admin/settings', admin.token, { minMovesByWeekday: days })).body).toMatchObject({ minMovesByWeekday: days });
+    await challenges.tick();
+    expect(calls.slice(2).map(c => [c.difficulty, c.minMoves])).toEqual([['NORMAL', 14]]);
+    expect(challenges.get('2026-10-16')).toMatchObject({ min_moves: 2, wanted_moves: null });
+    expect(challenges.get('2026-10-17')).toMatchObject({ min_moves: 14, wanted_moves: 14 });
   });
 });
 
@@ -552,12 +571,14 @@ describe('reset', () => {
     await s.request('PATCH', '/admin/settings', admin.token, {
       joinOpen: false, serverName: 'Copains', gracePeriodMs: 0, pregenerateAheadMs: 3_600_000,
       difficultyByWeekday: Array(7).fill('EXPERT'), replayRetentionDays: 30, thresholds: { minMsPerMove: 100 },
+      minMovesByWeekday: Array(7).fill(30),
     });
     const res = await s.request('POST', '/admin/settings/reset', admin.token);
     expect(res.body).toMatchObject({
       joinOpen: true, invitesAdminOnly: false, serverName: 'Rush Hours', gracePeriodMs: 3_600_000,
       pregenerateAheadMs: 48 * 3_600_000, replayRetentionDays: 7, releaseTime: '12:00',
       difficultyByWeekday: ['NORMAL', 'HARD', 'NORMAL', 'NORMAL', 'NORMAL', 'NORMAL', 'NORMAL'],
+      minMovesByWeekday: Array(7).fill(null),
       thresholds: { minMsPerMove: 600 },
     });
     expect((await s.request('GET', '/invite', admin.token)).body.inviteCode).toBe(code);

@@ -44,7 +44,7 @@ export default function ChallengeCard({ colors, icon, title, subtitle, reward, d
         <Text style={[styles.title, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
           {title}
         </Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]} numberOfLines={2}>{subtitle}</Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.85}>{subtitle}</Text>
       </View>
 
       {done ? null : (

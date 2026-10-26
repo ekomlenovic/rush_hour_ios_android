@@ -86,7 +86,7 @@ Dans l'app : Multijoueur → Mon compte → **Devenir admin**, avec `ADMIN_TOKEN
 - **régénérer le code d'invitation**, fermer les inscriptions, réserver les invitations à l'admin ;
 - **remettre à zéro** les parties des défis et/ou les duels, sur une période et pour tous les joueurs ou certains (nouvelle saison) ;
 - renommer le serveur, régler l'**heure de sortie**, le **délai de grâce** et la **pré-génération** ;
-- régler la **difficulté** par jour, la **conservation des replays** et les **seuils de soupçon**.
+- régler la **difficulté** par jour et, si tu veux, le **nombre exact de coups minimum** du défi de chaque jour, la **conservation des replays** et les **seuils de soupçon**.
 
 Un réglage changé dans l'app l'emporte ensuite sur sa variable d'environnement. Les secrets (`SERVER_SECRET`, `ADMIN_TOKEN`), le fuseau `TZ` et `PORT`, `HOST`, `DATA_DIR`, `TRUST_PROXY` ne se règlent que dans le `docker-compose.yml`. Le bouton **Réinitialiser** remet tous les réglages aux valeurs du `docker-compose.yml` (l'heure de sortie à partir du prochain défi, le code d'invitation ne change pas).
 
@@ -122,7 +122,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 
 | Route | Rôle |
 |---|---|
-| `GET /info` | nom, `apiVersion`, `minAppVersion`, `features` (`["duel", "ranking_range"]`) |
+| `GET /info` | nom, `apiVersion`, `minAppVersion`, `features` (`["duel", "ranking_range", "reactions"]`) |
 | `POST /join` `{ inviteCode, pseudo }` | crée un compte → `{ token, recoveryCode, player }` |
 | `POST /recover` `{ recoveryCode }` | nouveau jeton pour un compte (l'ancien téléphone est déconnecté) |
 | `GET /me`, `PATCH /me` `{ pseudo }`, `DELETE /me` | mon compte ; supprimer efface aussi mes parties |
@@ -140,7 +140,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 | `GET /admin/players`, `PATCH /admin/players/:id` `{ pseudo?, banned? }`, `POST /admin/players/:id/transfer`, `DELETE /admin/players/:id` | joueurs, renommer, exclure, nouveau code de récupération, supprimer le compte |
 | `GET /admin/reports`, `DELETE /admin/reports/:id` | signalements |
 | `POST /admin/invite` | nouveau code d'invitation |
-| `GET /admin/settings`, `PATCH /admin/settings` | nom, heure de sortie (`release_too_soon` si le prochain défi sortirait dans moins d'une heure), délai de grâce, pré-génération, inscriptions, invitations, difficulté, conservation des replays, seuils. La réponse donne aussi `timeZone` et `nextReleaseAt` |
+| `GET /admin/settings`, `PATCH /admin/settings` | nom, heure de sortie (`release_too_soon` si le prochain défi sortirait dans moins d'une heure), délai de grâce, pré-génération, inscriptions, invitations, difficulté, coups minimum exacts par jour (`minMovesByWeekday`, `null` : auto), conservation des replays, seuils. La réponse donne aussi `timeZone` et `nextReleaseAt` |
 | `POST /admin/settings/reset` | retour aux variables d'environnement (sauf le code d'invitation) |
 | `GET /duels` | les duels du serveur : ouverts (avec leur code, pour les rejoindre sans qu'on le donne) et en cours (avec leur code, pour les regarder, et leur nombre de `spectators`) ; les duels privés n'y sont que pour leur joueur. `ready` : puzzles prêts par niveau ; `metrics` : les vainqueurs possibles d'un duel (`["time", "moves"]`) |
 | `GET /duels/leaderboard?period=day\|week\|month\|all&date=` ou `?period=range&from=&to=` | classement des duels : victoires, puis moins de défaites |
@@ -151,7 +151,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 
 ### Duels (WebSocket `/api/v1/duel`)
 
-Messages JSON. Le premier est `{ "type": "auth", "token": "…" }` → `{ type: "ready", player, duel }` (`duel` : celui en cours, pour reprendre après une coupure, ou `null`).
+Messages JSON. Le premier est `{ "type": "auth", "token": "…", "look"?, "features"? }` → `{ type: "ready", player, duel }` (`duel` : celui en cours, pour reprendre après une coupure, ou `null`). `features` : ce que l'app connaît en plus des premiers duels (`["reactions"]`) ; **le serveur n'envoie jamais à une app un message qu'elle n'a pas annoncé** (la 2.0.3 plantait sur un message inconnu).
 
 | Envoyé par l'app | Effet |
 |---|---|
@@ -161,8 +161,9 @@ Messages JSON. Le premier est `{ "type": "auth", "token": "…" }` → `{ type: 
 | `{ type: "move", vehicleId, delta }` | un coup, vérifié puis envoyé aux deux : `{ type: "move", playerId, move }` (temps du serveur) |
 | `{ type: "leave" }` | quitte le duel (en pleine partie : défaite) |
 | `{ type: "rematch" }` | revanche, lancée quand les deux l'ont demandée |
+| `{ type: "react", playerId, reaction }` | pendant la partie, un spectateur réagit à un des deux joueurs, un joueur à l'autre : `reaction` est un identifiant de la liste fermée (`duel.reactions`, voir `utils/multi/reactions.ts`), jamais du texte libre ; envoyé à tous ceux du duel dont l'app a annoncé `reactions` : `{ type: "reaction", from, playerId, reaction }`. Refusé hors partie, à soi-même ou à quelqu'un d'autre (`reaction_refused`) ; 8 par personne en 10 s (l'app en envoie 3 d'affilée puis fait une pause), 10 par duel et par seconde, un `encourage` d'une personne à un même joueur toutes les 30 s (`too_many_reactions`, la connexion reste ouverte ; refusée parce que le duel est trop animé, elle ne compte pas) |
 
-Le serveur envoie aussi `duel` (tout le duel : statut `waiting`, `preparing`, `playing`, `over`, puzzle, `startsAt`, coups des deux joueurs), `presence` (adversaire connecté ou non), `spectators` (nombre de spectateurs), `end` (`winnerId`, `reason` : `won`, `forfeit`, `disconnected`, `timeout` ; l'optimum, `duelId` pour le replay et `score` des deux joueurs l'un contre l'autre), `closed` et `error`.
+Le serveur envoie aussi `duel` (tout le duel : statut `waiting`, `preparing`, `playing`, `over`, puzzle, `startsAt`, coups des deux joueurs et si leur app montre les réactions, `seesReactions`, `reactions` que le serveur relaie), `presence` (adversaire connecté ou non, et `seesReactions` quand il revient avec une autre app), `spectators` (nombre de spectateurs), `reaction` (réaction d'un spectateur ou de l'autre joueur, seulement aux apps qui l'ont annoncé), `end` (`winnerId`, `reason` : `won`, `forfeit`, `disconnected`, `timeout` ; l'optimum, `duelId` pour le replay et `score` des deux joueurs l'un contre l'autre), `closed` et `error`.
 
 ## Développement
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, Alert, Switch, Share } from 'react-native';
+import { View, Text, Alert, Switch, Share } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { MultiApi } from '@/utils/multi/api';
 import { buildInviteLink } from '@/utils/multi/serverUrl';
@@ -9,6 +9,7 @@ import AdminButton from './AdminButton';
 import { useAdminRefresh } from './AdminPage';
 import { useAdminSettings } from './useAdminSettings';
 import { adminStyles as styles } from './styles';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 interface Props { api: MultiApi; colors: UiColors; serverUrl: string }
 
@@ -35,7 +36,7 @@ export default function AdminInvites({ api, colors, serverUrl }: Props) {
     },
   ]);
 
-  if (!settings) return <ActivityIndicator color={colors.primary} />;
+  if (!settings) return <LoadingIndicator />;
 
   const card = [styles.card, { backgroundColor: colors.surface, borderColor: colors.border }];
   return (

@@ -3,7 +3,7 @@ import { sampleLevels } from '../data/sampleLevels';
 import { DIFFICULTY_LEVELS, createPRNG } from '../utils/generator';
 import { solvePuzzle } from '../utils/solver';
 import { applyMoves, toMoveRecord } from '../utils/moveLog';
-import { dressVariant, hardStarts, levelVariants, variantSources } from '../utils/variants';
+import { dressVariant, exactStarts, hardStarts, levelVariants, variantSources } from '../utils/variants';
 
 const master = DIFFICULTY_LEVELS.MASTER;
 // Quick ones to explore: a 6×6 and a 7×7 level of 40 moves or more
@@ -73,5 +73,23 @@ describe('variants of the hard levels of the app (hardest duels)', () => {
   it('explores boards up to the largest one of the app (375 000 positions)', () => {
     const { MAX_STATES } = require('../utils/variants') as typeof import('../utils/variants');
     expect(MAX_STATES).toBeGreaterThanOrEqual(400_000);
+  });
+});
+
+describe('start positions of an exact optimum (daily challenge of a server, chosen by its admin)', () => {
+  it('each one solved in exactly that many moves, by the rules of the game', () => {
+    const level = SOURCES[0];
+    for (const minMoves of [1, 12, level.minMoves - 1]) {
+      const starts = exactStarts(level, minMoves, 3, createPRNG(`exact:${minMoves}`));
+      expect(starts).toHaveLength(3);
+      for (const start of starts) {
+        expect(start.minMoves).toBe(minMoves);
+        expect(solvesByTheRules(start)).toBe(true);
+      }
+    }
+  });
+
+  it('none when the board has no such position', () => {
+    expect(exactStarts(SOURCES[0], 200, 1, createPRNG('exact'))).toEqual([]);
   });
 });

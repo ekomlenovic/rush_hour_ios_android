@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
-import { addDays, addMonths, getLocalDateString, getWeekKey, parseLocalDateString } from './date';
+import { addDays, addMonths, dateLocale, getLocalDateString, getWeekKey, parseLocalDateString } from './date';
+import { DAILY_HREF, WEEKLY_HREF } from './challengeDates';
 
 export const DEFAULT_REMINDER_HOUR = 19;
 /** "Streak in danger" comes this many hours after the daily reminder */
@@ -10,6 +11,9 @@ const WEEKLY_REMINDER_HOUR = 10;
 /** The recap is ready on the 1st of the month, the annual one on December 26th (issue 125) */
 const RECAP_REMINDER_HOUR = 11;
 const YEAR_RECAP_DAY = '12-26';
+
+/** Hour of the "streak in danger" reminder, also when the widget says so */
+export const streakDangerHour = (reminderHour: number): number => Math.min(reminderHour + STREAK_DANGER_DELAY_HOURS, 23);
 
 export interface ReminderInput {
   now: Date;
@@ -31,6 +35,8 @@ export interface PlannedReminder {
   date: Date;
   title: string;
   body: string;
+  /** Screen opened by touching it: the challenges without a date, dated when opened (issue 191) */
+  url: string;
 }
 
 function at(dateKey: string, hour: number): Date {
@@ -57,6 +63,7 @@ export function planReminders(t: TFunction, input: ReminderInput): PlannedRemind
       date: at(day, reminderHour),
       title: t('reminders.daily_title'),
       body: t('reminders.daily_body'),
+      url: DAILY_HREF,
     });
   }
 
@@ -65,9 +72,10 @@ export function planReminders(t: TFunction, input: ReminderInput): PlannedRemind
     const day = completedDailies.has(today) ? addDays(today, 1) : today;
     reminders.push({
       id: `streak-${day}`,
-      date: at(day, Math.min(reminderHour + STREAK_DANGER_DELAY_HOURS, 23)),
+      date: at(day, streakDangerHour(reminderHour)),
       title: t('reminders.streak_title'),
       body: t('reminders.streak_body', { count: currentStreak }),
+      url: DAILY_HREF,
     });
   }
 
@@ -82,6 +90,7 @@ export function planReminders(t: TFunction, input: ReminderInput): PlannedRemind
     date: at(monday, WEEKLY_REMINDER_HOUR),
     title: t('reminders.weekly_title'),
     body: t('reminders.weekly_body'),
+    url: WEEKLY_HREF,
   });
 
   // The recap of this month, ready on the 1st of the next one; the annual one on December 26th
@@ -93,9 +102,10 @@ export function planReminders(t: TFunction, input: ReminderInput): PlannedRemind
       date: at(firstOfNext, RECAP_REMINDER_HOUR),
       title: t('reminders.recap_title'),
       body: t('reminders.recap_month_body', {
-        month: parseLocalDateString(`${month}-01`).toLocaleDateString(input.language, { month: 'long' }),
+        month: parseLocalDateString(`${month}-01`).toLocaleDateString(dateLocale(input.language), { month: 'long' }),
         interpolation: { escapeValue: false },
       }),
+      url: `/recap?period=${month}`,
     });
   }
   const year = today.slice(0, 4);
@@ -105,6 +115,7 @@ export function planReminders(t: TFunction, input: ReminderInput): PlannedRemind
       date: at(`${year}-${YEAR_RECAP_DAY}`, RECAP_REMINDER_HOUR),
       title: t('reminders.recap_title'),
       body: t('reminders.recap_year_body', { year }),
+      url: `/recap?period=${year}`,
     });
   }
 

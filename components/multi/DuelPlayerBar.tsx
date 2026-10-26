@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
@@ -16,17 +16,19 @@ interface Props {
   away?: boolean;
   /** Won the duel (replay) */
   winner?: boolean;
+  /** Watching: touching the bar chooses this player for my reactions */
+  onSelect?: () => void;
+  /** The player my reactions go to */
+  selected?: boolean;
 }
 
-/** The bar above a board of a duel: who, connected or not, how many moves */
-export default function DuelPlayerBar({ name, moves, colors, width, isMe = false, away = false, winner = false }: Props) {
+/** The bar above a board of a duel: who, connected or not, how many moves; for a spectator, who gets the reactions */
+export default function DuelPlayerBar({ name, moves, colors, width, isMe = false, away = false, winner = false, onSelect, selected = false }: Props) {
   const { t } = useTranslation();
-  return (
-    <View
-      style={[styles.bar, { width, backgroundColor: isMe ? colors.primarySoft : colors.card }]}
-      accessible
-      accessibilityLabel={[name, away ? t('multi.duel.away') : null, winner ? t('multi.duel.winner') : null, t('multi.moves', { count: moves })].filter(Boolean).join(', ')}
-    >
+  const label = [name, away ? t('multi.duel.away') : null, winner ? t('multi.duel.winner') : null, t('multi.moves', { count: moves })].filter(Boolean).join(', ');
+  const content = (
+    <>
+      {onSelect && <Ionicons name={selected ? 'radio-button-on' : 'radio-button-off'} size={16} color={selected ? colors.primaryText : colors.textMuted} />}
       {winner
         ? <Ionicons name="trophy" size={14} color={colors.warning} />
         : <View style={[styles.dot, { backgroundColor: away ? colors.danger : colors.success }]} />}
@@ -36,6 +38,25 @@ export default function DuelPlayerBar({ name, moves, colors, width, isMe = false
         <Text style={[styles.movesLabel, { color: colors.textMuted }]}>{t('game.moves')}</Text>
         <Text style={[styles.movesValue, { color: colors.text }]}>{moves}</Text>
       </View>
+    </>
+  );
+  if (onSelect) {
+    return (
+      <Pressable
+        onPress={onSelect}
+        style={[styles.bar, styles.selectable, { width, backgroundColor: selected ? colors.primarySoft : colors.card, borderColor: selected ? colors.primary : 'transparent' }]}
+        accessibilityRole="radio"
+        accessibilityState={{ checked: selected }}
+        accessibilityLabel={label}
+        accessibilityHint={t('multi.reactions.target_hint')}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+  return (
+    <View style={[styles.bar, { width, backgroundColor: isMe ? colors.primarySoft : colors.card }]} accessible accessibilityLabel={label}>
+      {content}
     </View>
   );
 }
@@ -49,6 +70,11 @@ const styles = StyleSheet.create({
     paddingVertical: RFValue(6),
     paddingHorizontal: RFValue(10),
     marginBottom: RFValue(8),
+  },
+  selectable: {
+    borderWidth: 2,
+    paddingVertical: RFValue(6) - 2,
+    paddingHorizontal: RFValue(10) - 2,
   },
   dot: {
     width: 8,
