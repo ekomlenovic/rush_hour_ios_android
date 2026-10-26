@@ -1,4 +1,4 @@
-# Rush Hours 2.0.4 (versionCode 18)
+# Rush Hours 2.0.4 (versionCode 19)
 
 Mise à jour de la **2.0.3 (versionCode 16)** : un widget d'écran d'accueil, les réactions des spectateurs en duel, le scan de QR codes, une musique qui se mélange à la tienne, le serbe, plus de fluidité sur Android, et beaucoup de correctifs.
 
@@ -37,7 +37,7 @@ New:
 
 - **Widget d'écran d'accueil** (Android et iOS) : le streak, les gels et l'état du défi du jour sans ouvrir l'app. Le moyen (4×2) ajoute le compte à rebours jusqu'au prochain défi ou « Streak en danger » le soir. Il repasse à « À faire » à minuit tout seul.
 - **Réactions des spectateurs en duel** : un spectateur choisit un joueur et lui envoie un emoji (pour le taquiner ou l'applaudir) ou un encouragement ; tout le monde le voit 3 s sur le plateau visé, avec le pseudo de qui l'envoie. Liste fermée, sans texte libre. 3 réactions d'affilée, puis une courte pause ; un toucher ailleurs ferme la rangée sans perdre le coup joué.
-- **Scanner un QR code** dans l'app : « Rejoindre un serveur » remplit le formulaire depuis un QR code d'invitation ou de récupération, et Mes niveaux → Importés importe un niveau partagé (même vérification qu'un lien collé). Nouvelle permission caméra, sans micro.
+- **Scanner un QR code** dans l'app : « Rejoindre un serveur » remplit le formulaire depuis un QR code d'invitation ou de récupération, et Mes niveaux → Importés importe un niveau partagé (même vérification qu'un lien collé). Nouvelle permission caméra, sans micro ; la caméra est facultative, l'app reste disponible sur les appareils qui n'en ont pas (Chromebooks, tablettes, télés, voitures).
 - **Rappels** : toucher une notification ouvre le défi du jour, le défi de la semaine ou le récap annoncé.
 - **Défi du jour au nombre de coups exact** : l'admin d'un serveur peut choisir, pour chaque jour de la semaine, le nombre minimum de coups exact du défi (« Auto » garde l'optimum habituel).
 - **Serbe** (alphabet latin).
