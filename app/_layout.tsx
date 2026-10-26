@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Alert } from 'react-native';
 import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AudioProvider } from '@/context/AudioProvider';
 import AchievementToast from '@/components/AchievementToast';
@@ -9,10 +10,10 @@ import { useWidgetSync } from '@/hooks/useWidgetSync';
 import { useGameStore } from '@/store/gameStore';
 import { useMultiStore } from '@/store/multiStore';
 import i18n from '@/utils/i18n';
-import { useTheme, useAppearanceSync } from '@/theme';
+import { useTheme, useAppearanceSync, statusBarStyle } from '@/theme';
 
 export default function RootLayout() {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   useAppearanceSync();
   useReminderSync();
   useWidgetSync();
@@ -29,6 +30,8 @@ export default function RootLayout() {
   return (
     <AudioProvider>
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
+        {/* Follows the app theme (forced or system); the recap stacks its own light style on top while shown (issue 205) */}
+        <StatusBar style={statusBarStyle(scheme)} />
         <Stack
           screenOptions={{
             headerShown: false,
