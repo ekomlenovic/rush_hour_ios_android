@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import Animated, { useAnimatedReaction, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
@@ -40,6 +42,25 @@ export default function GarageScreen() {
   const [previewed, setPreviewed] = useState<CosmeticDef | null>(null);
   const [effectKey, setEffectKey] = useState(0);
 
+  // Sticky tabs: stickyHeaderIndices re-renders its header every ~15 ms while scrolling on Android (Fabric),
+  // which made the garage lag. A fixed copy of the tabs is shown over the list once they reach the top instead
+  const scrollY = useSharedValue(0);
+  /** Top of the tabs in the list, -1 until measured */
+  const tabsTop = useSharedValue(-1);
+  const [tabsHeight, setTabsHeight] = useState(0);
+  const [stuck, setStuck] = useState(false);
+  const onScroll = useAnimatedScrollHandler(e => { scrollY.value = e.contentOffset.y; });
+  useAnimatedReaction(
+    () => tabsTop.value >= 0 && scrollY.value >= tabsTop.value,
+    (now, before) => { if (now !== before) scheduleOnRN(setStuck, now); },
+  );
+  // The copy shows on the UI thread at once; `stuck` only lets it take touches
+  const stuckStyle = useAnimatedStyle(() => ({ opacity: tabsTop.value >= 0 && scrollY.value >= tabsTop.value ? 1 : 0 }));
+  const onTabsLayout = (e: LayoutChangeEvent) => {
+    tabsTop.value = e.nativeEvent.layout.y;
+    setTabsHeight(e.nativeEvent.layout.height);
+  };
+
   // A new item keeps its badge until it is touched
   const newKeys = new Set(unseen);
 
@@ -62,6 +83,42 @@ export default function GarageScreen() {
 
   const items = COSMETICS.filter(def => def.kind === kind);
 
+  const tabs = (
+    <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
+      {KINDS.map(k => {
+        const active = k === kind;
+        const newCount = COSMETICS.filter(def => def.kind === k && newKeys.has(cosmeticKey(def))).length;
+        return (
+          <Pressable
+            key={k}
+            onPress={() => { setKind(k); setPreviewed(null); }}
+            style={[styles.tab, active && { backgroundColor: colors.primary }]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
+            accessibilityLabel={newCount > 0
+              ? `${t(`cosmetics.kinds.${k}`)}, ${t('cosmetics.new_count', { count: newCount })}`
+              : t(`cosmetics.kinds.${k}`)}
+          >
+            <Ionicons name={KIND_ICONS[k]} size={20} color={active ? colors.onPrimary : colors.primaryText} />
+            <Text
+              style={[styles.tabText, { color: active ? colors.onPrimary : colors.text }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              {t(`cosmetics.tabs.${k}`)}
+            </Text>
+            {newCount > 0 && (
+              <View style={[styles.tabCount, { backgroundColor: colors.primary, borderColor: colors.surface }]}>
+                <Text style={[styles.tabCountText, { color: colors.onPrimary }]}>{newCount}</Text>
+              </View>
+            )}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Also opened from the win screen: back then leads to the map or the challenge, not home */}
@@ -72,8 +129,12 @@ export default function GarageScreen() {
         subtitle={t('cosmetics.unlocked_count', { unlocked: unlocked.length, total: COSMETICS.length })}
       />
 
-      {/* The tabs stay at the top while the items scroll */}
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]} stickyHeaderIndices={[1]}>
+      <View style={styles.body}>
+      <Animated.ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+      >
         <View style={styles.previewWrap}>
           <View>
             <BoardPreview selection={previewSelection} scheme={scheme} size={previewSize} />
@@ -92,40 +153,13 @@ export default function GarageScreen() {
           )}
         </View>
 
-        <View style={[styles.tabsSticky, { backgroundColor: colors.background }]}>
-        <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
-          {KINDS.map(k => {
-            const active = k === kind;
-            const newCount = COSMETICS.filter(def => def.kind === k && newKeys.has(cosmeticKey(def))).length;
-            return (
-              <Pressable
-                key={k}
-                onPress={() => { setKind(k); setPreviewed(null); }}
-                style={[styles.tab, active && { backgroundColor: colors.primary }]}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: active }}
-                accessibilityLabel={newCount > 0
-                  ? `${t(`cosmetics.kinds.${k}`)}, ${t('cosmetics.new_count', { count: newCount })}`
-                  : t(`cosmetics.kinds.${k}`)}
-              >
-                <Ionicons name={KIND_ICONS[k]} size={20} color={active ? colors.onPrimary : colors.primaryText} />
-                <Text
-                  style={[styles.tabText, { color: active ? colors.onPrimary : colors.text }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.8}
-                >
-                  {t(`cosmetics.tabs.${k}`)}
-                </Text>
-                {newCount > 0 && (
-                  <View style={[styles.tabCount, { backgroundColor: colors.primary, borderColor: colors.surface }]}>
-                    <Text style={[styles.tabCountText, { color: colors.onPrimary }]}>{newCount}</Text>
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
+        <View
+          style={styles.tabsSticky}
+          onLayout={onTabsLayout}
+          importantForAccessibility={stuck ? 'no-hide-descendants' : 'auto'}
+          accessibilityElementsHidden={stuck}
+        >
+          {tabs}
         </View>
 
         <View style={styles.grid}>
@@ -169,17 +203,30 @@ export default function GarageScreen() {
             );
           })}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
+
+      {/* The tabs stay at the top while the items scroll */}
+      <Animated.View
+        style={[styles.tabsStuck, styles.tabsSticky, { backgroundColor: colors.background, minHeight: tabsHeight }, stuckStyle]}
+        pointerEvents={stuck ? 'auto' : 'none'}
+        importantForAccessibility={stuck ? 'auto' : 'no-hide-descendants'}
+        accessibilityElementsHidden={!stuck}
+      >
+        {tabs}
+      </Animated.View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  body: { flex: 1 },
   content: { paddingHorizontal: 20 },
   previewWrap: { alignItems: 'center', marginBottom: 4, gap: 8 },
   previewNote: { fontSize: RFValue(13), fontWeight: '700', textAlign: 'center' },
   tabsSticky: { paddingTop: 8, paddingBottom: 12 },
+  tabsStuck: { position: 'absolute', top: 0, left: 20, right: 20 },
   tabs: { flexDirection: 'row', padding: 4, borderRadius: 12, gap: 4 },
   tab: { flex: 1, paddingVertical: 6, paddingHorizontal: 4, borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 2 },
   tabText: { fontSize: RFValue(12), fontWeight: '700', textAlign: 'center' },
