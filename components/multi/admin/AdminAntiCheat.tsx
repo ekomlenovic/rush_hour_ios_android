@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { MultiApi, Thresholds } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
 import Stepper from './Stepper';
 import { useAdminSettings } from './useAdminSettings';
 import { adminStyles as styles } from './styles';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 /** Each threshold, its step and how it is shown */
 const THRESHOLDS: { key: keyof Thresholds; step: number; min: number; max: number; format: (v: number) => string }[] = [
@@ -26,7 +27,7 @@ export default function AdminAntiCheat({ api, colors }: Props) {
   const { t } = useTranslation();
   const { settings, save } = useAdminSettings(api);
 
-  if (!settings) return <ActivityIndicator color={colors.primary} />;
+  if (!settings) return <LoadingIndicator />;
 
   const card = [styles.card, { backgroundColor: colors.surface, borderColor: colors.border }];
   return (

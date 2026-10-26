@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Animated, { FadeInDown, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,7 @@ import { RFValue } from '@/utils/responsive';
 import { formatDuration } from '@/utils/date';
 import type { DuelListing } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 interface Props {
   duels: DuelListing[] | null;
@@ -64,7 +65,7 @@ export default function DuelsCard({ duels, loadedAt, colors, myPlayerId, clockOf
         </Pressable>
       </View>
 
-      {duels === null && <ActivityIndicator color={colors.primary} style={styles.state} />}
+      {duels === null && <LoadingIndicator style={styles.state} />}
 
       {duels !== null && duels.length === 0 && (
         <View style={styles.empty}>

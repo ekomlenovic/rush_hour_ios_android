@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ActivityIndicator, AccessibilityInfo, useWindowDimensions, type LayoutChangeEvent,
+  View, Text, StyleSheet, Pressable, AccessibilityInfo, useWindowDimensions, type LayoutChangeEvent,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -18,6 +18,7 @@ import { useMultiApi } from '@/hooks/useMultiApi';
 import type { DuelReplay } from '@/utils/multi/api';
 import { REPLAY_SPEEDS, isLongPause, gapBefore, playbackDelay, timeAt, vehiclesAfter, type ReplaySpeed } from '@/utils/multi/replay';
 import { mergeDuelMoves, movesPlayedAt } from '@/utils/multi/duelReplay';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 const noop = () => {};
 /** Room for the player bars, the clock and the controls around the boards */
@@ -82,7 +83,7 @@ export default function DuelReplayScreen() {
       <MultiHeader title={t('multi.duel.replay_title')} colors={colors} />
       <View style={styles.center}>
         {error ? <Text style={[styles.message, { color: colors.text }]}>{multiErrorMessage(t, error)}</Text>
-          : <ActivityIndicator color={colors.primary} />}
+          : <LoadingIndicator />}
       </View>
     </View>
   );

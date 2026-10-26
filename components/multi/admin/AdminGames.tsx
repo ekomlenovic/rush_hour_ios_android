@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { formatDuration } from '@/utils/date';
@@ -12,6 +12,7 @@ import AdminSegmented from './AdminSegmented';
 import { useAdminRefresh } from './AdminPage';
 import { adminStyles as styles } from './styles';
 import IconText from '@/components/IconText';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 interface Props { api: MultiApi; colors: UiColors }
 
@@ -62,7 +63,7 @@ export default function AdminGames({ api, colors }: Props) {
         onChange={changeFilter}
         colors={colors}
       />
-      {!games && <ActivityIndicator color={colors.primary} />}
+      {!games && <LoadingIndicator />}
       {games?.length === 0 && <Text style={[styles.empty, { color: colors.textMuted }]}>{t('multi.admin_no_games')}</Text>}
       {games?.map(game => (
         <View key={game.attemptId} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>

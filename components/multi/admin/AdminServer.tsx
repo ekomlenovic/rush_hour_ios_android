@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { MultiApi } from '@/utils/multi/api';
 import { useMultiStore } from '@/store/multiStore';
@@ -8,6 +8,7 @@ import type { UiColors } from '@/theme';
 import AdminButton from './AdminButton';
 import { useAdminSettings } from './useAdminSettings';
 import { adminStyles as styles } from './styles';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 const SERVER_NAME_MAX = 40;
 
@@ -22,7 +23,7 @@ export default function AdminServer({ api, colors, serverUrl }: Props) {
 
   useEffect(() => { if (settings) setName(settings.serverName); }, [settings?.serverName]);
 
-  if (!settings) return <ActivityIndicator color={colors.primary} />;
+  if (!settings) return <LoadingIndicator />;
 
   const nameChanged = name.trim() !== settings.serverName && name.trim().length > 0;
   const saveName = async () => {

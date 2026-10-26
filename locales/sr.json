@@ -680,6 +680,7 @@
     "dir_down": "dole",
     "win": "{{title}} {{stars}} od 3 zvezdice. {{stats}}",
     "back": "Nazad",
+    "loading": "Učitavanje",
     "close": "Zatvori",
     "settings": "Opcije",
     "share_level": "Podeli ovaj nivo",
