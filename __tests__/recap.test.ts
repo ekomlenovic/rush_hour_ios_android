@@ -1,10 +1,11 @@
 import type { TFunction } from 'i18next';
 import { DAILY_LEVEL_ID, useGameStore, type ChallengeResult } from '../store/gameStore';
+import type { RecapsSeen } from '../store/types';
 import { sampleLevels } from '../data/sampleLevels';
 import { addToPeriods, emptyPeriodStats, RECAP_MONTHS_KEPT } from '../store/periodStats';
 import { isBossLevel } from '../data/bosses';
 import {
-  availableRecaps, buildRecap, buildRecapShareText, pendingRecap, periodBounds, pickProfile, recapHighlights, recapProgress, recapSlides, type RecapSource,
+  availableRecaps, buildRecap, buildRecapShareText, pendingRecap, periodBounds, pickProfile, recapHighlights, recapProgress, recapSlides, shouldMarkRecapSeen, type RecapSource,
 } from '../utils/recap';
 import { planReminders } from '../utils/reminders';
 import { addMonths, getWeekStart } from '../utils/date';
@@ -252,6 +253,40 @@ describe('the home screen announces the recap', () => {
     store().markRecapSeen('2026-08');
     store().markRecapSeen('2026');
     expect(store().recapsSeen).toEqual({ month: '2026-10', year: '2026' });
+  });
+
+  it('looking at the current period keeps its announcement once it is over (issue 182)', () => {
+    const october = source({
+      monthlyStats: { '2026-09': { ...emptyPeriodStats(), wins: 1 }, '2026-10': { ...emptyPeriodStats(), wins: 2 } },
+      yearlyStats: { 2026: { ...emptyPeriodStats(), wins: 3 } },
+      dailyChallengeProgress: { '2026-10-14': win, '2026-10-15': win },
+    });
+    // Opens the recap the way the screen does, on the given day
+    const open = (recapsSeen: RecapsSeen, key: string, now: Date): RecapsSeen => {
+      if (!shouldMarkRecapSeen({ ...october, recapsSeen }, key, now)) return recapsSeen;
+      const field = key.length === 4 ? 'year' : 'month';
+      const seen = recapsSeen[field];
+      return seen && seen >= key ? recapsSeen : { ...recapsSeen, [field]: key };
+    };
+
+    // The current month, opened on the 15th: announced on November 1st
+    const midMonth = open({}, '2026-10', new Date(2026, 9, 15));
+    expect(midMonth).toEqual({});
+    expect(pendingRecap({ ...october, recapsSeen: midMonth }, new Date(2026, 10, 1))).toBe('2026-10');
+    // September, over, opened on the 15th: does not hide October
+    const september = open({}, '2026-09', new Date(2026, 9, 15));
+    expect(september).toEqual({ month: '2026-09' });
+    expect(pendingRecap({ ...october, recapsSeen: september }, new Date(2026, 10, 1))).toBe('2026-10');
+    // October, announced, opened on November 2nd: no longer announced on the 3rd
+    const announced = open({}, '2026-10', new Date(2026, 10, 2));
+    expect(pendingRecap({ ...october, recapsSeen: announced }, new Date(2026, 10, 3))).toBeNull();
+
+    // The current year, opened in March: announced on December 26th
+    const march = open({ month: '2026-11' }, '2026', new Date(2026, 2, 10));
+    expect(pendingRecap({ ...october, recapsSeen: march }, new Date(2026, 11, 26))).toBe('2026');
+    // Still going on but announced, opened on December 27th: no longer announced on the 28th
+    const december = open({ month: '2026-11' }, '2026', new Date(2026, 11, 27));
+    expect(pendingRecap({ ...october, recapsSeen: december }, new Date(2026, 11, 28))).toBeNull();
   });
 
   it('the profile lists the last 12 months and every year played', () => {
