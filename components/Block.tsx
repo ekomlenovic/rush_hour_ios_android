@@ -5,14 +5,13 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withRepeat,
-  withSequence,
-  withTiming,
+  useReducedMotion,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { haptics, Haptics } from '@/utils/haptics';
 import { Vehicle } from '@/store/gameStore';
 import { stepVehicle } from '@/utils/accessibility';
+import { startHintGlow, stopHintGlow } from '@/utils/hintGlow';
 import { useBoardTheme, type VehicleArt } from '@/theme';
 import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
 
@@ -91,22 +90,16 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
     boundsMaxPx.value = max * cellSize;
   }, [min, max, cellSize]);
 
-  // Hint glow animation
+  // Hint glow animation: fixed highlight with the system "Reduce motion" setting (issue 154)
+  const reduceMotion = useReducedMotion();
   const hintGlow = useSharedValue(0);
   useEffect(() => {
     if (isHinted) {
-      hintGlow.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 600 }),
-          withTiming(0.3, { duration: 600 })
-        ),
-        -1,
-        true
-      );
+      startHintGlow(hintGlow, reduceMotion);
     } else {
-      hintGlow.value = withTiming(0, { duration: 200 });
+      stopHintGlow(hintGlow);
     }
-  }, [isHinted]);
+  }, [isHinted, reduceMotion]);
 
   const triggerMoveHaptic = useCallback(() => {
     if (vehicle.length >= 3) {
