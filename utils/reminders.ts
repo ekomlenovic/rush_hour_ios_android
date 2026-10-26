@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
 import { addDays, addMonths, dateLocale, getLocalDateString, getWeekKey, parseLocalDateString } from './date';
+import { DAILY_HREF, WEEKLY_HREF } from './challengeDates';
 
 export const DEFAULT_REMINDER_HOUR = 19;
 /** "Streak in danger" comes this many hours after the daily reminder */
@@ -34,6 +35,8 @@ export interface PlannedReminder {
   date: Date;
   title: string;
   body: string;
+  /** Screen opened by touching it: the challenges without a date, dated when opened (issue 191) */
+  url: string;
 }
 
 function at(dateKey: string, hour: number): Date {
@@ -60,6 +63,7 @@ export function planReminders(t: TFunction, input: ReminderInput): PlannedRemind
       date: at(day, reminderHour),
       title: t('reminders.daily_title'),
       body: t('reminders.daily_body'),
+      url: DAILY_HREF,
     });
   }
 
@@ -71,6 +75,7 @@ export function planReminders(t: TFunction, input: ReminderInput): PlannedRemind
       date: at(day, streakDangerHour(reminderHour)),
       title: t('reminders.streak_title'),
       body: t('reminders.streak_body', { count: currentStreak }),
+      url: DAILY_HREF,
     });
   }
 
@@ -85,6 +90,7 @@ export function planReminders(t: TFunction, input: ReminderInput): PlannedRemind
     date: at(monday, WEEKLY_REMINDER_HOUR),
     title: t('reminders.weekly_title'),
     body: t('reminders.weekly_body'),
+    url: WEEKLY_HREF,
   });
 
   // The recap of this month, ready on the 1st of the next one; the annual one on December 26th
@@ -99,6 +105,7 @@ export function planReminders(t: TFunction, input: ReminderInput): PlannedRemind
         month: parseLocalDateString(`${month}-01`).toLocaleDateString(dateLocale(input.language), { month: 'long' }),
         interpolation: { escapeValue: false },
       }),
+      url: `/recap?period=${month}`,
     });
   }
   const year = today.slice(0, 4);
@@ -108,6 +115,7 @@ export function planReminders(t: TFunction, input: ReminderInput): PlannedRemind
       date: at(`${year}-${YEAR_RECAP_DAY}`, RECAP_REMINDER_HOUR),
       title: t('reminders.recap_title'),
       body: t('reminders.recap_year_body', { year }),
+      url: `/recap?period=${year}`,
     });
   }
 
