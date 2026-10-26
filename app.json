@@ -18,7 +18,7 @@
     },
     "android": {
       "package": "com.rushhours.app",
-      "versionCode": 18,
+      "versionCode": 19,
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.SYSTEM_ALERT_WINDOW",
@@ -72,6 +72,7 @@
       ],
       "@bacons/apple-targets",
       "./plugins/withoutPushEntitlement",
+      "./plugins/withOptionalCamera",
       [
         "expo-notifications",
         {
