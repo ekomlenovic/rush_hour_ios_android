@@ -104,8 +104,11 @@ export default function AdminChallenges({ api, colors, timeZone }: Props) {
       {challenges.map(c => {
         const status = statusLine(c);
         const { puzzle } = c;
-        // Prepared in a difficulty changed since: generated again before its release
+        // Prepared in a difficulty or for an optimum changed since: generated again before its release
         const outdated = puzzle && puzzle.difficulty !== c.difficulty;
+        const otherMoves = puzzle && !outdated && (puzzle.wantedMoves ?? null) !== (c.wantedMoves ?? null);
+        // The optimum asked for was not found: the usual one of the difficulty
+        const notFound = puzzle && !outdated && !otherMoves && puzzle.wantedMoves != null && puzzle.wantedMoves !== puzzle.minMoves;
         return (
           <View key={c.date} style={[styles.card, local.card, { backgroundColor: colors.surface, borderColor: c.current ? colors.primary : colors.border }]}>
             <View style={local.header}>
@@ -117,7 +120,7 @@ export default function AdminChallenges({ api, colors, timeZone }: Props) {
               )}
             </View>
             <Text style={[styles.muted, { color: colors.text }]}>
-              {t(`difficulty.${c.difficulty}`)} · {c.current || c.releaseAt <= Date.now()
+              {t(`difficulty.${c.difficulty}`)}{c.wantedMoves != null ? ` · ${t('multi.admin_moves', { count: c.wantedMoves })}` : ''} · {c.current || c.releaseAt <= Date.now()
                 ? t('multi.admin_challenges_released', { date: when(c.releaseAt) })
                 : t('multi.admin_challenges_release', { date: when(c.releaseAt) })}
             </Text>
@@ -130,6 +133,10 @@ export default function AdminChallenges({ api, colors, timeZone }: Props) {
                     <Text style={[styles.muted, { color: colors.warning }]}>
                       {t('multi.admin_challenges_outdated', { old: t(`difficulty.${puzzle.difficulty}`), difficulty: t(`difficulty.${c.difficulty}`) })}
                     </Text>
+                  )}
+                  {otherMoves && <Text style={[styles.muted, { color: colors.warning }]}>{t('multi.admin_challenges_outdated_moves')}</Text>}
+                  {notFound && (
+                    <Text style={[styles.muted, { color: colors.warning }]}>{t('multi.admin_challenges_moves_not_found', { count: puzzle.wantedMoves! })}</Text>
                   )}
                   <Text style={[styles.muted, { color: puzzle.variantOf !== null ? colors.warning : colors.textMuted }]}>{originOf(t, puzzle)}</Text>
                   <Text style={[styles.muted, { color: colors.textMuted }]}>
