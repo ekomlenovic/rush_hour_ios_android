@@ -347,6 +347,25 @@ describe('sharing the recap', () => {
   });
 });
 
+describe('the reminder links (issue 191)', () => {
+  it('each reminder opens what it announces, the challenges dated when opened', () => {
+    const reminders = planReminders(t, {
+      now: new Date(2026, 9, 20, 12), reminderHour: 19, completedDailies: new Set<string>(), completedWeeklies: new Set<string>(),
+      currentStreak: 3, playedThisMonth: true, playedThisYear: true,
+    });
+    const links = Object.fromEntries(reminders.map(r => [r.id, r.url]));
+    expect(links).toMatchObject({
+      'daily-2026-10-20': '/game?levelId=daily',
+      'daily-2026-10-26': '/game?levelId=daily',
+      'streak-2026-10-20': '/game?levelId=daily',
+      'weekly-2026-10-26': '/game?levelId=weekly',
+      'recap-2026-10': '/recap?period=2026-10',
+      'recap-2026': '/recap?period=2026',
+    });
+    expect(reminders.every(r => r.url)).toBe(true);
+  });
+});
+
 describe('the recap reminder', () => {
   const input = { now: new Date(2026, 9, 20, 12), reminderHour: 19, completedDailies: new Set<string>(), completedWeeklies: new Set<string>(), currentStreak: 0 };
 

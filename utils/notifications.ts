@@ -92,6 +92,37 @@ export async function sendTestReminder(): Promise<boolean> {
   return true;
 }
 
+/** The screen a touched reminder opens, null for none (the test one, an action button) */
+function reminderLink(response: import('expo-notifications').NotificationResponse): string | null {
+  if (!Notifications || response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return null;
+  const url = response.notification.request.content.data?.url;
+  return typeof url === 'string' && url.startsWith('/') ? url : null;
+}
+
+/**
+ * Opens the screen a touched reminder announces (issue 191): the one that launched the app,
+ * then each one touched while it runs. Returns the cleanup; a no-op where notifications are off.
+ */
+export function listenToReminderTaps(open: (url: string) => void): () => void {
+  if (!Notifications) return () => {};
+  const notifications = Notifications;
+  let lastHandled: string | null = null;
+  const handle = (response: import('expo-notifications').NotificationResponse | null) => {
+    if (!response) return;
+    // The response that launched the app can also reach the listener: opened once
+    const key = `${response.notification.request.identifier}@${response.notification.date}`;
+    if (key === lastHandled) return;
+    lastHandled = key;
+    // Not opened again by the next launch
+    notifications.clearLastNotificationResponse();
+    const url = reminderLink(response);
+    if (url) open(url);
+  };
+  handle(notifications.getLastNotificationResponse());
+  const subscription = notifications.addNotificationResponseReceivedListener(handle);
+  return () => subscription.remove();
+}
+
 /**
  * Keeps the scheduled reminders in line with the player's progress: replans everything
  * when the progress or the settings change, and when the app comes back to the foreground.
@@ -142,7 +173,7 @@ export function useReminderSync() {
         if (outdated) return;
         await Notifications.scheduleNotificationAsync({
           identifier: reminder.id,
-          content: { title: reminder.title, body: reminder.body },
+          content: { title: reminder.title, body: reminder.body, data: { url: reminder.url } },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DATE,
             date: reminder.date,
