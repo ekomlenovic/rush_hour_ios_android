@@ -1467,6 +1467,7 @@
       "ranking_empty": "U ovom periodu nije odigran nijedan duel.",
       "record_a11y": "Pobede: {{wins}}, porazi: {{losses}}, nerešeno: {{draws}}",
       "history_title": "Moji dueli",
+      "recreate_room": "Ponovo napravi sobu",
       "history_empty": "Tvoji završeni dueli pojaviće se ovde.",
       "against": "protiv {{pseudo}}",
       "draws_one": "{{count}} nerešeno",
@@ -1593,6 +1594,8 @@
       "duel_replaced": "Tvoj nalog sada igra na drugom telefonu: duel se nastavlja tamo.",
       "puzzle_unavailable": "Server nije mogao da pripremi zagonetku za ovaj duel. Pokušaj ponovo ili izaberi drugi nivo.",
       "too_many_spectators": "Previše ljudi već gleda ovaj duel. Pokušaj ponovo kasnije.",
+      "room_closed": "Tvoja soba je zatvorena dok je veza bila prekinuta. Napravi je ponovo da pozoveš protivnika.",
+      "duel_ended_offline": "Tvoj duel se završio dok je veza bila prekinuta. Rezultat potraži u „Moji dueli”.",
       "reaction_refused": "Samo gledalac može da reaguje, tokom partije.",
       "too_many_reactions": "Polako! Sačekaj malo pre nove reakcije.",
       "unknown": "Desilo se nešto neočekivano."
