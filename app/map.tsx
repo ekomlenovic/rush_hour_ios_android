@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import type { ScrollViewInstance } from 'react-native';
-import { useNavigation, useRouter, type NativeStackNavigationProp } from 'expo-router';
+import { useNavigation, type NativeStackNavigationProp } from 'expo-router';
+import { useRouter } from '@/hooks/useRouter';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { haptics, Haptics } from '@/utils/haptics';
 import { useGameStore } from '@/store/gameStore';
