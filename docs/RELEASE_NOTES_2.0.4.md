@@ -13,7 +13,7 @@ Nouveautés :
 • En duel, les spectateurs réagissent et encouragent les joueurs
 • Scanne un QR code pour rejoindre un serveur ou importer un niveau
 • La musique du jeu ne coupe plus ta musique ni tes podcasts
-• Carte et effets de victoire plus fluides sur Android
+• Carte, garage et effets de victoire plus fluides sur Android
 • Nouvelle langue : serbe
 • Un défi du jour resté ouvert après minuit ne fait plus perdre ton streak
 • Corrections et améliorations
@@ -24,7 +24,7 @@ New:
 • In duels, spectators can react and cheer the players on
 • Scan a QR code to join a server or import a level
 • The game music no longer stops your music or podcasts
-• Smoother map and win effects on Android
+• Smoother map, garage and win effects on Android
 • New language: Serbian
 • A daily challenge left open past midnight no longer breaks your streak
 • Fixes and improvements
@@ -44,7 +44,8 @@ New:
 
 ### Correctifs
 
-- **Fluidité sur Android** : les animations d'opacité et de déplacement (particules et halos de la victoire) sont appliquées directement aux vues au lieu de recalculer tout l'écran à chaque image. La carte se dessine une fois le glissement depuis l'accueil terminé, en un seul fondu, avec un indicateur de chargement au milieu de l'écran en attendant.
+- **Fluidité sur Android** : les animations d'opacité et de déplacement (particules et halos de la victoire) sont appliquées directement aux vues au lieu de recalculer tout l'écran à chaque image. La carte se dessine une fois le glissement depuis l'accueil terminé, en un seul fondu ; l'indicateur de chargement n'apparaît que si elle est lente à dessiner. Le garage défile sans à-coups : les onglets restent en haut sans redessiner la liste, et choisir un style ne redessine plus toutes les vignettes.
+- **Navigation** : un bouton touché deux fois (garage, profil, menus) n'ouvre plus son écran en double ; un retour répété est ignoré de même.
 - **Indicateur de chargement** commun à toute l'app : il n'apparaît qu'après 150 ms (rien pour un chargement rapide) et le lecteur d'écran annonce « Chargement ».
 - **Audio** : la musique du jeu se mélange à l'audio du téléphone au lieu de le couper, et se tait en mode silencieux. Plus de boucle de 50 ms en arrière-plan.
 - **Streak** : un défi du jour resté ouvert après minuit ne fait plus perdre le streak (ni consommer un gel) ; deux jours consécutifs bien comptés en Nouvelle-Zélande au changement d'heure.
