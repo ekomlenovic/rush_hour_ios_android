@@ -33,7 +33,7 @@ interface Props {
 }
 
 /** Static board drawn with a cosmetic selection (garage preview, thumbnail of a level) */
-export default function BoardPreview({ selection, scheme, size, level }: Props) {
+function BoardPreview({ selection, scheme, size, level }: Props) {
   const board = getSkinnedBoard(selection.board, selection.skin, scheme);
   const vehicles = level?.vehicles ?? SAMPLE;
   const grid = level?.gridSize ?? GRID;
@@ -108,3 +108,5 @@ const styles = StyleSheet.create({
   shine: { position: 'absolute', top: 2, left: 2, right: 2, height: '45%' },
   exit: { position: 'absolute', borderRadius: 3, borderWidth: 1 },
 });
+
+export default React.memo(BoardPreview);

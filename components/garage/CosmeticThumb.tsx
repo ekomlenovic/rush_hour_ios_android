@@ -14,7 +14,7 @@ interface Props {
 }
 
 /** Small picture of a cosmetic: the board, the car with its skin, the palette colors or the effect */
-export default function CosmeticThumb({ def, scheme, size, locked }: Props) {
+function CosmeticThumb({ def, scheme, size, locked }: Props) {
   let content: React.ReactNode;
 
   if (def.kind === 'board') {
@@ -61,3 +61,6 @@ const styles = StyleSheet.create({
   locked: { opacity: 0.35 },
   lock: { position: 'absolute', right: -2, bottom: -2 },
 });
+
+// Its props don't change when an item is picked: the garage grid is not redrawn on every press
+export default React.memo(CosmeticThumb);
