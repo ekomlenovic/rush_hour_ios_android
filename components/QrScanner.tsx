@@ -7,9 +7,16 @@ import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { haptics, Haptics } from '@/utils/haptics';
 import { fixedColors, type UiColors } from '@/theme';
+import { getScannerCamera } from '@/modules/rush-device';
 
 /** Time the "not recognized" message stays before the camera scans again */
 const REJECT_PAUSE_MS = 1500;
+
+/** The camera of the phone, read once: front only on most Chromebooks */
+const SCANNER_CAMERA = getScannerCamera();
+
+/** False on a device without a camera (Chromebook, TV, car…): the scan buttons are hidden */
+export const canScanQr = SCANNER_CAMERA !== null;
 
 interface Props {
   visible: boolean;
@@ -90,7 +97,7 @@ export default function QrScanner({ visible, title, hint, colors, onClose, onSca
       <>
         <CameraView
           style={StyleSheet.absoluteFill}
-          facing="back"
+          facing={SCANNER_CAMERA ?? 'back'}
           barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
           onBarcodeScanned={rejected ? undefined : handleScan}
         />
