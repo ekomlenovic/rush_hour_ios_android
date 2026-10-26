@@ -1,4 +1,4 @@
-# Rush Hours 2.0.4 (versionCode 17)
+# Rush Hours 2.0.4 (versionCode 18)
 
 Mise à jour de la **2.0.3 (versionCode 16)** : un widget d'écran d'accueil, les réactions des spectateurs en duel, le scan de QR codes, une musique qui se mélange à la tienne, le serbe, plus de fluidité sur Android, et beaucoup de correctifs.
 
