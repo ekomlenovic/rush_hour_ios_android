@@ -40,6 +40,12 @@
     "done": "Gotovo",
     "close": "Zatvori"
   },
+  "scanner": {
+    "permission": "Dozvoli pristup kameri za skeniranje QR koda. Slika ostaje na tvom telefonu.",
+    "allow": "Dozvoli kameru",
+    "open_settings": "Otvori podešavanja",
+    "not_recognized": "Ovaj QR kod nije prepoznat"
+  },
   "home": {
     "play_level": "Nivo {{level}}",
     "play_tutorial": "Počni sa uputstvom",
@@ -290,6 +296,8 @@
     "not_won": "Još nije pređen",
     "import_title": "Uvezi nivo",
     "import_hint": "Nalepi link ili kod koji ti je prijatelj poslao.",
+    "scan_qr": "Skeniraj QR kod",
+    "scan_hint": "Usmeri kameru na QR kod nivoa",
     "import_existing_title": "Već uvezen",
     "import_existing": "Ovaj nivo već imaš u Uvezenim.",
     "name_label": "Naziv (opciono)",
@@ -1046,7 +1054,9 @@
     "recover": "Vrati moj nalog",
     "have_account": "Već imam nalog na ovom serveru",
     "new_account": "Nov sam na ovom serveru",
-    "join_tip": "Savet: nalepi link pozivnice ovde, sve će se samo popuniti.",
+    "join_tip": "Savet: skeniraj QR kod ili nalepi link pozivnice ovde, sve će se samo popuniti.",
+    "scan_qr": "Skeniraj QR kod",
+    "scan_hint": "Usmeri kameru na QR kod pozivnice ili oporavka",
     "already_joined_title": "Već si se pridružio",
     "already_joined_body": "Već imaš nalog na ovom serveru. Ako napraviš novi, na ovom telefonu gubiš pristup starom (sačuvaj svoj kod za oporavak).",
     "create_title": "Napravi svoj server",

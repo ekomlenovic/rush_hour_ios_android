@@ -34,7 +34,8 @@ describe('Android manifest', () => {
   it('only declares the permissions the app uses', () => {
     const permissions: Permission[] = manifest['uses-permission'] ?? [];
     const kept = permissions.filter((p) => p.$['tools:node'] !== 'remove').map((p) => p.$['android:name']);
-    expect(kept.sort()).toEqual(['android.permission.INTERNET', 'android.permission.MODIFY_AUDIO_SETTINGS', 'android.permission.VIBRATE']);
+    // Camera: the QR code scanner (components/QrScanner.tsx)
+    expect(kept.sort()).toEqual(['android.permission.CAMERA', 'android.permission.INTERNET', 'android.permission.MODIFY_AUDIO_SETTINGS', 'android.permission.VIBRATE']);
   });
 
   it('removes the unused permissions added by the libraries', () => {
@@ -56,5 +57,9 @@ describe('iOS Info.plist', () => {
 
   it('asks for no microphone access', () => {
     expect(infoPlist.NSMicrophoneUsageDescription).toBeUndefined();
+  });
+
+  it('says why it asks for the camera', () => {
+    expect(infoPlist.NSCameraUsageDescription).toMatch(/QR code/);
   });
 });

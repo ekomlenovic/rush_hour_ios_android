@@ -40,6 +40,12 @@
     "done": "Done",
     "close": "Close"
   },
+  "scanner": {
+    "permission": "Allow the camera to scan a QR code. The picture stays on your phone.",
+    "allow": "Allow camera",
+    "open_settings": "Open settings",
+    "not_recognized": "This QR code isn't recognized"
+  },
   "home": {
     "play_level": "Level {{level}}",
     "play_tutorial": "Start with the tutorial",
@@ -277,6 +283,8 @@
     "not_won": "Not won yet",
     "import_title": "Import a level",
     "import_hint": "Paste the link or code a friend sent you.",
+    "scan_qr": "Scan a QR code",
+    "scan_hint": "Point at the level's QR code",
     "import_existing_title": "Already imported",
     "import_existing": "You already have this level in Imported.",
     "name_label": "Name (optional)",
@@ -1010,7 +1018,9 @@
     "recover": "Get my account back",
     "have_account": "I already have an account on this server",
     "new_account": "I'm new on this server",
-    "join_tip": "Tip: paste the invitation link here, everything fills in by itself.",
+    "join_tip": "Tip: scan the QR code or paste the invitation link here, everything fills in by itself.",
+    "scan_qr": "Scan a QR code",
+    "scan_hint": "Point at the invitation or recovery QR code",
     "already_joined_title": "Already joined",
     "already_joined_body": "You already have an account on this server. Creating a new one will lose access to the old one on this phone (keep your recovery code).",
     "create_title": "Create my server",

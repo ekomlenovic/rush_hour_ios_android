@@ -62,6 +62,14 @@
           "faceIDPermission": false
         }
       ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Rush Hours uses the camera to scan a level or server invitation QR code.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
       "@bacons/apple-targets",
       "./plugins/withoutPushEntitlement",
       [
