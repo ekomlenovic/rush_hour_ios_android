@@ -20,8 +20,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import type { IoniconName } from '@/utils/icons';
 import IconText from '@/components/IconText';
 import ScreenHeader from '@/components/ScreenHeader';
-import LoadingIndicator from '@/components/LoadingIndicator';
-import { useSlideIn } from '@/hooks/useSlideIn';
 
 const KINDS: CosmeticKind[] = ['board', 'skin', 'palette', 'effect'];
 const KIND_ICONS: Record<CosmeticKind, IoniconName> = { board: 'grid', skin: 'car-sport', palette: 'color-palette', effect: 'sparkles' };
@@ -30,7 +28,6 @@ const KIND_ICONS: Record<CosmeticKind, IoniconName> = { board: 'grid', skin: 'ca
 export default function GarageScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const phase = useSlideIn();
   const { width } = useWindowDimensions();
   const { colors, scheme, board } = useTheme();
   const selection = useGameStore(s => s.cosmetics);
@@ -75,109 +72,104 @@ export default function GarageScreen() {
         subtitle={t('cosmetics.unlocked_count', { unlocked: unlocked.length, total: COSMETICS.length })}
       />
 
-      {/* Drawn after the slide: drawn before, it froze Android on the screen below */}
-      {phase === 'ready' ? (
-        <>
-          {/* The tabs stay at the top while the items scroll */}
-          <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]} stickyHeaderIndices={[1]}>
-            <View style={styles.previewWrap}>
-              <View>
-                <BoardPreview selection={previewSelection} scheme={scheme} size={previewSize} />
-                <WinEffect
-                  effect={previewSelection.effect}
-                  width={previewSize}
-                  height={previewSize}
-                  colors={[board.targetCar, ...board.vehicles.slice(0, 6)]}
-                  playKey={effectKey}
-                />
-              </View>
-              {previewed && (
-                <IconText icon="lock-closed" color={colors.warning} textStyle={styles.previewNote}>
-                  {t(`cosmetics.${previewed.kind}.${previewed.id}`)} : {describeUnlock(t, previewed, context)}
-                </IconText>
-              )}
-            </View>
+      {/* The tabs stay at the top while the items scroll */}
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]} stickyHeaderIndices={[1]}>
+        <View style={styles.previewWrap}>
+          <View>
+            <BoardPreview selection={previewSelection} scheme={scheme} size={previewSize} />
+            <WinEffect
+              effect={previewSelection.effect}
+              width={previewSize}
+              height={previewSize}
+              colors={[board.targetCar, ...board.vehicles.slice(0, 6)]}
+              playKey={effectKey}
+            />
+          </View>
+          {previewed && (
+            <IconText icon="lock-closed" color={colors.warning} textStyle={styles.previewNote}>
+              {t(`cosmetics.${previewed.kind}.${previewed.id}`)} : {describeUnlock(t, previewed, context)}
+            </IconText>
+          )}
+        </View>
 
-            <View style={[styles.tabsSticky, { backgroundColor: colors.background }]}>
-            <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
-              {KINDS.map(k => {
-                const active = k === kind;
-                const newCount = COSMETICS.filter(def => def.kind === k && newKeys.has(cosmeticKey(def))).length;
-                return (
-                  <Pressable
-                    key={k}
-                    onPress={() => { setKind(k); setPreviewed(null); }}
-                    style={[styles.tab, active && { backgroundColor: colors.primary }]}
-                    accessibilityRole="tab"
-                    accessibilityState={{ selected: active }}
-                    accessibilityLabel={newCount > 0
-                      ? `${t(`cosmetics.kinds.${k}`)}, ${t('cosmetics.new_count', { count: newCount })}`
-                      : t(`cosmetics.kinds.${k}`)}
-                  >
-                    <Ionicons name={KIND_ICONS[k]} size={20} color={active ? colors.onPrimary : colors.primaryText} />
-                    <Text
-                      style={[styles.tabText, { color: active ? colors.onPrimary : colors.text }]}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                      minimumFontScale={0.8}
-                    >
-                      {t(`cosmetics.tabs.${k}`)}
-                    </Text>
-                    {newCount > 0 && (
-                      <View style={[styles.tabCount, { backgroundColor: colors.primary, borderColor: colors.surface }]}>
-                        <Text style={[styles.tabCountText, { color: colors.onPrimary }]}>{newCount}</Text>
-                      </View>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
-            </View>
+        <View style={[styles.tabsSticky, { backgroundColor: colors.background }]}>
+        <View style={[styles.tabs, { backgroundColor: colors.neutralSoft }]} accessibilityRole="tablist">
+          {KINDS.map(k => {
+            const active = k === kind;
+            const newCount = COSMETICS.filter(def => def.kind === k && newKeys.has(cosmeticKey(def))).length;
+            return (
+              <Pressable
+                key={k}
+                onPress={() => { setKind(k); setPreviewed(null); }}
+                style={[styles.tab, active && { backgroundColor: colors.primary }]}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={newCount > 0
+                  ? `${t(`cosmetics.kinds.${k}`)}, ${t('cosmetics.new_count', { count: newCount })}`
+                  : t(`cosmetics.kinds.${k}`)}
+              >
+                <Ionicons name={KIND_ICONS[k]} size={20} color={active ? colors.onPrimary : colors.primaryText} />
+                <Text
+                  style={[styles.tabText, { color: active ? colors.onPrimary : colors.text }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  {t(`cosmetics.tabs.${k}`)}
+                </Text>
+                {newCount > 0 && (
+                  <View style={[styles.tabCount, { backgroundColor: colors.primary, borderColor: colors.surface }]}>
+                    <Text style={[styles.tabCountText, { color: colors.onPrimary }]}>{newCount}</Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+        </View>
 
-            <View style={styles.grid}>
-              {items.map(def => {
-                const key = cosmeticKey(def);
-                const isUnlocked = isCosmeticUnlocked(def, context);
-                const isSelected = selection[def.kind] === def.id;
-                const name = t(`cosmetics.${def.kind}.${def.id}`);
-                const condition = describeUnlock(t, def, context);
-                const shortCondition = describeUnlockShort(t, def, context);
-                const isNew = newKeys.has(key);
-                const state = isSelected ? t('cosmetics.selected')
-                  : isUnlocked ? (isNew ? `${t('cosmetics.new')}, ${t('cosmetics.unlock.default')}` : t('cosmetics.unlock.default'))
-                  : `${t('cosmetics.locked')}, ${condition}`;
-                return (
-                  <Pressable
-                    key={key}
-                    onPress={() => handlePress(def)}
-                    style={[
-                      styles.item,
-                      { backgroundColor: colors.surface, borderColor: isSelected ? colors.primary : colors.border },
-                      isSelected && styles.itemSelected,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('cosmetics.a11y_item', { name, state })}
-                    accessibilityState={{ selected: isSelected }}
-                  >
-                    <CosmeticThumb def={def} scheme={scheme} size={56} locked={!isUnlocked} />
-                    <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>{name}</Text>
-                    {isSelected ? (
-                      <Text style={[styles.itemState, { color: colors.primaryText }]}>✓ {t('cosmetics.selected')}</Text>
-                    ) : isUnlocked ? (
-                      isNew && <Text style={[styles.itemState, { color: colors.success }]}>{t('cosmetics.new')}</Text>
-                    ) : (
-                      <>
-                        <Text style={[styles.itemCondition, { color: colors.textMuted }]} numberOfLines={3}>{shortCondition}</Text>
-                        <XpBar colors={colors} ratio={unlockProgress(def, context)} height={4} />
-                      </>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
-          </ScrollView>
-        </>
-      ) : phase === 'drawing' && <LoadingIndicator size="large" fill />}
+        <View style={styles.grid}>
+          {items.map(def => {
+            const key = cosmeticKey(def);
+            const isUnlocked = isCosmeticUnlocked(def, context);
+            const isSelected = selection[def.kind] === def.id;
+            const name = t(`cosmetics.${def.kind}.${def.id}`);
+            const condition = describeUnlock(t, def, context);
+            const shortCondition = describeUnlockShort(t, def, context);
+            const isNew = newKeys.has(key);
+            const state = isSelected ? t('cosmetics.selected')
+              : isUnlocked ? (isNew ? `${t('cosmetics.new')}, ${t('cosmetics.unlock.default')}` : t('cosmetics.unlock.default'))
+              : `${t('cosmetics.locked')}, ${condition}`;
+            return (
+              <Pressable
+                key={key}
+                onPress={() => handlePress(def)}
+                style={[
+                  styles.item,
+                  { backgroundColor: colors.surface, borderColor: isSelected ? colors.primary : colors.border },
+                  isSelected && styles.itemSelected,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={t('cosmetics.a11y_item', { name, state })}
+                accessibilityState={{ selected: isSelected }}
+              >
+                <CosmeticThumb def={def} scheme={scheme} size={56} locked={!isUnlocked} />
+                <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>{name}</Text>
+                {isSelected ? (
+                  <Text style={[styles.itemState, { color: colors.primaryText }]}>✓ {t('cosmetics.selected')}</Text>
+                ) : isUnlocked ? (
+                  isNew && <Text style={[styles.itemState, { color: colors.success }]}>{t('cosmetics.new')}</Text>
+                ) : (
+                  <>
+                    <Text style={[styles.itemCondition, { color: colors.textMuted }]} numberOfLines={3}>{shortCondition}</Text>
+                    <XpBar colors={colors} ratio={unlockProgress(def, context)} height={4} />
+                  </>
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
     </View>
   );
 }
