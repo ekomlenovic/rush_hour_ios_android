@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { darkColors, lightColors, resolveScheme, type UiColors } from '../theme/ui';
+import { darkColors, lightColors, resolveScheme, statusBarStyle, type UiColors } from '../theme/ui';
 import { BOARD_THEMES, toBoardLook } from '../theme/board';
 import { contrastRatio } from '../theme/contrast';
 
@@ -16,6 +16,21 @@ describe('resolveScheme', () => {
   it('forces the chosen mode', () => {
     expect(resolveScheme('light', 'dark')).toBe('light');
     expect(resolveScheme('dark', 'light')).toBe('dark');
+  });
+});
+
+describe('statusBarStyle', () => {
+  it('uses dark icons on the light theme and light icons on the dark theme', () => {
+    expect(statusBarStyle('light')).toBe('dark');
+    expect(statusBarStyle('dark')).toBe('light');
+  });
+
+  it('is mounted at the root, following the theme, under the recap override (issue 205)', () => {
+    const layout = fs.readFileSync(path.join(__dirname, '../app/_layout.tsx'), 'utf8');
+    expect(layout).toMatch(/import \{ StatusBar \} from 'expo-status-bar'/);
+    expect(layout).toMatch(/<StatusBar style=\{statusBarStyle\(scheme\)\} \/>/);
+    const recap = fs.readFileSync(path.join(__dirname, '../app/recap.tsx'), 'utf8');
+    expect(recap).toMatch(/<StatusBar style="light" \/>/);
   });
 });
 
