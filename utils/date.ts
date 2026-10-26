@@ -5,15 +5,27 @@ export function getLocalDateString(d: Date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * Locale given to toLocaleDateString & co. for an app language: Serbian is written in Latin script
+ * in the app, while plain 'sr' would format the months in Cyrillic.
+ */
+export function dateLocale<T extends string | undefined>(language: T): T | 'sr-Latn' {
+  return language === 'sr' || language?.startsWith('sr-') ? 'sr-Latn' : language;
+}
+
 /** Parses a YYYY-MM-DD key as a local date (new Date('YYYY-MM-DD') would be UTC). */
 export function parseLocalDateString(dateKey: string): Date {
   const [year, month, day] = dateKey.split('-').map(Number);
   return new Date(year, month - 1, day);
 }
 
-/** Days since 1970 for a YYYY-MM-DD key; rounding absorbs daylight saving shifts. */
+/**
+ * Days since 1970 for a YYYY-MM-DD key, from the calendar alone: never shifted by the time zone
+ * (Auckland's local midnight falls exactly half a day off UTC in winter, rounding it broke the streak: issue 153).
+ */
 export function getDayNumber(dateKey: string): number {
-  return Math.round(parseLocalDateString(dateKey).getTime() / 86400000);
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return Date.UTC(year, month - 1, day) / 86400000;
 }
 
 /** YYYY-MM-DD key shifted by a number of days. */

@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import en from '../locales/en.json';
 import fr from '../locales/fr.json';
+import sr from '../locales/sr.json';
+import { dateLocale } from '../utils/date';
 
 const ROOT = path.join(__dirname, '..');
 const SOURCE_DIRS = ['app', 'components', 'hooks', 'utils', 'context'];
@@ -40,8 +42,72 @@ describe('translations', () => {
     expect(keys.size).toBeGreaterThan(100);
   });
 
-  it.each([['en', en], ['fr', fr]] as const)('every key used in the code exists in %s', (_, strings) => {
+  it.each([['en', en], ['fr', fr], ['sr', sr]] as const)('every key used in the code exists in %s', (_, strings) => {
     const missing = [...keys].filter(([key]) => !hasKey(strings, key)).map(([key, file]) => `${key} (${file})`);
     expect(missing).toEqual([]);
+  });
+
+  // Not even in a notification or a shared text: the code adds an emoji where one is wanted.
+  // Typographic symbols (★, ↕, ✓, ✗, ←) stay allowed
+  it.each([['en', en], ['fr', fr], ['sr', sr]] as const)('no text of %s contains an emoji', (_, strings) => {
+    const emoji = /(?![★↕©®™])\p{Extended_Pictographic}/u;
+    expect(flatten(strings).filter(([, text]) => emoji.test(text))).toEqual([]);
+  });
+
+  // One name per mode: the French daily challenge is « Défi du jour » everywhere (docs/GAME_DESIGN.md)
+  it.each([
+    [/défis? quotidiens?/i, 'défi du jour'],
+  ])('no French text says %s (write « %s »)', (forbidden) => {
+    expect(flatten(fr).filter(([, text]) => forbidden.test(text))).toEqual([]);
+  });
+});
+
+/** Every string of a translation file, by its dotted path */
+function flatten(node: object, prefix = ''): [string, string][] {
+  return Object.entries(node).flatMap(([key, value]) =>
+    typeof value === 'object' ? flatten(value, `${prefix}${key}.`) : [[`${prefix}${key}`, value as string]]);
+}
+
+const variables = (text: string) => [...text.matchAll(/{{(\w+)}}/g)].map(m => m[1]).sort();
+
+describe('Serbian translation', () => {
+  const english = new Map(flatten(en));
+  const serbian = new Map(flatten(sr));
+  // Serbian has three plural forms: an English key_one / key_other pair is key_one / key_few / key_other
+  const expected = new Map<string, string>();
+  for (const [key, text] of english) {
+    const plural = key.match(/^(.*)_(one|other)$/);
+    if (plural) for (const form of ['one', 'few', 'other']) expected.set(`${plural[1]}_${form}`, english.get(`${plural[1]}_other`)!);
+    else expected.set(key, text);
+  }
+
+  it('has the same keys as English, with the Serbian plural forms', () => {
+    expect([...serbian.keys()].filter(key => !expected.has(key))).toEqual([]);
+    expect([...expected.keys()].filter(key => !serbian.has(key))).toEqual([]);
+  });
+
+  it('keeps the variables of each English text', () => {
+    const wrong = [...serbian].filter(([key, text]) => {
+      // The one form also covers 21, 31…: it may name the count where English says "one"
+      const own = variables(text).filter(name => name !== 'count');
+      const reference = variables(expected.get(key) ?? '').filter(name => name !== 'count');
+      return own.join() !== reference.join();
+    });
+    expect(wrong).toEqual([]);
+  });
+
+  it('keeps {{count}} in the forms that need it, the one form included (21, 31…)', () => {
+    const missing = [...serbian].filter(([key, text]) => /{{count}}/.test(expected.get(key) ?? '') && !/{{count}}/.test(text));
+    expect(missing).toEqual([]);
+  });
+
+  it('is written in Latin script', () => {
+    expect([...serbian].filter(([, text]) => /[\u0400-\u04FF]/.test(text))).toEqual([]);
+  });
+
+  it('formats dates in Latin script too', () => {
+    expect(dateLocale('sr')).toBe('sr-Latn');
+    expect(dateLocale('fr')).toBe('fr');
+    expect(new Date(2026, 9, 1).toLocaleDateString(dateLocale('sr'), { month: 'long' })).not.toMatch(/[\u0400-\u04FF]/);
   });
 });

@@ -5,13 +5,12 @@ import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
 import { DIFFICULTY_LEVELS } from '@/utils/generator';
 import { haptics, Haptics } from '@/utils/haptics';
-import { useLevelGenerator, GENERATION_TIME_MAP, DifficultyKey, formatGenerationTime } from '@/hooks/useLevelGenerator';
+import { useLevelGenerator, DifficultyKey, formatGenerationTime, estimateGenerationSeconds } from '@/hooks/useLevelGenerator';
+import { useGenerationTimes } from '@/store/generationTimes';
+import { needsConfirmation } from '@/utils/generationEstimate';
 import { fixedColors, type UiColors } from '@/theme';
 import IconText from '../IconText';
 import { settingsStyles as styles } from './styles';
-
-/** A level this long to generate (Expert, Master) freezes the app: confirmed first */
-const LONG_LEVEL_MS = 60_000;
 
 /** Levels to generate at once; the default is one of them, so a choice is selected from the start */
 const GENERATION_AMOUNTS = [1, 3, 10];
@@ -33,26 +32,28 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
   const purgeCustomLevels = useGameStore(s => s.purgeCustomLevels);
   const unlockAllLevels = useGameStore(s => s.unlockAllLevels);
   const startGeneration = useLevelGenerator();
+  // Times measured on this phone: the estimate follows them (re-rendered after each level made)
+  const samples = useGenerationTimes(s => s.samples);
 
   const [genAmount, setGenAmount] = useState<number>(DEFAULT_GENERATION_AMOUNT);
   const [genDifficulty, setGenDifficulty] = useState<DifficultyKey>('NORMAL');
   const [genGridSize, setGenGridSize] = useState<number>(6);
 
-  const estimatedSeconds = (genAmount * (GENERATION_TIME_MAP[genDifficulty] || 2000)) / 1000;
+  const estimatedSeconds = estimateGenerationSeconds({ amount: genAmount, difficulty: genDifficulty, gridSize: genGridSize });
 
   const handleGenerate = () => {
     const start = () => {
       startGeneration({ amount: genAmount, difficulty: genDifficulty, gridSize: genGridSize });
       onClose();
     };
-    // Expert and Master: each level blocks the app for minutes, never started without saying so
-    if ((GENERATION_TIME_MAP[genDifficulty] || 0) < LONG_LEVEL_MS) return start();
+    // A level that blocks the app a minute or more (Expert, Master, big grids): never started without saying so
+    if (!needsConfirmation(genDifficulty, genGridSize, samples)) return start();
     haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(
       t('map.long_generation_title'),
       t('map.long_generation_body', {
         amount: genAmount,
-        difficulty: t(`difficulty.${genDifficulty}`),
+        difficulty: `${t(`difficulty.${genDifficulty}`)} ${genGridSize}x${genGridSize}`,
         time: formatGenerationTime(estimatedSeconds),
       }),
       [

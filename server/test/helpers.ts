@@ -31,13 +31,13 @@ export const LONG_SOLUTION: MoveRecord[] = [
   { vehicleId: 'target', delta: 4, t: 9000 },
 ];
 
-/** Records what it is asked to generate, answers LEVEL */
+/** Records what it is asked to generate, answers LEVEL (with the optimum asked for, if any) */
 export function fakeGenerator(level: Level | null = LEVEL) {
-  const calls: { seed: string; difficulty: string; kind?: string }[] = [];
+  const calls: { seed: string; difficulty: string; kind?: string; minMoves?: number }[] = [];
   const generator: PuzzleGenerator = {
-    generate: async (seed, difficulty) => {
-      calls.push({ seed, difficulty });
-      return level && { ...level };
+    generate: async (seed, difficulty, minMoves) => {
+      calls.push(minMoves === undefined ? { seed, difficulty } : { seed, difficulty, minMoves });
+      return level && { ...level, minMoves: minMoves ?? level.minMoves };
     },
     variants: async (sourceId, difficulty, count) => {
       calls.push({ seed: `variants:${sourceId}`, difficulty, kind: 'variants' });

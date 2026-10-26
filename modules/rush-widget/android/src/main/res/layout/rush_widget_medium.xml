@@ -82,5 +82,17 @@
             android:textSize="24sp"
             android:textStyle="bold"
             android:visibility="gone" />
+
+        <!-- In the last minutes before midnight, instead of the countdown: never below zero (issue 190) -->
+        <TextView
+            android:id="@+id/rush_widget_timer_bound"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:textColor="@color/rush_widget_text"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
     </LinearLayout>
 </LinearLayout>

@@ -10,6 +10,7 @@ import BoardPreview from '@/components/garage/BoardPreview';
 import { errorCode, multiErrorMessage } from '../errors';
 import { useAdminRefresh } from './AdminPage';
 import { adminStyles as styles } from './styles';
+import { dateLocale } from '@/utils/date';
 
 const THUMB = 72;
 
@@ -63,15 +64,15 @@ export default function AdminChallenges({ api, colors, timeZone }: Props) {
   /** In the time zone of the server, like the release time */
   const at = (ms: number, options: Intl.DateTimeFormatOptions) => {
     try {
-      return new Date(ms).toLocaleString(i18n.language, { ...options, timeZone });
+      return new Date(ms).toLocaleString(dateLocale(i18n.language), { ...options, timeZone });
     } catch {
-      return new Date(ms).toLocaleString(i18n.language, options);
+      return new Date(ms).toLocaleString(dateLocale(i18n.language), options);
     }
   };
   const when = (ms: number) => at(ms, { weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const time = (ms: number) => at(ms, { hour: '2-digit', minute: '2-digit' });
   // A day of the calendar, whatever the time zone
-  const day = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+  const day = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString(dateLocale(i18n.language), { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
 
   if (error && !challenges) return <Text style={[styles.muted, { color: colors.textMuted }]}>{error}</Text>;
   if (!challenges) return <ActivityIndicator color={colors.primary} />;
@@ -103,8 +104,11 @@ export default function AdminChallenges({ api, colors, timeZone }: Props) {
       {challenges.map(c => {
         const status = statusLine(c);
         const { puzzle } = c;
-        // Prepared in a difficulty changed since: generated again before its release
+        // Prepared in a difficulty or for an optimum changed since: generated again before its release
         const outdated = puzzle && puzzle.difficulty !== c.difficulty;
+        const otherMoves = puzzle && !outdated && (puzzle.wantedMoves ?? null) !== (c.wantedMoves ?? null);
+        // The optimum asked for was not found: the usual one of the difficulty
+        const notFound = puzzle && !outdated && !otherMoves && puzzle.wantedMoves != null && puzzle.wantedMoves !== puzzle.minMoves;
         return (
           <View key={c.date} style={[styles.card, local.card, { backgroundColor: colors.surface, borderColor: c.current ? colors.primary : colors.border }]}>
             <View style={local.header}>
@@ -116,7 +120,7 @@ export default function AdminChallenges({ api, colors, timeZone }: Props) {
               )}
             </View>
             <Text style={[styles.muted, { color: colors.text }]}>
-              {t(`difficulty.${c.difficulty}`)} · {c.current || c.releaseAt <= Date.now()
+              {t(`difficulty.${c.difficulty}`)}{c.wantedMoves != null ? ` · ${t('multi.admin_moves', { count: c.wantedMoves })}` : ''} · {c.current || c.releaseAt <= Date.now()
                 ? t('multi.admin_challenges_released', { date: when(c.releaseAt) })
                 : t('multi.admin_challenges_release', { date: when(c.releaseAt) })}
             </Text>
@@ -129,6 +133,10 @@ export default function AdminChallenges({ api, colors, timeZone }: Props) {
                     <Text style={[styles.muted, { color: colors.warning }]}>
                       {t('multi.admin_challenges_outdated', { old: t(`difficulty.${puzzle.difficulty}`), difficulty: t(`difficulty.${c.difficulty}`) })}
                     </Text>
+                  )}
+                  {otherMoves && <Text style={[styles.muted, { color: colors.warning }]}>{t('multi.admin_challenges_outdated_moves')}</Text>}
+                  {notFound && (
+                    <Text style={[styles.muted, { color: colors.warning }]}>{t('multi.admin_challenges_moves_not_found', { count: puzzle.wantedMoves! })}</Text>
                   )}
                   <Text style={[styles.muted, { color: puzzle.variantOf !== null ? colors.warning : colors.textMuted }]}>{originOf(t, puzzle)}</Text>
                   <Text style={[styles.muted, { color: colors.textMuted }]}>

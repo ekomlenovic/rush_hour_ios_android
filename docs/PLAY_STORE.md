@@ -58,6 +58,21 @@ L'app vise **tous les âges, enfants compris** : dans « Public cible et contenu
 
 Le multijoueur passe par des serveurs que le développeur ne contrôle pas : la politique demande qu'un parent décide si un enfant rejoint un serveur. Google peut demander plus (par exemple un contrôle parental avant d'ouvrir le multijoueur) : à ajouter dans l'app si la revue le demande.
 
+## Autorisations Android
+
+Le manifeste ne déclare que ce que l'app utilise (vérifié par `__tests__/permissions.test.ts`) :
+
+| Autorisation | Pourquoi |
+|---|---|
+| `INTERNET` | multijoueur, vérification de mise à jour |
+| `VIBRATE` | retours haptiques (expo-haptics) |
+| `MODIFY_AUDIO_SETTINGS` | lecture de la musique (expo-audio) |
+| `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED` | rappels, reprogrammés après un redémarrage (expo-notifications) |
+
+Retirées par `android.blockedPermissions` et les options d'expo-audio dans `app.json` : micro (`RECORD_AUDIO`), superposition (`SYSTEM_ALERT_WINDOW`), stockage externe (`READ/WRITE_EXTERNAL_STORAGE`, ajoutées aussi par expo-file-system), service de premier plan (`FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, service `AudioControlsService`). La musique ne joue qu'au premier plan : dans la Play Console, **aucun service de premier plan** n'est à déclarer. Sur iOS, pas de mode audio d'arrière-plan (`UIBackgroundModes`).
+
+Pour vérifier un build : `bundletool dump manifest --bundle <app>.aab`.
+
 ## Message « Mise à jour disponible » (Android)
 
 L'app compare sa version à `android-source.json` **sur `main`** (`utils/updateChecker.ts`) et renvoie vers la fiche Google Play. Ce fichier doit donc annoncer **uniquement la version en ligne sur le Play Store**, sinon les joueurs voient une mise à jour qu'ils ne peuvent pas installer.
