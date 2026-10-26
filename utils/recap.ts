@@ -214,6 +214,14 @@ export function pendingRecap(source: RecapSource & { recapsSeen: RecapsSeen }, n
   return null;
 }
 
+/**
+ * Whether opening the recap marks it as seen: only the one announced or a period already over. Looking
+ * at the current month (or year) keeps its announcement once it is over (issue 182)
+ */
+export function shouldMarkRecapSeen(source: RecapSource & { recapsSeen: RecapsSeen }, key: string, now: Date = new Date()): boolean {
+  return pendingRecap(source, now) === key || !isInProgress(buildRecap(source, key, now), now);
+}
+
 /** Recaps that can be opened again: the last 12 months and the current one, then every year, latest first */
 export function availableRecaps(source: RecapSource, now: Date = new Date()): string[] {
   const current = monthKeyOf(now);
