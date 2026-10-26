@@ -1413,6 +1413,7 @@
       "ranking_empty": "No duel played in this period.",
       "record_a11y": "{{wins}} wins, {{losses}} losses, {{draws}} draws",
       "history_title": "My duels",
+      "recreate_room": "Create the room again",
       "history_empty": "Your finished duels will show here.",
       "against": "vs {{pseudo}}",
       "draws_one": "{{count}} draw",
@@ -1534,6 +1535,8 @@
       "duel_replaced": "Your account now plays on another phone: the duel goes on there.",
       "puzzle_unavailable": "The server could not prepare a puzzle for this duel. Try again, or pick another level.",
       "too_many_spectators": "Too many people are already watching this duel. Try again later.",
+      "room_closed": "Your room was closed while your connection was lost. Create it again to invite your opponent.",
+      "duel_ended_offline": "Your duel ended while your connection was lost. Find its result in “My duels”.",
       "reaction_refused": "Only a spectator can react, during the game.",
       "too_many_reactions": "Easy! Wait a little before reacting again.",
       "unknown": "Something unexpected happened."

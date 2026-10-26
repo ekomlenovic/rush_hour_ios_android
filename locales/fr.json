@@ -1413,6 +1413,7 @@
       "ranking_empty": "Aucun duel joué sur cette période.",
       "record_a11y": "{{wins}} victoires, {{losses}} défaites, {{draws}} nuls",
       "history_title": "Mes duels",
+      "recreate_room": "Recréer le salon",
       "history_empty": "Tes duels terminés apparaîtront ici.",
       "against": "contre {{pseudo}}",
       "draws_one": "{{count}} nul",
@@ -1534,6 +1535,8 @@
       "duel_replaced": "Ton compte joue maintenant sur un autre téléphone : le duel continue là-bas.",
       "puzzle_unavailable": "Le serveur n'a pas pu préparer de puzzle pour ce duel. Réessaie, ou choisis un autre niveau.",
       "too_many_spectators": "Trop de monde regarde déjà ce duel. Réessaie plus tard.",
+      "room_closed": "Ton salon a été fermé pendant ta coupure de connexion. Recrée-le pour inviter ton adversaire.",
+      "duel_ended_offline": "Ton duel s'est terminé pendant ta coupure de connexion. Retrouve son résultat dans « Mes duels ».",
       "reaction_refused": "Seul un spectateur peut réagir, pendant la partie.",
       "too_many_reactions": "Doucement ! Attends un peu avant de réagir encore.",
       "unknown": "Une erreur inattendue est survenue."
