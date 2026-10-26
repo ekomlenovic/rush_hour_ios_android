@@ -5,7 +5,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { formatDuration } from '@/utils/date';
-import { useTheme } from '@/theme';
+import { toBoardLook, useTheme } from '@/theme';
 import Board from '@/components/Board';
 import MultiHeader from '@/components/multi/MultiHeader';
 import { multiErrorMessage } from '@/components/multi/errors';
@@ -60,6 +60,8 @@ export default function ReplayScreen() {
   }, [replay, playing, step, total, speed]);
 
   const vehicles = useMemo(() => (replay ? vehiclesAfter(replay.level, replay.moves, step) : []), [replay, step]);
+  // The board as its player saw it
+  const look = useMemo(() => toBoardLook(replay?.look), [replay]);
 
   if (!replay) return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -126,6 +128,7 @@ export default function ReplayScreen() {
             onMoveEnd={noop}
             hintVehicleId={step < total ? replay.moves[step].vehicleId : null}
             readOnly
+            look={look}
           />
         </View>
 

@@ -18,6 +18,7 @@ import Leaderboard, { type RowPlayer } from '@/components/multi/Leaderboard';
 import PlayerActionsSheet from '@/components/multi/PlayerActionsSheet';
 import InviteSheet from '@/components/multi/InviteSheet';
 import ServerPickerSheet from '@/components/multi/ServerPickerSheet';
+import ChallengeRulesSheet from '@/components/multi/ChallengeRulesSheet';
 import DuelsCard from '@/components/multi/DuelsCard';
 import DuelHistoryCard from '@/components/multi/DuelHistoryCard';
 import DuelLeaderboard from '@/components/multi/DuelLeaderboard';
@@ -83,7 +84,7 @@ function Intro() {
 }
 
 export default function MultiplayerScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { colors, isDark } = useTheme();
   const router = useRouter();
   const accounts = useMultiStore(s => s.accounts);
@@ -103,6 +104,7 @@ export default function MultiplayerScreen() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [now, setNow] = useState(Date.now());
   const [isPickerVisible, setPickerVisible] = useState(false);
+  const [isRulesVisible, setRulesVisible] = useState(false);
   const [isInviteVisible, setInviteVisible] = useState(false);
   const [isNewDuelVisible, setNewDuelVisible] = useState(false);
   const [isDuelCodeVisible, setDuelCodeVisible] = useState(false);
@@ -213,6 +215,16 @@ export default function MultiplayerScreen() {
   const blocked = (blockedByServer[account.url] ?? []).map(p => p.playerId);
   const me = today?.me;
   const finishedCount = today?.results.filter(r => r.status === 'won').length ?? 0;
+  const myRow = today?.results.find(r => r.playerId === account.playerId);
+  // Where I stand on the challenge, at a glance
+  const challengeStatus = !today ? null
+    : today.status === 'preparing' ? { label: t('multi.challenge_status.preparing'), color: colors.textMuted, background: colors.neutralSoft }
+    : !me ? { label: t('multi.challenge_status.todo'), color: colors.primaryText, background: colors.primarySoft }
+    : me.status === 'playing' ? { label: t('multi.challenge_status.playing'), color: colors.warning, background: colors.warningSoft }
+    : me.status === 'won' ? { label: t('multi.challenge_status.won'), color: colors.success, background: colors.successSoft }
+    : me.status === 'abandoned' ? { label: t('multi.challenge_status.abandoned'), color: colors.textMuted, background: colors.neutralSoft }
+    : { label: t('multi.challenge_status.unfinished'), color: colors.textMuted, background: colors.neutralSoft };
+  const releaseTime = today ? new Date(today.closesAt).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' }) : null;
 
   const forgetServer = () => {
     Alert.alert(t('multi.account_gone_title'), t('multi.account_gone_body'), [
@@ -282,7 +294,15 @@ export default function MultiplayerScreen() {
 
           {today && (
             <>
-              <Text style={[styles.cardTitle, { color: colors.text }]} accessibilityRole="header">{t('multi.challenge_number', { number: today.number })}</Text>
+              <View style={styles.cardTitleRow}>
+                <Text style={[styles.cardTitle, { color: colors.text }]} accessibilityRole="header">{t('multi.challenge_number', { number: today.number })}</Text>
+                {challengeStatus && (
+                  <Text style={[styles.statusPill, { color: challengeStatus.color, backgroundColor: challengeStatus.background }]}>{challengeStatus.label}</Text>
+                )}
+                <Pressable onPress={() => setRulesVisible(true)} style={styles.rulesButton} accessibilityRole="button" accessibilityLabel={t('multi.rules.title')} hitSlop={8}>
+                  <Ionicons name="help-circle-outline" size={RFValue(24)} color={colors.primaryText} />
+                </Pressable>
+              </View>
               <Text style={[styles.cardMuted, { color: colors.textMuted }]}>
                 {finishedCount === 0 ? t('multi.nobody_yet') : t('multi.players_done', { count: finishedCount })}
               </Text>
@@ -305,6 +325,11 @@ export default function MultiplayerScreen() {
 
               {today.status === 'ready' && !me && (
                 <>
+                  <View style={[styles.rulesBox, { backgroundColor: colors.card }]}>
+                    <IconText icon="timer-outline" color={colors.text} size={RFValue(18)} style={styles.ruleRow} textStyle={styles.ruleText}>{t('multi.rules.short_one_try')}</IconText>
+                    <IconText icon="close-circle-outline" color={colors.text} size={RFValue(18)} style={styles.ruleRow} textStyle={styles.ruleText}>{t('multi.rules.short_no_help')}</IconText>
+                    <IconText icon="podium-outline" color={colors.text} size={RFValue(18)} style={styles.ruleRow} textStyle={styles.ruleText}>{t('multi.rules.short_ranking')}</IconText>
+                  </View>
                   <Pressable
                     onPress={() => router.push('/multi/play')}
                     disabled={compat !== 'ok'}
@@ -314,7 +339,9 @@ export default function MultiplayerScreen() {
                   >
                     <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>{t('multi.start')}</Text>
                   </Pressable>
-                  <Text style={[styles.cardMuted, styles.startHint, { color: colors.textMuted }]}>{t('multi.start_hint')}</Text>
+                  <Pressable onPress={() => setRulesVisible(true)} style={styles.rulesLink} accessibilityRole="button">
+                    <Text style={[styles.link, { color: colors.primaryText }]}>{t('multi.rules.more')}</Text>
+                  </Pressable>
                 </>
               )}
 
@@ -331,13 +358,21 @@ export default function MultiplayerScreen() {
                   {t('multi.my_win', { moves: me.moves, time: formatDuration(me.timeMs ?? 0), min: me.minMoves })}
                 </IconText>
               )}
+              {me?.status === 'won' && !!myRow?.rank && (
+                <View style={[styles.myRank, { backgroundColor: colors.successSoft }]}>
+                  <Text style={[styles.myRankText, { color: colors.text }]}>
+                    {t('multi.my_rank', { rank: myRow.rank, total: finishedCount, count: myRow.points })}
+                  </Text>
+                  <Text style={[styles.cardMuted, { color: colors.textMuted }]}>{t('multi.my_rank_may_change')}</Text>
+                </View>
+              )}
               {(me?.status === 'abandoned' || me?.status === 'unfinished') && (
                 <Text style={[styles.cardBody, { color: colors.textMuted }]}>{t(`multi.my_${me.status}`, { min: me.minMoves })}</Text>
               )}
 
-              <Text style={[styles.cardMuted, { color: colors.textMuted, marginTop: RFValue(10) }]}>
+              <IconText icon="time-outline" color={colors.textMuted} style={styles.nextRow} textStyle={styles.nextText}>
                 {t('multi.next_in', { time: formatRemaining(t, today.closesAt - serverNow) })}
-              </Text>
+              </IconText>
             </>
           )}
         </View>
@@ -459,6 +494,14 @@ export default function MultiplayerScreen() {
         ]}
       />
 
+      <ChallengeRulesSheet
+        visible={isRulesVisible}
+        releaseTime={releaseTime}
+        server={account.name}
+        colors={colors}
+        isDark={isDark}
+        onClose={() => setRulesVisible(false)}
+      />
       <ServerPickerSheet
         visible={isPickerVisible}
         accounts={accounts}
@@ -467,6 +510,7 @@ export default function MultiplayerScreen() {
         isDark={isDark}
         onSelect={(url) => { setActive(url); setPickerVisible(false); }}
         onAdd={() => { setPickerVisible(false); router.push('/multi/join'); }}
+        onCreate={() => { setPickerVisible(false); router.push('/multi/create'); }}
         onClose={() => setPickerVisible(false)}
       />
       {api && (
@@ -657,9 +701,54 @@ const styles = StyleSheet.create({
     fontSize: RFValue(13),
     marginTop: 4,
   },
-  startHint: {
-    textAlign: 'center',
-    marginTop: RFValue(8),
+  cardTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(8),
+  },
+  statusPill: {
+    fontSize: RFValue(12),
+    fontWeight: '800',
+    paddingHorizontal: RFValue(10),
+    paddingVertical: RFValue(3),
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  rulesButton: {
+    marginLeft: 'auto',
+  },
+  rulesBox: {
+    borderRadius: 12,
+    padding: RFValue(12),
+    marginTop: RFValue(14),
+    gap: RFValue(8),
+  },
+  ruleRow: {
+    alignItems: 'flex-start',
+    gap: RFValue(10),
+  },
+  ruleText: {
+    fontSize: RFValue(14),
+    lineHeight: RFValue(19),
+  },
+  rulesLink: {
+    alignItems: 'center',
+    paddingTop: RFValue(12),
+  },
+  myRank: {
+    borderRadius: 12,
+    padding: RFValue(12),
+    marginTop: RFValue(12),
+  },
+  myRankText: {
+    fontSize: RFValue(15),
+    fontWeight: '800',
+  },
+  nextRow: {
+    marginTop: RFValue(14),
+  },
+  nextText: {
+    fontSize: RFValue(13),
   },
   cardBody: {
     fontSize: RFValue(16),

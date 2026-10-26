@@ -8,10 +8,12 @@ import type { PuzzleSource } from './puzzlePool';
  * each one sees the board of the other move. The server is the referee: it replays
  * every move with the rules of the app. Who wins is chosen at the creation (metric):
  * - time: the first win it sees is the one that counts;
- * - moves: the fewest moves to get the red car out, the fastest on a tie. Who got out
- *   first waits for the other, unless the other can no longer do better.
+ * - moves: the fewest moves to get the red car out, the same count is a draw (time does
+ *   not count). Who got out first waits for the other, unless the other can no longer
+ *   do as well; they may leave meanwhile, and find the result when they come back.
  * Other players of the server can watch a duel live (spectators): they see both boards,
- * and play nothing. Nothing is stored: a duel lives in memory, for as long as it is played.
+ * and play nothing. Each board is drawn with the look of its player (their board theme,
+ * car skin and palette in the app), said when they connect. Nothing is stored: a duel lives in memory, for as long as it is played.
  */
 
 /** Code to join a duel: no 0/O nor 1/I, easy to read out loud */
@@ -27,6 +29,8 @@ export const WAITING_TTL_MS = 15 * 60_000;
 export const MAX_DUEL_MS = 30 * 60_000;
 /** A finished duel stays open this long for a rematch */
 export const OVER_TTL_MS = 5 * 60_000;
+/** A finished duel on moves stays this long for who got out and left before the end: they find its result */
+export const RESULT_TTL_MS = 24 * 60 * 60_000;
 /** Time to say who you are after connecting */
 export const AUTH_TIMEOUT_MS = 10_000;
 /** Wrong codes of a player in WRONG_CODES_WINDOW_MS before their connection is closed (guessing a private code) */
@@ -43,6 +47,9 @@ export const MAX_SPECTATORS = 50;
 
 export interface DuelIdentity { id: number; pseudo: string }
 
+/** How a player's board looks in the app (ids of its cosmetics): the others see their board so */
+export interface DuelLook { board: string; skin: string; palette: string }
+
 /** What decides the winner of a duel */
 export type DuelMetric = 'time' | 'moves';
 export const DUEL_METRICS: readonly DuelMetric[] = ['time', 'moves'];
@@ -56,7 +63,7 @@ export interface DuelRecord {
   endedAt: number;
   reason: EndReason;
   winnerId: number | null;
-  players: { id: number; moves: MoveRecord[] }[];
+  players: { id: number; moves: MoveRecord[]; look: DuelLook | null }[];
 }
 
 /** Wins of each of two players against the other, and their draws */
@@ -81,7 +88,8 @@ export interface DuelConnection {
 }
 
 export type ClientMessage =
-  | { type: 'auth'; token: string }
+  /** look: absent from apps older than it */
+  | { type: 'auth'; token: string; look?: DuelLook }
   /** private: only who has the code can join; otherwise the duel is listed for everyone on the server */
   | { type: 'create'; difficulty?: Difficulty; metric?: DuelMetric; private?: boolean }
   | { type: 'join'; code: string }
@@ -93,7 +101,11 @@ export type ClientMessage =
 
 export type EndReason = 'won' | 'forfeit' | 'disconnected' | 'timeout';
 
-export interface DuelPlayerView { id: number; pseudo: string; connected: boolean; moves: MoveRecord[]; wantsRematch: boolean }
+export interface DuelPlayerView {
+  id: number; pseudo: string; connected: boolean; moves: MoveRecord[]; wantsRematch: boolean;
+  /** null: an app older than the looks, its board is drawn as the viewer's own */
+  look: DuelLook | null;
+}
 
 /**
  * The whole duel as one player sees it: sent at the start and when they come back.
@@ -124,7 +136,8 @@ export interface DuelListing {
   code: string | null;
   difficulty: Difficulty;
   metric: DuelMetric;
-  status: 'waiting' | 'preparing' | 'playing';
+  /** over: mine, its result waiting for me */
+  status: 'waiting' | 'preparing' | 'playing' | 'over';
   private: boolean;
   players: DuelIdentity[];
   createdAt: number;
@@ -168,6 +181,7 @@ interface Seat {
   /** Red car out (duel on moves: waiting for the other) */
   solved: boolean;
   wantsRematch: boolean;
+  look: DuelLook | null;
 }
 
 interface Duel {
@@ -216,6 +230,17 @@ export function newDuelCode(): string {
 /** 'ab-c d3' → 'ABCD3': what a player typed */
 export const normalizeDuelCode = (input: string) => input.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
+/** An id of a cosmetic: a short word (the app draws what it does not know as the classic look) */
+const LOOK_ID = /^[a-z0-9_-]{1,24}$/;
+
+/** The look said by the app, or null if it is not one (never a reason to refuse the player) */
+export function parseLook(data: unknown): DuelLook | null {
+  if (!data || typeof data !== 'object') return null;
+  const { board, skin, palette } = data as Record<string, unknown>;
+  const ok = (id: unknown): id is string => typeof id === 'string' && LOOK_ID.test(id);
+  return ok(board) && ok(skin) && ok(palette) ? { board, skin, palette } : null;
+}
+
 function parseMessage(raw: string): ClientMessage | null {
   let data: unknown;
   try {
@@ -226,7 +251,11 @@ function parseMessage(raw: string): ClientMessage | null {
   if (!data || typeof data !== 'object') return null;
   const m = data as Record<string, unknown>;
   switch (m.type) {
-    case 'auth': return typeof m.token === 'string' && m.token.length <= 200 ? { type: 'auth', token: m.token } : null;
+    case 'auth': {
+      if (typeof m.token !== 'string' || m.token.length > 200) return null;
+      const look = parseLook(m.look);
+      return look ? { type: 'auth', token: m.token, look } : { type: 'auth', token: m.token };
+    }
     case 'create':
       if (m.difficulty !== undefined && !DIFFICULTIES.includes(m.difficulty as Difficulty)) return null;
       if (m.metric !== undefined && !DUEL_METRICS.includes(m.metric as DuelMetric)) return null;
@@ -252,6 +281,8 @@ export class Duels {
   /** The duel each spectator watches */
   private readonly watching = new Map<number, Duel>();
   private readonly connections = new Map<number, DuelConnection>();
+  /** The look of each connected player */
+  private readonly looks = new Map<number, DuelLook>();
   private readonly wrongCodes = new WindowLimiter(MAX_WRONG_CODES - 1, WRONG_CODES_WINDOW_MS);
   private readonly creates = new WindowLimiter(MAX_CREATES, CREATES_WINDOW_MS);
 
@@ -287,7 +318,7 @@ export class Duels {
         const found = this.deps.authenticate(message.token);
         if (!found || found === 'banned') return refuse(4001, found === 'banned' ? 'banned' : 'unauthorized');
         player = found;
-        this.attach(player, connection);
+        this.attach(player, connection, message.look ?? null);
         return;
       }
 
@@ -329,6 +360,7 @@ export class Duels {
     if (duel) this.leave(duel, playerId);
     const connection = this.connections.get(playerId);
     this.connections.delete(playerId);
+    this.looks.delete(playerId);
     connection?.close(4003, reason);
   }
 
@@ -342,7 +374,8 @@ export class Duels {
   list(playerId: number): DuelListing[] {
     const order = { waiting: 0, preparing: 1, playing: 1, over: 2 };
     return [...this.duels.values()]
-      .filter(d => d.status !== 'over' && (!d.isPrivate || d.seats.some(s => s.player.id === playerId)))
+      // A finished duel only for who got out and left before the end: its result waits for them
+      .filter(d => (d.status !== 'over' || this.byPlayer.get(playerId) === d) && (!d.isPrivate || d.seats.some(s => s.player.id === playerId)))
       .sort((a, b) => order[a.status] - order[b.status] || b.createdAt - a.createdAt)
       .map(d => {
         const mine = d.seats.some(s => s.player.id === playerId);
@@ -382,7 +415,8 @@ export class Duels {
           const solved = duel.seats.find(s => s.solved);
           this.end(duel, solved ?? null, solved ? 'won' : 'timeout');
         }
-      } else if (duel.status === 'over' && duel.endedAt !== null && now - duel.endedAt > OVER_TTL_MS) {
+      } else if (duel.status === 'over' && duel.endedAt !== null
+        && now - duel.endedAt > (duel.seats.some(s => this.awaitsResult(duel, s)) ? RESULT_TTL_MS : OVER_TTL_MS)) {
         this.close(duel);
       }
     }
@@ -397,18 +431,21 @@ export class Duels {
 
   // ── Connections ────────────────────────────────────────────────────────────
 
-  private attach(player: DuelIdentity, connection: DuelConnection) {
+  private attach(player: DuelIdentity, connection: DuelConnection, look: DuelLook | null) {
     // The same player on another phone (or a reconnection): the old connection goes
     const previous = this.connections.get(player.id);
     if (previous && previous !== connection) previous.close(4000, 'replaced');
     this.connections.set(player.id, connection);
+    if (look) this.looks.set(player.id, look);
+    else this.looks.delete(player.id);
 
     const duel = this.byPlayer.get(player.id);
     if (!duel) return connection.send({ type: 'ready', player, duel: null });
     const seat = this.seat(duel, player.id)!;
     seat.connection = connection;
-    // The pseudo may have changed in the meantime
+    // The pseudo, and the look, may have changed in the meantime
     seat.player = player;
+    seat.look = look;
     const wasAway = seat.disconnectedAt !== null;
     seat.disconnectedAt = null;
     connection.send({ type: 'ready', player, duel: this.view(duel, player.id) });
@@ -418,6 +455,7 @@ export class Duels {
   private detach(playerId: number, connection: DuelConnection) {
     if (this.connections.get(playerId) !== connection) return;
     this.connections.delete(playerId);
+    this.looks.delete(playerId);
     // A spectator watches again once connected again (the app asks)
     this.unwatch(playerId);
     const duel = this.byPlayer.get(playerId);
@@ -489,14 +527,19 @@ export class Duels {
         return null;
       }
 
-      case 'leave':
+      case 'leave': {
         this.unwatch(player.id);
+        // Out already in a duel on moves: they have played, the other one may still finish
+        const seat = duel && this.seat(duel, player.id);
+        if (duel && duel.status === 'playing' && seat?.solved) return null;
         if (duel) this.leave(duel, player.id);
         return null;
+      }
 
       case 'rematch': {
         if (!duel || duel.status !== 'over') return 'no_duel';
-        if (duel.seats.length < 2) return 'opponent_left';
+        // The other one left (their result kept for this player): nobody for a rematch
+        if (duel.seats.length < 2 || duel.seats.some(s => !s.connection)) return 'opponent_left';
         const seat = this.seat(duel, player.id)!;
         if (seat.wantsRematch) return null;
         seat.wantsRematch = true;
@@ -566,7 +609,7 @@ export class Duels {
   private newSeat(player: DuelIdentity): Seat {
     return {
       player, connection: this.connections.get(player.id) ?? null, disconnectedAt: null, vehicles: [], moves: [], solved: false,
-      wantsRematch: false,
+      wantsRematch: false, look: this.looks.get(player.id) ?? null,
     };
   }
 
@@ -599,21 +642,26 @@ export class Duels {
   }
 
   /**
-   * A duel on moves: over once both are out (fewest moves, then fastest), or as soon as
-   * the one still playing can no longer do better than the one out: they need one move
-   * more at least, and the same count loses (slower). The optimum cannot be beaten either.
+   * A duel on moves: over once both are out (fewest moves; the same count is a draw, time
+   * does not count), or as soon as the one still playing can no longer do as well as the
+   * one out: they have played as many moves already, and need one more at least.
    */
   private decideOnMoves(duel: Duel) {
     const [a, b] = duel.seats;
     if (!a || !b) return;
     if (a.solved && b.solved) {
-      const diff = a.moves.length - b.moves.length || a.moves[a.moves.length - 1].t - b.moves[b.moves.length - 1].t;
+      const diff = a.moves.length - b.moves.length;
       return this.end(duel, diff < 0 ? a : diff > 0 ? b : null, 'won');
     }
     const out = a.solved ? a : b.solved ? b : null;
     if (!out) return;
     const playing = out === a ? b : a;
-    if (out.moves.length <= (duel.level?.minMoves ?? 0) || playing.moves.length + 1 >= out.moves.length) this.end(duel, out, 'won');
+    if (playing.moves.length >= out.moves.length) this.end(duel, out, 'won');
+  }
+
+  /** Got out in a duel on moves, then left before the end: the result waits for them */
+  private awaitsResult(duel: Duel, seat: Seat) {
+    return duel.metric === 'moves' && seat.solved && !seat.connection && this.byPlayer.get(seat.player.id) === duel;
   }
 
   private end(duel: Duel, winner: Seat | null, reason: EndReason) {
@@ -627,7 +675,7 @@ export class Duels {
       try {
         saved = this.deps.save?.({
           difficulty: duel.difficulty, metric: duel.metric, level: duel.level, startedAt: duel.startsAt, endedAt: now, reason, winnerId,
-          players: duel.seats.map(s => ({ id: s.player.id, moves: s.moves })),
+          players: duel.seats.map(s => ({ id: s.player.id, moves: s.moves, look: s.look })),
         }) ?? null;
       } catch (err) {
         this.deps.log?.error({ err }, 'duel not saved');
@@ -643,8 +691,8 @@ export class Duels {
     };
     for (const seat of duel.seats) seat.disconnectedAt = null;
     this.broadcast(duel, { type: 'end', result: duel.result, level: duel.level! });
-    // Who is gone for good has nothing to come back to
-    for (const seat of [...duel.seats]) if (!seat.connection) this.leave(duel, seat.player.id);
+    // Who is gone for good has nothing to come back to; who got out and left comes back for the result
+    for (const seat of [...duel.seats]) if (!seat.connection && !this.awaitsResult(duel, seat)) this.leave(duel, seat.player.id);
   }
 
   private leave(duel: Duel, playerId: number) {
@@ -653,9 +701,14 @@ export class Duels {
     // Leaving a game is losing it
     const other = duel.seats.find(s => s !== seat);
     if (duel.status === 'playing' && other) this.end(duel, other, 'forfeit');
+    if (this.byPlayer.get(playerId) === duel) this.byPlayer.delete(playerId);
+    // After the end, the result is kept for the other one if they got out and left meanwhile (no rematch)
+    if (duel.status === 'over' && duel.seats.some(s => s !== seat && this.awaitsResult(duel, s))) {
+      seat.connection = null;
+      return;
+    }
     // A room not started yet goes with the player; after the end, the other one has nobody left for a rematch
     duel.seats = duel.seats.filter(s => s !== seat);
-    if (this.byPlayer.get(playerId) === duel) this.byPlayer.delete(playerId);
     this.close(duel);
   }
 
@@ -679,7 +732,7 @@ export class Duels {
   }
 
   private playerView(seat: Seat): DuelPlayerView {
-    return { ...seat.player, connected: seat.connection !== null, moves: seat.moves, wantsRematch: seat.wantsRematch };
+    return { ...seat.player, connected: seat.connection !== null, moves: seat.moves, wantsRematch: seat.wantsRematch, look: seat.look };
   }
 
   private view(duel: Duel, playerId: number): DuelView {

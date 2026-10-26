@@ -6,7 +6,7 @@ import Block, { BlockA11yStrings } from './Block';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getVehicleLetters, describeVehicle, describePosition, describeExit } from '@/utils/accessibility';
-import { useTheme, applyPalette, PALETTE_ART } from '@/theme';
+import { useTheme, useBoardTheme, BoardLookProvider, applyPalette, PALETTE_ART, type BoardLook } from '@/theme';
 
 
 interface BoardProps {
@@ -22,6 +22,8 @@ interface BoardProps {
   readOnly?: boolean;
   /** Width of the board; the width of the screen by default */
   size?: number;
+  /** Another player's look (multiplayer); the selected cosmetics by default */
+  look?: BoardLook;
 }
 
 
@@ -29,9 +31,10 @@ const BOARD_PADDING = 24;
 // The frame border is drawn inside the board's width: cells only get what is left
 const BOARD_BORDER = 2;
 
-const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hintVehicleId, disabled = false, readOnly = false, size }: BoardProps) => {
+const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hintVehicleId, disabled = false, readOnly = false, size, look }: BoardProps) => {
 
-  const { colors, board, palette } = useTheme();
+  const { colors } = useTheme();
+  const { board, palette } = useBoardTheme(look);
 
   const { width: screenWidth } = useWindowDimensions();
   const boardSize = size ?? screenWidth - BOARD_PADDING * 2;
@@ -99,136 +102,138 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
   }
 
   return (
-    <View
-      style={[
-        styles.boardContainer,
-        {
-          width: boardSize,
-          height: boardSize,
-          backgroundColor: boardBg,
-          borderColor: board.frame,
-          borderRadius: board.boardRadius,
-        },
-      ]}
-    >
-      {/* Grid lines */}
-      {gridLines}
+    // Its vehicles drawn with the same look
+    <BoardLookProvider value={look ?? null}>
+      <View
+        style={[
+          styles.boardContainer,
+          {
+            width: boardSize,
+            height: boardSize,
+            backgroundColor: boardBg,
+            borderColor: board.frame,
+            borderRadius: board.boardRadius,
+          },
+        ]}
+      >
+        {/* Grid lines */}
+        {gridLines}
 
-      {/* Vehicles */}
-      {cellSize > 0 && !isNaN(cellSize) && vehicles.map((v) => {
-        const b = vehicleBounds.find(vb => vb.id === v.id)?.bounds || { min: 0, max: gridSize - v.length };
-        const color = displayColors.get(v.id) ?? v.color;
-        return (
-          <Block
-            key={v.id}
-            vehicle={v}
-            color={color}
-            allVehicles={vehicles}
-            gridSize={gridSize}
-            cellSize={cellSize}
-            onMoveEnd={onMoveEnd}
-            isHinted={hintVehicleId === v.id}
-            min={b.min}
-            max={b.max}
-            disabled={disabled || readOnly}
-            a11yLabel={describeVehicle(t, { ...v, color }, letters[v.id])}
-            a11yValue={describePosition(t, v)}
-            a11yStrings={a11yStrings}
-            letter={showVehicleLetters ? (v.isTarget ? '★' : letters[v.id]) : undefined}
-            art={v.isTarget ? board.targetArt : PALETTE_ART[palette]}
-          />
-        );
-      })}
+        {/* Vehicles */}
+        {cellSize > 0 && !isNaN(cellSize) && vehicles.map((v) => {
+          const b = vehicleBounds.find(vb => vb.id === v.id)?.bounds || { min: 0, max: gridSize - v.length };
+          const color = displayColors.get(v.id) ?? v.color;
+          return (
+            <Block
+              key={v.id}
+              vehicle={v}
+              color={color}
+              allVehicles={vehicles}
+              gridSize={gridSize}
+              cellSize={cellSize}
+              onMoveEnd={onMoveEnd}
+              isHinted={hintVehicleId === v.id}
+              min={b.min}
+              max={b.max}
+              disabled={disabled || readOnly}
+              a11yLabel={describeVehicle(t, { ...v, color }, letters[v.id])}
+              a11yValue={describePosition(t, v)}
+              a11yStrings={a11yStrings}
+              letter={showVehicleLetters ? (v.isTarget ? '★' : letters[v.id]) : undefined}
+              art={v.isTarget ? board.targetArt : PALETTE_ART[palette]}
+            />
+          );
+        })}
 
-      {/* Exit indicator and glow - Rendered AFTER vehicles to be on top */}
-      {(() => {
-        const isRight = exitCol >= gridSize && exitCol !== 255;
-        const isLeft = exitCol === 255 || exitCol < 0;
-        const isBottom = exitRow >= gridSize && exitRow !== 255;
-        const isTop = exitRow === 255 || exitRow < 0;
+        {/* Exit indicator and glow - Rendered AFTER vehicles to be on top */}
+        {(() => {
+          const isRight = exitCol >= gridSize && exitCol !== 255;
+          const isLeft = exitCol === 255 || exitCol < 0;
+          const isBottom = exitRow >= gridSize && exitRow !== 255;
+          const isTop = exitRow === 255 || exitRow < 0;
 
-        let indicatorStyle: any = {};
-        let glowStyle: any = {};
+          let indicatorStyle: any = {};
+          let glowStyle: any = {};
 
-        // Back to original dimensions but with high zIndex and a black border
-        if (isRight) {
-          indicatorStyle = { top: exitRow * cellSize + cellSize * 0.2, right: 0, width: 6, height: cellSize * 0.6, borderRadius: 3 };
-          glowStyle = { top: exitRow * cellSize, right: -8, width: 16, height: cellSize, opacity: 0.15, borderRadius: 8 };
-        } else if (isLeft) {
-          indicatorStyle = { top: exitRow * cellSize + cellSize * 0.2, left: 0, width: 6, height: cellSize * 0.6, borderRadius: 3 };
-          glowStyle = { top: exitRow * cellSize, left: -8, width: 16, height: cellSize, opacity: 0.15, borderRadius: 8 };
-        } else if (isBottom) {
-          indicatorStyle = { left: exitCol * cellSize + cellSize * 0.2, bottom: 0, height: 6, width: cellSize * 0.6, borderRadius: 3 };
-          glowStyle = { left: exitCol * cellSize, bottom: -8, height: 16, width: cellSize, opacity: 0.15, borderRadius: 8 };
-        } else if (isTop) {
-          indicatorStyle = { left: exitCol * cellSize + cellSize * 0.2, top: 0, height: 6, width: cellSize * 0.6, borderRadius: 3 };
-          glowStyle = { left: exitCol * cellSize, top: -8, height: 16, width: cellSize, opacity: 0.15, borderRadius: 8 };
-        }
+          // Back to original dimensions but with high zIndex and a black border
+          if (isRight) {
+            indicatorStyle = { top: exitRow * cellSize + cellSize * 0.2, right: 0, width: 6, height: cellSize * 0.6, borderRadius: 3 };
+            glowStyle = { top: exitRow * cellSize, right: -8, width: 16, height: cellSize, opacity: 0.15, borderRadius: 8 };
+          } else if (isLeft) {
+            indicatorStyle = { top: exitRow * cellSize + cellSize * 0.2, left: 0, width: 6, height: cellSize * 0.6, borderRadius: 3 };
+            glowStyle = { top: exitRow * cellSize, left: -8, width: 16, height: cellSize, opacity: 0.15, borderRadius: 8 };
+          } else if (isBottom) {
+            indicatorStyle = { left: exitCol * cellSize + cellSize * 0.2, bottom: 0, height: 6, width: cellSize * 0.6, borderRadius: 3 };
+            glowStyle = { left: exitCol * cellSize, bottom: -8, height: 16, width: cellSize, opacity: 0.15, borderRadius: 8 };
+          } else if (isTop) {
+            indicatorStyle = { left: exitCol * cellSize + cellSize * 0.2, top: 0, height: 6, width: cellSize * 0.6, borderRadius: 3 };
+            glowStyle = { left: exitCol * cellSize, top: -8, height: 16, width: cellSize, opacity: 0.15, borderRadius: 8 };
+          }
 
-        return (
-          <>
-            <View
-              accessible
-              accessibilityLabel={describeExit(t, exitRow, exitCol, gridSize)}
-              style={[
-                styles.exitIndicator, 
-                { 
+          return (
+            <>
+              <View
+                accessible
+                accessibilityLabel={describeExit(t, exitRow, exitCol, gridSize)}
+                style={[
+                  styles.exitIndicator, 
+                  { 
+                    backgroundColor: exitColor, 
+                    ...indicatorStyle,
+                    borderColor: board.exitOutline,
+                    borderWidth: 1,
+                    zIndex: 60, // Ensure it's above vehicles
+                  }
+                ]} 
+              />
+              <View 
+                style={{ 
+                  position: 'absolute', 
                   backgroundColor: exitColor, 
-                  ...indicatorStyle,
-                  borderColor: board.exitOutline,
-                  borderWidth: 1,
-                  zIndex: 60, // Ensure it's above vehicles
-                }
-              ]} 
-            />
-            <View 
-              style={{ 
-                position: 'absolute', 
-                backgroundColor: exitColor, 
-                ...glowStyle,
-                zIndex: 59,
-              }} 
-            />
-          </>
-        );
-      })()}
+                  ...glowStyle,
+                  zIndex: 59,
+                }} 
+              />
+            </>
+          );
+        })()}
 
-      {disabled && (
-        <View
-          pointerEvents="auto"
-          accessible
-          accessibilityLabel={t('a11y.board_locked')}
-          style={[
-            StyleSheet.absoluteFill, 
-            { 
-              backgroundColor: board.winVeil,
-              zIndex: 100,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }
-          ]} 
-        >
+        {disabled && (
           <View
-            style={{
-              backgroundColor: board.winBadge,
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: board.winBadgeBorder,
-              shadowColor: colors.shadow,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 8,
-            }}
+            pointerEvents="auto"
+            accessible
+            accessibilityLabel={t('a11y.board_locked')}
+            style={[
+              StyleSheet.absoluteFill, 
+              { 
+                backgroundColor: board.winVeil,
+                zIndex: 100,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }
+            ]} 
           >
-            <Ionicons name="lock-closed" size={24} color={colors.text} />
+            <View
+              style={{
+                backgroundColor: board.winBadge,
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: board.winBadgeBorder,
+                shadowColor: colors.shadow,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 8,
+              }}
+            >
+              <Ionicons name="lock-closed" size={24} color={colors.text} />
+            </View>
           </View>
-        </View>
-      )}
-    </View>
-
+        )}
+      </View>
+    </BoardLookProvider>
   );
 });
 
