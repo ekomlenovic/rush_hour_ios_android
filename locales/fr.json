@@ -46,10 +46,10 @@
     "play_all_done": "Tous les niveaux terminés",
     "daily_desc": "Un nouveau puzzle chaque jour",
     "daily_event": {
-      "halloween_one": "Halloween : réussis-le pour débloquer {{count}} style du Garage",
-      "halloween_other": "Halloween : réussis-le pour débloquer {{count}} styles du Garage",
-      "christmas_one": "Noël : réussis-le pour débloquer {{count}} style du Garage",
-      "christmas_other": "Noël : réussis-le pour débloquer {{count}} styles du Garage"
+      "halloween_one": "Halloween : gagne {{count}} style du Garage",
+      "halloween_other": "Halloween : gagne {{count}} styles du Garage",
+      "christmas_one": "Noël : gagne {{count}} style du Garage",
+      "christmas_other": "Noël : gagne {{count}} styles du Garage"
     },
     "daily_next": "Prochain dans {{time}}",
     "weekly_next_one": "Prochain dans {{count}} jour",
