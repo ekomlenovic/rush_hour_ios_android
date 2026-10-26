@@ -1,0 +1,96 @@
+# Dependabot config for Rush Hours
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # ── Expo / React Native app (root package.json) ──────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "app"]
+    commit-message:
+      prefix: "chore(deps)"
+    ignore:
+      # Expo SDK upgrades (57 → 58…) must go through `npx expo install --fix`,
+      # which picks the matching react / react-native / native-module versions.
+      # Dependabot bumping them one by one breaks native builds.
+      - dependency-name: "expo"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "expo-*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "babel-preset-expo"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "jest-expo"
+        update-types: ["version-update:semver-major"]
+      # These are pinned by the Expo SDK: only update them with an SDK upgrade.
+      - dependency-name: "react"
+      - dependency-name: "react-native"
+      - dependency-name: "@react-native/*"
+      - dependency-name: "@types/react"
+      - dependency-name: "react-native-reanimated"
+      - dependency-name: "react-native-worklets"
+      - dependency-name: "react-native-gesture-handler"
+      - dependency-name: "react-native-screens"
+      - dependency-name: "react-native-safe-area-context"
+      - dependency-name: "react-native-svg"
+      - dependency-name: "@react-native-async-storage/async-storage"
+      - dependency-name: "@expo/vector-icons"
+        update-types: ["version-update:semver-major"]
+    groups:
+      expo-sdk:                     # patch fixes inside the current SDK, one PR
+        patterns: ["expo", "expo-*", "babel-preset-expo", "jest-expo"]
+      app-minor-patch:              # everything else that is safe, one PR
+        update-types: ["minor", "patch"]
+
+  # ── Multiplayer server (server/package.json) ─────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "server"]
+    commit-message:
+      prefix: "chore(server-deps)"
+    ignore:
+      # Keep Node types aligned with the "engines" field (node >= 22)
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+    groups:
+      server-minor-patch:
+        update-types: ["minor", "patch"]
+
+  # ── Server Docker image (node:24-alpine) ─────────────────────────────────
+  - package-ecosystem: "docker"
+    directory: "/server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    labels: ["dependencies", "docker"]
+    commit-message:
+      prefix: "chore(docker)"
+    ignore:
+      # Stay on Node 24 LTS until you decide to move
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+
+  # ── GitHub Actions (build.yml, server.yml, tests.yml) ────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels: ["dependencies", "ci"]
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      actions:
+        patterns: ["*"]
