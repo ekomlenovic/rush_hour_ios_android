@@ -5,7 +5,8 @@ import {
 } from 'react-native';
 import type { HostInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useRouter } from '@/hooks/useRouter';
 import { usePreventRemove } from 'expo-router/react-navigation';
 import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
