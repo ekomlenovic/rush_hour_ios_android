@@ -147,7 +147,7 @@
     "request_github": "Zatraži nove nivoe na GitHubu",
     "hard_reset_progress": "Potpuno resetuj napredak",
     "grid_size_label": "Veličina table:",
-    "generator_warning": "Ekspert i Majstor: svaki nivo traje nekoliko minuta, a aplikacija za to vreme ne reaguje.",
+    "generator_warning": "Ekspert, Majstor i velike table (7x7, 8x8): nivo može da traje nekoliko minuta, a aplikacija za to vreme ne reaguje. Procena se prilagođava vremenima izmerenim na tvom telefonu.",
     "long_generation_title": "Dugo generisanje",
     "long_generation_body": "Generisanje nivoa ({{amount}}, {{difficulty}}) traje oko {{time}}. Tokom svakog nivoa aplikacija ne reaguje, čak ni na dugme Otkaži (deluje između dva nivoa). Ipak pokrenuti?",
     "long_generation_confirm": "Generiši",
