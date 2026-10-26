@@ -12,7 +12,8 @@ const workletsOf = (relative: string) => {
     filename: file,
     caller: { name: 'metro', platform: 'ios' } as never,
   })!.code!;
-  return [...out.matchAll(/code:"function (\w+)\(([^)]*)\)\{(?:const\{([^}]*)\}=this\.__closure;)?/g)]
+  // Plugin 0.13: code:"(function name(…){const[a,b]=this.__closure;… (before: no parenthesis, const{a,b})
+  return [...out.matchAll(/code:"\(?function (\w+)\(([^)]*)\)\{(?:const[{[]([^}\]]*)[}\]]=this\.__closure;)?/g)]
     // The plugin suffixes the names with the file: generateLevelWith_generatorCoreTs9
     .map(([, name, params, closure = '']) => ({
       name: name.replace(/_\w+Ts\d+$/, ''), params, closure: closure.split(',').filter(Boolean),

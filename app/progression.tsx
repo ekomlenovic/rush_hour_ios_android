@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -51,7 +52,7 @@ export default function ProgressionScreen() {
   const { colors, scheme } = useTheme();
   const xp = useGameStore(s => s.xp);
   const { context } = useCosmetics();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const scrolled = useRef(false);
 
   const current = getLevelInfo(xp).level;
