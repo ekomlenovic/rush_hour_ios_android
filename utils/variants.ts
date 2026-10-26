@@ -1,5 +1,5 @@
 import type { Level, Vehicle } from '../store/types';
-import { createPRNG, shuffleWith, transformLevel, type DifficultyConfig } from './generator';
+import { createPRNG, shuffleWith, transformLevel, type DifficultyConfig } from './generator.core';
 
 /**
  * Variants of hand-checked hard levels (the levels of the app), for the hardest duels:
