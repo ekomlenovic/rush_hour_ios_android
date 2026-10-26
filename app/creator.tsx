@@ -5,8 +5,7 @@ import {
 } from 'react-native';
 import type { HostInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
-import { useRouter } from '@/hooks/useRouter';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
 import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -30,8 +29,6 @@ import LevelNameSheet from '@/components/share/LevelNameSheet';
 import { vehicleStyles } from '@/components/creator/vehicleStyles';
 import { useTheme, fixedColors, applyPalette, PALETTE_ART, VEHICLE_PALETTES, TARGET_CAR_COLOR } from '@/theme';
 import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
-import LoadingIndicator from '@/components/LoadingIndicator';
-import { useSlideIn } from '@/hooks/useSlideIn';
 
 const BOARD_BORDER = 1.5;
 const EXIT_SIDES = ['Right', 'Left', 'Top', 'Bottom'] as const;
@@ -69,7 +66,6 @@ export default function LevelCreatorScreen() {
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const phase = useSlideIn();
   const boardSize = Math.min(screenWidth - BOARD_PADDING * 2, screenHeight * 0.48);
   // The frame border is drawn inside the board's width: cells only get what is left
   const cellSize = (boardSize - BOARD_BORDER * 2) / gridSize;
@@ -469,160 +465,155 @@ export default function LevelCreatorScreen() {
           </View>
         </View>
 
-        {/* Drawn after the slide: drawn before, it froze Android on the screen below */}
-        {phase === 'ready' ? (
-          <>
-            {/* ── Grid Size Selector (Sub-header) ── */}
-            <PillSelector
-              title={t('map.grid_size_label')}
-              options={GRID_SIZES}
-              isActive={s => gridSize === s}
-              getLabel={s => `${s}x${s}`}
-              onSelect={handleGridSizeChange}
-              colors={C}
-            />
+        {/* ── Grid Size Selector (Sub-header) ── */}
+        <PillSelector
+          title={t('map.grid_size_label')}
+          options={GRID_SIZES}
+          isActive={s => gridSize === s}
+          getLabel={s => `${s}x${s}`}
+          onSelect={handleGridSizeChange}
+          colors={C}
+        />
 
-            {/* ── Board ── */}
-            <View style={styles.boardWrapper}>
-              <View style={{ width: boardSize, height: boardSize }}>
-                <ExitMarker exitRow={exitRow} exitCol={exitCol} gridSize={gridSize} cellSize={cellSize} />
+        {/* ── Board ── */}
+        <View style={styles.boardWrapper}>
+          <View style={{ width: boardSize, height: boardSize }}>
+            <ExitMarker exitRow={exitRow} exitCol={exitCol} gridSize={gridSize} cellSize={cellSize} />
 
+          <View
+            ref={boardRef}
+            onLayout={() => requestAnimationFrame(measureBoard)}
+            style={[styles.board, { width: boardSize, height: boardSize, borderColor: board.frame, backgroundColor: board.background }]}
+          >
+            {Array.from({ length: gridSize + 1 }).map((_, i) => (
+              <React.Fragment key={i}>
+                <View style={[styles.gridH, { top: i * cellSize, backgroundColor: board.grid }]} />
+                <View style={[styles.gridV, { left: i * cellSize, backgroundColor: board.grid }]} />
+              </React.Fragment>
+            ))}
+
+            {ghostCells.map(([r, c], i) => (
               <View
-                ref={boardRef}
-                onLayout={() => requestAnimationFrame(measureBoard)}
-                style={[styles.board, { width: boardSize, height: boardSize, borderColor: board.frame, backgroundColor: board.background }]}
-              >
-                {Array.from({ length: gridSize + 1 }).map((_, i) => (
-                  <React.Fragment key={i}>
-                    <View style={[styles.gridH, { top: i * cellSize, backgroundColor: board.grid }]} />
-                    <View style={[styles.gridV, { left: i * cellSize, backgroundColor: board.grid }]} />
-                  </React.Fragment>
-                ))}
+                key={`ghost-${i}`} pointerEvents="none"
+                style={[styles.ghostCell, {
+                  top: r * cellSize + 2, left: c * cellSize + 2, width: cellSize - 4, height: cellSize - 4,
+                  backgroundColor: activeDrag?.isValid ? board.dropValid : board.dropInvalid,
+                  borderColor: activeDrag?.isValid ? board.dropValidBorder : board.dropInvalidBorder,
+                }]}
+              />
+            ))}
 
-                {ghostCells.map(([r, c], i) => (
-                  <View
-                    key={`ghost-${i}`} pointerEvents="none"
-                    style={[styles.ghostCell, {
-                      top: r * cellSize + 2, left: c * cellSize + 2, width: cellSize - 4, height: cellSize - 4,
-                      backgroundColor: activeDrag?.isValid ? board.dropValid : board.dropInvalid,
-                      borderColor: activeDrag?.isValid ? board.dropValidBorder : board.dropInvalidBorder,
-                    }]}
-                  />
-                ))}
+            {vehicles.map(v => (
+              <BoardVehicle
+                key={v.id} vehicle={v} color={displayColors.get(v.id)} cellSize={cellSize} isGhost={activeDrag?.id === v.id}
+                onDragStart={() => {
+                  const { cx, cy } = getVehicleVisualCenter(v, 0, 0);
+                  updateDrag(v.id, v.orientation, v.length, v.color, cx, cy, v.id);
+                }}
+                onDragMove={(tx, ty) => {
+                  const { cx, cy } = getVehicleVisualCenter(v, tx, ty);
+                  updateDrag(v.id, v.orientation, v.length, v.color, cx, cy, v.id);
+                }}
+                onDragEnd={(tx, ty) => {
+                  const { cx, cy } = getVehicleVisualCenter(v, tx, ty);
+                  const { row, col } = screenToGrid(cx, cy, v.orientation, v.length);
+                  if (!hasCollision(row, col, v.orientation, v.length, v.id)) moveVehicle(v.id, row, col);
+                  lastTarget.current = null;
+                  setActiveDrag(null);
+                }}
+                onRemove={() => removeVehicle(v.id)}
+                onPress={() => pivotVehicle(v.id)}
+                a11yLabel={describeVehicle(t, { ...v, color: displayColors.get(v.id) ?? v.color }, letters[v.id])}
+                a11yValue={describePosition(t, v)}
+                a11yStrings={vehicleA11yStrings}
+              />
+            ))}
+          </View>
+          </View>
+          <Text style={[styles.hint, { color: C.textMuted }]}>{t('creator.hint_text')}</Text>
+        </View>
 
-                {vehicles.map(v => (
-                  <BoardVehicle
-                    key={v.id} vehicle={v} color={displayColors.get(v.id)} cellSize={cellSize} isGhost={activeDrag?.id === v.id}
-                    onDragStart={() => {
-                      const { cx, cy } = getVehicleVisualCenter(v, 0, 0);
-                      updateDrag(v.id, v.orientation, v.length, v.color, cx, cy, v.id);
-                    }}
-                    onDragMove={(tx, ty) => {
-                      const { cx, cy } = getVehicleVisualCenter(v, tx, ty);
-                      updateDrag(v.id, v.orientation, v.length, v.color, cx, cy, v.id);
-                    }}
-                    onDragEnd={(tx, ty) => {
-                      const { cx, cy } = getVehicleVisualCenter(v, tx, ty);
-                      const { row, col } = screenToGrid(cx, cy, v.orientation, v.length);
-                      if (!hasCollision(row, col, v.orientation, v.length, v.id)) moveVehicle(v.id, row, col);
-                      lastTarget.current = null;
-                      setActiveDrag(null);
-                    }}
-                    onRemove={() => removeVehicle(v.id)}
-                    onPress={() => pivotVehicle(v.id)}
-                    a11yLabel={describeVehicle(t, { ...v, color: displayColors.get(v.id) ?? v.color }, letters[v.id])}
-                    a11yValue={describePosition(t, v)}
-                    a11yStrings={vehicleA11yStrings}
-                  />
-                ))}
-              </View>
-              </View>
-              <Text style={[styles.hint, { color: C.textMuted }]}>{t('creator.hint_text')}</Text>
-            </View>
+        {/* ── Exit Side Selector ── */}
+        <PillSelector
+          title={t('creator.exit_label')}
+          options={EXIT_SIDES}
+          isActive={side => {
+            const isH = side === 'Right' || side === 'Left';
+            const orientMatch = target ? (isH === (target.orientation === 'horizontal')) : true;
+            return orientMatch && exitSide === side;
+          }}
+          getLabel={side => t(`creator.${side.toLowerCase()}`)}
+          onSelect={handleExitSideChange}
+          colors={C}
+        />
 
-            {/* ── Exit Side Selector ── */}
-            <PillSelector
-              title={t('creator.exit_label')}
-              options={EXIT_SIDES}
-              isActive={side => {
-                const isH = side === 'Right' || side === 'Left';
-                const orientMatch = target ? (isH === (target.orientation === 'horizontal')) : true;
-                return orientMatch && exitSide === side;
-              }}
-              getLabel={side => t(`creator.${side.toLowerCase()}`)}
-              onSelect={handleExitSideChange}
-              colors={C}
-            />
-
-            {/* ── Floating preview (Le véhicule centré sur le doigt !) ── */}
-            {floatingTemplate && (
-              <Animated.View
-                pointerEvents="none"
-                style={[
-                  styles.floatingPreview,
-                  {
-                    width: floatW,
-                    height: floatH,
-                    backgroundColor: nextPaletteColor ?? floatingTemplate.color,
-                    borderColor: board.dragBorder,
-                  },
-                  PALETTE_ART[palette] && vehicleStyles.drawnBlock,
-                  floatAnimStyle,
-                ]}
-              >
-                {PALETTE_ART[palette] ? (
-                  <DrawnVehicle
-                    art={PALETTE_ART[palette]!}
-                    length={floatingTemplate.length}
-                    orientation={floatingTemplate.orientation}
-                    color={nextPaletteColor ?? floatingTemplate.color}
-                    width={floatW}
-                    height={floatH}
-                  />
-                ) : (
-                  <View style={[vehicleStyles.vehicleShine, { backgroundColor: board.vehicleShine }, floatingTemplate.orientation === 'vertical' && vehicleStyles.vehicleShineV]} />
-                )}
-              </Animated.View>
+        {/* ── Floating preview (Le véhicule centré sur le doigt !) ── */}
+        {floatingTemplate && (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.floatingPreview,
+              {
+                width: floatW,
+                height: floatH,
+                backgroundColor: nextPaletteColor ?? floatingTemplate.color,
+                borderColor: board.dragBorder,
+              },
+              PALETTE_ART[palette] && vehicleStyles.drawnBlock,
+              floatAnimStyle,
+            ]}
+          >
+            {PALETTE_ART[palette] ? (
+              <DrawnVehicle
+                art={PALETTE_ART[palette]!}
+                length={floatingTemplate.length}
+                orientation={floatingTemplate.orientation}
+                color={nextPaletteColor ?? floatingTemplate.color}
+                width={floatW}
+                height={floatH}
+              />
+            ) : (
+              <View style={[vehicleStyles.vehicleShine, { backgroundColor: board.vehicleShine }, floatingTemplate.orientation === 'vertical' && vehicleStyles.vehicleShineV]} />
             )}
+          </Animated.View>
+        )}
 
-            {/* ── Toolbox ── */}
-            <View style={[styles.toolbox, { borderTopColor: C.border, backgroundColor: C.background, paddingBottom: Math.max(34, insets.bottom + 12) }]}>
-              <Text style={[styles.toolboxHeading, { color: C.textMuted }]}>{t('creator.vehicles_toolbox', { defaultValue: 'VEHICLES' })}</Text>
-              <View style={styles.toolboxGrid}>
-                {TOOLBOX_ITEMS.map((item, idx) => {
-                  const dynamicColor = getNextAvailableColor(usedColors, item.color, CAR_PALETTE);
-                  const templateWithColor = { ...item, color: dynamicColor };
+        {/* ── Toolbox ── */}
+        <View style={[styles.toolbox, { borderTopColor: C.border, backgroundColor: C.background, paddingBottom: Math.max(34, insets.bottom + 12) }]}>
+          <Text style={[styles.toolboxHeading, { color: C.textMuted }]}>{t('creator.vehicles_toolbox', { defaultValue: 'VEHICLES' })}</Text>
+          <View style={styles.toolboxGrid}>
+            {TOOLBOX_ITEMS.map((item, idx) => {
+              const dynamicColor = getNextAvailableColor(usedColors, item.color, CAR_PALETTE);
+              const templateWithColor = { ...item, color: dynamicColor };
 
-                  return (
-                    <ToolboxItem
-                      key={idx}
-                      template={templateWithColor}
-                      displayColor={nextPaletteColor}
-                      colors={C}
-                      dragX={dragX}
-                      dragY={dragY}
-                      dragVisible={dragVisible}
-                      onDragStart={(tmpl, sx, sy) => {
-                        setFloatingTemplate(tmpl);
-                        updateDrag(`toolbox-${idx}`, tmpl.orientation, tmpl.length, tmpl.color, sx, sy);
-                      }}
-                      onDragMove={(sx, sy) => {
-                        updateDrag(`toolbox-${idx}`, templateWithColor.orientation, templateWithColor.length, templateWithColor.color, sx, sy);
-                      }}
-                      onDrop={(sx, sy) => {
-                        lastTarget.current = null;
-                        setActiveDrag(null);
-                        setFloatingTemplate(null);
-                        placeFromToolbox(templateWithColor, sx, sy);
-                      }}
-                      onA11yAdd={() => addFromToolboxA11y(templateWithColor)}
-                    />
-                  );
-                })}
-              </View>
-            </View>
-          </>
-        ) : phase === 'drawing' && <LoadingIndicator size="large" fill />}
+              return (
+                <ToolboxItem
+                  key={idx}
+                  template={templateWithColor}
+                  displayColor={nextPaletteColor}
+                  colors={C}
+                  dragX={dragX}
+                  dragY={dragY}
+                  dragVisible={dragVisible}
+                  onDragStart={(tmpl, sx, sy) => {
+                    setFloatingTemplate(tmpl);
+                    updateDrag(`toolbox-${idx}`, tmpl.orientation, tmpl.length, tmpl.color, sx, sy);
+                  }}
+                  onDragMove={(sx, sy) => {
+                    updateDrag(`toolbox-${idx}`, templateWithColor.orientation, templateWithColor.length, templateWithColor.color, sx, sy);
+                  }}
+                  onDrop={(sx, sy) => {
+                    lastTarget.current = null;
+                    setActiveDrag(null);
+                    setFloatingTemplate(null);
+                    placeFromToolbox(templateWithColor, sx, sy);
+                  }}
+                  onA11yAdd={() => addFromToolboxA11y(templateWithColor)}
+                />
+              );
+            })}
+          </View>
+        </View>
 
       </View>
 

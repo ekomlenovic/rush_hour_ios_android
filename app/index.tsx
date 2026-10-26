@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { useRouter } from '@/hooks/useRouter';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated';
 import Ionicons from '@expo/vector-icons/Ionicons';

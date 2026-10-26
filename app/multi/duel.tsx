@@ -3,8 +3,7 @@ import {
   View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, Modal, Share,
   AccessibilityInfo, useWindowDimensions, type LayoutChangeEvent,
 } from 'react-native';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
-import { useRouter } from '@/hooks/useRouter';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
