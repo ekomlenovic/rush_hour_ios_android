@@ -8,7 +8,9 @@ import {
   availableRecaps, buildRecap, buildRecapShareText, pendingRecap, periodBounds, pickProfile, recapHighlights, recapProgress, recapSlides, shouldMarkRecapSeen, type RecapSource,
 } from '../utils/recap';
 import { planReminders } from '../utils/reminders';
-import { addMonths, getWeekStart } from '../utils/date';
+import { addMonths, getLocalDateString, getWeekStart } from '../utils/date';
+import { dailyWinXp, levelWinXp, totalXpForLevel } from '../data/progression';
+import { buildCosmeticContext, getUnlockedCosmetics } from '../data/cosmetics';
 import { APP_URL } from '../utils/shareResult';
 import en from '../locales/en.json';
 import fr from '../locales/fr.json';
@@ -90,6 +92,73 @@ describe('recap counters in the store (issue 125)', () => {
     useGameStore.setState({ progress: sampleLevels.slice(1, 17).map(l => ({ levelId: l.id, completed: true, bestScore: 0, stars: 3 })) });
     winMapLevel(sampleLevels[0], { stars: 3 });
     expect(store().monthlyStats['2026-10'].cosmetics).toBeGreaterThanOrEqual(1);
+  });
+
+  describe('counts each style unlocked once (issue 183)', () => {
+    const unlocked = () => getUnlockedCosmetics(buildCosmeticContext(store()));
+    const cosmetics = () => [store().monthlyStats['2026-10']?.cosmetics ?? 0, store().yearlyStats['2026']?.cosmetics ?? 0];
+    /** Just under level 5 (the taxi) after the replayed win: only the missions XP reaches it, or the win alone */
+    const nearLevel5 = (missions: boolean) => {
+      winMapLevel(sampleLevels[0]);
+      const winXp = levelWinXp(sampleLevels[0].minMoves, 3, false);
+      useGameStore.setState({
+        xp: totalXpForLevel(5) - (missions ? winXp + 1 : 1),
+        monthlyStats: {},
+        yearlyStats: {},
+        dailyMissions: missions
+          ? { date: getLocalDateString(new Date()), ids: ['win_3', 'perfect_2', 'no_hint'], counters: { levelWins: 2, perfectWins: 1, noHintWins: 1 }, rewarded: false }
+          : { date: getLocalDateString(new Date()), ids: ['win_3', 'perfect_2', 'no_hint'], counters: {}, rewarded: false },
+      });
+      expect(unlocked()).not.toContain('skin:taxi');
+    };
+
+    it('a win completing the missions counts the style of the level reached once', () => {
+      nearLevel5(true);
+      const before = unlocked();
+      winMapLevel(sampleLevels[0]);
+      expect(store().dailyMissions?.rewarded).toBe(true);
+      const gained = unlocked().filter(key => !before.includes(key));
+      expect(gained).toContain('skin:taxi');
+      expect(cosmetics()).toEqual([gained.length, gained.length]);
+    });
+
+    it('the same level reached without the missions counts the same', () => {
+      nearLevel5(false);
+      const before = unlocked();
+      winMapLevel(sampleLevels[0]);
+      const gained = unlocked().filter(key => !before.includes(key));
+      expect(gained).toContain('skin:taxi');
+      expect(cosmetics()).toEqual([gained.length, gained.length]);
+    });
+
+    it('a daily completing the missions counts its styles once', () => {
+      useGameStore.setState({
+        // The daily alone stays under level 5, the missions XP reaches it
+        xp: totalXpForLevel(5) - dailyWinXp(3) - 1,
+        dailyMissions: { date: '2026-10-20', ids: ['win_3', 'daily', 'moves_100'], counters: { levelWins: 3, moves: 100 }, rewarded: false },
+      });
+      const before = unlocked();
+      store().loadLevel({ ...sampleLevels[0], id: DAILY_LEVEL_ID });
+      store().completeDailyChallenge('2026-10-20', 300, 3);
+      expect(store().dailyMissions?.rewarded).toBe(true);
+      const gained = unlocked().filter(key => !before.includes(key));
+      expect(gained).toContain('skin:taxi');
+      expect(cosmetics()).toEqual([gained.length, gained.length]);
+    });
+
+    it('counts the three Mafia styles of the secret code, once', () => {
+      store().recordSecretCode('mafia');
+      expect(unlocked()).toEqual(expect.arrayContaining(['skin:mafia', 'palette:mafia', 'effect:tommy']));
+      expect(cosmetics()).toEqual([3, 3]);
+      store().recordSecretCode('mafia');
+      expect(cosmetics()).toEqual([3, 3]);
+    });
+
+    it('leaves the past months as they are', () => {
+      useGameStore.setState({ monthlyStats: { '2026-09': { ...emptyPeriodStats(), cosmetics: 4 } } });
+      store().recordSecretCode('mafia');
+      expect(store().monthlyStats['2026-09'].cosmetics).toBe(4);
+    });
   });
 
   it('keeps 13 months and every year', () => {
