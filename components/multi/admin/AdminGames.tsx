@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Alert } from 'react-native';
-import { useRouter } from '@/hooks/useRouter';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { formatDuration } from '@/utils/date';
 import type { AdminGame, MultiApi } from '@/utils/multi/api';

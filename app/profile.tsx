@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
 import type { HostInstance, ScrollViewInstance } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useRouter } from '@/hooks/useRouter';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameStore } from '@/store/gameStore';
 import PlayerLevelCard from '@/components/progression/PlayerLevelCard';
@@ -16,13 +16,10 @@ import { RFValue } from '@/utils/responsive';
 import { formatDuration, formatPlayTime } from '@/utils/date';
 import { ACHIEVEMENTS, buildAchievementContext } from '@/data/achievements';
 import { useTheme } from '@/theme';
-import LoadingIndicator from '@/components/LoadingIndicator';
-import { useSlideIn } from '@/hooks/useSlideIn';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const phase = useSlideIn();
   const { t } = useTranslation();
   const { colors } = useTheme();
 
@@ -109,66 +106,61 @@ export default function ProfileScreen() {
         <ScreenHeader colors={colors} title={t('profile.title')} backLabel={t('common.home')} divider />
       </Pressable>
 
-      {/* Drawn after the slide: drawn before, it froze Android on the screen below */}
-      {phase === 'ready' ? (
-        <>
-          <ScrollView
-            ref={scrollRef}
-            onScroll={(e) => { scrollY.current = e.nativeEvent.contentOffset.y; }}
-            scrollEventThrottle={16}
-            style={styles.scrollView}
-            contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + RFValue(40), sheetHeight + RFValue(20)) }}
-          >
-            {/* Touching the screen outside a badge closes the achievement sheet */}
-            <Pressable onPress={selectedAchievement ? closeSheet : undefined} disabled={!selectedAchievement} accessible={false} style={styles.scrollContent}>
-              <Animated.View entering={FadeInDown.delay(50).duration(400)}>
-                <PlayerLevelCard colors={colors} ring onSeeAll={() => router.push('/progression')}>
-                  <View style={styles.keyNumbers}>
-                    {keyNumbers.map(item => (
-                      <View key={item.label} style={[styles.keyNumber, { backgroundColor: colors.card }]} accessible accessibilityLabel={`${item.value} ${item.label}`}>
-                        <Text style={[styles.keyValue, { color: item.color }]}>{item.value}</Text>
-                        <Text style={[styles.keyLabel, { color: colors.textMuted }]}>{item.label}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </PlayerLevelCard>
-              </Animated.View>
-
-              <Animated.View entering={FadeInDown.delay(100).duration(400)}>
-                <StreakCard colors={colors} />
-              </Animated.View>
-
-              <Animated.View entering={FadeInDown.delay(125).duration(400)}>
-                <RecapPreviewCard colors={colors} />
-              </Animated.View>
-
-              <Animated.View entering={FadeInDown.delay(150).duration(400)} style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]} accessibilityRole="header">{t('profile.stats')}</Text>
-                {statGroups.map(group => (
-                  <View key={group.title} style={[styles.statGroup, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <Text style={[styles.groupTitle, { color: colors.textMuted }]}>{group.title}</Text>
-                    {group.rows.map(([label, value], i) => (
-                      <View
-                        key={label}
-                        style={[styles.statRow, i < group.rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}
-                        accessible
-                        accessibilityLabel={`${label} : ${value}`}
-                      >
-                        <Text style={[styles.statLabel, { color: colors.textMuted }]}>{label}</Text>
-                        <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-                      </View>
-                    ))}
+      <ScrollView
+        ref={scrollRef}
+        onScroll={(e) => { scrollY.current = e.nativeEvent.contentOffset.y; }}
+        scrollEventThrottle={16}
+        style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + RFValue(40), sheetHeight + RFValue(20)) }}
+      >
+        {/* Touching the screen outside a badge closes the achievement sheet */}
+        <Pressable onPress={selectedAchievement ? closeSheet : undefined} disabled={!selectedAchievement} accessible={false} style={styles.scrollContent}>
+          <Animated.View entering={FadeInDown.delay(50).duration(400)}>
+            <PlayerLevelCard colors={colors} ring onSeeAll={() => router.push('/progression')}>
+              <View style={styles.keyNumbers}>
+                {keyNumbers.map(item => (
+                  <View key={item.label} style={[styles.keyNumber, { backgroundColor: colors.card }]} accessible accessibilityLabel={`${item.value} ${item.label}`}>
+                    <Text style={[styles.keyValue, { color: item.color }]}>{item.value}</Text>
+                    <Text style={[styles.keyLabel, { color: colors.textMuted }]}>{item.label}</Text>
                   </View>
                 ))}
-              </Animated.View>
+              </View>
+            </PlayerLevelCard>
+          </Animated.View>
 
-              <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-                <AchievementsSection colors={colors} context={context} selected={selectedAchievement} onSelect={selectAchievement} />
-              </Animated.View>
-            </Pressable>
-          </ScrollView>
-        </>
-      ) : phase === 'drawing' && <LoadingIndicator size="large" fill />}
+          <Animated.View entering={FadeInDown.delay(100).duration(400)}>
+            <StreakCard colors={colors} />
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.delay(125).duration(400)}>
+            <RecapPreviewCard colors={colors} />
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.delay(150).duration(400)} style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]} accessibilityRole="header">{t('profile.stats')}</Text>
+            {statGroups.map(group => (
+              <View key={group.title} style={[styles.statGroup, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Text style={[styles.groupTitle, { color: colors.textMuted }]}>{group.title}</Text>
+                {group.rows.map(([label, value], i) => (
+                  <View
+                    key={label}
+                    style={[styles.statRow, i < group.rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}
+                    accessible
+                    accessibilityLabel={`${label} : ${value}`}
+                  >
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{label}</Text>
+                    <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+                  </View>
+                ))}
+              </View>
+            ))}
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.delay(200).duration(400)}>
+            <AchievementsSection colors={colors} context={context} selected={selectedAchievement} onSelect={selectAchievement} />
+          </Animated.View>
+        </Pressable>
+      </ScrollView>
 
       <AchievementSheet colors={colors} context={context} id={selectedAchievement} onClose={closeSheet} onHeight={setSheetHeight} />
     </View>
