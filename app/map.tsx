@@ -45,7 +45,9 @@ export default function MapScreen() {
 
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const [scrollY, setScrollY] = useState(0); // Rounded to SCROLL_STEP
-  const [isReady, setIsReady] = useState(false);
+  // 'sliding': the screen slides in from the home screen; 'drawing': the map is being drawn; 'ready': it is drawn
+  const [phase, setPhase] = useState<'sliding' | 'drawing' | 'ready'>('sliding');
+  const isReady = phase === 'ready';
 
   // Combine static levels + dynamically generated levels
   const levels = useMemo(() => [...sampleLevels, ...generatedLevels], [generatedLevels]);
@@ -116,12 +118,20 @@ export default function MapScreen() {
 
   useEffect(() => {
     // Drawing the map during the slide from the home screen made it stutter on Android: wait for its end
-    const ready = () => setIsReady(true);
+    // The loading indicator is put on screen one frame before the map is drawn: it only shows (after its delay)
+    // when the drawing takes long, so a fast phone goes straight from the slide to the map
+    let frame: number | undefined;
+    const ready = () => {
+      if (frame !== undefined) return;
+      setPhase(p => (p === 'sliding' ? 'drawing' : p));
+      frame = requestAnimationFrame(() => setPhase('ready'));
+    };
     const unsubscribe = navigation.addListener('transitionEnd', ready);
     const timer = setTimeout(ready, READY_FALLBACK_MS);
     return () => {
       unsubscribe();
       clearTimeout(timer);
+      if (frame !== undefined) cancelAnimationFrame(frame);
     };
   }, [navigation]);
 
@@ -252,7 +262,7 @@ export default function MapScreen() {
         )}
       </ScrollView>
 
-      {!isReady && <LoadingIndicator size="large" fill style={StyleSheet.absoluteFill} />}
+      {phase === 'drawing' && <LoadingIndicator size="large" fill style={StyleSheet.absoluteFill} />}
 
       {isReady && (nextAbove || nextBelow) && !isGenerating && (
         <JumpButton levelId={nextNode.id} isEnd={nextNode.id > levels.length} below={nextBelow} colors={colors} onPress={jumpToNext} />
