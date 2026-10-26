@@ -14,8 +14,8 @@
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "babel-preset-expo": "~57.0.0",
-    "expo": "^57.0.26",
+    "babel-preset-expo": "~57.0.16",
+    "expo": "^57.0.31",
     "expo-asset": "~57.0.18",
     "expo-audio": "~57.0.5",
     "expo-blur": "~57.0.3",
