@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, Alert, TextInput, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Alert, TextInput, Pressable, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,7 @@ import { multiErrorMessage } from '../errors';
 import AdminButton from './AdminButton';
 import { useAdminRefresh } from './AdminPage';
 import { adminStyles as styles } from './styles';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 /** iOS drops an alert shown while a sheet is sliding away */
 const AFTER_SHEET_MS = 350;
@@ -94,7 +95,7 @@ export default function AdminPlayers({ api, colors, isDark, myPlayerId }: Props)
     ]);
   };
 
-  if (!players) return <ActivityIndicator color={colors.primary} />;
+  if (!players) return <LoadingIndicator />;
 
   const shown = players.filter(p => matchesPseudo(p.pseudo, query));
   const details = (p: AdminPlayer) => [

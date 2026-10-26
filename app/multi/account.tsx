@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,7 @@ import KeyboardScreen from '@/components/KeyboardScreen';
 import QrCode from '@/components/multi/QrCode';
 import { multiErrorMessage } from '@/components/multi/errors';
 import IconText from '@/components/IconText';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 /** My account on the active server: nickname, recovery code, leave, delete my data */
 export default function MultiAccountScreen() {
@@ -212,7 +213,7 @@ export default function MultiAccountScreen() {
           </View>
         )}
 
-        {busy && <ActivityIndicator color={colors.primary} style={{ marginTop: 12 }} />}
+        {busy && <LoadingIndicator style={{ marginTop: 12 }} />}
         {!!error && <Text style={[styles.error, { color: colors.danger }]} accessibilityLiveRegion="polite">{multiErrorMessage(t, error)}</Text>}
 
         <Pressable onPress={leave} style={[styles.dangerButton, { borderColor: colors.border }]} accessibilityRole="button">

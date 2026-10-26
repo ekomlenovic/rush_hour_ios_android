@@ -17,6 +17,7 @@ import { useMultiApi } from '@/hooks/useMultiApi';
 import { elapsedMs, gameFromStart, isWon, playMove, submission, wonResult } from '@/utils/multi/game';
 import { MultiApiError, type SubmitResult } from '@/utils/multi/api';
 import IconText from '@/components/IconText';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 type Phase = 'loading' | 'playing' | 'sending' | 'send_failed' | 'won' | 'error';
 
@@ -170,7 +171,7 @@ export default function MultiPlayScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <MultiHeader title={title} colors={colors} />
 
-      {phase === 'loading' && <ActivityIndicator color={colors.primary} style={styles.center} />}
+      {phase === 'loading' && <LoadingIndicator fill />}
 
       {phase === 'error' && (
         <View style={styles.center}>

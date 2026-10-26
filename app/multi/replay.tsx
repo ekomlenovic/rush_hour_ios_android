@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, AccessibilityInfo } from 'react-native';
+import { View, Text, StyleSheet, Pressable, AccessibilityInfo } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,7 @@ import { useMultiApi } from '@/hooks/useMultiApi';
 import type { Replay } from '@/utils/multi/api';
 import { REPLAY_SPEEDS, gapBefore, isLongPause, playbackDelay, timeAt, vehiclesAfter, type ReplaySpeed } from '@/utils/multi/replay';
 import IconText from '@/components/IconText';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 const noop = () => {};
 
@@ -68,7 +69,7 @@ export default function ReplayScreen() {
       <MultiHeader title={t('multi.replay_title')} colors={colors} />
       <View style={styles.center}>
         {error ? <Text style={[styles.message, { color: colors.text }]}>{multiErrorMessage(t, error)}</Text>
-          : <ActivityIndicator color={colors.primary} />}
+          : <LoadingIndicator />}
       </View>
     </View>
   );
