@@ -1,7 +1,7 @@
 import type { Level } from '../store/types';
 import { WEEKLY_LEVEL_ID } from '../store/levelIds';
 import { sampleLevels } from '../data/sampleLevels';
-import { COLORS, createPRNG, shuffleWith, transformLevel } from './generator';
+import { COLORS, createPRNG, shuffleWith, transformLevel } from './generator.core';
 
 /** Campaign levels at least this hard feed the weekly challenge */
 const WEEKLY_MIN_MOVES = 25;

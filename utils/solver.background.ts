@@ -11,6 +11,11 @@ import type { Level, Vehicle } from '../store/types';
 let runtime: WorkletRuntime | null = null;
 const solverRuntime = () => (runtime ??= createWorkletRuntime({ name: 'solver' }));
 
+/** Runs a worklet on the solver runtime, e.g. the generator of the daily (utils/generator.ts) */
+export function runOnSolverRuntime<Args extends unknown[], R>(worklet: (...args: Args) => R, ...args: Args): Promise<R> {
+  return runOnRuntimeAsync(solverRuntime(), worklet, ...args);
+}
+
 export function solvePuzzleAsync(
   vehicles: Vehicle[],
   gridSize: number,
