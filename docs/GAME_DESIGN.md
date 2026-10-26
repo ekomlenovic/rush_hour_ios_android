@@ -443,12 +443,12 @@ Les icônes de l'interface sont des **Ionicons** (`@expo/vector-icons/Ionicons`)
 | Une icône devant un texte passe par `IconText` ; dans une ligne de texte, l'icône peut être imbriquée dans le `<Text>` | `components/IconText.tsx` |
 | Un bouton qui n'a qu'une icône (fermer, réglages…) suit la règle d'accessibilité : `accessibilityLabel` traduit | clés `a11y.*` |
 | Les paliers d'une même série de succès répètent leur icône (1, 2 puis 3 flammes) plutôt que de la dupliquer | `iconCount`, `AchievementIcon` |
-| Les textes traduits affichés dans l'app ne contiennent pas d'emoji : l'icône est posée par le composant, à côté du texte (« 3 étoiles », pas « 3 ⭐ ») | `locales/*.json`, `IconText` |
+| **Aucun texte traduit ne contient d'emoji**, pas même un titre de notification ou un texte partagé : dans l'app, l'icône est posée par le composant, à côté du texte (« 3 étoiles », pas « 3 ⭐ ») ; hors de l'app, le code ajoute l'emoji au texte traduit | `locales/*.json`, `IconText`, test `no text of … contains an emoji` |
 | Les symboles typographiques dans un texte (`←`, `✓`, `★`, `↕`) restent permis | |
 
 Les emojis ne restent que là où une icône ne peut pas s'afficher ou n'a pas d'équivalent :
 
-- les **textes qui sortent de l'app** : résultat partagé (`utils/shareResult.ts`), titres des notifications, alertes système ;
+- les **textes qui sortent de l'app**, ajoutés par le code et jamais dans un fichier de traduction : résultat et récap partagés (`utils/shareResult.ts`, `utils/recap.ts`), alertes système ;
 - les **illustrations** : décor et panneaux des zones de la carte (`components/map/zones.ts`), icône des skins sur la voiture cible et vignettes des effets (`theme/board.ts`, `data/cosmetics.ts`).
 - les **réactions des spectateurs** en duel : l'emoji est la réaction elle-même, il est dans la liste des réactions (`utils/multi/reactions.ts`), jamais dans un texte traduit ; son nom traduit (`multi.reactions.names.*`) sert au lecteur d'écran.
 
