@@ -4,6 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { Difficulty, MultiApi } from '@/utils/multi/api';
+import { DIFFICULTY_LEVELS } from '@/utils/generator';
 import BottomSheet from '@/components/home/BottomSheet';
 import { RFValue } from '@/utils/responsive';
 import type { UiColors } from '@/theme';
@@ -76,6 +77,19 @@ export default function AdminChallenge({ api, colors, isDark }: Props) {
     }
   };
   const pregenerateIndex = PREGENERATE.findIndex(v => v >= settings.pregenerateAheadMs);
+  // Absent on a server too old to take an exact optimum
+  const minMovesByWeekday = settings.minMovesByWeekday;
+  const dayLabel = (day: number) => {
+    const moves = minMovesByWeekday?.[day];
+    return `${t(`difficulty.${settings.difficultyByWeekday[day]}`)}${moves != null ? ` · ${t('multi.admin_moves', { count: moves })}` : ''}`;
+  };
+  /** The exact optimum of a day, from 1 to the most of its difficulty; below 1, none (the usual one) */
+  const setMoves = (day: number, moves: number | null) => {
+    if (!minMovesByWeekday || moves === minMovesByWeekday[day]) return;
+    const days = [...minMovesByWeekday];
+    days[day] = moves;
+    save({ minMovesByWeekday: days });
+  };
 
   return (
     <View>
@@ -141,11 +155,11 @@ export default function AdminChallenge({ api, colors, isDark }: Props) {
           <View key={day} style={styles.row}>
             <Text style={[styles.rowLabel, { color: colors.text }]}>{dayName(day)}</Text>
             <AdminButton
-              label={`${t(`difficulty.${settings.difficultyByWeekday[day]}`)} ▾`}
+              label={`${dayLabel(day)} ▾`}
               onPress={() => setPickingDay(day)}
               background={colors.primarySoft}
               color={colors.primaryText}
-              accessibilityLabel={`${dayName(day)}, ${t(`difficulty.${settings.difficultyByWeekday[day]}`)}`}
+              accessibilityLabel={`${dayName(day)}, ${dayLabel(day)}`}
             />
           </View>
         ))}
@@ -167,7 +181,17 @@ export default function AdminChallenge({ api, colors, isDark }: Props) {
                 const days = [...settings.difficultyByWeekday];
                 days[pickingDay] = difficulty;
                 setPickingDay(null);
-                if (!selected) save({ difficultyByWeekday: days });
+                if (selected) return;
+                // An optimum beyond the new difficulty comes down to its most
+                const moves = minMovesByWeekday?.[pickingDay];
+                const most = DIFFICULTY_LEVELS[difficulty].maxMovesRequired;
+                if (minMovesByWeekday && moves != null && moves > most) {
+                  const minMoves = [...minMovesByWeekday];
+                  minMoves[pickingDay] = most;
+                  save({ difficultyByWeekday: days, minMovesByWeekday: minMoves });
+                } else {
+                  save({ difficultyByWeekday: days });
+                }
               }}
               style={{
                 borderWidth: 1.5, borderRadius: 14, paddingVertical: RFValue(13), paddingHorizontal: RFValue(14), marginBottom: RFValue(10),
@@ -182,6 +206,29 @@ export default function AdminChallenge({ api, colors, isDark }: Props) {
             </Pressable>
           );
         })}
+        {pickingDay !== null && minMovesByWeekday && (() => {
+          const moves = minMovesByWeekday[pickingDay];
+          const config = DIFFICULTY_LEVELS[settings.difficultyByWeekday[pickingDay]];
+          return (
+            <View style={{ marginTop: RFValue(6) }}>
+              <Stepper
+                label={t('multi.admin_min_moves')}
+                value={moves == null ? t('multi.admin_min_moves_auto') : String(moves)}
+                onMinus={() => setMoves(pickingDay, moves == null || moves <= 1 ? null : moves - 1)}
+                onPlus={() => setMoves(pickingDay, moves == null ? config.minMovesRequired : Math.min(config.maxMovesRequired, moves + 1))}
+                colors={colors}
+              />
+              <Text style={[styles.muted, { color: colors.textMuted }]}>
+                {t('multi.admin_min_moves_help', { min: config.minMovesRequired, max: config.maxMovesRequired })}
+              </Text>
+              {moves != null && (
+                <View style={styles.actions}>
+                  <AdminButton label={t('multi.admin_min_moves_reset')} onPress={() => setMoves(pickingDay, null)} background={colors.neutralSoft} color={colors.text} />
+                </View>
+              )}
+            </View>
+          );
+        })()}
       </BottomSheet>
     </View>
   );
