@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
+import { useRouter } from '@/hooks/useRouter';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/theme';
 import { selectActiveAccount, useMultiStore } from '@/store/multiStore';
