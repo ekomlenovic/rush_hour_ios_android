@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { AdminReport, MultiApi } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
@@ -10,6 +10,7 @@ import { useAdminRefresh } from './AdminPage';
 import { adminStyles as styles } from './styles';
 import IconText from '@/components/IconText';
 import { dateLocale } from '@/utils/date';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 interface Props { api: MultiApi; colors: UiColors }
 
@@ -39,7 +40,7 @@ export default function AdminReports({ api, colors }: Props) {
     }
   };
 
-  if (!reports) return <ActivityIndicator color={colors.primary} />;
+  if (!reports) return <LoadingIndicator />;
   if (reports.length === 0) return <Text style={[styles.empty, { color: colors.textMuted }]}>{t('multi.admin_no_reports')}</Text>;
 
   return (

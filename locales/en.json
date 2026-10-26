@@ -655,6 +655,7 @@
     "dir_down": "down",
     "win": "{{title}} {{stars}} out of 3 stars. {{stats}}",
     "back": "Back",
+    "loading": "Loading",
     "close": "Close",
     "settings": "Options",
     "share_level": "Share this level",

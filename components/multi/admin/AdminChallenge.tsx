@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, Alert, Pressable } from 'react-native';
+import { View, Text, Alert, Pressable } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -14,6 +14,7 @@ import Stepper from './Stepper';
 import { useAdminSettings } from './useAdminSettings';
 import { adminStyles as styles } from './styles';
 import { dateLocale } from '@/utils/date';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 const DIFFICULTIES: Difficulty[] = ['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER'];
 /** Monday first; the server counts from Sunday (0) */
@@ -55,7 +56,7 @@ export default function AdminChallenge({ api, colors, isDark }: Props) {
 
   useEffect(() => { if (settings) setReleaseTime(settings.releaseTime); }, [settings?.releaseTime]);
 
-  if (!settings) return <ActivityIndicator color={colors.primary} />;
+  if (!settings) return <LoadingIndicator />;
 
   const applyReleaseTime = () => Alert.alert(
     t('multi.admin_release_confirm_title', { time: releaseTime }),
