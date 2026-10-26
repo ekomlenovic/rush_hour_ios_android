@@ -1,6 +1,6 @@
 # Rush Hours 2.0.4 (versionCode 17)
 
-Mise à jour de la **2.0.3 (versionCode 16)** : un widget d'écran d'accueil, les réactions des spectateurs en duel, une musique qui se mélange à la tienne, le serbe, et beaucoup de correctifs.
+Mise à jour de la **2.0.3 (versionCode 16)** : un widget d'écran d'accueil, les réactions des spectateurs en duel, une musique qui se mélange à la tienne, le serbe, plus de fluidité sur Android, et beaucoup de correctifs.
 
 ## Play Store (500 caractères max par langue)
 
@@ -13,6 +13,7 @@ Nouveautés :
 • En duel, les spectateurs réagissent et encouragent les joueurs
 • Un rappel touché ouvre directement ce qu'il annonce
 • La musique du jeu ne coupe plus ta musique ni tes podcasts
+• Carte et effets de victoire plus fluides sur Android
 • Nouvelle langue : serbe
 • Un défi du jour resté ouvert après minuit ne fait plus perdre ton streak
 • Corrections et améliorations
@@ -23,6 +24,7 @@ New:
 • In duels, spectators can react and cheer the players on
 • Tapping a reminder opens what it announces
 • The game music no longer stops your music or podcasts
+• Smoother map and win effects on Android
 • New language: Serbian
 • A daily challenge left open past midnight no longer breaks your streak
 • Fixes and improvements
@@ -41,6 +43,8 @@ New:
 
 ### Correctifs
 
+- **Fluidité sur Android** : les animations d'opacité et de déplacement (particules et halos de la victoire) sont appliquées directement aux vues au lieu de recalculer tout l'écran à chaque image. La carte se dessine une fois le glissement depuis l'accueil terminé, en un seul fondu, avec un indicateur de chargement au milieu de l'écran en attendant.
+- **Indicateur de chargement** commun à toute l'app : il n'apparaît qu'après 150 ms (rien pour un chargement rapide) et le lecteur d'écran annonce « Chargement ».
 - **Audio** : la musique du jeu se mélange à l'audio du téléphone au lieu de le couper, et se tait en mode silencieux. Plus de boucle de 50 ms en arrière-plan.
 - **Streak** : un défi du jour resté ouvert après minuit ne fait plus perdre le streak (ni consommer un gel) ; deux jours consécutifs bien comptés en Nouvelle-Zélande au changement d'heure.
 - **Sauvegarde** : une alerte prévient quand la sauvegarde ne peut plus être écrite (stockage plein), et la réécrit au retour dans l'app.
