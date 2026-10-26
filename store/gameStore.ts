@@ -310,18 +310,18 @@ export const useGameStore = create<GameState>()(
           return;
         }
 
-        const cosmeticsBefore = unlockedCosmetics();
-        set({
-          ...update,
-          dailyMissions: { ...missions, counters, rewarded: true },
-          stats: { ...state.stats, missionDaysCompleted: state.stats.missionDaysCompleted + 1 },
+        withCosmeticCount(() => {
+          set({
+            ...update,
+            dailyMissions: { ...missions, counters, rewarded: true },
+            stats: { ...state.stats, missionDaysCompleted: state.stats.missionDaysCompleted + 1 },
+          });
+          const freezeGranted = get().addStreakFreeze();
+          const xp = missionsXp(freezeGranted);
+          set({ pendingMissionReward: { freezeGranted, xp } });
+          addXp(xp);
+          get().checkAchievements();
         });
-        const freezeGranted = get().addStreakFreeze();
-        const xp = missionsXp(freezeGranted);
-        set({ pendingMissionReward: { freezeGranted, xp } });
-        addXp(xp);
-        get().checkAchievements();
-        recordNewCosmetics(cosmeticsBefore);
       };
 
       /** Adds XP; each level reached gives a streak freeze (if there is room) and is queued for display */
@@ -345,11 +345,23 @@ export const useGameStore = create<GameState>()(
       /** Adds to the recap of this month and this year */
       const periodsWith = (increments: Partial<PeriodStats>, state: GameState = get()) => addToPeriods(state, increments);
 
-      /** Styles unlocked now: compared after a win, the new ones go to the recap */
+      /**
+       * Runs an action and adds the styles it unlocked to the recap. Only the outermost action counts:
+       * a nested one (the missions reward inside a win, the achievements after it) is already in its diff (issue 183)
+       */
       const unlockedCosmetics = () => getUnlockedCosmetics(buildCosmeticContext(get())).length;
-      const recordNewCosmetics = (before: number) => {
-        const gained = unlockedCosmetics() - before;
-        if (gained > 0) set(periodsWith({ cosmetics: gained }));
+      let cosmeticCountDepth = 0;
+      const withCosmeticCount = <T,>(action: () => T): T => {
+        if (cosmeticCountDepth > 0) return action();
+        const before = unlockedCosmetics();
+        cosmeticCountDepth++;
+        try {
+          return action();
+        } finally {
+          cosmeticCountDepth--;
+          const gained = unlockedCosmetics() - before;
+          if (gained > 0) set(periodsWith({ cosmetics: gained }));
+        }
       };
 
       return {
@@ -513,156 +525,148 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-      completeLevel: (levelId, score, stars, timeMs) => {
-        const { progress, maxUnlockedLevel, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
-        const cosmeticsBefore = unlockedCosmetics();
+      completeLevel: (levelId, score, stars, timeMs) => withCosmeticCount(() => {
+          const { progress, maxUnlockedLevel, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
 
-        // The tutorial completes a level that is not loaded: no attempt to record
-        const isCurrentLevel = currentLevel?.id === levelId;
-        const noHint = isCurrentLevel && currentAttempt.hints === 0;
-        const noHelp = noHint && currentAttempt.undos === 0;
-        const winTime = isCurrentLevel ? timeMs : undefined;
+          // The tutorial completes a level that is not loaded: no attempt to record
+          const isCurrentLevel = currentLevel?.id === levelId;
+          const noHint = isCurrentLevel && currentAttempt.hints === 0;
+          const noHelp = noHint && currentAttempt.undos === 0;
+          const winTime = isCurrentLevel ? timeMs : undefined;
 
-        const existing = progress.find((p) => p.levelId === levelId);
-        let updatedProgress: LevelProgress[];
-        if (existing) {
-          updatedProgress = progress.map((p) =>
-            p.levelId === levelId
-              ? {
-                  ...p,
-                  completed: true,
-                  bestScore: Math.max(p.bestScore, score),
-                  stars: Math.max(p.stars || 0, stars),
-                  bestTimeMs: winTime !== undefined ? Math.min(p.bestTimeMs ?? Infinity, winTime) : p.bestTimeMs,
-                  noHint: p.noHint || noHint,
-                  noHelp: p.noHelp || noHelp,
-                }
-              : p
-          );
-        } else {
-          updatedProgress = [...progress, { levelId, completed: true, bestScore: score, stars, bestTimeMs: winTime, noHint, noHelp }];
-        }
+          const existing = progress.find((p) => p.levelId === levelId);
+          let updatedProgress: LevelProgress[];
+          if (existing) {
+            updatedProgress = progress.map((p) =>
+              p.levelId === levelId
+                ? {
+                    ...p,
+                    completed: true,
+                    bestScore: Math.max(p.bestScore, score),
+                    stars: Math.max(p.stars || 0, stars),
+                    bestTimeMs: winTime !== undefined ? Math.min(p.bestTimeMs ?? Infinity, winTime) : p.bestTimeMs,
+                    noHint: p.noHint || noHint,
+                    noHelp: p.noHelp || noHelp,
+                  }
+                : p
+            );
+          } else {
+            updatedProgress = [...progress, { levelId, completed: true, bestScore: score, stars, bestTimeMs: winTime, noHint, noHelp }];
+          }
 
-        const newSavedStates = { ...savedStates };
-        delete newSavedStates[levelId];
+          const newSavedStates = { ...savedStates };
+          delete newSavedStates[levelId];
 
-        // Only advance map progression for map-based levels (Campaign + Generated)
-        // Daily/Weekly Challenges and Custom Levels (timestamps) are excluded
-        const isMapLevel = levelId < 900000;
+          // Only advance map progression for map-based levels (Campaign + Generated)
+          // Daily/Weekly Challenges and Custom Levels (timestamps) are excluded
+          const isMapLevel = levelId < 900000;
 
-        set({
-          progress: updatedProgress,
-          maxUnlockedLevel: isMapLevel ? Math.max(maxUnlockedLevel, levelId + 1) : maxUnlockedLevel,
-          savedStates: newSavedStates,
-          stats: isCurrentLevel && currentLevel ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'level') : stats,
-          currentAttempt: emptyAttempt(),
-          ...periodsWith({
-            ...(isCurrentLevel && currentLevel ? winIncrements(currentLevel, stars, 'level') : {}),
-            newLevels: existing?.completed ? 0 : 1,
-            starsGained: Math.max(0, stars - (existing?.completed ? existing.stars || 0 : 0)),
-          }),
-        });
-        if (isCurrentLevel && currentLevel) {
-          const isFirstWin = !existing?.completed;
-          addXp(levelWinXp(currentLevel.minMoves, stars, isFirstWin) + (isFirstWin && isBossLevel(levelId) ? BOSS_WIN_XP : 0));
-          bumpMissions({
-            levelWins: 1,
-            perfectWins: stars === 3 ? 1 : 0,
-            noHintWins: noHint ? 1 : 0,
-            cleanWins: noHelp ? 1 : 0,
-            bigGridWins: currentLevel.gridSize >= 7 ? 1 : 0,
-            newLevelWins: existing?.completed ? 0 : 1,
-            fastWins: timeMs !== undefined && timeMs < FAST_WIN_MS ? 1 : 0,
+          set({
+            progress: updatedProgress,
+            maxUnlockedLevel: isMapLevel ? Math.max(maxUnlockedLevel, levelId + 1) : maxUnlockedLevel,
+            savedStates: newSavedStates,
+            stats: isCurrentLevel && currentLevel ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'level') : stats,
+            currentAttempt: emptyAttempt(),
+            ...periodsWith({
+              ...(isCurrentLevel && currentLevel ? winIncrements(currentLevel, stars, 'level') : {}),
+              newLevels: existing?.completed ? 0 : 1,
+              starsGained: Math.max(0, stars - (existing?.completed ? existing.stars || 0 : 0)),
+            }),
           });
-        }
-        get().checkAchievements();
-        recordNewCosmetics(cosmeticsBefore);
-        recordXpGain(xpBefore);
-      },
+          if (isCurrentLevel && currentLevel) {
+            const isFirstWin = !existing?.completed;
+            addXp(levelWinXp(currentLevel.minMoves, stars, isFirstWin) + (isFirstWin && isBossLevel(levelId) ? BOSS_WIN_XP : 0));
+            bumpMissions({
+              levelWins: 1,
+              perfectWins: stars === 3 ? 1 : 0,
+              noHintWins: noHint ? 1 : 0,
+              cleanWins: noHelp ? 1 : 0,
+              bigGridWins: currentLevel.gridSize >= 7 ? 1 : 0,
+              newLevelWins: existing?.completed ? 0 : 1,
+              fastWins: timeMs !== undefined && timeMs < FAST_WIN_MS ? 1 : 0,
+            });
+          }
+          get().checkAchievements();
+          recordXpGain(xpBefore);
+      }),
 
-      completeDailyChallenge: (dateKey, score, stars, timeMs, details) => {
-        // A day to come (a forged link) would break the streak and the export of the save (issue 119)
-        if (!isDailyWinnable(dateKey)) return;
-        const { dailyChallengeProgress, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
-        const firstWin = !dailyChallengeProgress[dateKey]?.completed;
-        const cosmeticsBefore = unlockedCosmetics();
-        const newSavedStates = { ...savedStates };
-        delete newSavedStates[`daily-${dateKey}`];
+      completeDailyChallenge: (dateKey, score, stars, timeMs, details) => withCosmeticCount(() => {
+          // A day to come (a forged link) would break the streak and the export of the save (issue 119)
+          if (!isDailyWinnable(dateKey)) return;
+          const { dailyChallengeProgress, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
+          const firstWin = !dailyChallengeProgress[dateKey]?.completed;
+          const newSavedStates = { ...savedStates };
+          delete newSavedStates[`daily-${dateKey}`];
 
-        set({
-          dailyChallengeProgress: {
-            ...dailyChallengeProgress,
-            [dateKey]: mergeChallengeResult(dailyChallengeProgress[dateKey], score, stars, timeMs, details),
-          },
-          savedStates: newSavedStates,
-          stats: currentLevel?.id === DAILY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'daily') : stats,
-          currentAttempt: emptyAttempt(),
-          ...(currentLevel?.id === DAILY_LEVEL_ID && periodsWith(winIncrements(currentLevel, stars, 'daily'))),
-        });
+          set({
+            dailyChallengeProgress: {
+              ...dailyChallengeProgress,
+              [dateKey]: mergeChallengeResult(dailyChallengeProgress[dateKey], score, stars, timeMs, details),
+            },
+            savedStates: newSavedStates,
+            stats: currentLevel?.id === DAILY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'daily') : stats,
+            currentAttempt: emptyAttempt(),
+            ...(currentLevel?.id === DAILY_LEVEL_ID && periodsWith(winIncrements(currentLevel, stars, 'daily'))),
+          });
 
-        // Update streak
-        get().updateStreak(dateKey);
-        if (firstWin) addXp(dailyWinXp(stars));
-        if (dateKey === getLocalDateString(new Date())) {
-          bumpMissions({ dailyDone: 1 });
-        }
+          // Update streak
+          get().updateStreak(dateKey);
+          if (firstWin) addXp(dailyWinXp(stars));
+          if (dateKey === getLocalDateString(new Date())) {
+            bumpMissions({ dailyDone: 1 });
+          }
 
-        get().checkAchievements();
-        recordNewCosmetics(cosmeticsBefore);
-        recordXpGain(xpBefore);
-      },
+          get().checkAchievements();
+          recordXpGain(xpBefore);
+      }),
 
-      completeWeeklyChallenge: (weekKey, score, stars, timeMs, details) => {
-        if (!isWeeklyWinnable(weekKey)) return;
-        const { weeklyChallengeProgress, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
-        const firstWin = !weeklyChallengeProgress[weekKey]?.completed;
-        const cosmeticsBefore = unlockedCosmetics();
-        const newSavedStates = { ...savedStates };
-        delete newSavedStates[`weekly-${weekKey}`];
+      completeWeeklyChallenge: (weekKey, score, stars, timeMs, details) => withCosmeticCount(() => {
+          if (!isWeeklyWinnable(weekKey)) return;
+          const { weeklyChallengeProgress, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
+          const firstWin = !weeklyChallengeProgress[weekKey]?.completed;
+          const newSavedStates = { ...savedStates };
+          delete newSavedStates[`weekly-${weekKey}`];
 
-        set({
-          weeklyChallengeProgress: {
-            ...weeklyChallengeProgress,
-            [weekKey]: mergeChallengeResult(weeklyChallengeProgress[weekKey], score, stars, timeMs, details),
-          },
-          savedStates: newSavedStates,
-          stats: currentLevel?.id === WEEKLY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'weekly') : stats,
-          currentAttempt: emptyAttempt(),
-          ...(currentLevel?.id === WEEKLY_LEVEL_ID && periodsWith(winIncrements(currentLevel, stars, 'weekly'))),
-        });
-        if (firstWin) addXp(weeklyWinXp(stars));
-        get().checkAchievements();
-        recordNewCosmetics(cosmeticsBefore);
-        recordXpGain(xpBefore);
-      },
+          set({
+            weeklyChallengeProgress: {
+              ...weeklyChallengeProgress,
+              [weekKey]: mergeChallengeResult(weeklyChallengeProgress[weekKey], score, stars, timeMs, details),
+            },
+            savedStates: newSavedStates,
+            stats: currentLevel?.id === WEEKLY_LEVEL_ID ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'weekly') : stats,
+            currentAttempt: emptyAttempt(),
+            ...(currentLevel?.id === WEEKLY_LEVEL_ID && periodsWith(winIncrements(currentLevel, stars, 'weekly'))),
+          });
+          if (firstWin) addXp(weeklyWinXp(stars));
+          get().checkAchievements();
+          recordXpGain(xpBefore);
+      }),
 
-      completeArchiveChallenge: (dateKey, score, stars, timeMs, details) => {
-        // Only past days: today's daily is a one-shot challenge, never an archive
-        if (!isArchiveDateAvailable(dateKey, getLocalDateString(new Date()))) return;
-        const { archiveProgress, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
-        const firstWin = !archiveProgress[dateKey]?.completed;
-        const cosmeticsBefore = unlockedCosmetics();
-        const newSavedStates = { ...savedStates };
-        delete newSavedStates[`archive-${dateKey}`];
-        const isCurrentLevel = currentLevel?.id === ARCHIVE_LEVEL_ID;
+      completeArchiveChallenge: (dateKey, score, stars, timeMs, details) => withCosmeticCount(() => {
+          // Only past days: today's daily is a one-shot challenge, never an archive
+          if (!isArchiveDateAvailable(dateKey, getLocalDateString(new Date()))) return;
+          const { archiveProgress, savedStates, currentLevel, currentAttempt, stats, xp: xpBefore } = get();
+          const firstWin = !archiveProgress[dateKey]?.completed;
+          const newSavedStates = { ...savedStates };
+          delete newSavedStates[`archive-${dateKey}`];
+          const isCurrentLevel = currentLevel?.id === ARCHIVE_LEVEL_ID;
 
-        set({
-          archiveProgress: {
-            ...archiveProgress,
-            [dateKey]: mergeChallengeResult(archiveProgress[dateKey], score, stars, timeMs, details),
-          },
-          savedStates: newSavedStates,
-          stats: isCurrentLevel ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'archive') : stats,
-          currentAttempt: emptyAttempt(),
-          ...(isCurrentLevel && periodsWith(winIncrements(currentLevel, stars, 'archive'))),
-        });
+          set({
+            archiveProgress: {
+              ...archiveProgress,
+              [dateKey]: mergeChallengeResult(archiveProgress[dateKey], score, stars, timeMs, details),
+            },
+            savedStates: newSavedStates,
+            stats: isCurrentLevel ? withWinStats(stats, currentLevel, currentAttempt, timeMs, stars, 'archive') : stats,
+            currentAttempt: emptyAttempt(),
+            ...(isCurrentLevel && periodsWith(winIncrements(currentLevel, stars, 'archive'))),
+          });
 
-        // No streak, freeze or mission: playing a missed day afterwards does not make up for it
-        if (firstWin) addXp(archiveWinXp(details?.minMoves ?? currentLevel?.minMoves ?? 0, stars));
-        get().checkAchievements();
-        recordNewCosmetics(cosmeticsBefore);
-        recordXpGain(xpBefore);
-      },
+          // No streak, freeze or mission: playing a missed day afterwards does not make up for it
+          if (firstWin) addXp(archiveWinXp(details?.minMoves ?? currentLevel?.minMoves ?? 0, stars));
+          get().checkAchievements();
+          recordXpGain(xpBefore);
+      }),
 
       checkAchievements: (options) => {
         const state = get();
@@ -686,11 +690,14 @@ export const useGameStore = create<GameState>()(
           return;
         }
 
-        set({
-          achievements: [...state.achievements, ...newlyUnlocked],
-          unlockQueue: [...state.unlockQueue, ...newlyUnlocked],
+        // Their styles and those of the levels reached with their XP go to the recap
+        withCosmeticCount(() => {
+          set({
+            achievements: [...state.achievements, ...newlyUnlocked],
+            unlockQueue: [...state.unlockQueue, ...newlyUnlocked],
+          });
+          addXp(newlyUnlocked.length * ACHIEVEMENT_XP);
         });
-        addXp(newlyUnlocked.length * ACHIEVEMENT_XP);
         if (state.isHapticsEnabled) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
