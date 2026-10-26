@@ -26,7 +26,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // OPTIMIZATION: Track AppState in React state so effects can react to backgrounding
-  const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
+  const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState as AppStateStatus);
 
   // 1. Keep appState completely in sync
   useEffect(() => {

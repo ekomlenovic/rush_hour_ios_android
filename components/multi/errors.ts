@@ -10,6 +10,7 @@ export const MULTI_ERROR_CODES = [
   'release_too_soon',
   'replay_locked', 'replay_expired', 'replay_unavailable',
   'duel_not_found', 'duel_full', 'already_in_duel', 'no_duel', 'not_started', 'opponent_left', 'duel_unreachable', 'duel_replaced', 'puzzle_unavailable', 'too_many_spectators',
+  'duel_ended_offline', 'room_closed',
   'reaction_refused', 'too_many_reactions',
   'invalid_url', 'not_https', 'update_app', 'update_server', 'unknown',
 ] as const;

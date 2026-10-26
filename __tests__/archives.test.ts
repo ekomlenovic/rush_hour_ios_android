@@ -50,6 +50,11 @@ describe('archive dates', () => {
     expect(isArchiveDateAvailable('2027-01-01', today)).toBe(false);
   });
 
+  it('include yesterday across a daylight saving change (Auckland, #153)', () => {
+    expect(isArchiveDateAvailable('2027-09-26', '2027-09-27')).toBe(true);
+    expect(isArchiveDateAvailable('2027-04-04', '2027-04-05')).toBe(true);
+  });
+
   it('start with the current daily generator', () => {
     expect(isArchiveDateAvailable(ARCHIVE_FIRST_DATE, today)).toBe(true);
     expect(isArchiveDateAvailable(addDays(ARCHIVE_FIRST_DATE, -1), today)).toBe(false);

@@ -47,7 +47,7 @@ export default function GameActions({ colors, showUndoAndHint, isHintLoading, on
                 <Ionicons name="bulb" size={ICON_SIZE} color={colors.warning} />
               )}
             </View>
-            <Text style={[styles.actionText, { color: colors.warning }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('game.hint')}</Text>
+            <Text style={[styles.actionText, { color: colors.warningText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('game.hint')}</Text>
           </Pressable>
         </>
       )}

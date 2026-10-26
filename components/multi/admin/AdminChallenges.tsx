@@ -10,6 +10,7 @@ import BoardPreview from '@/components/garage/BoardPreview';
 import { errorCode, multiErrorMessage } from '../errors';
 import { useAdminRefresh } from './AdminPage';
 import { adminStyles as styles } from './styles';
+import { dateLocale } from '@/utils/date';
 
 const THUMB = 72;
 
@@ -63,15 +64,15 @@ export default function AdminChallenges({ api, colors, timeZone }: Props) {
   /** In the time zone of the server, like the release time */
   const at = (ms: number, options: Intl.DateTimeFormatOptions) => {
     try {
-      return new Date(ms).toLocaleString(i18n.language, { ...options, timeZone });
+      return new Date(ms).toLocaleString(dateLocale(i18n.language), { ...options, timeZone });
     } catch {
-      return new Date(ms).toLocaleString(i18n.language, options);
+      return new Date(ms).toLocaleString(dateLocale(i18n.language), options);
     }
   };
   const when = (ms: number) => at(ms, { weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const time = (ms: number) => at(ms, { hour: '2-digit', minute: '2-digit' });
   // A day of the calendar, whatever the time zone
-  const day = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+  const day = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString(dateLocale(i18n.language), { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
 
   if (error && !challenges) return <Text style={[styles.muted, { color: colors.textMuted }]}>{error}</Text>;
   if (!challenges) return <ActivityIndicator color={colors.primary} />;

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { LEVEL, LONG_SOLUTION, SOLUTION, paris, testServer } from './helpers';
+import { LEVEL, LONG_SOLUTION, SOLUTION, paris, testServer, INVITE } from './helpers';
 import { MAX_MOVES } from '../src/app';
 
 let server: ReturnType<typeof testServer>;
@@ -71,6 +71,51 @@ describe('joining a server', () => {
     for (let i = 0; i < 12; i++) statuses.push((await request('POST', '/join', undefined, { inviteCode: `guess-${i}`, pseudo: 'Léo' })).status);
     expect(statuses.slice(0, 10).every(s => s === 403)).toBe(true);
     expect(statuses.slice(10)).toEqual([429, 429]);
+  });
+
+  it('refuses invisible and look-alike nicknames', async () => {
+    const { join, request } = open();
+    await join('Léo');
+    const tryJoin = (pseudo: string) => request('POST', '/join', undefined, { inviteCode: INVITE, pseudo });
+    // Hangul filler and combining-only: no visible letters -> invalid
+    expect((await tryJoin('\u3164\u3164')).body).toEqual({ error: 'invalid_pseudo' });
+    expect((await tryJoin('\u0301\u0301\u0301')).body).toEqual({ error: 'invalid_pseudo' });
+    // A look-alike of the existing "Léo" (cyrillic е) is taken
+    expect((await tryJoin('L\u0435\u0301o')).body).toEqual({ error: 'pseudo_taken' });
+    // A look-alike that does not resemble a member is accepted
+    expect((await tryJoin('M\u0435\u0438a')).status).toBe(201);
+  });
+});
+
+describe('look-alike nickname (renames)', () => {
+  it('still allows a rename that looks like no other member', async () => {
+    const { join, request } = open();
+    await join('Léo');
+    const me = await join('Mia');
+    // "Mіа" (cyrillic і / а) is a look-alike of "Mia" itself only -> allowed (self is excluded)
+    expect((await request('PATCH', '/me', me.token, { pseudo: 'M\u0456\u0430' })).body).toMatchObject({ pseudo: 'M\u0456\u0430' });
+  });
+
+  it('refuses renaming onto a look-alike of another member', async () => {
+    const { join, request } = open();
+    await join('Léo');
+    const me = await join('Sam');
+    await join('Troll');
+    // "trоll" (cyrillic о) is a look-alike of "Troll"
+    expect((await request('PATCH', '/me', me.token, { pseudo: 'tr\u043ell' })).body).toEqual({ error: 'pseudo_taken' });
+    // "Lеo" (cyrillic е) is a look-alike of "Léo"
+    expect((await request('PATCH', '/me', me.token, { pseudo: 'L\u0435o' })).body).toEqual({ error: 'pseudo_taken' });
+  });
+
+  it('refuses an admin rename onto a look-alike of an existing member', async () => {
+    const { join, joinAdmin, request } = open();
+    await join('Léo');
+    const target = await join('Mia');
+    const admin = await joinAdmin('Admin');
+    // cyrillic е in "Lеo" collides with "Léo"
+    expect((await request('PATCH', `/admin/players/${target.player.id}`, admin.token, { pseudo: 'L\u0435o' })).body).toEqual({ error: 'pseudo_taken' });
+    // a non-colliding look-alike name still works
+    expect((await request('PATCH', `/admin/players/${target.player.id}`, admin.token, { pseudo: 'Zo\u0435' })).status).toBe(200);
   });
 });
 

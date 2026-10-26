@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { darkColors, lightColors, resolveScheme, type UiColors } from '../theme/ui';
+import { darkColors, lightColors, resolveScheme, statusBarStyle, type UiColors } from '../theme/ui';
 import { BOARD_THEMES, toBoardLook } from '../theme/board';
-import { contrastRatio } from '../theme/contrast';
+import { contrastRatio, over } from '../theme/contrast';
 
 const SCHEMES: [string, UiColors][] = [['dark', darkColors], ['light', lightColors]];
 
@@ -19,6 +19,21 @@ describe('resolveScheme', () => {
   });
 });
 
+describe('statusBarStyle', () => {
+  it('uses dark icons on the light theme and light icons on the dark theme', () => {
+    expect(statusBarStyle('light')).toBe('dark');
+    expect(statusBarStyle('dark')).toBe('light');
+  });
+
+  it('is mounted at the root, following the theme, under the recap override (issue 205)', () => {
+    const layout = fs.readFileSync(path.join(__dirname, '../app/_layout.tsx'), 'utf8');
+    expect(layout).toMatch(/import \{ StatusBar \} from 'expo-status-bar'/);
+    expect(layout).toMatch(/<StatusBar style=\{statusBarStyle\(scheme\)\} \/>/);
+    const recap = fs.readFileSync(path.join(__dirname, '../app/recap.tsx'), 'utf8');
+    expect(recap).toMatch(/<StatusBar style="light" \/>/);
+  });
+});
+
 describe('theme variants', () => {
   it('define the same tokens in light and dark', () => {
     expect(Object.keys(lightColors).sort()).toEqual(Object.keys(darkColors).sort());
@@ -29,7 +44,7 @@ describe('theme variants', () => {
 });
 
 describe('contrast (WCAG AA)', () => {
-  const TEXT_TOKENS = ['text', 'textMuted', 'primaryText', 'success', 'warning', 'danger', 'weekly', 'starText'] as const;
+  const TEXT_TOKENS = ['text', 'textMuted', 'primaryText', 'success', 'warning', 'warningText', 'danger', 'weekly', 'starText'] as const;
 
   it.each(SCHEMES)('text tokens are readable on the %s background and surfaces', (_, colors) => {
     for (const token of TEXT_TOKENS) {
@@ -41,6 +56,26 @@ describe('contrast (WCAG AA)', () => {
 
   it.each(SCHEMES)('button text is readable on the %s primary fill', (_, colors) => {
     expect(contrastRatio(colors.onPrimary, colors.primary)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  // Pairs drawn on a translucent fill, laid over the screen background (issue 166)
+  it.each(SCHEMES)('text on the %s composed fills is readable', (_, colors) => {
+    const pairs: [string, string, string][] = [
+      ['stats bar labels', colors.textMuted, over(colors.card, colors.background)],
+      ['hints left, stats bar', colors.warningText, over(colors.card, colors.background)],
+      ['hint button label', colors.warningText, over(colors.warning + '22', colors.background)],
+      ['multi resume button', colors.onWarning, colors.warning],
+      ['recap "new" pill', colors.onWarning, colors.warning],
+    ];
+    for (const [use, text, bg] of pairs) {
+      expect({ use, ratio: contrastRatio(text, bg) >= 4.5 }).toEqual({ use, ratio: true });
+    }
+  });
+
+  it('composes a translucent color over an opaque background', () => {
+    expect(over('rgba(0,0,0,0.5)', '#FFFFFF')).toBe('#808080');
+    expect(over('#FF000000', '#123456')).toBe('#123456');
+    expect(over('#FF0000', '#123456')).toBe('#ff0000');
   });
 });
 

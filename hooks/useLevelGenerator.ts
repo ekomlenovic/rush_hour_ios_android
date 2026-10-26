@@ -3,17 +3,19 @@ import { sampleLevels } from '@/data/sampleLevels';
 import { DIFFICULTY_LEVELS, generateLevel } from '@/utils/generator';
 import { haptics, Haptics } from '@/utils/haptics';
 import { formatTimeLeft } from '@/utils/date';
+import { estimateLevelMs } from '@/utils/generationEstimate';
+import { useGenerationTimes } from '@/store/generationTimes';
 
 export type DifficultyKey = keyof typeof DIFFICULTY_LEVELS;
 
-/** Rough generation time of one level, for the estimate shown before generating */
-export const GENERATION_TIME_MAP: Record<string, number> = {
-  'EASY': 1000,
-  'NORMAL': 3000,
-  'HARD': 15000,
-  'EXPERT': 500000,
-  'MASTER': 1200000,
-};
+/** Pause between two levels, for the Cancel button to be processed */
+const YIELD_MS = 150;
+
+/** Estimated time of a whole generation, in seconds, learnt from the times measured on this phone */
+export function estimateGenerationSeconds({ amount, difficulty, gridSize }: GenerationRequest): number {
+  const levelMs = estimateLevelMs(difficulty, gridSize, useGenerationTimes.getState().samples);
+  return (amount * (levelMs + YIELD_MS)) / 1000;
+}
 
 /** A generation time for the player: '45 s', then minutes and hours (an Expert batch takes hours, not '24000s') */
 export function formatGenerationTime(seconds: number): string {
@@ -47,19 +49,20 @@ export function startLevelGeneration({ amount, difficulty, gridSize }: Generatio
   if (running) return;
   running = true;
   const { setGenerationState } = useGameStore.getState();
-  const baseTimePerLevel = GENERATION_TIME_MAP[difficulty] || 2000;
-  const initialEst = Math.ceil(((amount * baseTimePerLevel) + (amount * 150)) / 1000);
+  const { recordLevelTime } = useGenerationTimes.getState();
+  const estimate = (left: number) => Math.ceil(estimateGenerationSeconds({ amount: left, difficulty, gridSize }));
 
   setGenerationState({
     isRunning: true,
     current: 0,
     total: amount,
     shouldCancel: false,
-    estimatedRemainingSeconds: initialEst
+    estimatedRemainingSeconds: estimate(amount)
   });
 
   setTimeout(async () => {
-    let totalGenerationTime = 0;
+    // Time spent since the last level made, failed tries included: what a level really costs
+    let sinceLastLevel = 0;
     let made = 0;
     // Failures are tried again, but a difficulty that keeps failing does not loop forever
     const maxTries = amount * 2;
@@ -74,28 +77,28 @@ export function startLevelGeneration({ amount, difficulty, gridSize }: Generatio
         const config = { ...DIFFICULTY_LEVELS[difficulty], gridSize };
         // The id is taken when the level is ready: a failed one leaves no hole
         const newLevel = generateLevel(nextLevelId(), { ...config });
-        const duration = Date.now() - startTime;
-        totalGenerationTime += duration;
+        sinceLastLevel += Date.now() - startTime;
 
         if (newLevel) {
           useGameStore.getState().addGeneratedLevel({ ...newLevel, id: nextLevelId() });
           made++;
+          // The estimate learns from this phone: the next generations, and the rest of this one
+          recordLevelTime(difficulty, gridSize, sinceLastLevel);
+          sinceLastLevel = 0;
         }
-
-        // Calculate remaining time based on actual average
-        const avgSoFar = totalGenerationTime / (tries + 1);
-        const remainingCount = amount - made;
-        const estRemaining = Math.ceil((remainingCount * (avgSoFar + 150)) / 1000);
 
         setGenerationState({
           current: made,
-          estimatedRemainingSeconds: estRemaining
+          estimatedRemainingSeconds: estimate(amount - made),
         });
 
         // Yield to the JS event loop — lets the Cancel button press be processed.
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise(resolve => setTimeout(resolve, YIELD_MS));
       }
     } finally {
+      // Tries that made no level (given up, cancelled): a level costs at least that, never counted as faster
+      const samples = useGenerationTimes.getState().samples;
+      if (sinceLastLevel > estimateLevelMs(difficulty, gridSize, samples)) recordLevelTime(difficulty, gridSize, sinceLastLevel);
       running = false;
       setGenerationState({ isRunning: false, shouldCancel: false, estimatedRemainingSeconds: 0 });
     }

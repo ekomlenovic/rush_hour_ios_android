@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
-import { formatDuration } from '@/utils/date';
+import { dateLocale, formatDuration } from '@/utils/date';
 import type { DuelHistoryItem, DuelRecordLine, MultiApi } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
 import { multiErrorMessage } from './errors';
@@ -38,7 +38,7 @@ export default function DuelHistoryCard({ api, colors, myPlayerId, refreshKey, o
 
   useEffect(() => { void load(); }, [load, refreshKey]);
 
-  const when = (at: number) => new Date(at).toLocaleString(i18n.language, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const when = (at: number) => new Date(at).toLocaleString(dateLocale(i18n.language), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const shown = history ? (expanded ? history.duels : history.duels.slice(0, SHORT_LIST)) : [];
 
   return (

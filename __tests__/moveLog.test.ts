@@ -202,7 +202,7 @@ describe('seeded generation', () => {
 
 describe('game logic runs without React Native (multiplayer server, #46)', () => {
   const root = path.resolve(__dirname, '..');
-  const CORE = ['utils/generator.ts', 'utils/solver.ts', 'utils/collision.ts', 'utils/moveLog.ts'];
+  const CORE = ['utils/generator.core.ts', 'utils/solver.ts', 'utils/collision.ts', 'utils/moveLog.ts'];
 
   /** Every file reached from a module through its imports, and the packages it imports */
   function importGraph(entry: string) {

@@ -118,3 +118,45 @@ describe('the game screen on a daily', () => {
     expect(state().openDailyDate).toBeNull();
   });
 });
+
+describe('launched by the widget, the game screen alone (issue 188)', () => {
+  /** The root layout records the open, whatever the first screen: here the game screen alone */
+  const launch = (today: string, daily: string | null) => React.createElement(React.Fragment, null,
+    React.createElement(Home, { today }),
+    React.createElement(Game, { daily }),
+  );
+
+  /** A cold launch on the daily of the day, won, then the app left without the home screen */
+  async function dailyFromWidget(day: string) {
+    setToday(day);
+    await show(launch(day, day));
+    act(() => { state().completeDailyChallenge(day, 300, 3); });
+    await show(launch(day, null));
+    act(() => renderer!.unmount());
+    renderer = null;
+  }
+
+  it('records each open: no false welcome back, the freeze is announced once, at the open that sees it', async () => {
+    setToday('2026-10-14');
+    await show(screens('2026-10-14'));
+    act(() => { state().completeDailyChallenge('2026-10-14', 300, 3); });
+    useGameStore.setState({ streakFreezes: 1 });
+    act(() => renderer!.unmount());
+    renderer = null;
+
+    // The 15th skipped; the 16th and the 17th won from the widget
+    await dailyFromWidget('2026-10-16');
+    expect(alert).toHaveBeenCalledTimes(1);
+    expect(alert).toHaveBeenCalledWith('❄️', i18n.t('home.freeze_used', { count: 1, streak: 1 }));
+    expect(state().lastOpenDate).toBe('2026-10-16');
+    await dailyFromWidget('2026-10-17');
+
+    // The home screen at last
+    setToday('2026-10-17', 20);
+    await show(screens('2026-10-17'));
+    expect(alert).toHaveBeenCalledTimes(1);
+    expect(alert).not.toHaveBeenCalledWith(i18n.t('home.welcome_back'), expect.anything());
+    expect(state()).toMatchObject({ currentStreak: 3, streakFreezes: 0, frozenDates: ['2026-10-15'], lastOpenDate: '2026-10-17' });
+    expect(state().stats.longestAbsenceDays).toBe(2);
+  });
+});
