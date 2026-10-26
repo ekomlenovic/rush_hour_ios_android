@@ -112,19 +112,20 @@ export default function DuelScreen() {
 
   // Leaving the screen during a game is losing it: asked first. usePreventRemove, not a
   // 'beforeRemove' listener that prevents: the native stack removed the screen anyway on a
-  // swipe back or the Android back button, and "Cancel" left the player off the duel
+  // swipe back or the Android back button, and "Cancel" left the player off the duel.
+  // repeat(), not dispatching the action again: still prevented, the alert came back endlessly
   const duelRef = useRef(duel);
   duelRef.current = duel;
   // Out already in a duel on moves: nothing to lose, the result waits on the server
   const mustConfirmLeave = !!duel && duel.status !== 'over' && !duel.spectating && duel.status !== 'waiting'
     && !(duel.metric === 'moves' && iHaveWon(duel));
-  usePreventRemove(mustConfirmLeave, ({ data }) => {
+  usePreventRemove(mustConfirmLeave, ({ repeat }) => {
     Alert.alert(t('multi.duel.leave_title'), t('multi.duel.leave_body'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('multi.duel.leave'), style: 'destructive', onPress: () => {
           leave();
-          navigation.dispatch(data.action);
+          repeat();
         },
       },
     ]);
