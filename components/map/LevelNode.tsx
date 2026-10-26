@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, {
-  FadeIn,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -108,10 +107,7 @@ const LevelNode = React.memo(({
   const labelColor = isLocked ? colors.mapLockedText : fixedColors.onPrimary;
 
   return (
-    <Animated.View
-      entering={FadeIn.duration(300)}
-      style={[styles.nodeContainer, { left: point.x - 45, top: point.y - TOKEN / 2 - 4 }]}
-    >
+    <View style={[styles.nodeContainer, { left: point.x - 45, top: point.y - TOKEN / 2 - 4 }]}>
       {isCurrent && (
         <View style={[styles.nextPill, { backgroundColor: colors.primary }]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
           <Text style={styles.nextText}>{t('map.next')}</Text>
@@ -172,7 +168,7 @@ const LevelNode = React.memo(({
           <Stars stars={stars} colors={colors} />
         ) : null}
       </View>
-    </Animated.View>
+    </View>
   );
 });
 

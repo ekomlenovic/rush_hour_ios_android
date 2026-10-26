@@ -58,6 +58,11 @@
     "typescript": "~6.0.3"
   },
   "private": true,
+  "reanimated": {
+    "staticFeatureFlags": {
+      "ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS": true
+    }
+  },
   "jest": {
     "preset": "jest-expo",
     "setupFiles": [
