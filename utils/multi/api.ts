@@ -1,4 +1,5 @@
 import type { Level, MoveRecord } from '../../store/types';
+import type { DuelLook } from './duel';
 
 /** Version of the server API this app speaks (server/src/app.ts) */
 export const API_VERSION = 1;
@@ -80,6 +81,8 @@ export interface Replay {
   number: number;
   level: Level;
   moves: MoveRecord[];
+  /** The look of the player's board; absent or null: a server, a game or an app older than the looks */
+  look?: DuelLook | null;
   timeMs: number;
   verdict: Verdict;
   reasons: Flag[];
@@ -215,7 +218,8 @@ export interface DuelListing {
   difficulty: Difficulty;
   /** Absent on older servers: the time */
   metric?: DuelMetric;
-  status: 'waiting' | 'preparing' | 'playing';
+  /** over: mine, its result waiting for me (I got out and left before the end) */
+  status: 'waiting' | 'preparing' | 'playing' | 'over';
   private: boolean;
   players: { id: number; pseudo: string }[];
   createdAt: number;
@@ -255,7 +259,8 @@ export interface DuelReplay {
   level: Level;
   reason: DuelEndReason;
   winnerId: number | null;
-  players: { id: number; pseudo: string; moves: MoveRecord[] }[];
+  /** look: absent or null for a server, a duel or an app older than the looks */
+  players: { id: number; pseudo: string; moves: MoveRecord[]; look?: DuelLook | null }[];
 }
 
 /** Back to zero (admin): games of the daily challenges and/or duels, between two days (none: all), of some players (none: all) */
@@ -332,8 +337,9 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
     duelHistory: () => call<{ duels: DuelHistoryItem[]; records: DuelRecordLine[] }>('GET', '/duels/history'),
     duelReplay: (duelId: number) => call<DuelReplay>('GET', `/duels/${duelId}`),
     start: (date?: string) => call<StartResult>('POST', '/challenge/start', date ? { date } : {}),
-    submit: (date: string, moves: MoveRecord[], clientMs: number, backgroundMs: number) =>
-      call<SubmitResult>('POST', '/challenge/submit', { date, moves, clientMs: Math.round(clientMs), backgroundMs: Math.round(backgroundMs) }),
+    /** look: of my board, for the replay */
+    submit: (date: string, moves: MoveRecord[], clientMs: number, backgroundMs: number, look: DuelLook) =>
+      call<SubmitResult>('POST', '/challenge/submit', { date, moves, clientMs: Math.round(clientMs), backgroundMs: Math.round(backgroundMs), look }),
     abandon: (date: string) => call<{ status: 'abandoned'; minMoves: number | null }>('POST', '/challenge/abandon', { date }),
     leaderboard: (query: RankingQuery) => call<Leaderboard>('GET', `/leaderboard?${rankingParams(query)}`),
     replay: (attemptId: number) => call<Replay>('GET', `/replay/${attemptId}`),

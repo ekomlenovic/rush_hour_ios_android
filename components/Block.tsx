@@ -13,7 +13,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { haptics, Haptics } from '@/utils/haptics';
 import { Vehicle } from '@/store/gameStore';
 import { stepVehicle } from '@/utils/accessibility';
-import { useTheme, type VehicleArt } from '@/theme';
+import { useBoardTheme, type VehicleArt } from '@/theme';
 import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
 
 interface BlockProps {
@@ -63,7 +63,7 @@ const BOUNCE_SPRING = {
 
 function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, disabled = false, a11yLabel, a11yValue, a11yStrings, letter, color, art }: BlockProps) {
 
-  const { board } = useTheme();
+  const { board } = useBoardTheme();
   const fillColor = vehicle.isTarget ? board.targetCar : color ?? vehicle.color;
   const radius = cellSize * board.vehicleRadius;
 

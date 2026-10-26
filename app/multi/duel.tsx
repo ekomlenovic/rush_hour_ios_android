@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, Modal, Share,
   AccessibilityInfo, useWindowDimensions, type LayoutChangeEvent,
@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { haptics, Haptics } from '@/utils/haptics';
 import { RFValue } from '@/utils/responsive';
 import { formatDuration } from '@/utils/date';
-import { fixedColors, useTheme, type UiColors } from '@/theme';
+import { fixedColors, toBoardLook, useTheme, type UiColors } from '@/theme';
 import Board from '@/components/Board';
 import MultiHeader from '@/components/multi/MultiHeader';
 import DuelPlayerBar from '@/components/multi/DuelPlayerBar';
@@ -30,7 +30,8 @@ const BARS_HEIGHT = RFValue(150);
 /**
  * Duel 1v1 in real time: two players of the server on the same puzzle, the board of
  * the opponent at the top, mine at the bottom. The first red car out wins, or, in a duel
- * on moves, the fewest moves.
+ * on moves, the fewest moves (the same count is a draw): who got out may leave, and comes
+ * back for the result.
  * Opened from the multiplayer screen to create a duel (?create=HARD&metric=moves&private=1), to
  * join one (?join=CODE), to watch one (?watch=CODE: both boards, nothing to play), or
  * to go back to mine. A duel already started, joined with its code, is watched.
@@ -51,7 +52,8 @@ export default function DuelScreen() {
   useEffect(() => {
     if (asked || state.connection !== 'online') return;
     setAsked(true);
-    if (duel) return;
+    // A duel of mine under way comes first; a finished one (its result was waiting) gives way
+    if (duel && duel.status !== 'over') return;
     if (params.join) join(normalizeDuelCode(params.join));
     else if (params.watch) watch(normalizeDuelCode(params.watch));
     else if (params.create) {
@@ -83,7 +85,9 @@ export default function DuelScreen() {
   // swipe back or the Android back button, and "Cancel" left the player off the duel
   const duelRef = useRef(duel);
   duelRef.current = duel;
-  const mustConfirmLeave = !!duel && duel.status !== 'over' && !duel.spectating && duel.status !== 'waiting';
+  // Out already in a duel on moves: nothing to lose, the result waits on the server
+  const mustConfirmLeave = !!duel && duel.status !== 'over' && !duel.spectating && duel.status !== 'waiting'
+    && !(duel.metric === 'moves' && iHaveWon(duel));
   usePreventRemove(mustConfirmLeave, ({ data }) => {
     Alert.alert(t('multi.duel.leave_title'), t('multi.duel.leave_body'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -153,7 +157,7 @@ export default function DuelScreen() {
       </View>
     );
   } else {
-    body = <Arena duel={duel} now={now} colors={colors} offline={state.connection !== 'online'} onMove={move} />;
+    body = <Arena duel={duel} now={now} colors={colors} offline={state.connection !== 'online'} onMove={move} onLeave={goBack} />;
   }
 
   return (
@@ -275,10 +279,12 @@ interface ArenaProps {
   colors: UiColors;
   offline: boolean;
   onMove: (vehicleId: string, row: number, col: number) => boolean | void;
+  /** Out in a duel on moves: leave, the result waits */
+  onLeave: () => void;
 }
 
 /** The game: the opponent at the top (small, read only), me at the bottom; for a spectator, both the same size */
-function Arena({ duel, now, colors, offline, onMove }: ArenaProps) {
+function Arena({ duel, now, colors, offline, onMove, onLeave }: ArenaProps) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -300,6 +306,10 @@ function Arena({ duel, now, colors, offline, onMove }: ArenaProps) {
         : null
     : null;
   const firstAway = duel.spectating && !duel.me.connected;
+  const outWaiting = duel.metric === 'moves' && duel.status === 'playing' && !duel.spectating && won;
+  // Each board as its player sees it; mine as I do
+  const opponentLook = useMemo(() => toBoardLook(duel.opponent?.look), [duel.opponent?.look]);
+  const firstLook = useMemo(() => (duel.spectating ? toBoardLook(duel.me.look) : undefined), [duel.spectating, duel.me.look]);
 
   return (
     <View style={styles.arena} onLayout={onLayout}>
@@ -315,6 +325,7 @@ function Arena({ duel, now, colors, offline, onMove }: ArenaProps) {
               onMoveEnd={noop}
               readOnly
               size={opponentSize}
+              look={opponentLook}
             />
           </View>
 
@@ -360,6 +371,7 @@ function Arena({ duel, now, colors, offline, onMove }: ArenaProps) {
               onMoveEnd={duel.spectating ? noop : onMove}
               readOnly={duel.spectating || countdown > 0 || won || duel.status !== 'playing'}
               size={mySize}
+              look={firstLook}
             />
             {countdown > 0 && (
               <View style={[StyleSheet.absoluteFill, styles.countdown]} pointerEvents="none">
@@ -371,6 +383,19 @@ function Arena({ duel, now, colors, offline, onMove }: ArenaProps) {
                 >
                   {Math.ceil(countdown / 1000)}
                 </Animated.Text>
+              </View>
+            )}
+            {outWaiting && (
+              <View style={[StyleSheet.absoluteFill, styles.countdown]}>
+                <Animated.View entering={FadeIn} style={[styles.outCard, { backgroundColor: colors.surface }]}>
+                  <Text style={[styles.outTitle, { color: colors.text }]} accessibilityRole="header">
+                    {t('multi.duel.out_title', { count: duel.me.moves.length + duel.pending.length })}
+                  </Text>
+                  <Text style={[styles.outText, { color: colors.textMuted }]}>{t('multi.duel.out_can_leave', { pseudo: duel.opponent?.pseudo ?? '' })}</Text>
+                  <Pressable onPress={onLeave} style={[styles.outButton, { backgroundColor: colors.primary }]} accessibilityRole="button">
+                    <Text style={[styles.actionText, { color: colors.onPrimary }]}>{t('multi.duel.out_leave')}</Text>
+                  </Pressable>
+                </Animated.View>
               </View>
             )}
           </View>
@@ -417,7 +442,8 @@ function ResultModal({ duel, colors, onRematch, onQuit, onReplay }: ResultProps)
     : result === 'loss' ? { icon: 'close-circle' as const, tint: colors.danger, background: colors.dangerSoft }
       : { icon: 'remove-circle' as const, tint: colors.textMuted, background: colors.neutralSoft };
   const reason = duel.result.reason;
-  const canRematch = !duel.opponentLeft && !!duel.opponent;
+  // An opponent who got out and left before the end: their result waited for them, no rematch
+  const canRematch = !duel.opponentLeft && !!duel.opponent?.connected;
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onQuit}>
@@ -431,7 +457,7 @@ function ResultModal({ duel, colors, onRematch, onQuit, onReplay }: ResultProps)
             <Text style={[styles.muted, { color: colors.textMuted }]}>{t(`multi.duel.reason_${reason}`, { pseudo })}</Text>
           )}
           {reason === 'won' && duel.metric === 'moves' && (
-            <Text style={[styles.muted, { color: colors.textMuted }]}>{t('multi.duel.won_on_moves')}</Text>
+            <Text style={[styles.muted, { color: colors.textMuted }]}>{t(result === 'draw' ? 'multi.duel.draw_on_moves' : 'multi.duel.won_on_moves')}</Text>
           )}
 
           <View style={[styles.stats, { backgroundColor: colors.card }]}>
@@ -467,7 +493,7 @@ function ResultModal({ duel, colors, onRematch, onQuit, onReplay }: ResultProps)
           {canRematch && duel.opponent?.wantsRematch && !duel.me.wantsRematch && (
             <Text style={[styles.muted, { color: colors.primaryText, fontWeight: '700' }]}>{t('multi.duel.rematch_asked', { pseudo })}</Text>
           )}
-          {duel.opponentLeft && reason !== 'forfeit' && (
+          {(duel.opponentLeft || (duel.opponent && !duel.opponent.connected)) && reason !== 'forfeit' && (
             <Text style={[styles.muted, { color: colors.textMuted }]}>{t('multi.duel.opponent_left', { pseudo })}</Text>
           )}
           {canRematch && (
@@ -520,7 +546,7 @@ function SpectatorResult({ duel, colors, onQuit }: { duel: Duel; colors: UiColor
             <Text style={[styles.muted, { color: colors.textMuted }]}>{t(`multi.duel.reason_${result.reason}`, { pseudo: loser?.pseudo ?? '' })}</Text>
           )}
           {result.reason === 'won' && duel.metric === 'moves' && (
-            <Text style={[styles.muted, { color: colors.textMuted }]}>{t('multi.duel.won_on_moves')}</Text>
+            <Text style={[styles.muted, { color: colors.textMuted }]}>{t(winner ? 'multi.duel.won_on_moves' : 'multi.duel.draw_on_moves')}</Text>
           )}
 
           <View style={[styles.stats, { backgroundColor: colors.card }]}>
@@ -802,6 +828,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: fixedColors.overlay,
+    borderRadius: 12,
+  },
+  outCard: {
+    alignItems: 'center',
+    borderRadius: 16,
+    padding: RFValue(16),
+    marginHorizontal: RFValue(16),
+    gap: RFValue(8),
+  },
+  outTitle: {
+    fontSize: RFValue(18),
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  outText: {
+    fontSize: RFValue(14),
+    lineHeight: RFValue(19),
+    textAlign: 'center',
+  },
+  outButton: {
+    marginTop: RFValue(4),
+    paddingVertical: RFValue(10),
+    paddingHorizontal: RFValue(22),
     borderRadius: 12,
   },
   countdownText: {

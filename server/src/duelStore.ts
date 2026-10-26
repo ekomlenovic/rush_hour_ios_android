@@ -1,6 +1,6 @@
 import type { Database } from './db';
 import type { Level, MoveRecord } from './core';
-import type { DuelMetric, DuelRecord, EndReason, HeadToHead } from './duel';
+import type { DuelLook, DuelMetric, DuelRecord, EndReason, HeadToHead } from './duel';
 import { localDate } from './time';
 
 /**
@@ -25,6 +25,8 @@ interface DuelRow {
   moves2: number;
   moves1_json: string | null;
   moves2_json: string | null;
+  look1_json: string | null;
+  look2_json: string | null;
 }
 
 export interface DuelStats { playerId: number; pseudo: string; wins: number; losses: number; draws: number; played: number }
@@ -66,7 +68,8 @@ export interface DuelReplay {
   level: Level;
   reason: EndReason;
   winnerId: number | null;
-  players: { id: number; pseudo: string; moves: MoveRecord[] }[];
+  /** look: null for a duel before the looks were kept, or a player with an app older than them */
+  players: { id: number; pseudo: string; moves: MoveRecord[]; look: DuelLook | null }[];
 }
 
 const lastTime = (moves: MoveRecord[]) => (moves.length ? moves[moves.length - 1].t : null);
@@ -78,12 +81,13 @@ export class DuelStore {
     const [a, b] = record.players;
     const result = this.db.prepare(`
       INSERT INTO duels (date, difficulty, metric, level_json, min_moves, started_at, ended_at, reason, winner_id,
-        player1_id, player2_id, moves1, moves2, moves1_json, moves2_json)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        player1_id, player2_id, moves1, moves2, moves1_json, moves2_json, look1_json, look2_json)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       localDate(record.endedAt, this.timeZone), record.difficulty, record.metric, JSON.stringify(record.level), record.level.minMoves,
       record.startedAt, record.endedAt, record.reason, record.winnerId,
       a.id, b.id, a.moves.length, b.moves.length, JSON.stringify(a.moves), JSON.stringify(b.moves),
+      a.look ? JSON.stringify(a.look) : null, b.look ? JSON.stringify(b.look) : null,
     );
     return { id: Number(result.lastInsertRowid), score: this.headToHead(a.id, b.id) };
   }
@@ -163,6 +167,7 @@ export class DuelStore {
     `).get(id) as (DuelRow & { pseudo1: string; pseudo2: string }) | undefined;
     if (!d) return null;
     const moves = (json: string | null) => (json ? JSON.parse(json) as MoveRecord[] : []);
+    const look = (json: string | null) => (json ? JSON.parse(json) as DuelLook : null);
     return {
       id: d.id,
       date: d.date,
@@ -172,8 +177,8 @@ export class DuelStore {
       reason: d.reason,
       winnerId: d.winner_id,
       players: [
-        { id: d.player1_id, pseudo: d.pseudo1, moves: moves(d.moves1_json) },
-        { id: d.player2_id, pseudo: d.pseudo2, moves: moves(d.moves2_json) },
+        { id: d.player1_id, pseudo: d.pseudo1, moves: moves(d.moves1_json), look: look(d.look1_json) },
+        { id: d.player2_id, pseudo: d.pseudo2, moves: moves(d.moves2_json), look: look(d.look2_json) },
       ],
       hasReplay: d.moves1_json !== null,
     };

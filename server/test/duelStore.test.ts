@@ -8,13 +8,15 @@ afterEach(async () => { await server?.app.close(); });
 
 const settle = () => new Promise(resolve => setImmediate(resolve));
 const DAY_MS = 24 * 3600_000;
+/** The look of Léo's board in his app */
+const LEO_LOOK = { board: 'neon', skin: 'taxi', palette: 'ocean' };
 
 /** A phone connected to the duels of the server */
-function phone(duels: Duels, token: string) {
+function phone(duels: Duels, token: string, look?: object) {
   const received: ServerMessage[] = [];
   const handlers = duels.connect({ send: (m) => received.push(JSON.parse(JSON.stringify(m))), close: () => {} });
   const send = (m: object) => handlers.onMessage(JSON.stringify(m));
-  send({ type: 'auth', token });
+  send({ type: 'auth', token, look });
   const last = <T extends ServerMessage['type']>(type: T) =>
     [...received].reverse().find(m => m.type === type) as Extract<ServerMessage, { type: T }> | undefined;
   return { send, last, close: handlers.onClose };
@@ -26,7 +28,8 @@ async function setup() {
   const { join, joinAdmin, duels, clock } = server;
   const [leo, emma, sam] = [await join('Léo'), await join('Emma'), await join('Sam')];
   const admin = await joinAdmin();
-  const phones = { leo: phone(duels, leo.token), emma: phone(duels, emma.token), sam: phone(duels, sam.token) };
+  // Emma's app is older than the looks
+  const phones = { leo: phone(duels, leo.token, LEO_LOOK), emma: phone(duels, emma.token), sam: phone(duels, sam.token) };
 
   const duel = async (a: keyof typeof phones, b: keyof typeof phones, outcome: 'a_wins' | 'b_gives_up' = 'a_wins') => {
     phones[a].send({ type: 'create', difficulty: 'EASY' });
@@ -113,15 +116,18 @@ describe('finished duels', () => {
     expect(rankDuels([row('B', 1, 0), row('A', 1, 0), row('C', 0, 1)]).map(r => [r.pseudo, r.rank])).toEqual([['A', 1], ['B', 1], ['C', 3]]);
   });
 
-  it('a replay with the moves of both, for its players and the admin, until REPLAY_RETENTION_DAYS', async () => {
+  it('a replay with the moves and the look of both, for its players and the admin, until REPLAY_RETENTION_DAYS', async () => {
     const { duel, request, leo, emma, sam, admin, challenges, clock } = await setup();
     const { duelId } = await duel('leo', 'emma');
     const replay = await request('GET', `/duels/${duelId}`, emma.token);
     expect(replay.status).toBe(200);
     expect(replay.body).toMatchObject({ winnerId: leo.player.id, reason: 'won', metric: 'time', level: { minMoves: 2 } });
     expect(replay.body.players).toEqual([
-      { id: leo.player.id, pseudo: 'Léo', moves: [{ vehicleId: 'v1', delta: 2, t: 4000 }, { vehicleId: 'target', delta: 4, t: 4000 }] },
-      { id: emma.player.id, pseudo: 'Emma', moves: [] },
+      {
+        id: leo.player.id, pseudo: 'Léo', moves: [{ vehicleId: 'v1', delta: 2, t: 4000 }, { vehicleId: 'target', delta: 4, t: 4000 }],
+        look: LEO_LOOK,
+      },
+      { id: emma.player.id, pseudo: 'Emma', moves: [], look: null },
     ]);
     expect((await request('GET', `/duels/${duelId}`, sam.token)).body).toEqual({ error: 'forbidden' });
     expect((await request('GET', `/duels/${duelId}`, admin.token)).status).toBe(200);
