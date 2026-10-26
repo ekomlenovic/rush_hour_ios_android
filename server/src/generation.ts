@@ -1,36 +1,46 @@
 import { Worker } from 'node:worker_threads';
 import path from 'node:path';
-import { DIFFICULTY_LEVELS, generateSeededLevelSync, levelVariants, MULTI_LEVEL_ID, sampleLevels, type Level } from './core';
+import { createPRNG, DIFFICULTY_LEVELS, dressVariant, exactStarts, generateSeededLevelSync, levelVariants, MULTI_LEVEL_ID, sampleLevels, type Level } from './core';
 import type { Difficulty } from './config';
 
-/** Makes puzzles: from a seed (the same seed and difficulty always give the same puzzle), or variants of a level of the app */
+/**
+ * Makes puzzles: from a seed (the same seed and difficulty always give the same puzzle), or variants of a level of the app.
+ * With `minMoves`, only puzzles of exactly that optimum (the daily challenge, when the admin chose it): null or none if not found.
+ */
 export interface PuzzleGenerator {
-  generate(seed: string, difficulty: Difficulty): Promise<Level | null>;
+  generate(seed: string, difficulty: Difficulty, minMoves?: number): Promise<Level | null>;
   /** Up to `count` variants of the level `sourceId` of the app for a difficulty (utils/variants.ts) */
-  variants(sourceId: number, difficulty: Difficulty, count: number, seed: string): Promise<Level[]>;
+  variants(sourceId: number, difficulty: Difficulty, count: number, seed: string, minMoves?: number): Promise<Level[]>;
   close(): Promise<void>;
 }
 
-export function generatePuzzle(seed: string, difficulty: Difficulty): Level | null {
-  return generateSeededLevelSync(seed, MULTI_LEVEL_ID, DIFFICULTY_LEVELS[difficulty]);
+export function generatePuzzle(seed: string, difficulty: Difficulty, minMoves?: number): Level | null {
+  const level = generateSeededLevelSync(seed, MULTI_LEVEL_ID, DIFFICULTY_LEVELS[difficulty]);
+  if (!level || minMoves === undefined) return level;
+  // A start position of the same board with exactly that optimum: along its solution at least, when it is longer
+  return exactStarts(level, minMoves, 1, createPRNG(`${seed}:exact`))[0] ?? null;
 }
 
-export function generateVariants(sourceId: number, difficulty: Difficulty, count: number, seed: string): Level[] {
+export function generateVariants(sourceId: number, difficulty: Difficulty, count: number, seed: string, minMoves?: number): Level[] {
   const source = sampleLevels.find(l => l.id === sourceId);
   if (!source) return [];
+  if (minMoves !== undefined) {
+    const random = createPRNG(seed);
+    return exactStarts(source, minMoves, count, random).map(level => ({ ...dressVariant(level, random), id: MULTI_LEVEL_ID, updatedAt: 0 }));
+  }
   return levelVariants(source, DIFFICULTY_LEVELS[difficulty], count, seed).map(level => ({ ...level, id: MULTI_LEVEL_ID }));
 }
 
 /** In the calling thread: for tests and tools */
 export const inlineGenerator: PuzzleGenerator = {
-  generate: async (seed, difficulty) => generatePuzzle(seed, difficulty),
-  variants: async (sourceId, difficulty, count, seed) => generateVariants(sourceId, difficulty, count, seed),
+  generate: async (seed, difficulty, minMoves) => generatePuzzle(seed, difficulty, minMoves),
+  variants: async (sourceId, difficulty, count, seed, minMoves) => generateVariants(sourceId, difficulty, count, seed, minMoves),
   close: async () => {},
 };
 
 type Job =
-  | { op: 'generate'; seed: string; difficulty: Difficulty }
-  | { op: 'variants'; sourceId: number; difficulty: Difficulty; count: number; seed: string };
+  | { op: 'generate'; seed: string; difficulty: Difficulty; minMoves?: number }
+  | { op: 'variants'; sourceId: number; difficulty: Difficulty; count: number; seed: string; minMoves?: number };
 export type WorkerJob = Job & { id: number };
 
 interface WorkerReply { id: number; result: Level | Level[] | null; error?: string }
@@ -71,8 +81,8 @@ export function workerGenerator(workerFile = path.join(__dirname, 'worker.cjs'))
   };
 
   return {
-    generate: (seed, difficulty) => run<Level | null>({ op: 'generate', seed, difficulty }),
-    variants: (sourceId, difficulty, count, seed) => run<Level[]>({ op: 'variants', sourceId, difficulty, count, seed }),
+    generate: (seed, difficulty, minMoves) => run<Level | null>({ op: 'generate', seed, difficulty, minMoves }),
+    variants: (sourceId, difficulty, count, seed, minMoves) => run<Level[]>({ op: 'variants', sourceId, difficulty, count, seed, minMoves }),
     async close() {
       await worker?.terminate();
       worker = null;

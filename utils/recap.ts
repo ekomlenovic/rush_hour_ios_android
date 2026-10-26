@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import type { ChallengeResult, PeriodStats, RecapsSeen } from '../store/types';
 import { emptyPeriodStats, monthKeyOf } from '../store/periodStats';
-import { addMonths, computeDayRuns, formatPlayTime, getLocalDateString, getWeekStart, parseLocalDateString } from './date';
+import { addMonths, computeDayRuns, dateLocale, formatPlayTime, getLocalDateString, getWeekStart, parseLocalDateString } from './date';
 import { APP_URL } from './shareResult';
 
 /**
@@ -214,6 +214,14 @@ export function pendingRecap(source: RecapSource & { recapsSeen: RecapsSeen }, n
   return null;
 }
 
+/**
+ * Whether opening the recap marks it as seen: only the one announced or a period already over. Looking
+ * at the current month (or year) keeps its announcement once it is over (issue 182)
+ */
+export function shouldMarkRecapSeen(source: RecapSource & { recapsSeen: RecapsSeen }, key: string, now: Date = new Date()): boolean {
+  return pendingRecap(source, now) === key || !isInProgress(buildRecap(source, key, now), now);
+}
+
 /** Recaps that can be opened again: the last 12 months and the current one, then every year, latest first */
 export function availableRecaps(source: RecapSource, now: Date = new Date()): string[] {
   const current = monthKeyOf(now);
@@ -229,7 +237,7 @@ export function availableRecaps(source: RecapSource, now: Date = new Date()): st
 /** 'octobre 2026' / '2026' */
 export function periodLabel(key: string, language: string): string {
   if (recapKind(key) === 'year') return key;
-  return parseLocalDateString(`${key}-01`).toLocaleDateString(language, { month: 'long', year: 'numeric' });
+  return parseLocalDateString(`${key}-01`).toLocaleDateString(dateLocale(language), { month: 'long', year: 'numeric' });
 }
 
 /** Whether the period is still going on */

@@ -333,6 +333,119 @@ describe('the grouped device storage', () => {
   });
 });
 
+describe('a write that fails (#176)', () => {
+  const value = (moves: number) => ({ state: { moves }, version: 1 });
+  let refused = 0;
+  /** The next writes of the device refused (storage full), single entry or several */
+  const refuse = (times: number) => { refused = times; };
+  const refusing = (method: 'setItem' | 'multiSet') => {
+    const write = (AsyncStorage[method] as jest.Mock).getMockImplementation()!;
+    (AsyncStorage[method] as jest.Mock).mockImplementation((...args: unknown[]) => {
+      if (refused <= 0) return write(...args);
+      refused -= 1;
+      return Promise.reject(new Error('SQLITE_FULL'));
+    });
+    return () => (AsyncStorage[method] as jest.Mock).mockImplementation(write);
+  };
+  let restore: (() => void)[] = [];
+  let warn: jest.SpyInstance;
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    await AsyncStorage.setItem(KEY, JSON.stringify(save));
+    jest.clearAllMocks();
+    warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    refused = 0;
+    restore = [refusing('setItem'), refusing('multiSet')];
+  });
+
+  afterEach(() => {
+    restore.forEach(undo => undo());
+    warn.mockRestore();
+  });
+
+  async function loaded() {
+    const store = launch();
+    await flush();
+    await settle();
+    expect(store.getState().saveWriteFailed).toBe(false);
+    return store;
+  }
+
+  it('is told after a few failures in a row, and no longer once a write succeeds', async () => {
+    const store = await loaded();
+    const { WRITE_FAILURES_BEFORE_ALERT } = require('../store/guardedStorage');
+    // Storage full: every write refused until space is freed
+    refuse(Infinity);
+    for (let i = 1; i < WRITE_FAILURES_BEFORE_ALERT; i++) {
+      store.setState({ xp: 1000 + i });
+      await flush();
+      expect(store.getState().saveWriteFailed).toBe(false);
+    }
+    store.setState({ xp: 2000 });
+    await flush();
+    expect(store.getState().saveWriteFailed).toBe(true);
+    // Nothing reached the device meanwhile
+    expect((await stored()).state.xp).toBeLessThan(1000);
+
+    refuse(0);
+    store.setState({ xp: 3000 });
+    await flush();
+    await flush();
+    expect(store.getState().saveWriteFailed).toBe(false);
+    expect((await stored()).state.xp).toBe(3000);
+  });
+
+  it('says nothing for a single failure followed by a write that succeeds', async () => {
+    const store = await loaded();
+    const changes = jest.fn();
+    const unsubscribe = store.subscribe((state, before) => changes(state.saveWriteFailed !== before.saveWriteFailed));
+    refuse(1);
+    store.setState({ xp: 1000 });
+    await flush();
+    store.setState({ xp: 1001 });
+    await flush();
+    unsubscribe();
+    expect(changes).not.toHaveBeenCalledWith(true);
+    expect(store.getState().saveWriteFailed).toBe(false);
+    expect((await stored()).state.xp).toBe(1001);
+  });
+
+  it('is neither persisted nor exported', async () => {
+    const store = await loaded();
+    store.setState({ saveWriteFailed: true });
+    expect(store.persist.getOptions().partialize!(store.getState())).not.toHaveProperty('saveWriteFailed');
+    await flush();
+    expect((await stored()).state).not.toHaveProperty('saveWriteFailed');
+  });
+
+  it('writes the last state not written again when the app comes back to the foreground', async () => {
+    const onWriteFailed = jest.fn();
+    const guarded = createGuardedStorage<{ moves: number }>({ onWriteFailed });
+    guarded.allowWrites();
+    refuse(3);
+    for (const moves of [1, 2, 3]) {
+      guarded.storage.setItem('k', value(moves));
+      await flush();
+    }
+    expect(onWriteFailed).toHaveBeenCalledTimes(1);
+    expect(onWriteFailed).toHaveBeenLastCalledWith(true);
+    expect(await AsyncStorage.getItem('k')).toBeNull();
+
+    // Space freed, back in the game
+    const listeners = (AppState.addEventListener as jest.Mock).mock.calls.filter(([event]) => event === 'change');
+    listeners[listeners.length - 1][1]('active');
+    await flush();
+    expect(JSON.parse((await AsyncStorage.getItem('k'))!)).toEqual(value(3));
+    expect(onWriteFailed).toHaveBeenLastCalledWith(false);
+
+    // Nothing left to write again
+    listeners[listeners.length - 1][1]('active');
+    await flush();
+    expect(AsyncStorage.setItem).toHaveBeenCalledTimes(4);
+  });
+});
+
 describe('the map, the archive days and the challenge results, in their own entries', () => {
   const GENERATED_KEY = `${KEY}:generatedLevels`;
   const ARCHIVES_KEY = `${KEY}:archiveLevels`;

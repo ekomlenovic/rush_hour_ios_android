@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, Modal, Share,
   AccessibilityInfo, useWindowDimensions, type LayoutChangeEvent,
@@ -73,6 +73,24 @@ export default function DuelScreen() {
     }
   }, [asked, state.connection, duel, params.join, params.watch, params.create, params.metric, params.private, join, watch, create]);
 
+  // My room, to create it again if it is closed while the connection is lost
+  const [room, setRoom] = useState<{ difficulty: DuelDifficulty; metric: DuelMetric; private: boolean } | null>(null);
+  const waitingRoom = duel?.status === 'waiting' && !duel.spectating ? duel : null;
+  const roomDifficulty = waitingRoom?.difficulty;
+  const roomMetric = waitingRoom?.metric;
+  const roomPrivate = waitingRoom?.private;
+  useEffect(() => {
+    if (roomDifficulty && roomMetric && roomPrivate !== undefined) setRoom({ difficulty: roomDifficulty, metric: roomMetric, private: roomPrivate });
+  }, [roomDifficulty, roomMetric, roomPrivate]);
+  // Asked again: the wait for it is a wait, not the end of my duel
+  const [recreating, setRecreating] = useState(false);
+  const recreateRoom = () => {
+    if (!room) return;
+    setRecreating(true);
+    clearError();
+    create(room.difficulty, room.metric, room.private);
+  };
+
   // The duel of the code has started without me: watched instead
   const [watchedInstead, setWatchedInstead] = useState(false);
   useEffect(() => {
@@ -109,11 +127,15 @@ export default function DuelScreen() {
       },
     ]);
   });
-  // Nothing to lose for a spectator, nor in a room not started yet: leaving just leaves
-  useEffect(() => navigation.addListener('beforeRemove', () => {
+  // Nothing to lose for a spectator, nor in a room not started yet: leaving just leaves.
+  // On unmount (React Navigation 8 has no 'beforeRemove' anymore), in a layout effect: its
+  // cleanup runs before the one of useDuel that closes the socket, the message still goes
+  const leaveRef = useRef(leave);
+  leaveRef.current = leave;
+  useLayoutEffect(() => () => {
     const current = duelRef.current;
-    if (current && current.status !== 'over' && (current.spectating || current.status === 'waiting')) leave();
-  }), [navigation, leave]);
+    if (current && current.status !== 'over' && (current.spectating || current.status === 'waiting')) leaveRef.current();
+  }, []);
 
   // A move of the opponent is felt: no need to look at their board all the time
   const opponentMoves = duel?.status === 'playing' && !duel.spectating ? duel.opponent?.moves.length ?? 0 : 0;
@@ -149,9 +171,15 @@ export default function DuelScreen() {
     body = <Notice icon="cloud-offline" text={multiErrorMessage(t, 'unauthorized')} colors={colors} onBack={goBack} />;
   } else if (unreachable && state.connection !== 'online') {
     body = <Notice icon="cloud-offline" text={multiErrorMessage(t, unreachable)} colors={colors} onBack={goBack} />;
+  } else if (!duel && state.error === 'room_closed' && room) {
+    body = (
+      <Notice icon="alert-circle" text={multiErrorMessage(t, state.error)} colors={colors} onBack={goBack}
+        action={{ label: t('multi.duel.recreate_room'), onPress: recreateRoom }} />
+    );
   } else if (!duel && state.error) {
-    body = <Notice icon="alert-circle" text={multiErrorMessage(t, state.error)} colors={colors} onBack={goBack} />;
-  } else if (!duel && asked && state.connection === 'online' && !params.join && !params.watch && !params.create) {
+    const ended = state.error === 'duel_ended_offline';
+    body = <Notice icon={ended ? 'flag' : 'alert-circle'} text={multiErrorMessage(t, state.error)} colors={colors} onBack={goBack} />;
+  } else if (!duel && asked && state.connection === 'online' && !recreating && !params.join && !params.watch && !params.create) {
     // Opened to go back to my duel, which ended meanwhile
     body = <Notice icon="flag" text={multiErrorMessage(t, 'no_duel')} colors={colors} onBack={goBack} />;
   } else if (!duel) {
@@ -202,7 +230,11 @@ export default function DuelScreen() {
   );
 }
 
-function Notice({ icon, text, colors, onBack }: { icon: React.ComponentProps<typeof Ionicons>['name']; text: string; colors: UiColors; onBack: () => void }) {
+function Notice({ icon, text, colors, onBack, action }: {
+  icon: React.ComponentProps<typeof Ionicons>['name']; text: string; colors: UiColors; onBack: () => void;
+  /** Done before going back, e.g. creating the closed room again */
+  action?: { label: string; onPress: () => void };
+}) {
   const { t } = useTranslation();
   return (
     <View style={styles.center}>
@@ -211,9 +243,20 @@ function Notice({ icon, text, colors, onBack }: { icon: React.ComponentProps<typ
           <Ionicons name={icon} size={RFValue(30)} color={colors.textMuted} />
         </View>
         <Text style={[styles.noticeText, { color: colors.text }]}>{text}</Text>
-        <Pressable onPress={onBack} style={[styles.primaryButton, styles.wide, { backgroundColor: colors.primary }]} accessibilityRole="button">
-          <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>{t('multi.back_to_multi')}</Text>
-        </Pressable>
+        {action ? (
+          <>
+            <Pressable onPress={action.onPress} style={[styles.primaryButton, styles.wide, { backgroundColor: colors.primary }]} accessibilityRole="button">
+              <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>{action.label}</Text>
+            </Pressable>
+            <Pressable onPress={onBack} style={styles.link} accessibilityRole="button">
+              <Text style={[styles.linkText, { color: colors.primaryText }]}>{t('multi.back_to_multi')}</Text>
+            </Pressable>
+          </>
+        ) : (
+          <Pressable onPress={onBack} style={[styles.primaryButton, styles.wide, { backgroundColor: colors.primary }]} accessibilityRole="button">
+            <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>{t('multi.back_to_multi')}</Text>
+          </Pressable>
+        )}
       </Animated.View>
     </View>
   );

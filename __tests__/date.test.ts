@@ -60,6 +60,18 @@ describe('addDays / daysBetween', () => {
     }
   });
 
+  it('puts two consecutive days one day apart across a daylight saving change (Auckland, #153)', () => {
+    expect(daysBetween('2027-04-04', '2027-04-05')).toBe(1);
+    expect(daysBetween('2027-09-26', '2027-09-27')).toBe(1);
+    expect(computeDayRuns(['2026-09-24', '2026-09-25', '2026-09-26', '2026-09-27', '2026-09-28', '2026-09-29']).longest).toBe(6);
+  });
+
+  it('puts every two consecutive days one day apart, 2025 to 2028', () => {
+    for (let key = '2025-01-01'; key !== '2029-01-01'; key = addDays(key, 1)) {
+      expect(daysBetween(key, addDays(key, 1))).toBe(1);
+    }
+  });
+
   it('is signed', () => {
     expect(daysBetween('2026-10-14', '2026-10-10')).toBe(-4);
     expect(daysBetween('2026-10-14', '2026-10-14')).toBe(0);

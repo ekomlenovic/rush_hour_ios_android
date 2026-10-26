@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 import { useNavigation, useRouter, type NativeStackNavigationProp } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { haptics, Haptics } from '@/utils/haptics';
@@ -39,7 +40,7 @@ export default function MapScreen() {
   const generatedLevels = useGameStore(s => s.generatedLevels);
   const isGenerating = useGameStore(s => s.generationState.isRunning);
   const setGenerationState = useGameStore(s => s.setGenerationState);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ScrollViewInstance>(null);
 
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const [scrollY, setScrollY] = useState(0); // Rounded to SCROLL_STEP

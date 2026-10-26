@@ -58,6 +58,8 @@ interface MultiState {
   blocked: Record<string, BlockedPlayer[]>;
   /** The accounts could not be read back: nothing is written until the next launch (not persisted) */
   loadFailed: boolean;
+  /** The last writes all failed, the phone storage is likely full (not persisted, issue 176) */
+  writeFailed: boolean;
 
   /** Adds an account or replaces the one on the same server, and makes it the active one */
   addAccount: (account: ServerAccount) => void;
@@ -73,7 +75,9 @@ interface MultiState {
 
 export const gameKey = (serverUrl: string, date: string) => `${serverUrl}|${date}`;
 
-const multiStorage = createGuardedStorage<Partial<MultiState>>();
+const multiStorage = createGuardedStorage<Partial<MultiState>>({
+  onWriteFailed: (failed) => useMultiStore.setState({ writeFailed: failed }),
+});
 /** Token and recovery code kept apart, in the secure storage (#84) */
 const accountStorage = createSecureAccountStorage(multiStorage.storage);
 
@@ -86,6 +90,7 @@ export const useMultiStore = create<MultiState>()(
       games: {},
       blocked: {},
       loadFailed: false,
+      writeFailed: false,
 
       addAccount: (account) => set(state => ({
         accounts: [...state.accounts.filter(a => a.url !== account.url), account],

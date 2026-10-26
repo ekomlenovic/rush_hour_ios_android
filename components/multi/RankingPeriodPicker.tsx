@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import BottomSheet from '@/components/home/BottomSheet';
 import { RFValue } from '@/utils/responsive';
-import { addDays, daysBetween, getMonthGrid, parseLocalDateString } from '@/utils/date';
+import { addDays, dateLocale, daysBetween, getMonthGrid, parseLocalDateString } from '@/utils/date';
 import {
   MAX_MONTHS_BACK, isPeriodOver, orderedDates, rankingDays, shiftMonth, stripOffsets, type RankingMode, type RankingView,
 } from '@/utils/multi/rankingPeriod';
@@ -33,10 +34,10 @@ interface Props {
 export default function RankingPeriodPicker({ colors, isDark, today, view, onView, datesSupported }: Props) {
   const { t, i18n } = useTranslation();
   const [isSheetVisible, setSheetVisible] = useState(false);
-  const strip = useRef<ScrollView>(null);
+  const strip = useRef<ScrollViewInstance>(null);
   const chipX = useRef<Record<number, number>>({});
 
-  const locale = i18n.language;
+  const locale = dateLocale(i18n.language);
   const day = (date: string, withYear = false) => parseLocalDateString(date).toLocaleDateString(locale, {
     weekday: 'short', day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}),
   });
@@ -276,9 +277,9 @@ function DateRangeSheet({ visible, colors, isDark, today, dates, onClose, onAppl
   const shiftShown = (by: number) => setMonth(shiftMonth(`${month}-01`, by).slice(0, 7));
 
   const cells = useMemo(() => getMonthGrid(month), [month]);
-  const monthTitle = parseLocalDateString(`${month}-01`).toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' });
+  const monthTitle = parseLocalDateString(`${month}-01`).toLocaleDateString(dateLocale(i18n.language), { month: 'long', year: 'numeric' });
   const range = to ? orderedDates({ from, to }) : { from, to: from };
-  const longDay = (date: string) => parseLocalDateString(date).toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const longDay = (date: string) => parseLocalDateString(date).toLocaleDateString(dateLocale(i18n.language), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   const touch = (date: string) => {
     // A new range starts on the first touch, ends on the second
@@ -290,7 +291,7 @@ function DateRangeSheet({ visible, colors, isDark, today, dates, onClose, onAppl
     }
   };
 
-  const shortDay = (date: string) => parseLocalDateString(date).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' });
+  const shortDay = (date: string) => parseLocalDateString(date).toLocaleDateString(dateLocale(i18n.language), { day: 'numeric', month: 'short', year: 'numeric' });
   const summary = range.from === range.to ? shortDay(range.from) : t('multi.ranking_days', { from: shortDay(range.from), to: shortDay(range.to) });
 
   return (

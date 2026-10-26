@@ -43,7 +43,7 @@ export default function RecapPreviewCard({ colors }: Props) {
       <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t('recap.list_title')}</Text>
       {isNew ? (
         <View style={[styles.pill, { backgroundColor: colors.warning }]}>
-          <Text style={[styles.pillText, { color: colors.onLightFill }]}>{t('recap.new')}</Text>
+          <Text style={[styles.pillText, { color: colors.onWarning }]}>{t('recap.new')}</Text>
         </View>
       ) : null}
     </View>

@@ -273,7 +273,11 @@ export function duelReducer(state: DuelState, action: DuelAction): DuelState {
           const next = message.duel ? fromView(message.duel, now, duel)
             : duel?.status === 'over' ? { ...duel, opponentLeft: true }
               : duel?.spectating ? duel : null;
-          return { ...state, connection: 'online', player: message.player, duel: next };
+          // My duel gone while the connection was lost (ended without me, or my room closed): told, not a wait without end
+          const gone = !message.duel && duel && duel.status !== 'over' && !duel.spectating
+            ? duel.status === 'waiting' ? 'room_closed' : 'duel_ended_offline'
+            : null;
+          return { ...state, connection: 'online', player: message.player, duel: next, error: gone ?? state.error };
         }
 
         case 'duel':

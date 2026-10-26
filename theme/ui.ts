@@ -38,7 +38,11 @@ export interface UiColors {
   successBorder: string;
   /** Hints, streak, achievements */
   warning: string;
+  /** Warning color for small text on a card or a warning-tinted fill (hint button, hints left) */
+  warningText: string;
   warningSoft: string;
+  /** Text on a warning fill */
+  onWarning: string;
   danger: string;
   dangerSoft: string;
   /** Weekly challenge */
@@ -183,7 +187,9 @@ export const darkColors: UiColors = {
   successSoft: 'rgba(16,185,129,0.12)',
   successBorder: 'rgba(16,185,129,0.35)',
   warning: '#F59E0B',
+  warningText: '#F59E0B',
   warningSoft: 'rgba(245,158,11,0.15)',
+  onWarning: '#0F0F1A',
   danger: '#EF4444',
   dangerSoft: 'rgba(239,68,68,0.18)',
   weekly: '#F97316',
@@ -216,7 +222,7 @@ export const lightColors: UiColors = {
   divider: 'rgba(0,0,0,0.1)',
   inactive: '#E0E0E8',
   text: '#1A1A2E',
-  textMuted: '#6B6B80',
+  textMuted: '#62627A',
   primary: '#5A4FE0',
   primaryText: '#5A4FE0',
   primarySoft: 'rgba(90,79,224,0.08)',
@@ -225,7 +231,9 @@ export const lightColors: UiColors = {
   successSoft: 'rgba(5,150,105,0.08)',
   successBorder: 'rgba(5,150,105,0.25)',
   warning: '#B45309',
+  warningText: '#92400E',
   warningSoft: 'rgba(217,119,6,0.1)',
+  onWarning: '#FFFFFF',
   danger: '#B91C1C',
   dangerSoft: 'rgba(239,68,68,0.1)',
   weekly: '#C2410C',
@@ -250,6 +258,11 @@ export const lightColors: UiColors = {
 export function resolveScheme(mode: 'system' | 'light' | 'dark', system: string | null | undefined): ColorScheme {
   if (mode === 'light' || mode === 'dark') return mode;
   return system === 'dark' ? 'dark' : 'light';
+}
+
+/** Status bar icons readable on the screen background: dark icons on the light theme, light ones on the dark theme */
+export function statusBarStyle(scheme: ColorScheme): 'light' | 'dark' {
+  return scheme === 'dark' ? 'light' : 'dark';
 }
 
 export function getUiColors(scheme: ColorScheme): UiColors {

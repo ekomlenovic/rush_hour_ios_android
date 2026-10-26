@@ -2,6 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState } from 'react-native';
 import type { PersistStorage, StorageValue } from 'zustand/middleware';
 
+/** Consecutive failed writes before the store is told the save is not reaching the device (issue 176) */
+export const WRITE_FAILURES_BEFORE_ALERT = 3;
+
 /** Device key of a field kept in its own entry (see `separateFields`) */
 const fieldKey = (name: string, field: string) => `${name}:${field}`;
 
@@ -25,8 +28,18 @@ const fieldKey = (name: string, field: string) => `${name}:${field}`;
  * moves to its own entry at the next write. If its own entry exists too, an older
  * version installed back wrote the main entry without reading it: the richer of the
  * two is kept (see `richer`).
+ *
+ * A failed write is only logged at first: the next one rewrites the whole main entry and
+ * every separate field not written yet, which repairs a passing error. After
+ * `WRITE_FAILURES_BEFORE_ALERT` failures in a row (the phone storage is full, issue 176),
+ * `onWriteFailed(true)` tells the store, and `onWriteFailed(false)` once a write succeeds.
+ * The last state not written is written again when the app comes back to the foreground.
  */
-export function createGuardedStorage<S>(options: { delayMs?: number; separateFields?: readonly string[] } = {}): {
+export function createGuardedStorage<S>(options: {
+  delayMs?: number;
+  separateFields?: readonly string[];
+  onWriteFailed?: (failed: boolean) => void;
+} = {}): {
   storage: PersistStorage<S>;
   allowWrites: () => void;
   deferNextWrite: () => void;
@@ -40,6 +53,11 @@ export function createGuardedStorage<S>(options: { delayMs?: number; separateFie
   let timer: ReturnType<typeof setTimeout> | null = null;
   /** The value of each separate field as it is on the device */
   const onDevice = new Map<string, unknown>();
+  let failures = 0;
+  /** Number of the latest write of each entry, and the state of the latest one when it failed */
+  const latest = new Map<string, number>();
+  const notWritten = new Map<string, StorageValue<S>>();
+  let writes = 0;
 
   const write = (name: string, value: StorageValue<S>) => {
     const state: Record<string, unknown> = { ...(value.state as Record<string, unknown>) };
@@ -55,10 +73,31 @@ export function createGuardedStorage<S>(options: { delayMs?: number; separateFie
     }
     entries.push([name, JSON.stringify({ ...value, state })]);
 
+    const attempt = ++writes;
+    latest.set(name, attempt);
     const saved = entries.length === 1 ? AsyncStorage.setItem(name, entries[0][1]) : AsyncStorage.multiSet(entries);
     return saved
-      .then(() => { for (const [key, fieldValue] of written) onDevice.set(key, fieldValue); })
-      .catch((error) => console.warn(`[storage] ${name} not written`, error));
+      .then(() => {
+        for (const [key, fieldValue] of written) onDevice.set(key, fieldValue);
+        if (latest.get(name) === attempt) notWritten.delete(name);
+        if (failures >= WRITE_FAILURES_BEFORE_ALERT) options.onWriteFailed?.(false);
+        failures = 0;
+      })
+      .catch((error) => {
+        console.warn(`[storage] ${name} not written`, error);
+        if (latest.get(name) === attempt) notWritten.set(name, value);
+        failures += 1;
+        if (failures === WRITE_FAILURES_BEFORE_ALERT) options.onWriteFailed?.(true);
+      });
+  };
+
+  /** Writes again what could not be written, the app back in the foreground */
+  const retry = () => {
+    for (const [name, value] of [...notWritten]) {
+      if (pending.has(name)) continue;
+      notWritten.delete(name);
+      write(name, value);
+    }
   };
 
   const flush = async () => {
@@ -69,10 +108,11 @@ export function createGuardedStorage<S>(options: { delayMs?: number; separateFie
     await Promise.all(values.map(([name, value]) => write(name, value)));
   };
 
-  if (delayMs > 0) {
+  if (delayMs > 0 || options.onWriteFailed) {
     AppState.addEventListener('change', (state) => {
       foreground = state === 'active';
       if (!foreground) flush();
+      else retry();
     });
   }
 
@@ -111,6 +151,7 @@ export function createGuardedStorage<S>(options: { delayMs?: number; separateFie
       removeItem: (name) => {
         if (!loaded) return;
         pending.delete(name);
+        notWritten.delete(name);
         const keys = separateFields.map(field => fieldKey(name, field));
         keys.forEach(key => onDevice.delete(key));
         return AsyncStorage.multiRemove([name, ...keys]);

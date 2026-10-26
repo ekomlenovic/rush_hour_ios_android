@@ -261,7 +261,7 @@ export default function CustomLevelsScreen() {
                             <Text style={[styles.importBtnText, { color: colors.onPrimary }]}>{t('common.import')}</Text>
                         </Pressable>
                     </View>
-                ) : null}
+                ) : undefined}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
                         <View style={[styles.emptyIcon, { backgroundColor: colors.primarySoft }]}>

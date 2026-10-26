@@ -10,6 +10,8 @@ export const MIN_RELEASE_NOTICE_MS = HOUR_MS;
 export const SERVER_NAME_MAX = 40;
 /** Most duel puzzles of a difficulty generated ahead */
 export const DUEL_POOL_MAX = 30;
+/** Highest optimum the admin can ask for a daily challenge (the hardest levels of the app take about 80 moves) */
+export const WANTED_MOVES_MAX = 100;
 const INVISIBLE = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/;
 
 /**
@@ -22,6 +24,8 @@ export interface AdminSettings {
   /** Only the admin can see the invite code (to invite) */
   invitesAdminOnly: boolean;
   difficultyByWeekday: Difficulty[];
+  /** Exact optimum of the challenge of each day of the week, 0 = Sunday; null: the usual one of its difficulty */
+  minMovesByWeekday: (number | null)[];
   replayRetentionDays: number;
   thresholds: Thresholds;
   serverName: string;
@@ -45,6 +49,7 @@ export function defaultSettings(config: Config): AdminSettings {
     joinOpen: true,
     invitesAdminOnly: false,
     difficultyByWeekday: config.difficultyByWeekday,
+    minMovesByWeekday: Array(7).fill(null),
     replayRetentionDays: config.replayRetentionDays,
     thresholds: DEFAULT_THRESHOLDS,
     serverName: config.serverName,
@@ -131,6 +136,13 @@ export function updateSettings(db: Database, config: Config, patch: Record<strin
     const days = patch.difficultyByWeekday;
     if (!Array.isArray(days) || days.length !== 7 || !days.every(d => DIFFICULTIES.includes(d))) throw new SettingsError('difficultyByWeekday');
     next.difficultyByWeekday = days as Difficulty[];
+  }
+  if ('minMovesByWeekday' in patch) {
+    const days = patch.minMovesByWeekday;
+    if (!Array.isArray(days) || days.length !== 7 || !days.every(m => m === null || (isNumber(m, 1, WANTED_MOVES_MAX) && Number.isInteger(m)))) {
+      throw new SettingsError('minMovesByWeekday');
+    }
+    next.minMovesByWeekday = days as (number | null)[];
   }
   if ('replayRetentionDays' in patch) {
     if (!isNumber(patch.replayRetentionDays, 0, 365) || !Number.isInteger(patch.replayRetentionDays)) throw new SettingsError('replayRetentionDays');

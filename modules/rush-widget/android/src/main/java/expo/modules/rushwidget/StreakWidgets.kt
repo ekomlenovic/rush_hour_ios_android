@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.SystemClock
+import android.text.format.DateUtils
 import android.view.View
 import android.widget.RemoteViews
 import java.util.Calendar
@@ -27,6 +28,12 @@ object StreakWidgets {
   private const val ALARM_WINDOW_MS = 10 * 60 * 1000L
   /** A moment after midnight: the new day is sure to have begun */
   private const val ALARM_DELAY_MS = 1000L
+  /**
+   * The countdown stops this long before midnight (issue 190): a Chronometer counting down goes
+   * negative past zero, and the midnight alarm is inexact. An alarm in the window before redraws it
+   * as a bound ("< 08:00") that never goes below zero, and the window ends before midnight.
+   */
+  private const val FINAL_MS = 15 * 60 * 1000L
 
   private val SLOTS = intArrayOf(
     R.id.rush_widget_slot_0, R.id.rush_widget_slot_1, R.id.rush_widget_slot_2,
@@ -109,12 +116,16 @@ object StreakWidgets {
       views.setViewVisibility(R.id.rush_widget_extra_danger, if (extra == Extra.DANGER) View.VISIBLE else View.GONE)
       views.setViewVisibility(R.id.rush_widget_extra_caption, if (extra == Extra.DANGER) View.VISIBLE else View.GONE)
 
-      // Counts down to midnight: the next daily, or the end of the streak
+      // Counts down to midnight: the next daily, or the end of the streak; in the last minutes, a bound
       val counting = extra != Extra.PLAY
       val untilMidnight = nextMidnight(now) - now.timeInMillis
-      views.setViewVisibility(R.id.rush_widget_timer, if (counting) View.VISIBLE else View.GONE)
-      views.setChronometer(R.id.rush_widget_timer, SystemClock.elapsedRealtime() + untilMidnight, null, counting)
+      val running = counting && untilMidnight > FINAL_MS
+      views.setViewVisibility(R.id.rush_widget_timer, if (running) View.VISIBLE else View.GONE)
+      views.setChronometer(R.id.rush_widget_timer, SystemClock.elapsedRealtime() + untilMidnight, null, running)
       views.setChronometerCountDown(R.id.rush_widget_timer, true)
+      views.setViewVisibility(R.id.rush_widget_timer_bound, if (counting && !running) View.VISIBLE else View.GONE)
+      val minutes = untilMidnight / 60_000 + 1
+      views.setTextViewText(R.id.rush_widget_timer_bound, "< " + DateUtils.formatElapsedTime(minutes * 60))
       if (extra == Extra.DANGER) label = "$label. ${data.danger}"
     }
 
@@ -131,12 +142,21 @@ object StreakWidgets {
     return PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
   }
 
-  /** Next change of what the widgets show: "streak in danger" in the evening, or the next day */
+  /**
+   * Next change of what the widgets show: "streak in danger" in the evening, the countdown stopped
+   * before midnight (delivered by midnight - FINAL_MS + ALARM_WINDOW_MS), or the next day
+   */
   private fun scheduleNext(context: Context, data: WidgetData, now: Calendar) {
     val day = data.dayFor(localDateKey(now))
     val evening = todayAt(now, data.dangerHour)
-    val next = if (day.danger && now.timeInMillis < evening) evening else nextMidnight(now)
-    alarms(context).setWindow(AlarmManager.RTC, next + ALARM_DELAY_MS, ALARM_WINDOW_MS, tickIntent(context))
+    val midnight = nextMidnight(now)
+    val lastMinutes = midnight - FINAL_MS
+    val alarms = alarms(context)
+    when {
+      day.danger && now.timeInMillis < evening -> alarms.setWindow(AlarmManager.RTC, evening + ALARM_DELAY_MS, ALARM_WINDOW_MS, tickIntent(context))
+      (day.done || day.danger) && now.timeInMillis < lastMinutes -> alarms.setWindow(AlarmManager.RTC, lastMinutes, ALARM_WINDOW_MS, tickIntent(context))
+      else -> alarms.setWindow(AlarmManager.RTC, midnight + ALARM_DELAY_MS, ALARM_WINDOW_MS, tickIntent(context))
+    }
   }
 
   private fun alarms(context: Context): AlarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager

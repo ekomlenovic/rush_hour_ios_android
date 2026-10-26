@@ -1,5 +1,5 @@
 import type { Level, Vehicle } from '../store/types';
-import { createPRNG, shuffleWith, transformLevel, type DifficultyConfig } from './generator';
+import { createPRNG, shuffleWith, transformLevel, type DifficultyConfig } from './generator.core';
 
 /**
  * Variants of hand-checked hard levels (the levels of the app), for the hardest duels:
@@ -152,6 +152,16 @@ export function levelVariants(level: Level, config: DifficultyConfig, count: num
   const found = hardStarts(level, lowest, config.maxMovesRequired, { count, random });
   if (!found) return [];
   return found.starts.map(start => dressVariant({ ...level, vehicles: start.vehicles, minMoves: start.minMoves, updatedAt: 0 }, random));
+}
+
+/**
+ * Up to `count` start positions of the board of a level whose optimum is exactly
+ * `minMoves`, drawn at random (the daily challenge of a server, when its admin chose
+ * how many moves). None when the board has none, or too many positions to explore.
+ */
+export function exactStarts(level: Level, minMoves: number, count: number, random: () => number): Level[] {
+  const found = hardStarts(level, minMoves, minMoves, { count, random });
+  return (found?.starts ?? []).map(start => ({ ...level, vehicles: start.vehicles, minMoves: start.minMoves }));
 }
 
 /** The same puzzle turned or mirrored (one of the 8 symmetries), its colors shuffled: it does not look the same */
