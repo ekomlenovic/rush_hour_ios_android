@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { addDays, addMonths, getLocalDateString, getWeekKey, parseLocalDateString } from './date';
+import { addDays, addMonths, dateLocale, getLocalDateString, getWeekKey, parseLocalDateString } from './date';
 
 export const DEFAULT_REMINDER_HOUR = 19;
 /** "Streak in danger" comes this many hours after the daily reminder */
@@ -96,7 +96,7 @@ export function planReminders(t: TFunction, input: ReminderInput): PlannedRemind
       date: at(firstOfNext, RECAP_REMINDER_HOUR),
       title: t('reminders.recap_title'),
       body: t('reminders.recap_month_body', {
-        month: parseLocalDateString(`${month}-01`).toLocaleDateString(input.language, { month: 'long' }),
+        month: parseLocalDateString(`${month}-01`).toLocaleDateString(dateLocale(input.language), { month: 'long' }),
         interpolation: { escapeValue: false },
       }),
     });

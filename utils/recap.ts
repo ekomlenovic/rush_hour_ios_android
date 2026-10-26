@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import type { ChallengeResult, PeriodStats, RecapsSeen } from '../store/types';
 import { emptyPeriodStats, monthKeyOf } from '../store/periodStats';
-import { addMonths, computeDayRuns, formatPlayTime, getLocalDateString, getWeekStart, parseLocalDateString } from './date';
+import { addMonths, computeDayRuns, dateLocale, formatPlayTime, getLocalDateString, getWeekStart, parseLocalDateString } from './date';
 import { APP_URL } from './shareResult';
 
 /**
@@ -229,7 +229,7 @@ export function availableRecaps(source: RecapSource, now: Date = new Date()): st
 /** 'octobre 2026' / '2026' */
 export function periodLabel(key: string, language: string): string {
   if (recapKind(key) === 'year') return key;
-  return parseLocalDateString(`${key}-01`).toLocaleDateString(language, { month: 'long', year: 'numeric' });
+  return parseLocalDateString(`${key}-01`).toLocaleDateString(dateLocale(language), { month: 'long', year: 'numeric' });
 }
 
 /** Whether the period is still going on */
