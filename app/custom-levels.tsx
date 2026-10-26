@@ -15,6 +15,7 @@ import BoardPreview from '@/components/garage/BoardPreview';
 import BottomSheet from '@/components/home/BottomSheet';
 import ShareIcon from '@/components/share/ShareIcon';
 import ShareLevelSheet from '@/components/share/ShareLevelSheet';
+import QrScanner from '@/components/QrScanner';
 import LevelNameSheet from '@/components/share/LevelNameSheet';
 import KeyboardScreen from '@/components/KeyboardScreen';
 import ScreenHeader from '@/components/ScreenHeader';
@@ -51,6 +52,7 @@ export default function CustomLevelsScreen() {
     const [sharing, setSharing] = useState<Entry | null>(null);
     const [menu, setMenu] = useState<Entry | null>(null);
     const [renaming, setRenaming] = useState<Entry | null>(null);
+    const [scanning, setScanning] = useState(false);
 
     const entries = useMemo(() => {
         const toEntries = (levels: Level[], kind: CustomLevelKind): Entry[] =>
@@ -95,6 +97,13 @@ export default function CustomLevelsScreen() {
         if (!text) return;
         setImportText(text);
         haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    };
+
+    // A scanned level QR code fills the field like a pasted link: checked and solved the same way
+    const handleScanned = (data: string) => {
+        if (!decodeSharedLevel(data.trim())) return false;
+        setImportText(data.trim());
+        return true;
     };
 
     const handleImport = () => {
@@ -223,6 +232,14 @@ export default function CustomLevelsScreen() {
                                 <Ionicons name="clipboard-outline" size={16} color={colors.primaryText} />
                                 <Text style={[styles.pasteBtnText, { color: colors.primaryText }]}>{t('common.paste')}</Text>
                             </Pressable>
+                            <Pressable
+                                onPress={() => setScanning(true)}
+                                style={[styles.pasteBtn, { backgroundColor: colors.primarySoft }]}
+                                accessibilityRole="button"
+                                accessibilityLabel={t('custom_levels.scan_qr')}
+                            >
+                                <Ionicons name="qr-code-outline" size={18} color={colors.primaryText} />
+                            </Pressable>
                         </View>
 
                         {pendingInvalid ? (
@@ -285,6 +302,15 @@ export default function CustomLevelsScreen() {
                         )}
                     </View>
                 }
+            />
+
+            <QrScanner
+                visible={scanning}
+                title={t('custom_levels.scan_qr')}
+                hint={t('custom_levels.scan_hint')}
+                colors={colors}
+                onClose={() => setScanning(false)}
+                onScanned={handleScanned}
             />
 
             <ShareLevelSheet

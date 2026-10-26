@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import type { HostInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useRouter } from '@/hooks/useRouter';
 import { usePreventRemove } from 'expo-router/react-navigation';
 import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
@@ -40,7 +40,6 @@ export default function LevelCreatorScreen() {
   const { t } = useTranslation();
   const { colors: C, board, palette, isDark } = useTheme();
   const router = useRouter();
-  const navigation = useNavigation();
   const params = useLocalSearchParams<{ levelId: string }>();
   const saveCreatedLevel = useGameStore(s => s.saveCreatedLevel);
   const createdLevels = useGameStore(s => s.createdLevels);
@@ -347,11 +346,12 @@ export default function LevelCreatorScreen() {
   }, [boardKey, vehicles.length, savedBoard]);
   const hasUnsavedChanges = savedBoard !== null && savedBoard !== boardKey;
   // usePreventRemove, not a 'beforeRemove' listener: the native stack removed the screen anyway
-  // on a swipe back or the Android back button, and "Cancel" left the player off the creator
-  usePreventRemove(hasUnsavedChanges, ({ data }) => {
+  // on a swipe back or the Android back button, and "Cancel" left the player off the creator.
+  // repeat(), not dispatching the action again: still prevented, the alert came back endlessly
+  usePreventRemove(hasUnsavedChanges, ({ repeat }) => {
     Alert.alert(t('creator.exit_title'), t('creator.exit_confirm'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('creator.exit'), style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+      { text: t('creator.exit'), style: 'destructive', onPress: repeat },
     ]);
   });
 

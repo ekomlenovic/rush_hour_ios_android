@@ -40,16 +40,22 @@
     "done": "Terminé",
     "close": "Fermer"
   },
+  "scanner": {
+    "permission": "Autorise l'appareil photo pour scanner un QR code. L'image reste sur ton téléphone.",
+    "allow": "Autoriser l'appareil photo",
+    "open_settings": "Ouvrir les réglages",
+    "not_recognized": "Ce QR code n'est pas reconnu"
+  },
   "home": {
     "play_level": "Niveau {{level}}",
     "play_tutorial": "Commence par le tutoriel",
     "play_all_done": "Tous les niveaux terminés",
     "daily_desc": "Un nouveau puzzle chaque jour",
     "daily_event": {
-      "halloween_one": "Halloween : réussis-le pour débloquer {{count}} style du Garage",
-      "halloween_other": "Halloween : réussis-le pour débloquer {{count}} styles du Garage",
-      "christmas_one": "Noël : réussis-le pour débloquer {{count}} style du Garage",
-      "christmas_other": "Noël : réussis-le pour débloquer {{count}} styles du Garage"
+      "halloween_one": "Halloween : gagne {{count}} style du Garage",
+      "halloween_other": "Halloween : gagne {{count}} styles du Garage",
+      "christmas_one": "Noël : gagne {{count}} style du Garage",
+      "christmas_other": "Noël : gagne {{count}} styles du Garage"
     },
     "daily_next": "Prochain dans {{time}}",
     "weekly_next_one": "Prochain dans {{count}} jour",
@@ -277,6 +283,8 @@
     "not_won": "Pas encore réussi",
     "import_title": "Importer un niveau",
     "import_hint": "Colle le lien ou le code reçu d'un ami.",
+    "scan_qr": "Scanner un QR code",
+    "scan_hint": "Vise le QR code du niveau",
     "import_existing_title": "Déjà importé",
     "import_existing": "Tu as déjà ce niveau dans Importés.",
     "name_label": "Nom (facultatif)",
@@ -1010,7 +1018,9 @@
     "recover": "Récupérer mon compte",
     "have_account": "J'ai déjà un compte sur ce serveur",
     "new_account": "Je suis nouveau sur ce serveur",
-    "join_tip": "Astuce : colle ici le lien d'invitation, tout se remplit tout seul.",
+    "join_tip": "Astuce : scanne le QR code ou colle ici le lien d'invitation, tout se remplit tout seul.",
+    "scan_qr": "Scanner un QR code",
+    "scan_hint": "Vise le QR code d'invitation ou de récupération",
     "already_joined_title": "Déjà inscrit",
     "already_joined_body": "Tu as déjà un compte sur ce serveur. En créer un nouveau te fera perdre l'accès à l'ancien sur ce téléphone (garde ton code de récupération).",
     "create_title": "Créer mon serveur",
