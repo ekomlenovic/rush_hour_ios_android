@@ -46,6 +46,13 @@ describe('translations', () => {
     const missing = [...keys].filter(([key]) => !hasKey(strings, key)).map(([key, file]) => `${key} (${file})`);
     expect(missing).toEqual([]);
   });
+
+  // Not even in a notification or a shared text: the code adds an emoji where one is wanted.
+  // Typographic symbols (★, ↕, ✓, ✗, ←) stay allowed
+  it.each([['en', en], ['fr', fr], ['sr', sr]] as const)('no text of %s contains an emoji', (_, strings) => {
+    const emoji = /(?![★↕©®™])\p{Extended_Pictographic}/u;
+    expect(flatten(strings).filter(([, text]) => emoji.test(text))).toEqual([]);
+  });
 });
 
 /** Every string of a translation file, by its dotted path */
