@@ -119,12 +119,15 @@ export default function DuelScreen() {
   // Out already in a duel on moves: nothing to lose, the result waits on the server
   const mustConfirmLeave = !!duel && duel.status !== 'over' && !duel.spectating && duel.status !== 'waiting'
     && !(duel.metric === 'moves' && iHaveWon(duel));
-  usePreventRemove(mustConfirmLeave, ({ repeat }) => {
+  // "Leave" chosen: the protection goes off with repeat(), the prop too (or a warning in development)
+  const [leaving, setLeaving] = useState(false);
+  usePreventRemove(mustConfirmLeave && !leaving, ({ repeat }) => {
     Alert.alert(t('multi.duel.leave_title'), t('multi.duel.leave_body'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('multi.duel.leave'), style: 'destructive', onPress: () => {
           leave();
+          setLeaving(true);
           repeat();
         },
       },
