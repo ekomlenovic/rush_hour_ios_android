@@ -86,7 +86,7 @@ Dans l'app : Multijoueur → Mon compte → **Devenir admin**, avec `ADMIN_TOKEN
 - **régénérer le code d'invitation**, fermer les inscriptions, réserver les invitations à l'admin ;
 - **remettre à zéro** les parties des défis et/ou les duels, sur une période et pour tous les joueurs ou certains (nouvelle saison) ;
 - renommer le serveur, régler l'**heure de sortie**, le **délai de grâce** et la **pré-génération** ;
-- régler la **difficulté** par jour, la **conservation des replays** et les **seuils de soupçon**.
+- régler la **difficulté** par jour et, si tu veux, le **nombre exact de coups minimum** du défi de chaque jour, la **conservation des replays** et les **seuils de soupçon**.
 
 Un réglage changé dans l'app l'emporte ensuite sur sa variable d'environnement. Les secrets (`SERVER_SECRET`, `ADMIN_TOKEN`), le fuseau `TZ` et `PORT`, `HOST`, `DATA_DIR`, `TRUST_PROXY` ne se règlent que dans le `docker-compose.yml`. Le bouton **Réinitialiser** remet tous les réglages aux valeurs du `docker-compose.yml` (l'heure de sortie à partir du prochain défi, le code d'invitation ne change pas).
 
@@ -140,7 +140,7 @@ Toutes les routes sauf `/info`, `/join` et `/recover` exigent `Authorization: Be
 | `GET /admin/players`, `PATCH /admin/players/:id` `{ pseudo?, banned? }`, `POST /admin/players/:id/transfer`, `DELETE /admin/players/:id` | joueurs, renommer, exclure, nouveau code de récupération, supprimer le compte |
 | `GET /admin/reports`, `DELETE /admin/reports/:id` | signalements |
 | `POST /admin/invite` | nouveau code d'invitation |
-| `GET /admin/settings`, `PATCH /admin/settings` | nom, heure de sortie (`release_too_soon` si le prochain défi sortirait dans moins d'une heure), délai de grâce, pré-génération, inscriptions, invitations, difficulté, conservation des replays, seuils. La réponse donne aussi `timeZone` et `nextReleaseAt` |
+| `GET /admin/settings`, `PATCH /admin/settings` | nom, heure de sortie (`release_too_soon` si le prochain défi sortirait dans moins d'une heure), délai de grâce, pré-génération, inscriptions, invitations, difficulté, coups minimum exacts par jour (`minMovesByWeekday`, `null` : auto), conservation des replays, seuils. La réponse donne aussi `timeZone` et `nextReleaseAt` |
 | `POST /admin/settings/reset` | retour aux variables d'environnement (sauf le code d'invitation) |
 | `GET /duels` | les duels du serveur : ouverts (avec leur code, pour les rejoindre sans qu'on le donne) et en cours (avec leur code, pour les regarder, et leur nombre de `spectators`) ; les duels privés n'y sont que pour leur joueur. `ready` : puzzles prêts par niveau ; `metrics` : les vainqueurs possibles d'un duel (`["time", "moves"]`) |
 | `GET /duels/leaderboard?period=day\|week\|month\|all&date=` ou `?period=range&from=&to=` | classement des duels : victoires, puis moins de défaites |
