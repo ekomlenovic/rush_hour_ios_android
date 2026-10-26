@@ -879,6 +879,8 @@
   "save": {
     "load_error_title": "Sauvegarde illisible",
     "load_error_body": "Ta progression n'a pas pu être chargée. Elle n'est pas effacée : rien ne sera enregistré par-dessus. Ferme complètement le jeu et relance-le pour réessayer.",
+    "write_error_title": "Progression non enregistrée",
+    "write_error_body": "Ta progression n'a pas pu être enregistrée : le stockage de ton téléphone est sans doute plein. Libère de l'espace, puis reviens dans le jeu : elle sera enregistrée à nouveau. Ne ferme pas le jeu d'ici là, sinon ce que tu as joué depuis sera perdu.",
     "title": "Sauvegarde",
     "desc": "Change de téléphone sans perdre ta progression : exporte-la dans un fichier (ou un code), puis importe-la sur l'autre téléphone. Rien n'est envoyé sur internet.",
     "export_btn": "Exporter ma progression",

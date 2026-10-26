@@ -105,6 +105,8 @@ interface GameState {
   archiveLevels: Record<string, Level>;
   /** The save could not be read back: nothing is written until the next launch (not persisted) */
   saveLoadFailed: boolean;
+  /** The last writes of the save all failed, the phone storage is likely full (not persisted, issue 176) */
+  saveWriteFailed: boolean;
   /** Date of the archive being played (not persisted) */
   archiveDate: string | null;
   /** Day of the daily open on the game screen and not won yet (not persisted): left open past midnight, it can still be won */
@@ -249,7 +251,11 @@ const SAVE_WRITE_DELAY_MS = 1000;
 export const SEPARATE_SAVE_FIELDS: readonly (keyof GameState)[] = [
   'generatedLevels', 'archiveLevels', 'dailyChallengeProgress', 'weeklyChallengeProgress', 'archiveProgress',
 ];
-const saveStorage = createGuardedStorage<Partial<GameState>>({ delayMs: SAVE_WRITE_DELAY_MS, separateFields: SEPARATE_SAVE_FIELDS });
+const saveStorage = createGuardedStorage<Partial<GameState>>({
+  delayMs: SAVE_WRITE_DELAY_MS,
+  separateFields: SEPARATE_SAVE_FIELDS,
+  onWriteFailed: (failed) => useGameStore.setState({ saveWriteFailed: failed }),
+});
 
 export const useGameStore = create<GameState>()(
   persist(
@@ -379,6 +385,7 @@ export const useGameStore = create<GameState>()(
       archiveDate: null,
       openDailyDate: null,
       saveLoadFailed: false,
+      saveWriteFailed: false,
       savedStates: {},
       isMusicEnabled: true,
       isHapticsEnabled: true,
