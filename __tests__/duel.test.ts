@@ -182,7 +182,30 @@ describe('duel on the phone', () => {
     const over = run(playing(), message({ type: 'end', result: { winnerId: 2, reason: 'disconnected', timeMs: null, minMoves: 2, duelId: null, score: null }, level: LEVEL }));
     const back = run(over, { type: 'connection', status: 'offline' }, message({ type: 'ready', player: { id: 1, pseudo: 'Léo' }, duel: null }));
     expect(back.duel).toMatchObject({ status: 'over', opponentLeft: true });
+    expect(back.error).toBeNull();
     expect(run(playing(), message({ type: 'ready', player: { id: 1, pseudo: 'Léo' }, duel: null })).duel).toBeNull();
+  });
+
+  // Ended without me (the opponent won, or the 60 s passed), or my room closed: told, not a wait without end
+  it.each([
+    ['playing', 'duel_ended_offline'],
+    ['preparing', 'duel_ended_offline'],
+    ['waiting', 'room_closed'],
+  ] as const)('a %s duel gone while offline is told, not dropped', (status, error) => {
+    const before = run(initialDuelState,
+      message({ type: 'ready', player: { id: 1, pseudo: 'Léo' }, duel: null }),
+      message({ type: 'duel', duel: view(status === 'waiting' ? { status, level: null, startsAt: null, opponent: null } : { status }) }));
+    const after = run(before, { type: 'connection', status: 'offline' },
+      message({ type: 'ready', player: { id: 1, pseudo: 'Léo' }, duel: null }));
+    expect(after).toMatchObject({ duel: null, error, connection: 'online' });
+    // The room created again, or another duel: the error goes
+    expect(run(after, message({ type: 'duel', duel: view({ status: 'waiting', level: null, startsAt: null, opponent: null }) })).error).toBeNull();
+  });
+
+  it('connected for the first time, or still in my duel: no error', () => {
+    expect(run(initialDuelState, message({ type: 'ready', player: { id: 1, pseudo: 'Léo' }, duel: null })).error).toBeNull();
+    const back = run(playing(), { type: 'connection', status: 'offline' }, message({ type: 'ready', player: { id: 1, pseudo: 'Léo' }, duel: view() }));
+    expect(back).toMatchObject({ error: null, duel: { status: 'playing' } });
   });
 
   it('a spectator sees both boards move, and plays nothing', () => {
@@ -202,6 +225,7 @@ describe('duel on the phone', () => {
     // Connected again: the duel stays until the server sends it again; gone meanwhile, it is said
     state = run(state, message({ type: 'ready', player: { id: 3, pseudo: 'Sam' }, duel: null }));
     expect(state.duel?.code).toBe('ABCD3');
+    expect(state.error).toBeNull();
     expect(run(state, message({ type: 'error', error: 'duel_not_found' }))).toMatchObject({ duel: null, error: 'duel_not_found' });
 
     state = run(state, message({ type: 'end', result: { winnerId: 2, reason: 'won', timeMs: 4000, minMoves: 2, duelId: 7, score: null }, level: LEVEL }));
