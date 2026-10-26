@@ -1,6 +1,6 @@
 // Shape of a level up to the 8 symmetries of the square: two levels with the same key are the same puzzle
 import type { Level } from '../../store/types';
-import { transformLevel } from '../../utils/generator';
+import { transformLevel } from '../../utils/generator.core';
 
 function shapeKey(level: Level): string {
   const [target, ...others] = level.vehicles;
