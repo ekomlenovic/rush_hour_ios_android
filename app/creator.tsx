@@ -345,13 +345,20 @@ export default function LevelCreatorScreen() {
     if (savedBoard === null && vehicles.length > 0) setSavedBoard(boardKey);
   }, [boardKey, vehicles.length, savedBoard]);
   const hasUnsavedChanges = savedBoard !== null && savedBoard !== boardKey;
+  // "Exit" chosen: the protection goes off with repeat(), the prop too (or a warning in development)
+  const [leaving, setLeaving] = useState(false);
   // usePreventRemove, not a 'beforeRemove' listener: the native stack removed the screen anyway
   // on a swipe back or the Android back button, and "Cancel" left the player off the creator.
   // repeat(), not dispatching the action again: still prevented, the alert came back endlessly
-  usePreventRemove(hasUnsavedChanges, ({ repeat }) => {
+  usePreventRemove(hasUnsavedChanges && !leaving, ({ repeat }) => {
     Alert.alert(t('creator.exit_title'), t('creator.exit_confirm'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('creator.exit'), style: 'destructive', onPress: repeat },
+      {
+        text: t('creator.exit'), style: 'destructive', onPress: () => {
+          setLeaving(true);
+          repeat();
+        },
+      },
     ]);
   });
 
