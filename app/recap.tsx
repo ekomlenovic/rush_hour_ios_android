@@ -16,7 +16,7 @@ import { useGameStore } from '@/store/gameStore';
 import { recapSlideColors, recapSlideText } from '@/theme';
 import { dateLocale, formatPlayTime, parseLocalDateString } from '@/utils/date';
 import {
-  buildRecap, buildRecapShareText, isInProgress, periodLabel, recapHighlights, recapProgress, recapSlides,
+  buildRecap, buildRecapShareText, isInProgress, periodLabel, recapHighlights, recapProgress, recapSlides, shouldMarkRecapSeen,
   type Recap, type RecapFigure, type RecapSlide,
 } from '@/utils/recap';
 import { APP_URL } from '@/utils/shareResult';
@@ -85,9 +85,9 @@ export default function RecapScreen() {
     [isValidKey, period, monthlyStats, yearlyStats, achievementMonths, recapSince, dailyChallengeProgress, weeklyChallengeProgress, frozenDates],
   );
 
-  // Opened: the home screen stops announcing it
+  // Opened: the home screen stops announcing it. The current period is not: once over, it is announced
   useEffect(() => {
-    if (isValidKey) markRecapSeen(period);
+    if (isValidKey && shouldMarkRecapSeen(useGameStore.getState(), period)) markRecapSeen(period);
   }, [isValidKey, period, markRecapSeen]);
 
   if (!recap) {
