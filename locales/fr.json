@@ -138,7 +138,7 @@
     "request_github": "Demander de nouveaux niveaux sur GitHub",
     "hard_reset_progress": "Réinitialiser la progression",
     "grid_size_label": "Taille de la grille :",
-    "generator_warning": "Expert et Maître : chaque niveau prend plusieurs minutes, pendant lesquelles l'app ne répond plus.",
+    "generator_warning": "Expert, Maître et grandes grilles (7x7, 8x8) : un niveau peut prendre plusieurs minutes, pendant lesquelles l'app ne répond plus. L'estimation s'ajuste aux temps mesurés sur ton téléphone.",
     "long_generation_title": "Génération longue",
     "long_generation_body": "Générer {{amount}} niveaux {{difficulty}} prend environ {{time}}. Pendant chaque niveau, l'app ne répond plus, même au bouton Annuler (il agit entre deux niveaux). Lancer quand même ?",
     "long_generation_confirm": "Générer",

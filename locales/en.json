@@ -138,7 +138,7 @@
     "request_github": "Request New Levels on GitHub",
     "hard_reset_progress": "Hard Reset Progress",
     "grid_size_label": "Grid Size:",
-    "generator_warning": "Expert and Master: each level takes several minutes, during which the app does not respond.",
+    "generator_warning": "Expert, Master and big grids (7x7, 8x8): a level can take several minutes, during which the app does not respond. The estimate adjusts to the times measured on your phone.",
     "long_generation_title": "Long generation",
     "long_generation_body": "Generating {{amount}} {{difficulty}} levels takes about {{time}}. During each level the app does not respond, not even to the Cancel button (it acts between two levels). Start anyway?",
     "long_generation_confirm": "Generate",
