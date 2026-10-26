@@ -53,6 +53,13 @@ describe('translations', () => {
     const emoji = /(?![★↕©®™])\p{Extended_Pictographic}/u;
     expect(flatten(strings).filter(([, text]) => emoji.test(text))).toEqual([]);
   });
+
+  // One name per mode: the French daily challenge is « Défi du jour » everywhere (docs/GAME_DESIGN.md)
+  it.each([
+    [/défis? quotidiens?/i, 'défi du jour'],
+  ])('no French text says %s (write « %s »)', (forbidden) => {
+    expect(flatten(fr).filter(([, text]) => forbidden.test(text))).toEqual([]);
+  });
 });
 
 /** Every string of a translation file, by its dotted path */
