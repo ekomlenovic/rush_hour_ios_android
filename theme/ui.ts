@@ -252,6 +252,11 @@ export function resolveScheme(mode: 'system' | 'light' | 'dark', system: string 
   return system === 'dark' ? 'dark' : 'light';
 }
 
+/** Status bar icons readable on the screen background: dark icons on the light theme, light ones on the dark theme */
+export function statusBarStyle(scheme: ColorScheme): 'light' | 'dark' {
+  return scheme === 'dark' ? 'light' : 'dark';
+}
+
 export function getUiColors(scheme: ColorScheme): UiColors {
   return scheme === 'dark' ? darkColors : lightColors;
 }
