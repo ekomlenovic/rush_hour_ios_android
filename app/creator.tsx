@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Pressable,
+  View, Text, StyleSheet, Pressable, ActivityIndicator,
   useWindowDimensions, Alert, AccessibilityInfo,
 } from 'react-native';
 import type { HostInstance } from 'react-native';
@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 import { useGameStore, Vehicle, Level } from '@/store/gameStore';
 import { validateLevelAsync } from '@/utils/solver.background';
+import { createExclusiveTask } from '@/utils/exclusiveTask';
 import { haptics, Haptics } from '@/utils/haptics';
 import {
   ExitSide, hasCollision as collides, vehicleCells, getExitSide, moveExitToSide, getNextAvailableColor, findFreeCell, resizeBoard,
@@ -313,9 +314,18 @@ export default function LevelCreatorScreen() {
   }, []);
 
   // ── Actions ──
-  // Solved in the background: a big board never freezes the screen; -2: too big to search
-  const handleTest = async () => {
-    const minMoves = await validateLevelAsync(vehicles, gridSize, exitRow, exitCol);
+  // Solved in the background: a big board never freezes the screen; -2: too big to search.
+  // One check at a time for "Test" and "Save": both are disabled while it runs, a tap gives one result
+  const [checking, setChecking] = useState<'test' | 'save' | null>(null);
+  const checkingAction = useRef<'test' | 'save'>('test');
+  const [runCheck] = useState(() => createExclusiveTask(busy => setChecking(busy ? checkingAction.current : null)));
+  const check = (action: 'test' | 'save', onResult: (minMoves: number) => void) => {
+    if (checking) return;
+    checkingAction.current = action;
+    return runCheck(() => validateLevelAsync(vehicles, gridSize, exitRow, exitCol), onResult);
+  };
+
+  const handleTest = () => check('test', minMoves => {
     if (minMoves === -2) {
       Alert.alert(t('creator.unsolvable_title'), t('creator.too_complex_desc'));
     } else if (minMoves === -1) {
@@ -325,7 +335,7 @@ export default function LevelCreatorScreen() {
     } else {
       Alert.alert(t('creator.solvable_title'), t('creator.solvable_desc', { count: minMoves }));
     }
-  };
+  });
 
   // The board as loaded or last saved: leaving with another one asks first
   const [savedBoard, setSavedBoard] = useState<string | null>(null);
@@ -346,8 +356,7 @@ export default function LevelCreatorScreen() {
 
   // Checked first, then named: the name sheet only opens for a level that can be saved
   const checkedMinMoves = useRef(0);
-  const handleSave = async () => {
-    const minMoves = await validateLevelAsync(vehicles, gridSize, exitRow, exitCol);
+  const handleSave = () => check('save', minMoves => {
     if (minMoves < 0) {
       Alert.alert(t('creator.unsolvable_title'), t(minMoves === -2 ? 'creator.too_complex_desc' : 'creator.fix_before_save'));
       return;
@@ -359,7 +368,7 @@ export default function LevelCreatorScreen() {
     }
     checkedMinMoves.current = minMoves;
     setNaming(true);
-  };
+  });
 
   // Modifying an imported level creates a level of one's own (in "Created"), the imported one stays as is
   const saveLevel = (name: string) => {
@@ -428,11 +437,30 @@ export default function LevelCreatorScreen() {
           </Pressable>
           <Text style={[styles.title, { color: C.text }]} numberOfLines={1} accessibilityRole="header">{t('creator.title')}</Text>
           <View style={styles.headerRight}>
-            <Pressable onPress={handleTest} style={[styles.pill, { borderColor: C.primary, borderWidth: 1.5 }]} accessibilityRole="button" hitSlop={6}>
-              <Text style={[styles.pillText, { color: C.primaryText }]}>{t('creator.test')}</Text>
+            <Pressable
+              onPress={handleTest}
+              disabled={!!checking}
+              style={[styles.pill, { borderColor: C.primary, borderWidth: 1.5 }, checking && checking !== 'test' && styles.pillDisabled]}
+              accessibilityRole="button"
+              accessibilityLabel={checking === 'test' ? t('game.analyzing') : t('creator.test')}
+              accessibilityState={{ disabled: !!checking, busy: checking === 'test' }}
+              hitSlop={6}
+            >
+              {/* The label stays (hidden) under the spinner: the pill keeps its width */}
+              <Text style={[styles.pillText, { color: C.primaryText }, checking === 'test' && styles.hidden]}>{t('creator.test')}</Text>
+              {checking === 'test' && <ActivityIndicator size="small" color={C.primaryText} style={styles.pillSpinner} />}
             </Pressable>
-            <Pressable onPress={handleSave} style={[styles.pill, { backgroundColor: C.primary }]} accessibilityRole="button" hitSlop={6}>
-              <Text style={[styles.pillText, { color: C.onPrimary }]}>{t('creator.save')}</Text>
+            <Pressable
+              onPress={handleSave}
+              disabled={!!checking}
+              style={[styles.pill, { backgroundColor: C.primary }, checking && checking !== 'save' && styles.pillDisabled]}
+              accessibilityRole="button"
+              accessibilityLabel={checking === 'save' ? t('game.analyzing') : t('creator.save')}
+              accessibilityState={{ disabled: !!checking, busy: checking === 'save' }}
+              hitSlop={6}
+            >
+              <Text style={[styles.pillText, { color: C.onPrimary }, checking === 'save' && styles.hidden]}>{t('creator.save')}</Text>
+              {checking === 'save' && <ActivityIndicator size="small" color={C.onPrimary} style={styles.pillSpinner} />}
             </Pressable>
           </View>
         </View>
@@ -615,6 +643,9 @@ const styles = StyleSheet.create({
   headerRight: { flexDirection: 'row', gap: 8 },
   pill: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 20 },
   pillText: { fontSize: 12, fontWeight: '700' },
+  pillDisabled: { opacity: 0.5 },
+  pillSpinner: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 },
+  hidden: { opacity: 0 },
 
   boardWrapper: { alignItems: 'center', paddingHorizontal: BOARD_PADDING, marginTop: 8 },
   board: { position: 'relative', borderWidth: BOARD_BORDER, borderRadius: 14, overflow: 'hidden' },
