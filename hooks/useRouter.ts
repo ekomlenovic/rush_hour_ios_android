@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNavigation, useRoute, useRouter as useExpoRouter } from 'expo-router';
 import { NavigationLock } from '@/utils/navigationLock';
 
@@ -6,8 +6,8 @@ import { NavigationLock } from '@/utils/navigationLock';
 const locks = new Map<string, NavigationLock>();
 
 /**
- * The router of Expo Router, with push and back ignored while one from the same screen is under
- * way: spamming a button (garage, profile…) no longer stacks the same screen twice. Replace and
+ * The router of Expo Router, with push and back ignored when they repeat one from the same screen:
+ * spamming a button (garage, profile…) no longer stacks the same screen twice. Replace and
  * dismissTo don't grow the stack and stay as they are (a redirect right after opening a screen).
  */
 export function useRouter(): ReturnType<typeof useExpoRouter> {
@@ -15,31 +15,21 @@ export function useRouter(): ReturnType<typeof useExpoRouter> {
   const navigation = useNavigation();
   const { key } = useRoute();
 
-  const lock = useMemo(() => {
-    let existing = locks.get(key);
-    if (!existing) {
-      existing = new NavigationLock();
-      locks.set(key, existing);
+  return useMemo(() => {
+    let lock = locks.get(key);
+    if (!lock) {
+      lock = new NavigationLock();
+      locks.set(key, lock);
     }
-    return existing;
-  }, [key]);
-
-  useEffect(() => {
-    const offFocus = navigation.addListener('focus', () => lock.focused());
-    const offBlur = navigation.addListener('blur', () => lock.blurred());
-    return () => {
-      offFocus();
-      offBlur();
+    const claim = () => lock.claim(navigation.isFocused());
+    return {
+      ...router,
+      push: (...args: Parameters<typeof router.push>) => {
+        if (claim()) router.push(...args);
+      },
+      back: () => {
+        if (claim()) router.back();
+      },
     };
-  }, [navigation, lock]);
-
-  return useMemo(() => ({
-    ...router,
-    push: (...args: Parameters<typeof router.push>) => {
-      if (lock.claim()) router.push(...args);
-    },
-    back: () => {
-      if (lock.claim()) router.back();
-    },
-  }), [router, lock]);
+  }, [router, navigation, key]);
 }
