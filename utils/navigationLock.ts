@@ -1,39 +1,20 @@
-/** Without leaving its screen, a navigation no longer blocks its buttons after this delay */
-export const NAVIGATION_FALLBACK_MS = 1500;
+/** After a push or a back, the buttons of the same screen don't navigate again for this delay */
+export const NAVIGATION_LOCK_MS = 500;
 
 /**
- * Navigation lock of one screen: after a push or a back, its buttons no longer navigate until the
- * screen is shown again. A button spammed during the transition opens the screen only once, and
- * back spammed leaves only one screen, however slow the transition (a delay was not enough on
- * Android: the second tap could arrive after it). A navigation that did not leave the screen (a
- * back stopped by "unsaved changes") frees the buttons after NAVIGATION_FALLBACK_MS.
+ * Navigation lock of one screen. A push or a back is ignored when the screen is no longer the one
+ * shown (the screen opened by the first tap is already there: on a slow Android phone, the second
+ * tap only arrives after it) or when one just left from it (the second tap arrives before the new
+ * screen is there). A button spammed opens the screen only once, back spammed leaves only one
+ * screen, and the screen back on top navigates again at once.
  */
 export class NavigationLock {
-  private locked = false;
-  private left = false;
-  private timer: ReturnType<typeof setTimeout> | undefined;
+  private last = -Infinity;
 
-  /** True when the navigation may go ahead; the following ones are then ignored */
-  claim(): boolean {
-    if (this.locked) return false;
-    this.locked = true;
-    this.left = false;
-    clearTimeout(this.timer);
-    this.timer = setTimeout(() => {
-      if (!this.left) this.locked = false;
-    }, NAVIGATION_FALLBACK_MS);
+  /** True when the navigation may go ahead */
+  claim(isShown: boolean, now: number = Date.now()): boolean {
+    if (!isShown || now - this.last < NAVIGATION_LOCK_MS) return false;
+    this.last = now;
     return true;
-  }
-
-  /** The screen is covered by another one or is leaving: locked until it is shown again */
-  blurred(): void {
-    this.left = true;
-  }
-
-  /** The screen is shown again: its buttons navigate */
-  focused(): void {
-    clearTimeout(this.timer);
-    this.locked = false;
-    this.left = false;
   }
 }
