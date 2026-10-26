@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Alert } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -26,6 +26,17 @@ export default function RootLayout() {
   useEffect(() => {
     if (saveLoadFailed) Alert.alert(i18n.t('save.load_error_title'), i18n.t('save.load_error_body'));
   }, [saveLoadFailed]);
+
+  // The save no longer reaches the device (phone storage full): said once per session, the game goes on (issue 176)
+  const gameWriteFailed = useGameStore(state => state.saveWriteFailed);
+  const multiWriteFailed = useMultiStore(state => state.writeFailed);
+  const saveWriteFailed = gameWriteFailed || multiWriteFailed;
+  const writeFailureShown = useRef(false);
+  useEffect(() => {
+    if (!saveWriteFailed || writeFailureShown.current) return;
+    writeFailureShown.current = true;
+    Alert.alert(i18n.t('save.write_error_title'), i18n.t('save.write_error_body'));
+  }, [saveWriteFailed]);
 
   return (
     <AudioProvider>
