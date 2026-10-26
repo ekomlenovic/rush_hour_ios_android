@@ -26,7 +26,7 @@ export default function GameStatsBar({ colors, moveCount, minMoves, score, hintR
           <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('game.best')}</Text>
           <Text style={[styles.statValue, { color: colors.text }]}>
             {minMoves}
-            {hintRemainingMoves ? <Text style={{ color: colors.warning, fontSize: 13 }}> ({t('game.hint_left', { count: hintRemainingMoves })})</Text> : null}
+            {hintRemainingMoves ? <Text style={{ color: colors.warningText, fontSize: 13 }}> ({t('game.hint_left', { count: hintRemainingMoves })})</Text> : null}
           </Text>
         </View>
       </View>
