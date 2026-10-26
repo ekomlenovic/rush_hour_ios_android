@@ -68,7 +68,9 @@ export default function RootLayout() {
         />
         <AppOpenAlert />
         <AchievementToast />
-        {/* Animations follow the system "Reduce motion" setting: the default of Reanimated (#26) */}
+        {/* Animations follow the system "Reduce motion" setting: the default of Reanimated (#26), except
+            a reversed infinite withRepeat, which keeps its starting value: its visible state is set
+            with useReducedMotion() (hint highlight, utils/hintGlow.ts, issue 154) */}
       </GestureHandlerRootView>
     </AudioProvider>
   );
