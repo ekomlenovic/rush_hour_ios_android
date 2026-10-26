@@ -13,7 +13,7 @@ import MultiHeader from '@/components/multi/MultiHeader';
 import KeyboardScreen from '@/components/KeyboardScreen';
 import { multiErrorMessage } from '@/components/multi/errors';
 import IconText from '@/components/IconText';
-import QrScanner from '@/components/QrScanner';
+import QrScanner, { canScanQr } from '@/components/QrScanner';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 
@@ -119,15 +119,17 @@ export default function JoinScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={[styles.intro, { color: colors.textMuted }]}>{mode === 'join' ? t('multi.join_desc') : t('multi.recover_desc')}</Text>
 
-        <Pressable
-          onPress={() => setScanning(true)}
-          style={[styles.scan, { backgroundColor: colors.primarySoft, borderColor: colors.primaryBorder }]}
-          accessibilityRole="button"
-        >
-          <IconText icon="qr-code-outline" color={colors.primaryText} size={RFValue(20)} textStyle={[styles.scanText, { color: colors.primaryText }]}>
-            {t('multi.scan_qr')}
-          </IconText>
-        </Pressable>
+        {canScanQr ? (
+          <Pressable
+            onPress={() => setScanning(true)}
+            style={[styles.scan, { backgroundColor: colors.primarySoft, borderColor: colors.primaryBorder }]}
+            accessibilityRole="button"
+          >
+            <IconText icon="qr-code-outline" color={colors.primaryText} size={RFValue(20)} textStyle={[styles.scanText, { color: colors.primaryText }]}>
+              {t('multi.scan_qr')}
+            </IconText>
+          </Pressable>
+        ) : null}
 
         <Text style={[styles.label, { color: colors.text }]}>{t('multi.server_address')}</Text>
         <TextInput
