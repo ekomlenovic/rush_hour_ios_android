@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Share, Alert, AccessibilityInfo, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -91,6 +91,10 @@ export default function GameScreen() {
   // A past daily replayed from the archives: training, played like a map level
   const isArchive = params.levelId === 'archive' && !!params.date;
 
+  // Left while the level was loading (back from the loading screen): the result is ignored
+  const isMounted = useRef(true);
+  useEffect(() => () => { isMounted.current = false; }, []);
+
   /** Back where the level was opened from; home for a level opened by a link at launch (nothing under it) */
   const goBack = useCallback(() => {
     if (router.canGoBack()) router.back();
@@ -181,6 +185,7 @@ export default function GameScreen() {
       // A shared link (rush-hours://game?data=…): imported, then opened as an imported level
       if (params.data && !params.levelId) {
         const id = await importSharedLevel(params.data);
+        if (!isMounted.current) return;
         if (id !== null) {
           router.replace(`/game?levelId=${id}`);
         } else {
@@ -199,7 +204,10 @@ export default function GameScreen() {
       }
       if (params.levelId === 'weekly' && !isWeeklyOpen(params.week ?? '')) return closeUnavailable();
 
+      // The daily of a Monday takes seconds to generate: the player may leave meanwhile (issue 159),
+      // the level then stays cached in the store, without being loaded on another screen
       const level = await resolveLevel(params as GameRouteParams);
+      if (!isMounted.current) return;
 
       if (level) {
         loadLevel(level);
@@ -380,7 +388,7 @@ export default function GameScreen() {
 
   if (isLoading || !currentLevel) {
     const isMondayDaily = (params.levelId === 'daily' || isArchive) && !!params.date && parseLocalDateString(params.date).getDay() === 1;
-    return <GameLoading colors={colors} isMondayDaily={isMondayDaily} />;
+    return <GameLoading colors={colors} isMondayDaily={isMondayDaily} onBack={goBack} />;
   }
 
   return (
