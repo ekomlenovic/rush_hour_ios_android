@@ -48,6 +48,12 @@ describe('Android manifest', () => {
     expect(services.filter((s) => s.$['android:foregroundServiceType'] === 'mediaPlayback')).toEqual([]);
     expect(services.map((s) => s.$['android:name'])).not.toContain('expo.modules.audio.service.AudioControlsService');
   });
+
+  it('requires no hardware feature, the camera included (Play would hide the app without one)', () => {
+    const features: { $: Record<string, string> }[] = manifest['uses-feature'] ?? [];
+    expect(features.filter((f) => f.$['android:required'] !== 'false')).toEqual([]);
+    expect(features.map((f) => f.$['android:name']).sort()).toEqual(['android.hardware.camera', 'android.hardware.camera.autofocus']);
+  });
 });
 
 describe('iOS Info.plist', () => {
