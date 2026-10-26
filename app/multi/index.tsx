@@ -347,7 +347,7 @@ export default function MultiplayerScreen() {
 
               {me?.status === 'playing' && (
                 <Pressable onPress={() => router.push(`/multi/play?date=${today.date}`)} style={[styles.primaryButton, { backgroundColor: colors.warning }]} accessibilityRole="button">
-                  <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>
+                  <Text style={[styles.primaryButtonText, { color: colors.onWarning }]}>
                     {t('multi.resume', { time: formatDuration(Math.max(0, serverNow - me.startedAt)) })}
                   </Text>
                 </Pressable>
