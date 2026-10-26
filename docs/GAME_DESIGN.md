@@ -146,6 +146,7 @@ Le streak compte les jours consécutifs avec le défi du jour réussi.
 | « Nouveau défi hebdo » le **lundi à 10 h** | |
 | « Ton récap est prêt » le **1er du mois à 11 h** (si on a joué le mois écoulé) et le **26 décembre à 11 h** (si on a joué dans l'année) | `planReminders`, voir « Récap mensuel et annuel » |
 | Rien n'est envoyé quand l'app est ouverte ; tout est replanifié à chaque retour dans l'app et à chaque progrès | `useReminderSync` |
+| **Toucher** un rappel ouvre ce qu'il annonce (#191), par-dessus l'écran laissé ouvert, app fermée comme en arrière-plan : « Défi du jour » et « Streak en danger » le défi du jour, « Nouveau défi hebdo » le défi de la semaine, **datés à l'ouverture** (liens sans date ni semaine, comme le widget) ; « Ton récap est prêt » le récap annoncé (`/recap?period=…`). La notification de test des options n'ouvre rien | `url` (`planReminders`), `listenToReminderTaps` (`utils/notifications.ts`), `app/_layout.tsx`, `todayDailyHref`, `thisWeeklyHref` |
 
 ## Widget d'écran d'accueil
 
@@ -462,6 +463,7 @@ Les emojis ne restent que là où une icône ne peut pas s'afficher ou n'a pas d
 ## Retour du joueur
 
 - Après **3 jours ou plus** d'absence : message de bienvenue (`recordAppOpen`, `hooks/useAppOpenAlert.ts`).
+- **Toute ouverture** de l'app est enregistrée, quel que soit le premier écran : l'accueil, ou un défi ouvert par le widget ou un rappel sans accueil dessous (#188). Le hook est monté par la racine (`app/_layout.tsx`), pas par l'accueil : pas de faux « Bon retour » pour un joueur qui ne passe que par le widget, et un gel consommé ou un streak perdu est annoncé **à l'ouverture qui le constate**, avant la victoire du défi, jamais par-dessus elle.
 
 ## Roadmap
 

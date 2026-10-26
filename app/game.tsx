@@ -19,7 +19,7 @@ import { requestReminderPermission } from '@/utils/notifications';
 import { calculateScore, getStars } from '@/utils/scoring';
 import { importSharedLevel, resolveLevel, GameRouteParams } from '@/utils/levelResolver';
 import { isArchiveDateAvailable } from '@/utils/archives';
-import { isDailyOpen, isWeeklyOpen, todayDailyHref } from '@/utils/challengeDates';
+import { isDailyOpen, isWeeklyOpen, thisWeeklyHref, todayDailyHref } from '@/utils/challengeDates';
 import { nextMapLevel } from '@/utils/mapFocus';
 import { sampleLevels } from '@/data/sampleLevels';
 import { useActivePlayTime } from '@/hooks/useActivePlayTime';
@@ -195,8 +195,10 @@ export default function GameScreen() {
         }
         return;
       }
-      // A daily link without a date (the home screen widget): today's, dated when it opens (issue 151)
+      // A daily link without a date (the home screen widget, a reminder): today's, dated when it opens (issue 151)
       if (params.levelId === 'daily' && !params.date) return router.replace(todayDailyHref());
+      // Same for a weekly link without a week (the "new weekly" reminder): this week's (issue 191)
+      if (params.levelId === 'weekly' && !params.week) return router.replace(thisWeeklyHref());
       // The daily and the weekly open on their own day and week only (issue 119): a past day is an archive
       if (params.levelId === 'daily' && !isDailyOpen(params.date ?? '')) {
         if (params.date && isArchiveDateAvailable(params.date)) return router.replace(`/game?levelId=archive&date=${params.date}`);

@@ -1,23 +1,39 @@
 import React, { useEffect, useRef } from 'react';
 import { Alert } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AudioProvider } from '@/context/AudioProvider';
 import AchievementToast from '@/components/AchievementToast';
-import { useReminderSync } from '@/utils/notifications';
+import { listenToReminderTaps, useReminderSync } from '@/utils/notifications';
 import { useWidgetSync } from '@/hooks/useWidgetSync';
+import { useAppOpenAlert } from '@/hooks/useAppOpenAlert';
+import { useNow } from '@/hooks/useNow';
+import { getLocalDateString } from '@/utils/date';
 import { useGameStore } from '@/store/gameStore';
 import { useMultiStore } from '@/store/multiStore';
 import i18n from '@/utils/i18n';
 import { useTheme, useAppearanceSync, statusBarStyle } from '@/theme';
 
+/**
+ * Records the app open whatever the first screen: the home screen, or a challenge opened
+ * by the widget or a reminder without it underneath (issue 188). Its own component: the clock
+ * re-renders it each minute, not the whole app.
+ */
+function AppOpenAlert() {
+  useAppOpenAlert(getLocalDateString(useNow()));
+  return null;
+}
+
 export default function RootLayout() {
   const { colors, scheme } = useTheme();
+  const router = useRouter();
   useAppearanceSync();
   useReminderSync();
   useWidgetSync();
   // Shared level links (rush-hours://game?data=…) are opened by Expo Router on the game screen (issue 118)
+  // A touched reminder opens what it announces, above the screen left open (issue 191)
+  useEffect(() => listenToReminderTaps(url => router.push(url)), [router]);
 
   // The save could not be read: the player must know their progress is not gone
   const gameLoadFailed = useGameStore(state => state.saveLoadFailed);
@@ -50,6 +66,7 @@ export default function RootLayout() {
             animation: 'slide_from_right',
           }}
         />
+        <AppOpenAlert />
         <AchievementToast />
         {/* Animations follow the system "Reduce motion" setting: the default of Reanimated (#26) */}
       </GestureHandlerRootView>
