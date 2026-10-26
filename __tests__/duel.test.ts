@@ -1,6 +1,7 @@
 import type { Level } from '../store/types';
 import en from '../locales/en.json';
 import fr from '../locales/fr.json';
+import sr from '../locales/sr.json';
 import {
   APP_FEATURES, MAX_KEPT_REACTIONS, REACTION_SHOWN_MS,
   countdownMs, duelElapsedMs, duelReducer, duelSocketUrl, iHaveWon, initialDuelState, myMove, normalizeDuelCode, opponentHasWon, outcome,
@@ -318,7 +319,7 @@ describe('reactions of the spectators', () => {
     for (const reaction of REACTIONS) expect(!!reaction.emoji).toBe(reaction.kind !== 'encourage');
   });
 
-  it.each([['en', en], ['fr', fr]] as const)('each one has its name in %s, for the screen reader', (_, strings) => {
+  it.each([['en', en], ['fr', fr], ['sr', sr]] as const)('each one has its name in %s, for the screen reader', (_, strings) => {
     const names = (strings.multi as unknown as { reactions: { names: Record<string, string> } }).reactions.names;
     expect(REACTION_IDS.filter(id => !names[id])).toEqual([]);
   });

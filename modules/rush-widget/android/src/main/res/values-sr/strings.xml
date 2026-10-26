@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rush_widget_small_name">Niz i dnevni izazov</string>
+    <string name="rush_widget_small_description">Tvoj niz, tvoja zamrzavanja i dnevni izazov</string>
+    <string name="rush_widget_medium_name">Niz i odbrojavanje</string>
+    <string name="rush_widget_medium_description">Tvoj niz, tvoja zamrzavanja, dnevni izazov i vreme do sledećeg</string>
+    <string name="rush_widget_daily">Dnevni izazov</string>
+    <string name="rush_widget_todo">Za uraditi</string>
+    <string name="rush_widget_done">Urađeno</string>
+    <string name="rush_widget_unit">dana niza</string>
+    <string name="rush_widget_open_app">Otvori Rush Hours da vidiš svoj niz.</string>
+    <string name="rush_widget_next_in">Sledeći izazov za</string>
+    <string name="rush_widget_danger">Niz u opasnosti</string>
+    <string name="rush_widget_time_left">Preostalo vreme</string>
+    <string name="rush_widget_play">Dodirni da igraš</string>
+</resources>

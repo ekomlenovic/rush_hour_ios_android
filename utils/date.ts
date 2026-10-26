@@ -5,6 +5,14 @@ export function getLocalDateString(d: Date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * Locale given to toLocaleDateString & co. for an app language: Serbian is written in Latin script
+ * in the app, while plain 'sr' would format the months in Cyrillic.
+ */
+export function dateLocale<T extends string | undefined>(language: T): T | 'sr-Latn' {
+  return language === 'sr' || language?.startsWith('sr-') ? 'sr-Latn' : language;
+}
+
 /** Parses a YYYY-MM-DD key as a local date (new Date('YYYY-MM-DD') would be UTC). */
 export function parseLocalDateString(dateKey: string): Date {
   const [year, month, day] = dateKey.split('-').map(Number);

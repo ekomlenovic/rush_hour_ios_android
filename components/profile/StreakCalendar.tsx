@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
 import { RFValue } from '@/utils/responsive';
-import { daysBetween, getLocalDateString, getMonthGrid, parseLocalDateString } from '@/utils/date';
+import { dateLocale, daysBetween, getLocalDateString, getMonthGrid, parseLocalDateString } from '@/utils/date';
 import { countArchiveWins, getArchiveDayStatus, getCalendarMonths, isArchiveDateAvailable } from '@/utils/archives';
 import type { UiColors } from '@/theme';
 
@@ -32,7 +32,7 @@ export default function StreakCalendar({ colors }: Props) {
   const [monthIndex, setMonthIndex] = useState(months.length - 1);
   const month = months[monthIndex];
   const cells = useMemo(() => getMonthGrid(month), [month]);
-  const monthTitle = parseLocalDateString(`${month}-01`).toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' });
+  const monthTitle = parseLocalDateString(`${month}-01`).toLocaleDateString(dateLocale(i18n.language), { month: 'long', year: 'numeric' });
   const archiveWins = countArchiveWins(archiveProgress);
 
   const starColor = (stars: number) => colors.dailyStars[stars - 1] ?? colors.dailyStars[2];
@@ -94,7 +94,7 @@ export default function StreakCalendar({ colors }: Props) {
                 : null,
             ];
             const label = t(`archives.day_${status === 'none' && frozen ? 'frozen' : status}`, {
-              date: parseLocalDateString(dateKey).toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' }),
+              date: parseLocalDateString(dateKey).toLocaleDateString(dateLocale(i18n.language), { weekday: 'long', day: 'numeric', month: 'long' }),
             });
             const content = <Text style={[styles.dayNumber, { color: textColor }]}>{dayNumber}</Text>;
 
