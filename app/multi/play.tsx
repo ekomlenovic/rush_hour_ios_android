@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, ActivityIndicator, AppState, Modal, AccessibilityInfo } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useLocalSearchParams } from 'expo-router';
-import { useRouter } from '@/hooks/useRouter';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { haptics, Haptics } from '@/utils/haptics';

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList, Alert, TextInput } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { useRouter } from '@/hooks/useRouter';
+import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';

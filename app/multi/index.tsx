@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, RefreshControl, Alert, AppState } from 'react-native';
-import { useFocusEffect } from 'expo-router';
-import { useRouter } from '@/hooks/useRouter';
+import { useFocusEffect, useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
