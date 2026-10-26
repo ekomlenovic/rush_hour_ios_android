@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, Pressable,
   useWindowDimensions, Alert, AccessibilityInfo,
 } from 'react-native';
+import type { HostInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
@@ -59,7 +60,7 @@ export default function LevelCreatorScreen() {
   const dragY = useSharedValue(0);
   const dragVisible = useSharedValue(0);
 
-  const boardRef = useRef<View>(null);
+  const boardRef = useRef<HostInstance>(null);
   const boardPos = useRef({ x: 0, y: 0 });
   const vehiclesRef = useRef<Vehicle[]>([]);
 
