@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { ChallengeResult } from '../store/gameStore';
-import { formatDuration, parseLocalDateString } from './date';
+import { dateLocale, formatDuration, parseLocalDateString } from './date';
 
 /** Where friends can get the game */
 export const APP_URL = 'https://github.com/ekomlenovic/rush_hour_ios_android';
@@ -25,7 +25,7 @@ export function buildChallengeShareText(t: TFunction, { kind, key, result, strea
   let title: string;
   if (kind === 'daily') {
     const date = parseLocalDateString(key);
-    const label = date.toLocaleDateString(language, { day: '2-digit', month: '2-digit' });
+    const label = date.toLocaleDateString(dateLocale(language), { day: '2-digit', month: '2-digit' });
     title = date.getDay() === 1 ? t('share.title_monday', { date: label, ...plain }) : t('share.title_daily', { date: label, ...plain });
   } else {
     title = t('share.title_weekly', { week: Number(key.split('-W')[1]) });

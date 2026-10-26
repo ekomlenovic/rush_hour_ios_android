@@ -13,7 +13,7 @@ import { checkWin } from '@/utils/collision';
 import { solvePuzzleAsync } from '@/utils/solver.background';
 import { customLevelKind, customLevelTitle } from '@/utils/customLevels';
 import { useTranslation } from 'react-i18next';
-import { parseLocalDateString } from '@/utils/date';
+import { dateLocale, parseLocalDateString } from '@/utils/date';
 import { buildChallengeShareText } from '@/utils/shareResult';
 import { requestReminderPermission } from '@/utils/notifications';
 import { calculateScore, getStars } from '@/utils/scoring';
@@ -395,7 +395,7 @@ export default function GameScreen() {
           {challengeKind === 'daily' ? t('home.daily_challenge')
             : challengeKind === 'weekly' ? t('home.weekly_challenge')
             : isArchive ? t('game.archive_title', {
-                date: parseLocalDateString(params.date!).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' }),
+                date: parseLocalDateString(params.date!).toLocaleDateString(dateLocale(i18n.language), { day: 'numeric', month: 'short' }),
               })
             : !customKind && isBossLevel(currentLevel.id) ? t('game.level_boss', { id: currentLevel.id })
             : levelTitle}
