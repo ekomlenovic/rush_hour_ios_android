@@ -199,6 +199,75 @@ describe('replays', () => {
   });
 });
 
+describe('an exact optimum asked by the admin', () => {
+  /** Settings changed on the fly, like the admin does in the app */
+  function exactAt(at: number, generator: PuzzleGenerator, minMovesByWeekday: (number | null)[]) {
+    const db = openDatabase(':memory:');
+    const clock = { now: at };
+    const config = testConfig({ PREGENERATE_AHEAD: '24h' });
+    const settings = { ...config, minMovesByWeekday };
+    const challenges = new Challenges(db, config, generator, () => clock.now, silent, () => settings);
+    return { challenges, clock, settings, db };
+  }
+
+  it('the puzzle has it; changed, the puzzle not released yet is generated again, never the released one', async () => {
+    const { generator, calls } = fakeGenerator();
+    // Friday 16th (out at noon) and Saturday 17th
+    const { challenges, clock, settings } = exactAt(paris('2026-10-16', '15:00'), generator, [null, null, null, null, null, 9, 14]);
+    await challenges.pregenerate();
+    expect(calls.map(c => c.minMoves)).toEqual([9, 14]);
+    expect(challenges.get('2026-10-17')).toMatchObject({ min_moves: 14, wanted_moves: 14 });
+    expect(challenges.overview()[1]).toMatchObject({ status: 'ready', wantedMoves: 14, puzzle: { minMoves: 14, wantedMoves: 14 } });
+
+    settings.minMovesByWeekday = [null, null, null, null, null, 5, null];
+    expect(challenges.overview().slice(0, 2).map(c => [c.status, c.wantedMoves])).toEqual([['ready', 9], ['waiting', null]]);
+    clock.now += 60_000;
+    await challenges.pregenerate();
+    expect(calls.slice(2).map(c => c.minMoves)).toEqual([undefined]);
+    expect(challenges.get('2026-10-16')).toMatchObject({ min_moves: 9, wanted_moves: 9 });
+    expect(challenges.get('2026-10-17')).toMatchObject({ min_moves: LEVEL.minMoves, wanted_moves: null });
+  });
+
+  it('not found: the usual puzzle of the difficulty comes out, and is not looked for again', async () => {
+    const calls: (number | undefined)[] = [];
+    const generator: PuzzleGenerator = {
+      ...fakeGenerator().generator,
+      generate: async (_seed, _difficulty, minMoves) => {
+        calls.push(minMoves);
+        return minMoves === undefined ? { ...LEVEL } : null;
+      },
+    };
+    const { challenges, clock } = exactAt(paris('2026-10-16', '15:00'), generator, [null, null, null, null, null, 40, null]);
+    expect(await challenges.ensure('2026-10-16')).toMatchObject({ min_moves: LEVEL.minMoves, wanted_moves: 40 });
+    // More seeds for an exact optimum, then the usual puzzle at once
+    expect(calls).toEqual([...Array(20).fill(40), undefined]);
+    expect(challenges.overview()[0]).toMatchObject({ status: 'ready', wantedMoves: 40, puzzle: { minMoves: LEVEL.minMoves, wantedMoves: 40 } });
+    clock.now += 60_000;
+    await challenges.ensure('2026-10-16');
+    expect(calls).toHaveLength(21);
+  });
+
+  it('for the hardest difficulties, a variant of exactly that optimum when from scratch fails', async () => {
+    const variants: { sourceId: number; minMoves?: number }[] = [];
+    const generator: PuzzleGenerator = {
+      ...fakeGenerator(null).generator,
+      variants: async (sourceId, _d, count, _seed, minMoves) => {
+        variants.push({ sourceId, minMoves });
+        return Array.from({ length: count }, () => ({ ...LEVEL, minMoves: minMoves ?? 42 }));
+      },
+    };
+    const db = openDatabase(':memory:');
+    const config = testConfig({ DIFFICULTY: 'MASTER', PREGENERATE_AHEAD: '1m' });
+    const challenges = new Challenges(db, config, generator, () => paris('2026-10-16', '15:00'), silent,
+      () => ({ ...config, minMovesByWeekday: Array(7).fill(55) }));
+    expect(await challenges.ensure('2026-10-16')).toMatchObject({ min_moves: 55, wanted_moves: 55 });
+    // From a level of the app at least that long
+    const source = sampleLevels.find(l => l.id === variants[0].sourceId)!;
+    expect(variants[0].minMoves).toBe(55);
+    expect(source.minMoves).toBeGreaterThanOrEqual(55);
+  });
+});
+
 describe('real generation', () => {
   it('a puzzle of the server is solvable in its optimum and deterministic', () => {
     const a = generatePuzzle('a-secret-seed', 'EASY')!;
@@ -208,6 +277,18 @@ describe('real generation', () => {
     const solution = solvePuzzle(a);
     expect(solution.length).toBe(a.minMoves);
     expect(applyMoves(a, solution)).toMatchObject({ ok: true, won: true, moveCount: a.minMoves });
+  });
+
+  it('a puzzle of an exact optimum: solvable in exactly that, from scratch or a variant', () => {
+    const level = generatePuzzle('x0', 'NORMAL', 8)!;
+    expect(level.minMoves).toBe(8);
+    expect(solvePuzzle(level).length).toBe(8);
+    expect({ ...level, updatedAt: 0 }).toEqual({ ...generatePuzzle('x0', 'NORMAL', 8)!, updatedAt: 0 });
+
+    const source = variantSources(sampleLevels, DIFFICULTY_LEVELS.MASTER).find(l => l.minMoves >= 50)!;
+    const [variant] = generateVariants(source.id, 'MASTER', 1, 'a-seed', 50);
+    expect(variant).toMatchObject({ id: 999996, minMoves: 50 });
+    expect(solvePuzzle(variant).length).toBe(50);
   });
 
   it('runs in a worker thread once built', async () => {

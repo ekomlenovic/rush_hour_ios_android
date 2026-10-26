@@ -3,7 +3,7 @@ export { DIFFICULTY_LEVELS, generateSeededLevelSync } from '../../utils/generato
 export { applyMoves } from '../../utils/moveLog';
 export type { Level, MoveRecord, Vehicle } from '../../store/types';
 export { MULTI_LEVEL_ID } from '../../store/levelIds';
-export { levelVariants, dressVariant, variantSources } from '../../utils/variants';
+export { levelVariants, dressVariant, exactStarts, variantSources } from '../../utils/variants';
 export { createPRNG } from '../../utils/generator';
 /** The levels of the app: the hardest ones are the base of the hardest duels */
 export { sampleLevels } from '../../data/sampleLevels';

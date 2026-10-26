@@ -31,7 +31,7 @@ describe('schema migrations', () => {
       expect((db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version).toBe(MIGRATIONS.length);
       expect({ ...(db.prepare('SELECT * FROM challenges').get() as object) }).toEqual({
         date: '2026-10-16', difficulty: 'MASTER', level_json: '{"id":999996}', min_moves: 45, generated_at: 1_760_000_000_000,
-        variant_of: null, generation_ms: null,
+        variant_of: null, generation_ms: null, wanted_moves: null,
       });
       db.close();
     } finally {
@@ -57,6 +57,26 @@ describe('schema migrations', () => {
       expect({ ...(db.prepare('SELECT moves_json, look_json FROM attempts').get() as object) }).toEqual({ moves_json: '[]', look_json: null });
       expect({ ...(db.prepare('SELECT winner_id, moves1_json, look1_json, look2_json FROM duels').get() as object) })
         .toEqual({ winner_id: 1, moves1_json: '[]', look1_json: null, look2_json: null });
+      db.close();
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('the challenges before an optimum could be asked for: the usual one of their difficulty, never generated again', () => {
+    const before = MIGRATIONS.findIndex(step => step.includes('ADD COLUMN wanted_moves'));
+    expect(before).toBeGreaterThan(0);
+    const { file, cleanup } = databaseAt(before, (db) => {
+      db.prepare(`INSERT INTO challenges (date, difficulty, level_json, min_moves, generated_at, variant_of, generation_ms) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+        .run('2026-10-17', 'HARD', '{"id":999996}', 18, 1_760_000_000_000, null, 1200);
+    });
+    try {
+      const db = openDatabase(file);
+      expect((db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version).toBe(MIGRATIONS.length);
+      expect({ ...(db.prepare('SELECT * FROM challenges').get() as object) }).toEqual({
+        date: '2026-10-17', difficulty: 'HARD', level_json: '{"id":999996}', min_moves: 18, generated_at: 1_760_000_000_000,
+        variant_of: null, generation_ms: 1200, wanted_moves: null,
+      });
       db.close();
     } finally {
       cleanup();

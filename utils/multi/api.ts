@@ -161,12 +161,16 @@ export interface AdminChallenge {
   current: boolean;
   /** waiting: generated later, from generatesAt; failed: tried again each minute */
   status: 'ready' | 'generating' | 'failed' | 'waiting';
+  /** Exact optimum asked for, like the difficulty; null: the usual one (absent on older servers) */
+  wantedMoves?: number | null;
   generatesAt: number;
   generatingSince: number | null;
   failedAt: number | null;
   /** In another difficulty when it changed since: generated again before its release */
   puzzle: {
     difficulty: Difficulty;
+    /** The optimum asked for when it was generated: not found when minMoves differs (absent on older servers) */
+    wantedMoves?: number | null;
     minMoves: number;
     /** The level of the app it is a variant of; null: generated from scratch */
     variantOf: number | null;
@@ -191,6 +195,8 @@ export interface AdminSettings {
   invitesAdminOnly: boolean;
   /** 0 = Sunday */
   difficultyByWeekday: Difficulty[];
+  /** Exact optimum of each day, 0 = Sunday; null: the usual one of the difficulty (absent on older servers) */
+  minMovesByWeekday?: (number | null)[];
   replayRetentionDays: number;
   thresholds: Thresholds;
   serverName: string;
