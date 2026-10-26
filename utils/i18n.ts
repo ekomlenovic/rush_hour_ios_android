@@ -3,12 +3,14 @@ import { initReactI18next } from 'react-i18next';
 import * as Localization from 'expo-localization';
 import en from '../locales/en.json';
 import fr from '../locales/fr.json';
+import sr from '../locales/sr.json';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const resources = {
   en: { translation: en },
   fr: { translation: fr },
+  sr: { translation: sr },
 };
 
 const LANGUAGE_KEY = 'user_language';
@@ -22,7 +24,7 @@ i18n.use(initReactI18next).init({
   resources,
   lng: systemLanguage,
   fallbackLng: 'en',
-  supportedLngs: ['en', 'fr'],
+  supportedLngs: ['en', 'fr', 'sr'],
   nonExplicitSupportedLngs: true,
   initAsync: false,
   interpolation: {

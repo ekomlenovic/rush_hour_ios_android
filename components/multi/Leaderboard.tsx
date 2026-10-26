@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-nati
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
-import { formatDuration, parseLocalDateString } from '@/utils/date';
+import { dateLocale, formatDuration, parseLocalDateString } from '@/utils/date';
 import { rankingParams, type DayRow, type Leaderboard as Board, type MultiApi, type PeriodRow, type RankingQuery } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
 import { weekCells, type DayCell } from '@/utils/multi/week';
@@ -85,7 +85,7 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
   const cellsOf = (row: PeriodRow) =>
     current?.period === 'week' && row.days && currentDate ? weekCells(current.from, row.days, currentDate) : null;
   const cellLabel = (cell: DayCell) => {
-    const day = parseLocalDateString(cell.date).toLocaleDateString(i18n.language, { weekday: 'long' });
+    const day = parseLocalDateString(cell.date).toLocaleDateString(dateLocale(i18n.language), { weekday: 'long' });
     if (cell.kind === 'upcoming') return null;
     const value = cell.kind === 'points' ? t('multi.points', { count: cell.points })
       : cell.kind === 'playing' ? t('multi.status.playing') : t('multi.not_played');

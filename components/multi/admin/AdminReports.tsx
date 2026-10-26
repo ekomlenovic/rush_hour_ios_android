@@ -9,6 +9,7 @@ import AdminButton from './AdminButton';
 import { useAdminRefresh } from './AdminPage';
 import { adminStyles as styles } from './styles';
 import IconText from '@/components/IconText';
+import { dateLocale } from '@/utils/date';
 
 interface Props { api: MultiApi; colors: UiColors }
 
@@ -48,7 +49,7 @@ export default function AdminReports({ api, colors }: Props) {
           <IconText icon="flag" color={colors.warning} textStyle={[styles.title, { color: colors.text }]}>{report.player.pseudo}</IconText>
           <Text style={[styles.warning, { color: colors.warning }]}>{reportReasonText(t, report.reason || 'other')}</Text>
           <Text style={[styles.muted, { color: colors.textMuted }]}>
-            {t('multi.admin_reported_by', { pseudo: report.reporter.pseudo, date: new Date(report.createdAt).toLocaleDateString(i18n.language) })}
+            {t('multi.admin_reported_by', { pseudo: report.reporter.pseudo, date: new Date(report.createdAt).toLocaleDateString(dateLocale(i18n.language)) })}
           </Text>
           <View style={styles.actions}>
             <AdminButton label={t('multi.admin_report_done')} onPress={() => remove(report)} background={colors.neutralSoft} color={colors.text} />

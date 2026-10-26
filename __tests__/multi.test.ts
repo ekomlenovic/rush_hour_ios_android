@@ -316,7 +316,7 @@ describe('a multiplayer game on the phone', () => {
 describe('translations of the multiplayer mode', () => {
   const { MULTI_ERROR_CODES } = require('../components/multi/errors') as typeof import('../components/multi/errors');
   const { ADMIN_SECTIONS } = require('../components/multi/admin/sections') as typeof import('../components/multi/admin/sections');
-  const locales = { en: require('../locales/en.json'), fr: require('../locales/fr.json') };
+  const locales = { en: require('../locales/en.json'), fr: require('../locales/fr.json'), sr: require('../locales/sr.json') };
 
   it.each(Object.entries(locales))('%s has the keys built at runtime', (_, strings) => {
     const multi = strings.multi;
