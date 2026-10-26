@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { useAudioPlayer, type AudioStatus } from 'expo-audio';
+import { setAudioModeAsync, useAudioPlayer, type AudioMode, type AudioStatus } from 'expo-audio';
 import { useGameStore } from '@/store/gameStore';
 
 interface AudioContextType {
@@ -28,6 +28,15 @@ const TICK_MS = 50;
 // The player sends its status (position, duration, playing) at this rate, and only while playing
 const STATUS_UPDATE_MS = 1000;
 
+// Background music mixes with the player's own audio (music, podcast) and never stops it:
+// ambient category on iOS, no audio focus requested on Android. Silent like the phone:
+// muted by the silent switch (iOS) and in silent or vibrate mode (Android)
+export const MUSIC_AUDIO_MODE: Partial<AudioMode> = {
+  interruptionMode: 'mixWithOthers',
+  playsInSilentMode: false,
+  shouldPlayInBackground: false,
+};
+
 // What we know of the player, kept in JS: on Android every getter of the native player
 // (playing, currentTime, duration, volume) blocks the JS thread on the main thread
 interface PlayerState {
@@ -46,6 +55,17 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const volume = useRef(0);
   // Runs the volume logic again right away (set by the effect 5, a no-op when it is not running)
   const wake = useRef(() => { });
+
+  // The audio session is set up before the first play(): left as is, it is exclusive
+  // (soloAmbient on iOS, transient audio focus on Android) and stops the player's audio
+  const [audioModeReady, setAudioModeReady] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    setAudioModeAsync(MUSIC_AUDIO_MODE)
+      .catch(() => { })
+      .finally(() => { if (!cancelled) setAudioModeReady(true); });
+    return () => { cancelled = true; };
+  }, []);
 
   // OPTIMIZATION: Track AppState in React state so effects can react to backgrounding
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState as AppStateStatus);
@@ -95,7 +115,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   // its goal: a single timeout up to the next end-of-track fade while the music plays,
   // nothing once it is paused (music off)
   useEffect(() => {
-    if (!player) return;
+    if (!player || !audioModeReady) return;
 
     // OPTIMIZATION: If the app is not active, do not start the timer at all.
     // This entirely prevents the Swift crash and saves device battery.
@@ -176,7 +196,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       timer = null;
       wake.current = () => { };
     };
-  }, [player, isMusicEnabled, appState]); // Adding appState here is the magic trick
+  }, [player, isMusicEnabled, appState, audioModeReady]); // Adding appState here is the magic trick
 
   const toggleMusic = () => {
     toggleMusicEnabled();
