@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Light theme of the app (theme/ui.ts, lightColors): the widget follows the phone's theme -->
+<resources>
+    <color name="rush_widget_background">#FFFFFF</color>
+    <color name="rush_widget_text">#1A1A2E</color>
+    <color name="rush_widget_muted">#6B6B80</color>
+    <color name="rush_widget_divider">#E0E0E8</color>
+    <color name="rush_widget_flame">#B45309</color>
+    <color name="rush_widget_frozen">#7DD3FC</color>
+    <color name="rush_widget_on_frozen">#0F0F1A</color>
+    <color name="rush_widget_success">#047857</color>
+    <color name="rush_widget_danger">#B91C1C</color>
+    <color name="rush_widget_star">#FFB800</color>
+    <color name="rush_widget_primary">#5A4FE0</color>
+</resources>

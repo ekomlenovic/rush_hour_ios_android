@@ -1,6 +1,6 @@
 import { useGameStore, Level, ARCHIVE_LEVEL_ID, whenSaveLoaded } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
-import { generateLevel, DIFFICULTY_LEVELS, generateDailyLevel } from '@/utils/generator';
+import { generateDailyLevel } from '@/utils/generator';
 import { generateWeeklyLevel } from '@/utils/weekly';
 import { parseSharedLevelAsync } from '@/utils/solver.background';
 import { isArchiveDateAvailable } from '@/utils/archives';
@@ -51,7 +51,9 @@ export async function importSharedLevel(data: string): Promise<number | null> {
 
 /**
  * Finds the level a game route points to: daily / weekly challenge (cached in the store),
- * archive, campaign, generated, created or imported level, or a level generated on the fly.
+ * archive, campaign, generated, created or imported level; null for any other id (a deleted
+ * level, a broken link). Never generated on the fly: it froze the app and its id left a hole
+ * in the generated levels (see docs/GAME_DESIGN.md).
  */
 export async function resolveLevel(params: GameRouteParams): Promise<Level | null> {
   // Opened right at launch (deep link, notification), the cached daily / weekly level
@@ -99,21 +101,6 @@ export async function resolveLevel(params: GameRouteParams): Promise<Level | nul
       level = state.createdLevels.find((l) => String(l.id) === String(id)) ||
               state.importedLevels.find((l) => String(l.id) === String(id)) ||
               null;
-    }
-
-    // 4. Fallback: Generate it right now (Infinite Map support)
-    // Adjust difficulty based on level ID range
-    if (!level && id > 0 && id <= 2000) {
-      let difficulty = DIFFICULTY_LEVELS.EASY;
-      if (id > 1500) difficulty = DIFFICULTY_LEVELS.MASTER;
-      else if (id > 800) difficulty = DIFFICULTY_LEVELS.EXPERT;
-      else if (id > 400) difficulty = DIFFICULTY_LEVELS.HARD;
-      else if (id > 100) difficulty = DIFFICULTY_LEVELS.NORMAL;
-
-      level = generateLevel(id || 1, difficulty) || sampleLevels[0];
-      if (level && level.id !== sampleLevels[0].id) {
-        state.addGeneratedLevel(level);
-      }
     }
   }
 

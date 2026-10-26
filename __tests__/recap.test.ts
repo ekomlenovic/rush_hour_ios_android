@@ -1,13 +1,16 @@
 import type { TFunction } from 'i18next';
 import { DAILY_LEVEL_ID, useGameStore, type ChallengeResult } from '../store/gameStore';
+import type { RecapsSeen } from '../store/types';
 import { sampleLevels } from '../data/sampleLevels';
 import { addToPeriods, emptyPeriodStats, RECAP_MONTHS_KEPT } from '../store/periodStats';
 import { isBossLevel } from '../data/bosses';
 import {
-  availableRecaps, buildRecap, buildRecapShareText, pendingRecap, periodBounds, pickProfile, recapHighlights, recapProgress, recapSlides, type RecapSource,
+  availableRecaps, buildRecap, buildRecapShareText, pendingRecap, periodBounds, pickProfile, recapHighlights, recapProgress, recapSlides, shouldMarkRecapSeen, type RecapSource,
 } from '../utils/recap';
 import { planReminders } from '../utils/reminders';
-import { addMonths, getWeekStart } from '../utils/date';
+import { addMonths, getLocalDateString, getWeekStart } from '../utils/date';
+import { dailyWinXp, levelWinXp, totalXpForLevel } from '../data/progression';
+import { buildCosmeticContext, getUnlockedCosmetics } from '../data/cosmetics';
 import { APP_URL } from '../utils/shareResult';
 import en from '../locales/en.json';
 import fr from '../locales/fr.json';
@@ -89,6 +92,73 @@ describe('recap counters in the store (issue 125)', () => {
     useGameStore.setState({ progress: sampleLevels.slice(1, 17).map(l => ({ levelId: l.id, completed: true, bestScore: 0, stars: 3 })) });
     winMapLevel(sampleLevels[0], { stars: 3 });
     expect(store().monthlyStats['2026-10'].cosmetics).toBeGreaterThanOrEqual(1);
+  });
+
+  describe('counts each style unlocked once (issue 183)', () => {
+    const unlocked = () => getUnlockedCosmetics(buildCosmeticContext(store()));
+    const cosmetics = () => [store().monthlyStats['2026-10']?.cosmetics ?? 0, store().yearlyStats['2026']?.cosmetics ?? 0];
+    /** Just under level 5 (the taxi) after the replayed win: only the missions XP reaches it, or the win alone */
+    const nearLevel5 = (missions: boolean) => {
+      winMapLevel(sampleLevels[0]);
+      const winXp = levelWinXp(sampleLevels[0].minMoves, 3, false);
+      useGameStore.setState({
+        xp: totalXpForLevel(5) - (missions ? winXp + 1 : 1),
+        monthlyStats: {},
+        yearlyStats: {},
+        dailyMissions: missions
+          ? { date: getLocalDateString(new Date()), ids: ['win_3', 'perfect_2', 'no_hint'], counters: { levelWins: 2, perfectWins: 1, noHintWins: 1 }, rewarded: false }
+          : { date: getLocalDateString(new Date()), ids: ['win_3', 'perfect_2', 'no_hint'], counters: {}, rewarded: false },
+      });
+      expect(unlocked()).not.toContain('skin:taxi');
+    };
+
+    it('a win completing the missions counts the style of the level reached once', () => {
+      nearLevel5(true);
+      const before = unlocked();
+      winMapLevel(sampleLevels[0]);
+      expect(store().dailyMissions?.rewarded).toBe(true);
+      const gained = unlocked().filter(key => !before.includes(key));
+      expect(gained).toContain('skin:taxi');
+      expect(cosmetics()).toEqual([gained.length, gained.length]);
+    });
+
+    it('the same level reached without the missions counts the same', () => {
+      nearLevel5(false);
+      const before = unlocked();
+      winMapLevel(sampleLevels[0]);
+      const gained = unlocked().filter(key => !before.includes(key));
+      expect(gained).toContain('skin:taxi');
+      expect(cosmetics()).toEqual([gained.length, gained.length]);
+    });
+
+    it('a daily completing the missions counts its styles once', () => {
+      useGameStore.setState({
+        // The daily alone stays under level 5, the missions XP reaches it
+        xp: totalXpForLevel(5) - dailyWinXp(3) - 1,
+        dailyMissions: { date: '2026-10-20', ids: ['win_3', 'daily', 'moves_100'], counters: { levelWins: 3, moves: 100 }, rewarded: false },
+      });
+      const before = unlocked();
+      store().loadLevel({ ...sampleLevels[0], id: DAILY_LEVEL_ID });
+      store().completeDailyChallenge('2026-10-20', 300, 3);
+      expect(store().dailyMissions?.rewarded).toBe(true);
+      const gained = unlocked().filter(key => !before.includes(key));
+      expect(gained).toContain('skin:taxi');
+      expect(cosmetics()).toEqual([gained.length, gained.length]);
+    });
+
+    it('counts the three Mafia styles of the secret code, once', () => {
+      store().recordSecretCode('mafia');
+      expect(unlocked()).toEqual(expect.arrayContaining(['skin:mafia', 'palette:mafia', 'effect:tommy']));
+      expect(cosmetics()).toEqual([3, 3]);
+      store().recordSecretCode('mafia');
+      expect(cosmetics()).toEqual([3, 3]);
+    });
+
+    it('leaves the past months as they are', () => {
+      useGameStore.setState({ monthlyStats: { '2026-09': { ...emptyPeriodStats(), cosmetics: 4 } } });
+      store().recordSecretCode('mafia');
+      expect(store().monthlyStats['2026-09'].cosmetics).toBe(4);
+    });
   });
 
   it('keeps 13 months and every year', () => {
@@ -254,6 +324,40 @@ describe('the home screen announces the recap', () => {
     expect(store().recapsSeen).toEqual({ month: '2026-10', year: '2026' });
   });
 
+  it('looking at the current period keeps its announcement once it is over (issue 182)', () => {
+    const october = source({
+      monthlyStats: { '2026-09': { ...emptyPeriodStats(), wins: 1 }, '2026-10': { ...emptyPeriodStats(), wins: 2 } },
+      yearlyStats: { 2026: { ...emptyPeriodStats(), wins: 3 } },
+      dailyChallengeProgress: { '2026-10-14': win, '2026-10-15': win },
+    });
+    // Opens the recap the way the screen does, on the given day
+    const open = (recapsSeen: RecapsSeen, key: string, now: Date): RecapsSeen => {
+      if (!shouldMarkRecapSeen({ ...october, recapsSeen }, key, now)) return recapsSeen;
+      const field = key.length === 4 ? 'year' : 'month';
+      const seen = recapsSeen[field];
+      return seen && seen >= key ? recapsSeen : { ...recapsSeen, [field]: key };
+    };
+
+    // The current month, opened on the 15th: announced on November 1st
+    const midMonth = open({}, '2026-10', new Date(2026, 9, 15));
+    expect(midMonth).toEqual({});
+    expect(pendingRecap({ ...october, recapsSeen: midMonth }, new Date(2026, 10, 1))).toBe('2026-10');
+    // September, over, opened on the 15th: does not hide October
+    const september = open({}, '2026-09', new Date(2026, 9, 15));
+    expect(september).toEqual({ month: '2026-09' });
+    expect(pendingRecap({ ...october, recapsSeen: september }, new Date(2026, 10, 1))).toBe('2026-10');
+    // October, announced, opened on November 2nd: no longer announced on the 3rd
+    const announced = open({}, '2026-10', new Date(2026, 10, 2));
+    expect(pendingRecap({ ...october, recapsSeen: announced }, new Date(2026, 10, 3))).toBeNull();
+
+    // The current year, opened in March: announced on December 26th
+    const march = open({ month: '2026-11' }, '2026', new Date(2026, 2, 10));
+    expect(pendingRecap({ ...october, recapsSeen: march }, new Date(2026, 11, 26))).toBe('2026');
+    // Still going on but announced, opened on December 27th: no longer announced on the 28th
+    const december = open({ month: '2026-11' }, '2026', new Date(2026, 11, 27));
+    expect(pendingRecap({ ...october, recapsSeen: december }, new Date(2026, 11, 28))).toBeNull();
+  });
+
   it('the profile lists the last 12 months and every year played', () => {
     const keys = availableRecaps(source({
       monthlyStats: { '2026-10': { ...emptyPeriodStats(), wins: 1 }, '2026-03': { ...emptyPeriodStats(), moves: 4 } },
@@ -309,6 +413,25 @@ describe('sharing the recap', () => {
     expect(text).toContain('🏁 12');
     expect(text).toContain('🧩 2');
     expect(text.split('\n').pop()).toBe(APP_URL);
+  });
+});
+
+describe('the reminder links (issue 191)', () => {
+  it('each reminder opens what it announces, the challenges dated when opened', () => {
+    const reminders = planReminders(t, {
+      now: new Date(2026, 9, 20, 12), reminderHour: 19, completedDailies: new Set<string>(), completedWeeklies: new Set<string>(),
+      currentStreak: 3, playedThisMonth: true, playedThisYear: true,
+    });
+    const links = Object.fromEntries(reminders.map(r => [r.id, r.url]));
+    expect(links).toMatchObject({
+      'daily-2026-10-20': '/game?levelId=daily',
+      'daily-2026-10-26': '/game?levelId=daily',
+      'streak-2026-10-20': '/game?levelId=daily',
+      'weekly-2026-10-26': '/game?levelId=weekly',
+      'recap-2026-10': '/recap?period=2026-10',
+      'recap-2026': '/recap?period=2026',
+    });
+    expect(reminders.every(r => r.url)).toBe(true);
   });
 });
 

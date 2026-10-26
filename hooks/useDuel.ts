@@ -3,8 +3,9 @@ import { AppState } from 'react-native';
 import type { ServerAccount } from '@/store/multiStore';
 import { useGameStore } from '@/store/gameStore';
 import { multiApi } from '@/utils/multi/api';
+import type { ReactionId } from '@/utils/multi/reactions';
 import {
-  duelReducer, duelSocketUrl, initialDuelState, myMove,
+  APP_FEATURES, duelReducer, duelSocketUrl, initialDuelState, myMove,
   type DuelClientMessage, type DuelDifficulty, type DuelMetric, type DuelServerMessage, type DuelState,
 } from '@/utils/multi/duel';
 
@@ -23,6 +24,8 @@ export interface DuelControls {
   move: (vehicleId: string, row: number, col: number) => boolean;
   leave: () => void;
   rematch: () => void;
+  /** A reaction to a player of the duel: either one when watching, the other one when playing; false if not sent (offline) */
+  react: (playerId: number, reaction: ReactionId) => boolean;
   clearError: () => void;
 }
 
@@ -58,9 +61,11 @@ export function useDuel(account: ServerAccount | null): DuelControls {
         everOpened = true;
         attempt = 0;
         setUnreachable(null);
-        // My look, for the opponent and the spectators to see my board as I do
+        // My look, for the opponent and the spectators to see my board as I do, and what this app knows
         const { board, skin, palette } = useGameStore.getState().cosmetics;
-        socket.send(JSON.stringify({ type: 'auth', token: account.token, look: { board, skin, palette } } satisfies DuelClientMessage));
+        socket.send(JSON.stringify({
+          type: 'auth', token: account.token, look: { board, skin, palette }, features: APP_FEATURES,
+        } satisfies DuelClientMessage));
       };
       socket.onmessage = (event) => {
         let message: DuelServerMessage;
@@ -110,9 +115,12 @@ export function useDuel(account: ServerAccount | null): DuelControls {
     };
   }, [account?.url, account?.token]);
 
+  /** False if the connection is not open: the message is lost */
   const send = useCallback((message: DuelClientMessage) => {
     const socket = socketRef.current;
-    if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
+    if (socket?.readyState !== WebSocket.OPEN) return false;
+    socket.send(JSON.stringify(message));
+    return true;
   }, []);
 
   const move = useCallback((vehicleId: string, row: number, col: number) => {
@@ -146,6 +154,7 @@ export function useDuel(account: ServerAccount | null): DuelControls {
       dispatch({ type: 'left' });
     }, [send]),
     rematch: useCallback(() => send({ type: 'rematch' }), [send]),
+    react: useCallback((playerId: number, reaction: ReactionId) => send({ type: 'react', playerId, reaction }), [send]),
     clearError: useCallback(() => dispatch({ type: 'clear_error' }), []),
   };
 }

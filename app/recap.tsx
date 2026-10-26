@@ -3,8 +3,10 @@ import {
   View, Text, StyleSheet, Pressable, ScrollView, Share, Alert, PixelRatio, Platform, useWindowDimensions,
   type AccessibilityActionEvent, type GestureResponderEvent, type NativeScrollEvent, type NativeSyntheticEvent,
 } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { useRouter } from '@/hooks/useRouter';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -14,9 +16,9 @@ import { File, Paths } from 'expo-file-system';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useGameStore } from '@/store/gameStore';
 import { recapSlideColors, recapSlideText } from '@/theme';
-import { formatPlayTime, parseLocalDateString } from '@/utils/date';
+import { dateLocale, formatPlayTime, parseLocalDateString } from '@/utils/date';
 import {
-  buildRecap, buildRecapShareText, isInProgress, periodLabel, recapHighlights, recapProgress, recapSlides,
+  buildRecap, buildRecapShareText, isInProgress, periodLabel, recapHighlights, recapProgress, recapSlides, shouldMarkRecapSeen,
   type Recap, type RecapFigure, type RecapSlide,
 } from '@/utils/recap';
 import { APP_URL } from '@/utils/shareResult';
@@ -63,7 +65,7 @@ export default function RecapScreen() {
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
   const { width, height } = useWindowDimensions();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const svgRef = useRef<Svg>(null);
   const [page, setPage] = useState(0);
 
@@ -85,9 +87,9 @@ export default function RecapScreen() {
     [isValidKey, period, monthlyStats, yearlyStats, achievementMonths, recapSince, dailyChallengeProgress, weeklyChallengeProgress, frozenDates],
   );
 
-  // Opened: the home screen stops announcing it
+  // Opened: the home screen stops announcing it. The current period is not: once over, it is announced
   useEffect(() => {
-    if (isValidKey) markRecapSeen(period);
+    if (isValidKey && shouldMarkRecapSeen(useGameStore.getState(), period)) markRecapSeen(period);
   }, [isValidKey, period, markRecapSeen]);
 
   if (!recap) {
@@ -263,7 +265,7 @@ function introNotes(t: T, recap: Recap, language: string): string[] {
   const notes: string[] = [];
   if (isInProgress(recap)) notes.push(t('recap.in_progress'));
   if (recap.partialSince) {
-    const since = parseLocalDateString(recap.partialSince).toLocaleDateString(language, { day: 'numeric', month: 'short' });
+    const since = parseLocalDateString(recap.partialSince).toLocaleDateString(dateLocale(language), { day: 'numeric', month: 'short' });
     notes.push(t('recap.counted_since', { date: since }));
   }
   return notes;
@@ -351,7 +353,7 @@ function SlideContent({ t, slide, recap, label, language }: SlideProps) {
 function imageSticker(t: T, recap: Recap, language: string) {
   const progress = recapProgress(recap);
   if (!progress) return null;
-  const period = recap.kind === 'year' ? progress.previousKey : parseLocalDateString(`${progress.previousKey}-01`).toLocaleDateString(language, { month: 'long' });
+  const period = recap.kind === 'year' ? progress.previousKey : parseLocalDateString(`${progress.previousKey}-01`).toLocaleDateString(dateLocale(language), { month: 'long' });
   return {
     value: `+${progress.diff}`,
     label: t(`recap.sticker_${progress.key}`, { count: progress.diff }),
@@ -363,7 +365,7 @@ function imageSticker(t: T, recap: Recap, language: string) {
 function comparisonLine(t: T, recap: Recap, language: string): string | null {
   const { previous } = recap;
   if (!previous) return null;
-  const period = recap.kind === 'year' ? previous.key : parseLocalDateString(`${previous.key}-01`).toLocaleDateString(language, { month: 'long' });
+  const period = recap.kind === 'year' ? previous.key : parseLocalDateString(`${previous.key}-01`).toLocaleDateString(dateLocale(language), { month: 'long' });
   const signed = (n: number) => (n > 0 ? `+${n}` : String(n));
   if (previous.wins !== null) return t('recap.compare_wins', { diff: signed(recap.stats.wins - previous.wins), period });
   return t('recap.compare_dailies', { diff: signed(recap.dailies - previous.dailies), period });

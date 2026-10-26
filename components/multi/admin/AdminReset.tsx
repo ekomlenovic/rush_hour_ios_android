@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, Switch, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, Switch, Alert } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
-import { addDays, getLocalDateString, parseLocalDateString } from '@/utils/date';
+import { addDays, dateLocale, getLocalDateString, parseLocalDateString } from '@/utils/date';
 import { RESET_PRESETS, resetRange, type ResetPreset } from '@/utils/multi/reset';
 import type { AdminPlayer, MultiApi, ResetResult } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
@@ -11,6 +11,7 @@ import { multiErrorMessage } from '../errors';
 import AdminButton from './AdminButton';
 import { useAdminRefresh } from './AdminPage';
 import { adminStyles as styles } from './styles';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 interface Props { api: MultiApi; colors: UiColors }
 
@@ -58,7 +59,7 @@ export default function AdminReset({ api, colors }: Props) {
     return () => { cancelled = true; clearTimeout(timer); };
   }, [api, request, nothing, version]);
 
-  const day = (date: string) => parseLocalDateString(date).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' });
+  const day = (date: string) => parseLocalDateString(date).toLocaleDateString(dateLocale(i18n.language), { weekday: 'short', day: 'numeric', month: 'short' });
   const rangeText = range.from === null ? t('multi.admin_reset_all_time')
     : range.from === range.to ? day(range.from) : t('multi.admin_reset_range', { from: day(range.from), to: day(range.to!) });
   const total = (preview?.challenges ?? 0) + (preview?.duels ?? 0);
@@ -149,7 +150,7 @@ export default function AdminReset({ api, colors }: Props) {
           <Text style={[styles.rowLabel, { color: colors.text }]}>{t('multi.admin_reset_everyone')}</Text>
           <Switch value={everyone} onValueChange={setEveryone} accessibilityLabel={t('multi.admin_reset_everyone')} />
         </View>
-        {!everyone && !players && <ActivityIndicator color={colors.primary} />}
+        {!everyone && !players && <LoadingIndicator />}
         {!everyone && players?.map(p => {
           const selected = chosen.includes(p.id);
           return (

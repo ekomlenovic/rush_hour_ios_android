@@ -35,3 +35,13 @@ export const latestSavedDate = (now: Date = new Date()): string => addDays(getLo
 
 /** Latest week a saved result can have: the week of tomorrow */
 export const latestSavedWeek = (now: Date = new Date()): string => getWeekKey(parseLocalDateString(latestSavedDate(now)));
+
+/** Today's daily, for a link without a date (the widget): the date is the one of the opening */
+export const todayDailyHref = (now: Date = new Date()): string => `/game?levelId=daily&date=${getLocalDateString(now)}`;
+
+/** This week's weekly, for a link without a week (the reminder): the week is the one of the opening */
+export const thisWeeklyHref = (now: Date = new Date()): string => `/game?levelId=weekly&week=${getWeekKey(now)}`;
+
+/** Links without a date or a week, dated by the game screen when it opens them (widget, reminders) */
+export const DAILY_HREF = '/game?levelId=daily';
+export const WEEKLY_HREF = '/game?levelId=weekly';

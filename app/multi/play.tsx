@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, ActivityIndicator, AppState, Modal, AccessibilityInfo } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { useRouter } from '@/hooks/useRouter';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { haptics, Haptics } from '@/utils/haptics';
@@ -17,6 +18,7 @@ import { useMultiApi } from '@/hooks/useMultiApi';
 import { elapsedMs, gameFromStart, isWon, playMove, submission, wonResult } from '@/utils/multi/game';
 import { MultiApiError, type SubmitResult } from '@/utils/multi/api';
 import IconText from '@/components/IconText';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 type Phase = 'loading' | 'playing' | 'sending' | 'send_failed' | 'won' | 'error';
 
@@ -170,7 +172,7 @@ export default function MultiPlayScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <MultiHeader title={title} colors={colors} />
 
-      {phase === 'loading' && <ActivityIndicator color={colors.primary} style={styles.center} />}
+      {phase === 'loading' && <LoadingIndicator fill />}
 
       {phase === 'error' && (
         <View style={styles.center}>

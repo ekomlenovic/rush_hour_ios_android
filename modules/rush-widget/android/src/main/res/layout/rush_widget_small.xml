@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2×2 widget: @android:id/background lets Android 12+ round it like the other widgets -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/rush_widget_background"
+    android:clipToOutline="true"
+    android:contentDescription="@string/rush_widget_open_app"
+    android:padding="14dp">
+
+    <include
+        layout="@layout/rush_widget_core"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</FrameLayout>

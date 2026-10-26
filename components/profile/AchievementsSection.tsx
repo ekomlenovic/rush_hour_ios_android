@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import type { HostInstance } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import AchievementIcon from './AchievementIcon';
 import { useGameStore } from '@/store/gameStore';
@@ -20,7 +21,7 @@ interface Props {
   /** Achievement whose detail is shown (see AchievementSheet) */
   selected: string | null;
   /** `badge`: the medal touched, so the screen can keep it in view above the sheet */
-  onSelect: (id: string | null, badge?: View | null) => void;
+  onSelect: (id: string | null, badge?: HostInstance | null) => void;
 }
 
 /** Achievements of the profile: the closest ones, then a grid of badges per category */
@@ -32,7 +33,7 @@ export default function AchievementsSection({ colors, context, selected, onSelec
   const newSet = useMemo(() => new Set(newAchievements), [newAchievements]);
   const markAchievementSeen = useGameStore((state) => state.markAchievementSeen);
   // The first category, and those with something new to see
-  const badgeRefs = useRef(new Map<string, View | null>());
+  const badgeRefs = useRef(new Map<string, HostInstance | null>());
   const [openCategories, setOpenCategories] = useState<Set<AchievementCategory>>(() => new Set([
     ACHIEVEMENT_CATEGORIES[0],
     ...ACHIEVEMENTS.filter(a => newSet.has(a.id)).map(a => a.category),

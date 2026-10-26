@@ -1,16 +1,19 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Pressable,
+  View, Text, StyleSheet, Pressable, ActivityIndicator,
   useWindowDimensions, Alert, AccessibilityInfo,
 } from 'react-native';
+import type { HostInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { useRouter } from '@/hooks/useRouter';
 import { usePreventRemove } from 'expo-router/react-navigation';
 import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 import { useGameStore, Vehicle, Level } from '@/store/gameStore';
 import { validateLevelAsync } from '@/utils/solver.background';
+import { createExclusiveTask } from '@/utils/exclusiveTask';
 import { haptics, Haptics } from '@/utils/haptics';
 import {
   ExitSide, hasCollision as collides, vehicleCells, getExitSide, moveExitToSide, getNextAvailableColor, findFreeCell, resizeBoard,
@@ -37,7 +40,6 @@ export default function LevelCreatorScreen() {
   const { t } = useTranslation();
   const { colors: C, board, palette, isDark } = useTheme();
   const router = useRouter();
-  const navigation = useNavigation();
   const params = useLocalSearchParams<{ levelId: string }>();
   const saveCreatedLevel = useGameStore(s => s.saveCreatedLevel);
   const createdLevels = useGameStore(s => s.createdLevels);
@@ -59,7 +61,7 @@ export default function LevelCreatorScreen() {
   const dragY = useSharedValue(0);
   const dragVisible = useSharedValue(0);
 
-  const boardRef = useRef<View>(null);
+  const boardRef = useRef<HostInstance>(null);
   const boardPos = useRef({ x: 0, y: 0 });
   const vehiclesRef = useRef<Vehicle[]>([]);
 
@@ -312,17 +314,28 @@ export default function LevelCreatorScreen() {
   }, []);
 
   // ── Actions ──
-  // Solved in the background: a big board never freezes the screen; -2: too big to search
-  const handleTest = async () => {
-    const minMoves = await validateLevelAsync(vehicles, gridSize, exitRow, exitCol);
+  // Solved in the background: a big board never freezes the screen; -2: too big to search.
+  // One check at a time for "Test" and "Save": both are disabled while it runs, a tap gives one result
+  const [checking, setChecking] = useState<'test' | 'save' | null>(null);
+  const checkingAction = useRef<'test' | 'save'>('test');
+  const [runCheck] = useState(() => createExclusiveTask(busy => setChecking(busy ? checkingAction.current : null)));
+  const check = (action: 'test' | 'save', onResult: (minMoves: number) => void) => {
+    if (checking) return;
+    checkingAction.current = action;
+    return runCheck(() => validateLevelAsync(vehicles, gridSize, exitRow, exitCol), onResult);
+  };
+
+  const handleTest = () => check('test', minMoves => {
     if (minMoves === -2) {
       Alert.alert(t('creator.unsolvable_title'), t('creator.too_complex_desc'));
     } else if (minMoves === -1) {
       Alert.alert(t('creator.unsolvable_title'), t('creator.unsolvable_desc'));
+    } else if (minMoves === 0) {
+      Alert.alert(t('creator.already_solved_title'), t('creator.already_solved_desc'));
     } else {
       Alert.alert(t('creator.solvable_title'), t('creator.solvable_desc', { count: minMoves }));
     }
-  };
+  });
 
   // The board as loaded or last saved: leaving with another one asks first
   const [savedBoard, setSavedBoard] = useState<string | null>(null);
@@ -332,26 +345,38 @@ export default function LevelCreatorScreen() {
     if (savedBoard === null && vehicles.length > 0) setSavedBoard(boardKey);
   }, [boardKey, vehicles.length, savedBoard]);
   const hasUnsavedChanges = savedBoard !== null && savedBoard !== boardKey;
+  // "Exit" chosen: the protection goes off with repeat(), the prop too (or a warning in development)
+  const [leaving, setLeaving] = useState(false);
   // usePreventRemove, not a 'beforeRemove' listener: the native stack removed the screen anyway
-  // on a swipe back or the Android back button, and "Cancel" left the player off the creator
-  usePreventRemove(hasUnsavedChanges, ({ data }) => {
+  // on a swipe back or the Android back button, and "Cancel" left the player off the creator.
+  // repeat(), not dispatching the action again: still prevented, the alert came back endlessly
+  usePreventRemove(hasUnsavedChanges && !leaving, ({ repeat }) => {
     Alert.alert(t('creator.exit_title'), t('creator.exit_confirm'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('creator.exit'), style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+      {
+        text: t('creator.exit'), style: 'destructive', onPress: () => {
+          setLeaving(true);
+          repeat();
+        },
+      },
     ]);
   });
 
   // Checked first, then named: the name sheet only opens for a level that can be saved
   const checkedMinMoves = useRef(0);
-  const handleSave = async () => {
-    const minMoves = await validateLevelAsync(vehicles, gridSize, exitRow, exitCol);
+  const handleSave = () => check('save', minMoves => {
     if (minMoves < 0) {
       Alert.alert(t('creator.unsolvable_title'), t(minMoves === -2 ? 'creator.too_complex_desc' : 'creator.fix_before_save'));
       return;
     }
+    // Already solved: nothing to play, and its link would be refused by the import (1 move at least)
+    if (minMoves === 0) {
+      Alert.alert(t('creator.already_solved_title'), t('creator.already_solved_desc'));
+      return;
+    }
     checkedMinMoves.current = minMoves;
     setNaming(true);
-  };
+  });
 
   // Modifying an imported level creates a level of one's own (in "Created"), the imported one stays as is
   const saveLevel = (name: string) => {
@@ -420,11 +445,30 @@ export default function LevelCreatorScreen() {
           </Pressable>
           <Text style={[styles.title, { color: C.text }]} numberOfLines={1} accessibilityRole="header">{t('creator.title')}</Text>
           <View style={styles.headerRight}>
-            <Pressable onPress={handleTest} style={[styles.pill, { borderColor: C.primary, borderWidth: 1.5 }]} accessibilityRole="button" hitSlop={6}>
-              <Text style={[styles.pillText, { color: C.primaryText }]}>{t('creator.test')}</Text>
+            <Pressable
+              onPress={handleTest}
+              disabled={!!checking}
+              style={[styles.pill, { borderColor: C.primary, borderWidth: 1.5 }, checking && checking !== 'test' && styles.pillDisabled]}
+              accessibilityRole="button"
+              accessibilityLabel={checking === 'test' ? t('game.analyzing') : t('creator.test')}
+              accessibilityState={{ disabled: !!checking, busy: checking === 'test' }}
+              hitSlop={6}
+            >
+              {/* The label stays (hidden) under the spinner: the pill keeps its width */}
+              <Text style={[styles.pillText, { color: C.primaryText }, checking === 'test' && styles.hidden]}>{t('creator.test')}</Text>
+              {checking === 'test' && <ActivityIndicator size="small" color={C.primaryText} style={styles.pillSpinner} />}
             </Pressable>
-            <Pressable onPress={handleSave} style={[styles.pill, { backgroundColor: C.primary }]} accessibilityRole="button" hitSlop={6}>
-              <Text style={[styles.pillText, { color: C.onPrimary }]}>{t('creator.save')}</Text>
+            <Pressable
+              onPress={handleSave}
+              disabled={!!checking}
+              style={[styles.pill, { backgroundColor: C.primary }, checking && checking !== 'save' && styles.pillDisabled]}
+              accessibilityRole="button"
+              accessibilityLabel={checking === 'save' ? t('game.analyzing') : t('creator.save')}
+              accessibilityState={{ disabled: !!checking, busy: checking === 'save' }}
+              hitSlop={6}
+            >
+              <Text style={[styles.pillText, { color: C.onPrimary }, checking === 'save' && styles.hidden]}>{t('creator.save')}</Text>
+              {checking === 'save' && <ActivityIndicator size="small" color={C.onPrimary} style={styles.pillSpinner} />}
             </Pressable>
           </View>
         </View>
@@ -607,6 +651,9 @@ const styles = StyleSheet.create({
   headerRight: { flexDirection: 'row', gap: 8 },
   pill: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 20 },
   pillText: { fontSize: 12, fontWeight: '700' },
+  pillDisabled: { opacity: 0.5 },
+  pillSpinner: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 },
+  hidden: { opacity: 0 },
 
   boardWrapper: { alignItems: 'center', paddingHorizontal: BOARD_PADDING, marginTop: 8 },
   board: { position: 'relative', borderWidth: BOARD_BORDER, borderRadius: 14, overflow: 'hidden' },

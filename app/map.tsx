@@ -1,6 +1,9 @@
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import type { ScrollViewInstance } from 'react-native';
+import { useNavigation, type NativeStackNavigationProp } from 'expo-router';
+import { useRouter } from '@/hooks/useRouter';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { haptics, Haptics } from '@/utils/haptics';
 import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
@@ -17,6 +20,7 @@ import JumpButton from '@/components/map/JumpButton';
 import GenerationPill from '@/components/map/GenerationPill';
 import { isGenerationActive } from '@/hooks/useLevelGenerator';
 import OptionsSheet from '@/components/settings/OptionsSheet';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 /** Height of the blurred header over the map */
 const HEADER_HEIGHT = 140;
@@ -24,10 +28,13 @@ const HEADER_HEIGHT = 140;
 const SCROLL_STEP = 100;
 /** Part of the map drawn above and under the screen */
 const DRAW_MARGIN = 1200;
+/** The map is drawn once the screen has slid in, or after this delay if the end of the slide is not reported */
+const READY_FALLBACK_MS = 600;
 
 export default function MapScreen() {
   const { colors, board, isDark } = useTheme();
   const router = useRouter();
+  const navigation = useNavigation<NativeStackNavigationProp<ReactNavigation.RootParamList>>();
 
   const maxUnlockedLevel = useGameStore(s => s.maxUnlockedLevel);
   const lastPlayedLevelId = useGameStore(s => s.lastPlayedLevelId);
@@ -35,14 +42,17 @@ export default function MapScreen() {
   const generatedLevels = useGameStore(s => s.generatedLevels);
   const isGenerating = useGameStore(s => s.generationState.isRunning);
   const setGenerationState = useGameStore(s => s.setGenerationState);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ScrollViewInstance>(null);
 
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const [scrollY, setScrollY] = useState(0); // Rounded to SCROLL_STEP
-  const [isReady, setIsReady] = useState(false);
+  // 'sliding': the screen slides in from the home screen; 'drawing': the map is being drawn; 'ready': it is drawn
+  const [phase, setPhase] = useState<'sliding' | 'drawing' | 'ready'>('sliding');
+  const isReady = phase === 'ready';
 
   // Combine static levels + dynamically generated levels
   const levels = useMemo(() => [...sampleLevels, ...generatedLevels], [generatedLevels]);
+  const levelsById = useMemo(() => new Map(levels.map(l => [l.id, l])), [levels]);
 
   // We add exactly 1 node at the end for the final Padlock marker indicating the end of generated levels
   const pathLength = levels.length + 1;
@@ -105,13 +115,26 @@ export default function MapScreen() {
     if (maxUnlockedLevel >= 900000) {
       useGameStore.setState({ maxUnlockedLevel: sampleLevels.length + 1 });
     }
-
-    // Defer heavy rendering until after navigation transition
-    const timer = setTimeout(() => {
-      setIsReady(true);
-    }, 150);
-    return () => clearTimeout(timer);
   }, [maxUnlockedLevel]);
+
+  useEffect(() => {
+    // Drawing the map during the slide from the home screen made it stutter on Android: wait for its end
+    // The loading indicator is put on screen one frame before the map is drawn: it only shows (after its delay)
+    // when the drawing takes long, so a fast phone goes straight from the slide to the map
+    let frame: number | undefined;
+    const ready = () => {
+      if (frame !== undefined) return;
+      setPhase(p => (p === 'sliding' ? 'drawing' : p));
+      frame = requestAnimationFrame(() => setPhase('ready'));
+    };
+    const unsubscribe = navigation.addListener('transitionEnd', ready);
+    const timer = setTimeout(ready, READY_FALLBACK_MS);
+    return () => {
+      unsubscribe();
+      clearTimeout(timer);
+      if (frame !== undefined) cancelAnimationFrame(frame);
+    };
+  }, [navigation]);
 
   useEffect(() => {
     // A generation left over by a closed app (the state is saved) is not running any more;
@@ -190,7 +213,8 @@ export default function MapScreen() {
         {!isReady ? (
           <View style={{ flex: 1, height: totalHeight }} />
         ) : (
-          <>
+          // One fade for the whole map rather than one per level: dozens of entering animations at once lagged on Android
+          <Animated.View entering={FadeIn.duration(300)} style={StyleSheet.absoluteFill}>
             <ZoneLayer
               zones={zones}
               zoneStars={zoneStars}
@@ -211,7 +235,7 @@ export default function MapScreen() {
               const isPadlockNode = point.id !== 0 && index === pathPoints.length - 1;
 
               // find level data by matching point.id with level.id
-              const levelData = isTutorial || isPadlockNode ? null : levels.find(l => l.id === point.id);
+              const levelData = isTutorial || isPadlockNode ? null : levelsById.get(point.id);
 
               const isUnlocked = isTutorial || isMapLevelUnlocked(point.id, maxUnlockedLevel);
               const isCurrent = point.id === maxUnlockedLevel;
@@ -235,9 +259,11 @@ export default function MapScreen() {
                 />
               );
             })}
-          </>
+          </Animated.View>
         )}
       </ScrollView>
+
+      {phase === 'drawing' && <LoadingIndicator size="large" fill style={StyleSheet.absoluteFill} />}
 
       {isReady && (nextAbove || nextBelow) && !isGenerating && (
         <JumpButton levelId={nextNode.id} isEnd={nextNode.id > levels.length} below={nextBelow} colors={colors} onPress={jumpToNext} />

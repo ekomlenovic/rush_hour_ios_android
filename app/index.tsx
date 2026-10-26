@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/hooks/useRouter';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -11,7 +11,6 @@ import { getMissionsForDay, countMissionsDone } from '@/data/missions';
 import { getFreezeCapacity, getPlayerLevel, dailyWinXp, weeklyWinXp } from '@/data/progression';
 import { lockedEventCosmetics, seasonalEventOf } from '@/data/cosmetics';
 import { sampleLevels } from '@/data/sampleLevels';
-import { useAppOpenAlert } from '@/hooks/useAppOpenAlert';
 import { useNow } from '@/hooks/useNow';
 import { useTheme, fixedColors } from '@/theme';
 import ChallengeCard from '@/components/home/ChallengeCard';
@@ -69,9 +68,9 @@ export default function HomeScreen() {
   const [isMissionsVisible, setMissionsVisible] = useState(false);
 
   // The screen stays mounted under the others: it follows the clock to show the new day
+  // (the app open is recorded by the root layout, whatever the first screen: issue 188)
   const now = useNow();
   const dateStr = getLocalDateString(now);
-  useAppOpenAlert(dateStr);
   const { unseen: newCosmetics, context: cosmeticContext } = useCosmetics();
   const newAchievements = useNewAchievements();
 

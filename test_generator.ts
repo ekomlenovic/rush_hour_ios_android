@@ -1,4 +1,4 @@
-import { generateLevel, DIFFICULTY_LEVELS } from './utils/generator';
+import { generateLevel, DIFFICULTY_LEVELS } from './utils/generator.core';
 
 console.log('Generating Easy Level...');
 const easy = generateLevel(3, DIFFICULTY_LEVELS.EASY);

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ionicons "time" (MIT), as in the app: generated from the font of @expo/vector-icons -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <path
+        android:fillColor="@color/rush_widget_muted"
+        android:pathData="M242 49Q263 47 283 50Q324 55 360.5 76Q397 97 421 130Q477 203 461 292Q452 341 421 382Q405 405 382 421Q338 454 284 462Q273 464 256 464Q239 464 228 462Q174 454 130 421Q107 405 91 382Q58 338 50 284Q46 256 50 228Q57 181 82.5 141.5Q108 102 149 78Q192 52 242 49ZM265 115Q265 115 265 115Q251 106 242 120Q242 120 240 123V200V276L242 280Q245 284 248 286Q248 286 252 288H301Q357 289 362 284Q368 279 367.5 270Q367 261 359 258Q355 256 314 256Q314 256 272 256V190V123L270 120Q268 117 265 115Z" />
+</vector>

@@ -50,6 +50,11 @@ describe('archive dates', () => {
     expect(isArchiveDateAvailable('2027-01-01', today)).toBe(false);
   });
 
+  it('include yesterday across a daylight saving change (Auckland, #153)', () => {
+    expect(isArchiveDateAvailable('2027-09-26', '2027-09-27')).toBe(true);
+    expect(isArchiveDateAvailable('2027-04-04', '2027-04-05')).toBe(true);
+  });
+
   it('start with the current daily generator', () => {
     expect(isArchiveDateAvailable(ARCHIVE_FIRST_DATE, today)).toBe(true);
     expect(isArchiveDateAvailable(addDays(ARCHIVE_FIRST_DATE, -1), today)).toBe(false);
@@ -250,6 +255,35 @@ describe('opening an archive', () => {
     useGameStore.setState({ currentDailyLevel: cached, dailyLevelDate: '2026-10-24' });
     const level = (await open('2026-10-24'))!;
     expect(level).toEqual({ ...cached, id: ARCHIVE_LEVEL_ID });
+  });
+
+  it("resumes yesterday's daily closed after midnight without a win, with the moves played after midnight", async () => {
+    setToday('2026-10-20', 23);
+    const pending = resolveLevel({ levelId: 'daily', date: '2026-10-20' });
+    await jest.runAllTimersAsync();
+    const daily = (await pending)!;
+    state().loadLevel(daily);
+    state().setOpenDailyDate('2026-10-20');
+    /** Slides the first vehicle that can move one cell forward */
+    const playMove = () => expect(state().vehicles.some(v => v.orientation === 'horizontal'
+      ? state().moveVehicle(v.id, v.row, v.col + 1)
+      : state().moveVehicle(v.id, v.row + 1, v.col))).toBe(true);
+    playMove();
+    // Still open at midnight, played on, then closed: the home records the app open each time
+    setToday('2026-10-21', 0);
+    state().recordAppOpen();
+    playMove();
+    state().setOpenDailyDate(null);
+    state().recordAppOpen();
+
+    const level = (await open('2026-10-20'))!;
+    expect(level.vehicles).toEqual(daily.vehicles);
+    state().loadLevel(level);
+    expect(state().moveCount).toBe(2);
+
+    state().completeArchiveChallenge('2026-10-20', 1200, 3, 30_000, { moves: 12, minMoves: 12 });
+    expect(getArchiveDayStatus('2026-10-20', state().dailyChallengeProgress, state().archiveProgress)).toBe('archive');
+    expect(state().savedStates).toEqual({});
   });
 
   it('drops the cached archives too old to be replayed', async () => {

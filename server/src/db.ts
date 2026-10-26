@@ -121,6 +121,11 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE duels ADD COLUMN look2_json TEXT;
   ALTER TABLE attempts ADD COLUMN look_json TEXT;
   `,
+  // The optimum the admin asked for a daily challenge: null for the usual one of its difficulty
+  // (all the challenges before this step)
+  `
+  ALTER TABLE challenges ADD COLUMN wanted_moves INTEGER;
+  `,
 ];
 
 export function openDatabase(path: string): Database {
