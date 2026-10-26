@@ -13,6 +13,7 @@ import AdminChallenges from './AdminChallenges';
 import Stepper from './Stepper';
 import { useAdminSettings } from './useAdminSettings';
 import { adminStyles as styles } from './styles';
+import { dateLocale } from '@/utils/date';
 
 const DIFFICULTIES: Difficulty[] = ['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER'];
 /** Monday first; the server counts from Sunday (0) */
@@ -65,14 +66,14 @@ export default function AdminChallenge({ api, colors, isDark }: Props) {
     ],
   );
 
-  const dayName = (day: number) => new Date(2026, 9, 18 + day).toLocaleDateString(i18n.language, { weekday: 'long' });
+  const dayName = (day: number) => new Date(2026, 9, 18 + day).toLocaleDateString(dateLocale(i18n.language), { weekday: 'long' });
   const card = [styles.card, { backgroundColor: colors.surface, borderColor: colors.border }];
   const inZone = (ms: number) => {
     const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' };
     try {
-      return new Date(ms).toLocaleString(i18n.language, { ...options, timeZone: settings.timeZone });
+      return new Date(ms).toLocaleString(dateLocale(i18n.language), { ...options, timeZone: settings.timeZone });
     } catch {
-      return new Date(ms).toLocaleString(i18n.language, options);
+      return new Date(ms).toLocaleString(dateLocale(i18n.language), options);
     }
   };
   const pregenerateIndex = PREGENERATE.findIndex(v => v >= settings.pregenerateAheadMs);

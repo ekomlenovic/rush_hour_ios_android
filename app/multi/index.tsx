@@ -5,7 +5,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
-import { addDays, formatDuration, getLocalDateString } from '@/utils/date';
+import { addDays, dateLocale, formatDuration, getLocalDateString } from '@/utils/date';
 import { useTheme } from '@/theme';
 import { selectActiveAccount, useMultiStore } from '@/store/multiStore';
 import { useMultiApi } from '@/hooks/useMultiApi';
@@ -224,7 +224,7 @@ export default function MultiplayerScreen() {
     : me.status === 'won' ? { label: t('multi.challenge_status.won'), color: colors.success, background: colors.successSoft }
     : me.status === 'abandoned' ? { label: t('multi.challenge_status.abandoned'), color: colors.textMuted, background: colors.neutralSoft }
     : { label: t('multi.challenge_status.unfinished'), color: colors.textMuted, background: colors.neutralSoft };
-  const releaseTime = today ? new Date(today.closesAt).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' }) : null;
+  const releaseTime = today ? new Date(today.closesAt).toLocaleTimeString(dateLocale(i18n.language), { hour: '2-digit', minute: '2-digit' }) : null;
 
   const forgetServer = () => {
     Alert.alert(t('multi.account_gone_title'), t('multi.account_gone_body'), [
@@ -347,7 +347,7 @@ export default function MultiplayerScreen() {
 
               {me?.status === 'playing' && (
                 <Pressable onPress={() => router.push(`/multi/play?date=${today.date}`)} style={[styles.primaryButton, { backgroundColor: colors.warning }]} accessibilityRole="button">
-                  <Text style={[styles.primaryButtonText, { color: colors.onPrimary }]}>
+                  <Text style={[styles.primaryButtonText, { color: colors.onWarning }]}>
                     {t('multi.resume', { time: formatDuration(Math.max(0, serverNow - me.startedAt)) })}
                   </Text>
                 </Pressable>

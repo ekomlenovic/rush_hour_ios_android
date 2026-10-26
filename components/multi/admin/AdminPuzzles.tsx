@@ -10,6 +10,7 @@ import { errorCode, multiErrorMessage } from '../errors';
 import { useAdminRefresh } from './AdminPage';
 import Stepper from './Stepper';
 import { adminStyles as styles } from './styles';
+import { dateLocale } from '@/utils/date';
 
 const THUMB = 72;
 /** Most puzzles of a difficulty kept ready (DUEL_POOL_MAX on the server) */
@@ -53,8 +54,8 @@ export default function AdminPuzzles({ api, colors }: Props) {
     await load();
   };
 
-  const time = (at: number) => new Date(at).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
-  const date = (at: number) => new Date(at).toLocaleString(i18n.language, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const time = (at: number) => new Date(at).toLocaleTimeString(dateLocale(i18n.language), { hour: '2-digit', minute: '2-digit' });
+  const date = (at: number) => new Date(at).toLocaleString(dateLocale(i18n.language), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
   if (error && !data) return <Text style={[styles.empty, { color: colors.textMuted }]}>{error}</Text>;
   if (!data) return <ActivityIndicator color={colors.primary} />;

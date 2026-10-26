@@ -101,24 +101,43 @@ func localDateKey(_ date: Date) -> String {
 
 /// The app writes its texts in its own language; these are for the gallery and while it has written nothing
 enum WidgetStrings {
-  static let french = Locale.preferredLanguages.first?.hasPrefix("fr") ?? false
+  private static let language = Locale.preferredLanguages.first ?? "en"
+  private static let french = language.hasPrefix("fr")
+  private static let serbian = language.hasPrefix("sr")
 
-  static let name = french ? "Streak et défi du jour" : "Streak and daily challenge"
-  static let description = french
-    ? "Ton streak, tes gels et le défi du jour. En grand : le temps avant le prochain."
-    : "Your streak, your freezes and today's challenge. Medium size: the time left before the next one."
-  static let daily = french ? "Défi du jour" : "Daily challenge"
-  static let todo = french ? "À faire" : "To do"
-  static let unit = french ? "jours de streak" : "day streak"
-  static let nextIn = french ? "Prochain défi dans" : "Next challenge in"
-  static let danger = french ? "Streak en danger" : "Streak in danger"
-  static let timeLeft = french ? "Il te reste" : "Time left"
-  static let play = french ? "Touche pour jouer" : "Tap to play"
+  /// The phone's language among the app's: French, Serbian (Latin script, as in the app), else English
+  private static func pick(_ fr: String, _ sr: String, _ en: String) -> String {
+    french ? fr : serbian ? sr : en
+  }
+
+  static let name = pick("Streak et défi du jour", "Niz i dnevni izazov", "Streak and daily challenge")
+  static let description = pick(
+    "Ton streak, tes gels et le défi du jour. En grand : le temps avant le prochain.",
+    "Tvoj niz, tvoja zamrzavanja i dnevni izazov. Veća veličina: vreme do sledećeg.",
+    "Your streak, your freezes and today's challenge. Medium size: the time left before the next one."
+  )
+  static let daily = pick("Défi du jour", "Dnevni izazov", "Daily challenge")
+  static let todo = pick("À faire", "Za uraditi", "To do")
+  static let unit = pick("jours de streak", "dana niza", "day streak")
+  static let nextIn = pick("Prochain défi dans", "Sledeći izazov za", "Next challenge in")
+  static let danger = pick("Streak en danger", "Niz u opasnosti", "Streak in danger")
+  static let timeLeft = pick("Il te reste", "Preostalo vreme", "Time left")
+  static let play = pick("Touche pour jouer", "Dodirni da igraš", "Tap to play")
   /// Nothing written yet: an update not opened yet, never a streak at 0 that would be wrong
-  static let openApp = french ? "Ouvre Rush Hours pour afficher ton streak." : "Open Rush Hours to show your streak."
+  static let openApp = pick(
+    "Ouvre Rush Hours pour afficher ton streak.",
+    "Otvori Rush Hours da vidiš svoj niz.",
+    "Open Rush Hours to show your streak."
+  )
   /// No app group: this install cannot share the app's data with the widget
-  static let noAccess = french
-    ? "Le widget ne peut pas lire les données de Rush Hours sur cette installation."
-    : "The widget cannot read Rush Hours' data on this install."
-  static let previewLabel = french ? "Streak de 7 jours, 2 gels, défi du jour à faire" : "7-day streak, 2 freezes, daily challenge to do"
+  static let noAccess = pick(
+    "Le widget ne peut pas lire les données de Rush Hours sur cette installation.",
+    "Vidžet ne može da čita podatke aplikacije Rush Hours na ovoj instalaciji.",
+    "The widget cannot read Rush Hours' data on this install."
+  )
+  static let previewLabel = pick(
+    "Streak de 7 jours, 2 gels, défi du jour à faire",
+    "Niz od 7 dana, 2 zamrzavanja, dnevni izazov za uraditi",
+    "7-day streak, 2 freezes, daily challenge to do"
+  )
 }

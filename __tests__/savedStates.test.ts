@@ -67,6 +67,13 @@ describe('opening the app', () => {
     expect(state().archiveProgress).toEqual({});
   });
 
+  it("moves yesterday's daily to its archive the day after Auckland springs forward (#153)", () => {
+    setToday('2027-09-27');
+    useGameStore.setState({ savedStates: { 'daily-2027-09-26': save(3) } });
+    state().recordAppOpen();
+    expect(state().savedStates).toEqual({ 'archive-2027-09-26': save(3) });
+  });
+
   it('forgets the archives out of reach (more than 90 days ago)', () => {
     setToday('2027-02-01');
     useGameStore.setState({ savedStates: { 'archive-2026-10-14': save(1), 'archive-2026-12-01': save(2) } });
