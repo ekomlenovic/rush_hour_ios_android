@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, Modal, Share,
   AccessibilityInfo, useWindowDimensions, type LayoutChangeEvent,
@@ -127,11 +127,15 @@ export default function DuelScreen() {
       },
     ]);
   });
-  // Nothing to lose for a spectator, nor in a room not started yet: leaving just leaves
-  useEffect(() => navigation.addListener('beforeRemove', () => {
+  // Nothing to lose for a spectator, nor in a room not started yet: leaving just leaves.
+  // On unmount (React Navigation 8 has no 'beforeRemove' anymore), in a layout effect: its
+  // cleanup runs before the one of useDuel that closes the socket, the message still goes
+  const leaveRef = useRef(leave);
+  leaveRef.current = leave;
+  useLayoutEffect(() => () => {
     const current = duelRef.current;
-    if (current && current.status !== 'over' && (current.spectating || current.status === 'waiting')) leave();
-  }), [navigation, leave]);
+    if (current && current.status !== 'over' && (current.spectating || current.status === 'waiting')) leaveRef.current();
+  }, []);
 
   // A move of the opponent is felt: no need to look at their board all the time
   const opponentMoves = duel?.status === 'playing' && !duel.spectating ? duel.opponent?.moves.length ?? 0 : 0;
