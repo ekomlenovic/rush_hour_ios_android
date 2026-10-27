@@ -916,6 +916,21 @@
     "paste_code_btn": "Paste a code",
     "error_read": "This file could not be read."
   },
+  "crash": {
+    "title": "Oops, the game crashed",
+    "body": "Your progress is still saved on your phone. Try again; if the problem comes back, export your save to keep it safe.",
+    "retry_btn": "Try again",
+    "export_btn": "Export my progress",
+    "report_btn": "Report the bug on GitHub",
+    "report_hint": "Opens a public report, already filled in, that you send yourself",
+    "copy_error_btn": "Copy the error details",
+    "error_copied_title": "Error copied",
+    "error_copied_body": "Paste it in a bug report to help fix the problem. Nothing has been sent.",
+    "export_failed_title": "Export failed",
+    "export_failed_body": "Your save could not be exported. It stays on your phone: close the game completely and launch it again.",
+    "issue_title": "fix: crash ({{error}})",
+    "issue_body": "The game crashed. What I was doing just before:"
+  },
   "multi": {
     "title": "Multiplayer",
     "intro_title": "Take on your friends",
