@@ -177,8 +177,13 @@ jobs:
     permissions:
       contents: write
     steps:
+      # main only accepts pull requests (ruleset): the sources commit is pushed with the
+      # RELEASE_DEPLOY_KEY deploy key, which is in the ruleset's bypass list. Without
+      # the secret, checkout falls back to GITHUB_TOKEN and that push is rejected.
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
 
       - name: Download ISO Build
         uses: actions/download-artifact@v4
