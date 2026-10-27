@@ -5,7 +5,8 @@ import { useTheme } from '@/theme';
 
 /**
  * Draws the alerts of the web version (utils/webDialogs.ts), one at a time, like the system
- * alerts of the phones: title, message and buttons, Escape or a click outside for the cancel
+ * alerts of the phones: title, message and buttons, Escape (onRequestClose, the Modal of
+ * react-native-web: the top one only) or a click outside for the cancel
  * button. Mounted once by the root layout; nothing on iOS and Android.
  */
 export default function WebDialogHost() {
@@ -21,12 +22,6 @@ function DialogCard({ dialog }: { dialog: WebDialog }) {
   const dismiss = () => { if (dialog.cancelable) closeWebDialog(dialog.id, cancel); };
   // Side by side when they fit, like iOS; stacked otherwise
   const row = dialog.buttons.length <= 2 && dialog.buttons.every(b => (b.text ?? '').length <= 14);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') dismiss(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  });
 
   return (
     <Modal transparent visible animationType="fade" onRequestClose={dismiss}>
