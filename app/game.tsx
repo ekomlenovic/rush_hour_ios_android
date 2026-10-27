@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Share, Alert, AccessibilityInfo, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Share, Alert, AccessibilityInfo, ScrollView, Platform } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useRouter } from '@/hooks/useRouter';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -135,6 +135,8 @@ export default function GameScreen() {
     if (challengeKind) setWon(false);
     else goBack();
     const state = useGameStore.getState();
+    // No reminders in the web version (no local notifications there)
+    if (Platform.OS === 'web') return;
     if (challengeKind !== 'daily' || state.notificationsPrompted || state.notificationsEnabled) return;
     state.markNotificationsPrompted();
     setTimeout(() => {

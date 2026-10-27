@@ -1,20 +1,13 @@
-import { createWorkletRuntime, runOnRuntimeAsync, type WorkletRuntime } from 'react-native-worklets';
+import { runOnSolverRuntime } from './solverRuntime';
 import { solvePuzzle, validateLevel, Move, SolverResult } from './solver';
 import { decodeSharedLevel, withOptimum } from './sharing';
 import type { Level, Vehicle } from '../store/types';
 
 /**
- * Background versions of the solver, on a worklet runtime of their own: a thread that is
- * neither the JS thread (touches, React) nor the UI one (drawing, animations), so a long
- * search never freezes the screen.
+ * Background versions of the solver, on the solver runtime (utils/solverRuntime.ts): a thread
+ * of its own, so a long search never freezes the screen.
  */
-let runtime: WorkletRuntime | null = null;
-const solverRuntime = () => (runtime ??= createWorkletRuntime({ name: 'solver' }));
-
-/** Runs a worklet on the solver runtime, e.g. the generator of the daily (utils/generator.ts) */
-export function runOnSolverRuntime<Args extends unknown[], R>(worklet: (...args: Args) => R, ...args: Args): Promise<R> {
-  return runOnRuntimeAsync(solverRuntime(), worklet, ...args);
-}
+export { runOnSolverRuntime };
 
 export function solvePuzzleAsync(
   vehicles: Vehicle[],
@@ -23,7 +16,7 @@ export function solvePuzzleAsync(
   exitCol: number,
   depthLimit: number = 200
 ): Promise<SolverResult> {
-  return runOnRuntimeAsync(solverRuntime(), solvePuzzle, vehicles, gridSize, exitRow, exitCol, depthLimit, Infinity);
+  return runOnSolverRuntime(solvePuzzle, vehicles, gridSize, exitRow, exitCol, depthLimit, Infinity);
 }
 
 /**
@@ -42,7 +35,7 @@ export async function getHintAsync(
 
 /** Background version of validateLevel: the optimum, -1 if unsolvable, -2 if too big to search */
 export function validateLevelAsync(vehicles: Vehicle[], gridSize: number, exitRow: number, exitCol: number): Promise<number> {
-  return runOnRuntimeAsync(solverRuntime(), validateLevel, vehicles, gridSize, exitRow, exitCol);
+  return runOnSolverRuntime(validateLevel, vehicles, gridSize, exitRow, exitCol);
 }
 
 /** parseSharedLevel (utils/sharing.ts) solved in the background: a forged link never freezes the app */
