@@ -1705,5 +1705,13 @@
     "sticker_dailies_one": "défi du jour",
     "sticker_dailies_other": "défis du jour",
     "sticker_vs": "vs {{period}}"
+  },
+  "web": {
+    "share_copied_title": "Copié !",
+    "share_copied_body": "Le message est dans ton presse-papiers : colle-le là où tu veux le partager.",
+    "install_title": "Installe Rush Hours",
+    "install_ios": "Touche Partager, puis « Sur l'écran d'accueil » : le jeu s'ouvre en plein écran, même hors ligne. Sinon, Safari peut effacer ta progression après 7 jours sans jouer.",
+    "install_prompt": "Mets le jeu sur ton écran d'accueil : il s'ouvre en plein écran, même hors ligne.",
+    "install_button": "Installer"
   }
 }

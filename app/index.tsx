@@ -14,6 +14,7 @@ import { sampleLevels } from '@/data/sampleLevels';
 import { useNow } from '@/hooks/useNow';
 import { useTheme, fixedColors } from '@/theme';
 import ChallengeCard from '@/components/home/ChallengeCard';
+import InstallHint from '@/components/web/InstallHint';
 import RecapCard from '@/components/home/RecapCard';
 import { pendingRecap, periodLabel, recapKind } from '@/utils/recap';
 import HomeHeader from '@/components/home/HomeHeader';
@@ -199,6 +200,8 @@ export default function HomeScreen() {
               enteringDelay={500}
               onPress={() => router.push(`/game?levelId=weekly&week=${weekKey}`)}
             />
+            {/* The web version, not installed yet: how to put it on the home screen */}
+            <InstallHint colors={colors} />
           </View>
         </View>
       </ScrollView>

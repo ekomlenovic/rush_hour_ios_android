@@ -6,6 +6,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AudioProvider } from '@/context/AudioProvider';
 import AchievementToast from '@/components/AchievementToast';
 import CrashScreen from '@/components/CrashScreen';
+// The web version: alerts and shares the browser does not have (before any alert), its install prompt
+import '@/utils/webDialogs';
+import '@/utils/webInstall';
+import WebDialogHost from '@/components/web/WebDialogHost';
 import { listenToReminderTaps, useReminderSync } from '@/utils/notifications';
 import { useWidgetSync } from '@/hooks/useWidgetSync';
 import { useAppOpenAlert } from '@/hooks/useAppOpenAlert';
@@ -75,6 +79,7 @@ export default function RootLayout() {
         />
         <AppOpenAlert />
         <AchievementToast />
+        <WebDialogHost />
         {/* Animations follow the system "Reduce motion" setting: the default of Reanimated (#26), except
             a reversed infinite withRepeat, which keeps its starting value: its visible state is set
             with useReducedMotion() (hint highlight, utils/hintGlow.ts, issue 154) */}

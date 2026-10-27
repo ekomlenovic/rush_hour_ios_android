@@ -1795,5 +1795,13 @@
     "sticker_dailies_few": "dnevna",
     "sticker_dailies_other": "dnevnih",
     "sticker_vs": "vs {{period}}"
+  },
+  "web": {
+    "share_copied_title": "Kopirano!",
+    "share_copied_body": "Poruka je u tvom međuspremniku: nalepi je gde želiš da je podeliš.",
+    "install_title": "Instaliraj Rush Hours",
+    "install_ios": "Dodirni Deli, pa „Dodaj na početni ekran“: igra se otvara preko celog ekrana, čak i bez interneta. Inače Safari može da obriše tvoj napredak posle 7 dana bez igranja.",
+    "install_prompt": "Stavi igru na početni ekran: otvara se preko celog ekrana, čak i bez interneta.",
+    "install_button": "Instaliraj"
   }
 }

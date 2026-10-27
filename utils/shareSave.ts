@@ -18,3 +18,21 @@ export async function shareSaveFile(code: string, dialogTitle: string): Promise<
     return false;
   }
 }
+
+/** The text of a file picked with expo-document-picker (copied to the cache) */
+export async function readPickedFile(asset: { uri: string }): Promise<string> {
+  return new File(asset.uri).text();
+}
+
+/**
+ * Shares a PNG image drawn by the app (recap), from its base64 data. Returns whether it went
+ * out; throws when the device cannot share it.
+ */
+export async function sharePngFile(name: string, base64: string, dialogTitle: string): Promise<boolean> {
+  if (!(await Sharing.isAvailableAsync())) throw new Error('sharing unavailable');
+  const file = new File(Paths.cache, name);
+  file.create({ overwrite: true });
+  file.write(base64, { encoding: 'base64' });
+  await Sharing.shareAsync(file.uri, { mimeType: 'image/png', UTI: 'public.png', dialogTitle });
+  return true;
+}

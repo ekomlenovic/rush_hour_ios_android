@@ -1705,5 +1705,13 @@
     "sticker_dailies_one": "daily",
     "sticker_dailies_other": "dailies",
     "sticker_vs": "vs {{period}}"
+  },
+  "web": {
+    "share_copied_title": "Copied!",
+    "share_copied_body": "The message is in your clipboard: paste it wherever you want to share it.",
+    "install_title": "Install Rush Hours",
+    "install_ios": "Tap Share, then “Add to Home Screen”: the game opens full screen, even offline. Otherwise Safari may erase your progress after 7 days without playing.",
+    "install_prompt": "Put the game on your home screen: it opens full screen, even offline.",
+    "install_button": "Install"
   }
 }

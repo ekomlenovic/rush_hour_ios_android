@@ -13,6 +13,14 @@ A sliding-car puzzle game: move the cars to free the red one. 700+ levels on a w
 
 ## Install the game
 
+### In the browser (any phone or computer)
+
+Play right away, without installing anything: **[ekomlenovic.github.io/rush_hour_ios_android](https://ekomlenovic.github.io/rush_hour_ios_android/)**.
+
+On iPhone, open it in Safari, then **Share** → **Add to Home Screen**: the game gets its icon, opens full screen and works offline. Do it to keep your progress: Safari erases the data of a website left 7 days without a visit, but not the one of a game on the home screen. On Android, Chrome offers to **Install** it.
+
+The web version is the same game, with its progress in the browser (export it from the options to move it to the app). No home screen widget and no reminders there.
+
 ### Android
 
 On the Google Play Store: **[Rush Hours on Google Play](https://play.google.com/store/apps/details?id=com.rushhours.app)**.
@@ -101,6 +109,14 @@ Un jeu de casse-tête où tu fais glisser les voitures pour libérer la rouge. P
 </table>
 
 ## Installer le jeu
+
+### Dans le navigateur (n'importe quel téléphone ou ordinateur)
+
+Joue tout de suite, sans rien installer : **[ekomlenovic.github.io/rush_hour_ios_android](https://ekomlenovic.github.io/rush_hour_ios_android/)**.
+
+Sur iPhone, ouvre-le dans Safari, puis **Partager** → **Sur l'écran d'accueil** : le jeu a son icône, s'ouvre en plein écran et marche hors ligne. Fais-le pour garder ta progression : Safari efface les données d'un site resté 7 jours sans visite, pas celles d'un jeu sur l'écran d'accueil. Sur Android, Chrome propose de l'**Installer**.
+
+La version web est le même jeu, avec sa progression dans le navigateur (exporte-la depuis les options pour la passer à l'app). Pas de widget d'écran d'accueil ni de rappels.
 
 ### Android
 
