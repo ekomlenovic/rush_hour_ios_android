@@ -501,6 +501,19 @@ La CI (`.github/workflows/tests.yml`) lance le typecheck et les tests dans les t
 
 Le build de l'app (`.github/workflows/build.yml`) ne se lance **qu'à la main** (Actions → Run workflow). Lancé sur `main`, il publie une release et met à jour les sources SideStore / Android ; lancé sur une autre branche, il ne fait que builder.
 
+### Source SideStore
+
+`sidestore-source.json` est une source au format AltStore 2.0, prête pour la [Community Source de SideStore](SIDESTORE_COMMUNITY.md). `build.yml` la vérifie avant de builder et y ajoute chaque build (`scripts/sidestore/cli.ts`, règles dans `scripts/sidestore/source.ts`, testées par `__tests__/sidestoreSource.test.ts`).
+
+| Règle | Où |
+|---|---|
+| Chaque build est une entrée de `versions`, **la plus récente en premier** ; les champs du haut (`version`, `downloadURL`…) la répètent pour les anciens SideStore | `addVersion` |
+| Le numéro de build de l'IPA (`CFBundleVersion`, de l'app et du widget) est le numéro du run, le même que `buildVersion` : SideStore refuse une app dont la version ou le build diffère de la source | `build.yml` (« Set the build number ») |
+| Une version **plus ancienne** que la dernière de la source est refusée avant le build : monter `version` dans `app.json` et `package.json` à chaque release. Un nouveau build de la même version la remplace | `sourceErrors`, `addVersion` |
+| `appPermissions` annonce **exactement** les entitlements et les clés `…UsageDescription` de l'app, lus dans `app.json` : en ajouter une dans l'app oblige à mettre à jour la source (le test échoue sinon) | `expectedPermissions` |
+| Icône, captures (`store-listing/en/`) et téléchargements sont des fichiers **de ce dépôt** (pas d'hébergeur externe) ; catégorie `games` | `sourceErrors` |
+| Chaque version a sa taille et son `sha256` ; la release donne le MD5 et le SHA-256 des fichiers ; les notes de la version sont le bloc `<en-US>` de `docs/RELEASE_NOTES_<version>.md` | `cli.ts add`, `build.yml` |
+
 ## Conventions
 
 Les **commits** et les **titres d'issues** suivent les [Semantic Commit Messages](https://www.conventionalcommits.org/) : `type(scope optionnel): description`.

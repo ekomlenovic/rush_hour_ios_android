@@ -10,6 +10,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.rushhours.app",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "Rush Hours connects to the multiplayer server you join, which can be on your local network."
+      },
       "entitlements": {
         "com.apple.security.application-groups": [
           "group.com.rushhours.app"
