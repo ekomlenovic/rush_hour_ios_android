@@ -2,7 +2,7 @@
 import '@/utils/webViewport';
 import React, { useEffect, useRef } from 'react';
 import { Alert } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AudioProvider } from '@/context/AudioProvider';
@@ -11,6 +11,7 @@ import CrashScreen from '@/components/CrashScreen';
 // The web version: alerts and shares the browser does not have (before any alert), its install prompt
 import '@/utils/webDialogs';
 import '@/utils/webInstall';
+import { listenToEscape } from '@/utils/webKeyboard';
 import WebDialogHost from '@/components/web/WebDialogHost';
 import { listenToReminderTaps, useReminderSync } from '@/utils/notifications';
 import { useWidgetSync } from '@/hooks/useWidgetSync';
@@ -41,12 +42,19 @@ function AppOpenAlert() {
 export default function RootLayout() {
   const { colors, scheme } = useTheme();
   const router = useRouter();
+  const pathname = usePathname();
   useAppearanceSync();
   useReminderSync();
   useWidgetSync();
   // Shared level links (rush-hours://game?data=…) are opened by Expo Router on the game screen (issue 118)
   // A touched reminder opens what it announces, above the screen left open (issue 191)
   useEffect(() => listenToReminderTaps(url => router.push(url)), [router]);
+  // The web version: Escape goes back, like the back button of Android (modals close themselves)
+  // (a screen opened by a link, nothing under it: home, like its back button; nothing on home)
+  useEffect(() => listenToEscape(() => {
+    if (router.canGoBack()) router.back();
+    else if (pathname !== '/') router.replace('/');
+  }), [router, pathname]);
 
   // The save could not be read: the player must know their progress is not gone
   const gameLoadFailed = useGameStore(state => state.saveLoadFailed);
