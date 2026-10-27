@@ -490,6 +490,8 @@ Les règles ci-dessus sont vérifiées par les tests de `__tests__/` (Jest). Tou
 | `npm run typecheck` | vérification TypeScript |
 | `cd server && npm test` | tests du serveur multijoueur (Vitest) |
 
+Les tests en `.test.ts` couvrent la logique ; ceux en `.test.tsx` de `__tests__/components/` **rendent les écrans** avec `@testing-library/react-native` (et `renderRouter` d'`expo-router/testing-library` pour un écran sous la vraie mise en page racine) : `WinModal`, partie gagnée sur l'écran de jeu, créateur. Ils trouvent les éléments comme un lecteur d'écran (rôle, libellé traduit) et jouent avec les actions d'accessibilité, pas avec des identifiants de test. Ils importent d'abord `__tests__/components/setup.ts`, qui remplace les modules natifs (Reanimated, audio, rappels, icônes…) : pas dans `jest.setup.ts`, car des tests de logique utilisent le vrai Reanimated.
+
 La CI (`.github/workflows/tests.yml`) lance le typecheck et les tests dans les trois fuseaux sur chaque pull request. `.github/workflows/server.yml` teste le serveur et publie son image Docker sur GHCR (`:latest` depuis `main`, `:preprod` depuis les branches de version `X.Y.Z`, `:test` pour le reste : les PR du dépôt et les lancements manuels sur une autre branche, la dernière gagne).
 
 Le build de l'app (`.github/workflows/build.yml`) ne se lance **qu'à la main** (Actions → Run workflow). Lancé sur `main`, il publie une release et met à jour les sources SideStore / Android ; lancé sur une autre branche, il ne fait que builder.
