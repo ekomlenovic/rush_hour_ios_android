@@ -192,6 +192,23 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
               </Pressable>
             </View>
 
+            {SHOW_SUPPORT && (
+              <View style={settingsStyles.settingRow}>
+                <View style={settingsStyles.settingText}>
+                  <Text style={[settingsStyles.settingLabel, { color: colors.text }]}>{t('home.support')}</Text>
+                  <Text style={[settingsStyles.settingSub, { color: colors.textMuted }]}>{t('home.support_desc')}</Text>
+                </View>
+                <Pressable
+                  onPress={() => Linking.openURL(SPONSOR_URL)}
+                  accessibilityRole="link"
+                  style={[styles.updateButton, styles.supportButton, { backgroundColor: colors.primary }]}
+                >
+                  <Ionicons name="heart" size={RFValue(14)} color={colors.onPrimary} />
+                  <Text style={[styles.updateButtonText, { color: colors.onPrimary }]}>{t('home.support_button')}</Text>
+                </Pressable>
+              </View>
+            )}
+
             <View style={settingsStyles.settingRow}>
               <View style={settingsStyles.settingText}>
                 <Text style={[settingsStyles.settingLabel, { color: colors.text }]}>{t('common.language')}</Text>
@@ -255,22 +272,6 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
             {showMapLevels && <MapLevelsSection colors={colors} onClose={onClose} />}
 
             <SaveSection colors={colors} onClose={onClose} />
-
-            {SHOW_SUPPORT && (
-              <View style={settingsStyles.settingRow}>
-                <View style={settingsStyles.settingText}>
-                  <Text style={[settingsStyles.settingLabel, { color: colors.text }]}>{t('home.support')}</Text>
-                  <Text style={[settingsStyles.settingSub, { color: colors.textMuted }]}>{t('home.support_desc')}</Text>
-                </View>
-                <Pressable
-                  onPress={() => Linking.openURL(SPONSOR_URL)}
-                  accessibilityRole="link"
-                  style={[styles.updateButton, { backgroundColor: colors.card }]}
-                >
-                  <Text style={[styles.updateButtonText, { color: colors.primaryText }]}>{t('home.support_button')}</Text>
-                </Pressable>
-              </View>
-            )}
 
             <View style={settingsStyles.settingRow}>
               <View style={settingsStyles.settingText}>
@@ -391,6 +392,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
+  },
+  supportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   updateButtonText: {
     fontSize: RFValue(14),
