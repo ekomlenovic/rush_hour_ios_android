@@ -11,8 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StatusBar } from 'expo-status-bar';
-import * as Sharing from 'expo-sharing';
-import { File, Paths } from 'expo-file-system';
+import { sharePngFile } from '@/utils/shareSave';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useGameStore } from '@/store/gameStore';
 import { recapSlideColors, recapSlideText } from '@/theme';
@@ -21,7 +20,7 @@ import {
   buildRecap, buildRecapShareText, isInProgress, periodLabel, recapHighlights, recapProgress, recapSlides, shouldMarkRecapSeen,
   type Recap, type RecapFigure, type RecapSlide,
 } from '@/utils/recap';
-import { APP_URL } from '@/utils/shareResult';
+import { GAME_URL } from '@/utils/shareResult';
 import RecapShareImage, { MAX_IMAGE_TILES, SHARE_IMAGE_HEIGHT, SHARE_IMAGE_WIDTH } from '@/components/recap/RecapShareImage';
 import type { IoniconName } from '@/utils/icons';
 
@@ -136,12 +135,10 @@ export default function RecapScreen() {
     if (!svg) return;
     svg.toDataURL(async (data: string) => {
       try {
-        if (!(await Sharing.isAvailableAsync())) throw new Error('sharing unavailable');
-        const file = new File(Paths.cache, `rush-hours-recap-${recap.key}.png`);
-        file.create({ overwrite: true });
-        file.write(data.replace(/^data:image\/png;base64,/, ''), { encoding: 'base64' });
-        await Sharing.shareAsync(file.uri, { mimeType: 'image/png', UTI: 'public.png', dialogTitle: t('recap.share_image') });
-        useGameStore.getState().recordResultShared();
+        const base64 = data.replace(/^data:image\/png;base64,/, '');
+        if (await sharePngFile(`rush-hours-recap-${recap.key}.png`, base64, t('recap.share_image'))) {
+          useGameStore.getState().recordResultShared();
+        }
       } catch (error) {
         console.error('Sharing failed', error);
         Alert.alert(t('common.error'), t('recap.share_image_error'));
@@ -160,7 +157,7 @@ export default function RecapScreen() {
     profileDescription: t(`recap.profile_${recap.profile}_desc`),
     highlights: recapHighlights(t, recap, MAX_IMAGE_TILES),
     sticker: imageSticker(t, recap, i18n.language),
-    footer: APP_URL.replace(/^https:\/\//, ''),
+    footer: GAME_URL.replace(/^https:\/\//, ''),
     cosmetics,
   };
   const pagePosition = (index: number) => t('a11y.recap_page', { page: index + 1, total });

@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import type { ChallengeResult, PeriodStats, RecapsSeen } from '../store/types';
 import { emptyPeriodStats, monthKeyOf } from '../store/periodStats';
 import { addMonths, computeDayRuns, dateLocale, formatPlayTime, getLocalDateString, getWeekStart, parseLocalDateString } from './date';
-import { APP_URL } from './shareResult';
+import { GAME_URL } from './shareResult';
 
 /**
  * Monthly and yearly recap, Spotify Wrapped style (issue 125, see docs/GAME_DESIGN.md, Récap).
@@ -298,5 +298,5 @@ export function buildRecapShareText(t: TFunction, recap: Recap, language: string
     ? t('recap.share_title_year', { period: periodLabel(recap.key, language), ...plain })
     : t('recap.share_title_month', { period: periodLabel(recap.key, language), ...plain });
   const lines = recapHighlights(t, recap, 5).map(h => `${h.emoji} ${h.value} ${h.label}`);
-  return [`Rush Hours — ${title} 🎁`, ...lines, t(`recap.profile_${recap.profile}`), APP_URL].join('\n');
+  return [`Rush Hours — ${title} 🎁`, ...lines, t(`recap.profile_${recap.profile}`), GAME_URL].join('\n');
 }

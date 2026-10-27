@@ -1037,6 +1037,7 @@
     "have_account": "I already have an account on this server",
     "new_account": "I'm new on this server",
     "join_tip": "Tip: scan the QR code or paste the invitation link here, everything fills in by itself.",
+    "join_tip_paste": "Tip: paste the invitation link here, everything fills in by itself.",
     "scan_qr": "Scan a QR code",
     "scan_hint": "Point at the invitation or recovery QR code",
     "already_joined_title": "Already joined",
@@ -1531,6 +1532,7 @@
     },
     "errors": {
       "network": "The server does not answer. Check your connection and the server address.",
+      "network_web": "The server does not answer. Check your connection and the server address. A server older than Rush Hours 2.0.6 does not let the web version in: ask its admin to update it.",
       "timeout": "The server takes too long to answer. Try again.",
       "bad_response": "This is not a Rush Hours server (check the address).",
       "internal": "The server ran into a problem. Try again later.",
@@ -1705,5 +1707,13 @@
     "sticker_dailies_one": "daily",
     "sticker_dailies_other": "dailies",
     "sticker_vs": "vs {{period}}"
+  },
+  "web": {
+    "share_copied_title": "Copied!",
+    "share_copied_body": "The message is in your clipboard: paste it wherever you want to share it.",
+    "install_title": "Install Rush Hours",
+    "install_ios": "Tap Share, then “Add to Home Screen”: the game opens full screen, even offline. Otherwise Safari may erase your progress after 7 days without playing.",
+    "install_prompt": "Put the game on your home screen: it opens full screen, even offline.",
+    "install_button": "Install"
   }
 }

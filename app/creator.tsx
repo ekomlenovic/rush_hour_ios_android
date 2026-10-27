@@ -60,6 +60,11 @@ export default function LevelCreatorScreen() {
   const dragX = useSharedValue(0);
   const dragY = useSharedValue(0);
   const dragVisible = useSharedValue(0);
+  // Where the screen starts in the window: the dragged vehicle is drawn in the screen, the finger is
+  // in the window. Not at 0 in the web version on a big screen (the column in the middle)
+  const screenX = useSharedValue(0);
+  const screenY = useSharedValue(0);
+  const screenRef = useRef<HostInstance>(null);
 
   const boardRef = useRef<HostInstance>(null);
   const boardPos = useRef({ x: 0, y: 0 });
@@ -77,6 +82,10 @@ export default function LevelCreatorScreen() {
     boardRef.current?.measureInWindow((x, y) => {
       // Origin of the cells, inside the frame border
       boardPos.current = { x: x + BOARD_BORDER, y: y + BOARD_BORDER };
+    });
+    screenRef.current?.measureInWindow((x, y) => {
+      screenX.value = x;
+      screenY.value = y;
     });
   }, []);
 
@@ -418,8 +427,8 @@ export default function LevelCreatorScreen() {
 
   const floatAnimStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateX: dragX.value - floatW / 2 },
-      { translateY: dragY.value - floatH / 2 },
+      { translateX: dragX.value - screenX.value - floatW / 2 },
+      { translateY: dragY.value - screenY.value - floatH / 2 },
     ],
     opacity: dragVisible.value,
   }));
@@ -436,7 +445,7 @@ export default function LevelCreatorScreen() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={[styles.container, { backgroundColor: C.background }]}>
+      <View ref={screenRef} style={[styles.container, { backgroundColor: C.background }]}>
 
         {/* ── Header ── */}
         <View style={[styles.header, { backgroundColor: C.background, paddingTop: insets.top + 8 }]}>
@@ -604,6 +613,8 @@ export default function LevelCreatorScreen() {
                   dragY={dragY}
                   dragVisible={dragVisible}
                   onDragStart={(tmpl, sx, sy) => {
+                    // The window may have moved the board since its layout (web: resized window)
+                    measureBoard();
                     setFloatingTemplate(tmpl);
                     updateDrag(`toolbox-${idx}`, tmpl.orientation, tmpl.length, tmpl.color, sx, sy);
                   }}

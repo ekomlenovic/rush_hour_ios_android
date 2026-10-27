@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import type { PersistStorage, StorageValue } from 'zustand/middleware';
 
@@ -30,9 +31,12 @@ function accountsOf(state: unknown): StoredAccount[] | null {
  * Wraps the storage of the multiplayer store: secrets are written to the secure storage and
  * left out of the save, then put back in the accounts when it is read. An account saved before
  * (v1) still has them in the save: they move at the next write. If the secure storage fails,
- * they stay in the save rather than being lost (the player stays signed in).
+ * they stay in the save rather than being lost (the player stays signed in). Same on the web.
  */
 export function createSecureAccountStorage<S>(base: PersistStorage<S>): PersistStorage<S> {
+  // The web version has no secure storage (expo-secure-store is empty there): the secrets stay in
+  // the save, in the browser's storage, which no page of another site can read
+  if (Platform.OS === 'web') return base;
   /** Secrets as they are in the secure storage, by server: only changes are written */
   const stored = new Map<string, Secrets>();
   /** The save was read: before, the state written is the empty one of the first frames */

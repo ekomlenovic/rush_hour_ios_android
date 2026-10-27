@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <!-- viewport-fit=cover: the bottom safe area of the iPhone (home bar) reaches the app as env(safe-area-inset-bottom) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>%WEB_TITLE%</title>
+    <!-- Installed on the home screen (PWA): full screen, its own icon and name. Paths: experiments.baseUrl of app.json -->
+    <link rel="manifest" href="/rush_hour_ios_android/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/rush_hour_ios_android/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Rush Hours" />
+    <!-- Not black-translucent: the page would go under the status bar, and iOS 26 gives it a top safe area of 0
+         (WebKit bug 301994): the header was under the clock and the page ended a status bar short of the bottom.
+         The status bar takes the theme-color, set by the app to its background (useAppearanceSync) -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F5F5FA" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0F0F1A" />
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+        /* A game, not a page: no bounce, no double-tap zoom, no text selected or callout while dragging a vehicle */
+        overscroll-behavior: none;
+        touch-action: manipulation;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+        background-color: #F5F5FA;
+      }
+      /* The ring of the focused element for the keyboard only, not after a touch or a focus set by the app */
+      :focus:not(:focus-visible) {
+        outline: none;
+      }
+      input,
+      textarea {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background-color: #0F0F1A;
+        }
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+        /* A big screen: the game stays a phone, in a column in the middle (utils/webViewport.ts) */
+        max-width: 480px;
+        margin: 0 auto;
+      }
+      /* The modals (react-native-web portals, children of body): in the column too. A transform makes
+         the portal the frame of their position: fixed */
+      body > div:not(#root):has(> *) {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        width: 100%;
+        max-width: 480px;
+        transform: translateX(-50%);
+      }
+      @media (min-width: 520px) {
+        #root {
+          box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.2);
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>Rush Hours needs JavaScript to run.</noscript>
+    <div id="root"></div>
+    <script>
+      // Offline play and a fast start: the service worker written at the export (scripts/web/postExport.mjs)
+      if ('serviceWorker' in navigator && location.protocol === 'https:') {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/rush_hour_ios_android/sw.js', { scope: '/rush_hour_ios_android/' }).catch(function () {});
+        });
+      }
+    </script>
+  </body>
+</html>

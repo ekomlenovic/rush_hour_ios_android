@@ -66,33 +66,37 @@ const ToolboxItem = React.memo(function ToolboxItem({ template, displayColor, co
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View
-        accessible
-        accessibilityRole="button"
-        accessibilityLabel={`${t(`creator.${template.label.toLowerCase()}`)}, ${t(isH ? 'a11y.horizontal' : 'a11y.vertical')}, ${size}`}
-        accessibilityHint={t('a11y.tool_hint')}
-        accessibilityActions={[{ name: 'activate', label: t('a11y.add_to_board') }]}
-        onAccessibilityAction={onA11yAdd}
-        style={[styles.toolCard, animStyle, {
-        backgroundColor: colors.card,
-        borderColor: colors.border,
-      }]}>
-        <View style={[styles.toolPreviewWrap, { width: pw + 8, height: Math.max(ph + 8, MINI_CELL + 8) }]}>
-          {art ? (
-            <View style={{ width: pw, height: ph }}>
-              <DrawnVehicle art={art} length={template.length} orientation={template.orientation} color={color} width={pw} height={ph} />
-            </View>
-          ) : (
-            <View style={[styles.toolPreview, { width: pw, height: ph, backgroundColor: color }]}>
-              <View style={[styles.toolPreviewShine, { backgroundColor: board.vehicleShineStrong }]} />
-            </View>
-          )}
-        </View>
+      {/* The gesture's view has no button role: on the web, gesture-handler does not capture the
+          pointer of a button, and the drag stopped as soon as it left the card */}
+      <Animated.View style={[styles.toolSlot, animStyle]}>
+        <View
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={`${t(`creator.${template.label.toLowerCase()}`)}, ${t(isH ? 'a11y.horizontal' : 'a11y.vertical')}, ${size}`}
+          accessibilityHint={t('a11y.tool_hint')}
+          accessibilityActions={[{ name: 'activate', label: t('a11y.add_to_board') }]}
+          onAccessibilityAction={onA11yAdd}
+          style={[styles.toolCard, {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+        }]}>
+          <View style={[styles.toolPreviewWrap, { width: pw + 8, height: Math.max(ph + 8, MINI_CELL + 8) }]}>
+            {art ? (
+              <View style={{ width: pw, height: ph }}>
+                <DrawnVehicle art={art} length={template.length} orientation={template.orientation} color={color} width={pw} height={ph} />
+              </View>
+            ) : (
+              <View style={[styles.toolPreview, { width: pw, height: ph, backgroundColor: color }]}>
+                <View style={[styles.toolPreviewShine, { backgroundColor: board.vehicleShineStrong }]} />
+              </View>
+            )}
+          </View>
 
-        <View style={styles.toolLabels}>
-          <Text style={[styles.toolName, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t(`creator.${template.label.toLowerCase()}`)}</Text>
-          <View style={[styles.toolBadge, { backgroundColor: color + '28', borderColor: color + '55' }]}>
-            <Text style={[styles.toolBadgeText, { color }]}>{dir} {size}</Text>
+          <View style={styles.toolLabels}>
+            <Text style={[styles.toolName, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t(`creator.${template.label.toLowerCase()}`)}</Text>
+            <View style={[styles.toolBadge, { backgroundColor: color + '28', borderColor: color + '55' }]}>
+              <Text style={[styles.toolBadgeText, { color }]}>{dir} {size}</Text>
+            </View>
           </View>
         </View>
       </Animated.View>
@@ -104,7 +108,8 @@ export default ToolboxItem;
 
 const styles = StyleSheet.create({
   // The truck lying down left too little room to its name: smaller previews, and the labels shrink rather than overflow the card
-  toolCard: { borderRadius: 14, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, flexBasis: '48%' },
+  toolSlot: { flexBasis: '48%' },
+  toolCard: { flex: 1, borderRadius: 14, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
   toolPreviewWrap: { justifyContent: 'center', alignItems: 'center', width: 52, height: 38 },
   toolPreview: { borderRadius: 5, overflow: 'hidden', justifyContent: 'flex-start' },
   toolPreviewShine: { position: 'absolute', top: 0, left: 0, right: 0, height: '40%' },

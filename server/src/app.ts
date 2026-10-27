@@ -126,6 +126,21 @@ export function buildApp(deps: AppDeps) {
   });
   app.setNotFoundHandler((_, reply) => reply.status(404).send({ error: 'not_found' }));
 
+  // The web version of the game (see docs/GAME_DESIGN.md, Version web) calls the API from a page
+  // of another site: browsers let it read the answers. Any page may: no cookie, nothing is somebody's
+  // without their token, which a page of another site cannot read. The preflight of a request with a
+  // token is answered here, before the routes and their rate limit
+  app.addHook('onRequest', async (request, reply) => {
+    if (!request.url.startsWith('/api/')) return;
+    reply.header('access-control-allow-origin', '*');
+    if (request.method !== 'OPTIONS') return;
+    return reply.status(204).headers({
+      'access-control-allow-methods': 'GET, POST, PATCH, DELETE',
+      'access-control-allow-headers': 'authorization, content-type',
+      'access-control-max-age': '86400',
+    }).send();
+  });
+
   // ── Players ────────────────────────────────────────────────────────────────
 
   const PLAYER_FIELDS = 'id, pseudo, created_at, is_admin, banned';
