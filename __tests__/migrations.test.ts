@@ -661,6 +661,29 @@ describe('multiplayer accounts v2: secrets in the secure storage (#84)', () => {
     expect(store.getState().accounts).toHaveLength(2);
   });
 
+  it('keeps the secrets in the save on the web, which has no secure storage', async () => {
+    // The modules of the web version: Platform.OS read when the store is created
+    const launchWeb = () => {
+      let store!: typeof import('../store/multiStore').useMultiStore;
+      jest.isolateModules(() => {
+        jest.replaceProperty(require('react-native').Platform, 'OS', 'web');
+        store = require('../store/multiStore').useMultiStore;
+      });
+      return store;
+    };
+    SecureStore.setItemAsync.mockClear();
+    const store = launchWeb();
+    await flush();
+    expect(store.getState().accounts).toEqual(v1Save.state.accounts);
+    store.getState().updateAccount('https://rush.example', { recoveryCode: 'QRST-UVWX' });
+    await flush();
+    expect((await stored()).state.accounts[0]).toMatchObject({ token: 't0k', recoveryCode: 'QRST-UVWX' });
+    expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+    const next = launchWeb();
+    await flush();
+    expect(next.getState().accounts[0]).toMatchObject({ token: 't0k', recoveryCode: 'QRST-UVWX' });
+  });
+
   it('escapes the server address into a valid secure storage key', () => {
     expect(secretKey('https://a.example:8443/x_y')).toMatch(/^[A-Za-z0-9._-]+$/);
     expect(secretKey('https://a.example/a_b')).not.toBe(secretKey('https://a.example/a/b'));

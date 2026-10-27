@@ -87,6 +87,37 @@ describe('joining a server', () => {
   });
 });
 
+describe('web version (another origin)', () => {
+  it('lets a page of another site read the answers, errors and rate limits included', async () => {
+    const { app, join } = open();
+    const { token } = await join('Léo');
+    const origin = { origin: 'https://ekomlenovic.github.io' };
+    for (const [url, headers] of [['/api/v1/info', {}], ['/api/v1/me', { authorization: `Bearer ${token}` }], ['/api/v1/me', {}], ['/api/v1/nothing', {}]] as const) {
+      const res = await app.inject({ method: 'GET', url, headers: { ...origin, ...headers } });
+      expect(res.headers['access-control-allow-origin']).toBe('*');
+    }
+  });
+
+  it('answers the preflight of a request with a token, without a route nor the rate limit', async () => {
+    const { app } = open();
+    for (let i = 0; i < 150; i++) {
+      const res = await app.inject({
+        method: 'OPTIONS', url: '/api/v1/challenge/submit',
+        headers: { origin: 'https://ekomlenovic.github.io', 'access-control-request-method': 'POST', 'access-control-request-headers': 'authorization, content-type' },
+      });
+      expect(res.statusCode).toBe(204);
+      expect(res.headers['access-control-allow-headers']).toBe('authorization, content-type');
+      expect(res.headers['access-control-allow-methods']).toContain('PATCH');
+    }
+  });
+
+  it('leaves the pages outside the API alone', async () => {
+    const { app } = open();
+    const res = await app.inject({ method: 'GET', url: '/delete-account', headers: { origin: 'https://example.org' } });
+    expect(res.headers['access-control-allow-origin']).toBeUndefined();
+  });
+});
+
 describe('look-alike nickname (renames)', () => {
   it('still allows a rename that looks like no other member', async () => {
     const { join, request } = open();

@@ -1,3 +1,6 @@
+import { Platform } from 'react-native';
+import { WEB_APP_URL } from '../webApp';
+
 /**
  * Addresses of the multiplayer servers (#46) and the invitation links.
  * No URL object: the one of React Native is incomplete.
@@ -5,6 +8,14 @@
 
 /** Scheme of the app (app.json) */
 export const APP_SCHEME = 'rush-hours';
+
+/**
+ * Start of the links: the app's own, or on the web the web version's, which opens in any
+ * browser (see docs/GAME_DESIGN.md, Version web). Both are read everywhere.
+ */
+const linkBase = () => (Platform.OS === 'web' ? `${WEB_APP_URL}/` : `${APP_SCHEME}://`);
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const JOIN_LINK = new RegExp(`^(?:${APP_SCHEME}://(?:/)?|${escapeRegExp(WEB_APP_URL)}/)multi/join/?\\?(.*)$`, 'i');
 
 export type ServerUrlResult = { ok: true; url: string } | { ok: false; error: 'invalid_url' | 'not_https' };
 
@@ -39,7 +50,7 @@ export const serverHost = (url: string): string => url.replace(/^https:\/\//, ''
  * its invite code: Expo Router opens the route of the link with its parameters.
  */
 export function buildInviteLink(serverUrl: string, inviteCode: string): string {
-  return `${APP_SCHEME}://multi/join?server=${encodeURIComponent(serverUrl)}&code=${encodeURIComponent(inviteCode)}`;
+  return `${linkBase()}multi/join?server=${encodeURIComponent(serverUrl)}&code=${encodeURIComponent(inviteCode)}`;
 }
 
 function queryParams(query: string): Record<string, string> {
@@ -57,7 +68,7 @@ function queryParams(query: string): Record<string, string> {
 }
 
 function parseLink(link: string, recover: boolean): { server: string; code: string } | null {
-  const match = new RegExp(`^${APP_SCHEME}://(?:/)?multi/join/?\\?(.*)$`, 'i').exec(link.trim());
+  const match = JOIN_LINK.exec(link.trim());
   if (!match) return null;
   const { server, code, mode } = queryParams(match[1]);
   if ((mode === 'recover') !== recover) return null;
@@ -74,7 +85,7 @@ export const parseInviteLink = (link: string) => parseLink(link, false);
  * with a new phone, it opens the app ready to get the account back.
  */
 export function buildRecoveryLink(serverUrl: string, recoveryCode: string): string {
-  return `${APP_SCHEME}://multi/join?mode=recover&server=${encodeURIComponent(serverUrl)}&code=${encodeURIComponent(recoveryCode)}`;
+  return `${linkBase()}multi/join?mode=recover&server=${encodeURIComponent(serverUrl)}&code=${encodeURIComponent(recoveryCode)}`;
 }
 
 export const parseRecoveryLink = (link: string) => parseLink(link, true);
