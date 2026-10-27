@@ -29,6 +29,14 @@ const build = (version: string, buildVersion: string): VersionEntry => ({
   minOSVersion: MIN_OS_VERSION,
 });
 
+// The real source with 2.0.4 (1) as its only build: the tests below must not depend on
+// the builds the release workflow adds to sidestore-source.json
+const currentApp = rushHoursApp(current);
+const base = addVersion(
+  { ...current, apps: current.apps.map((a) => (a === currentApp ? { ...a, versions: [] } : a)) },
+  build('2.0.4', '1'),
+);
+
 describe('SideStore source', () => {
   it('is valid and announces what the app uses', () => {
     expect(sourceErrors(current, expected)).toEqual([]);
@@ -64,7 +72,7 @@ describe('SideStore source', () => {
   });
 
   it('adds a build on top and repeats it in the top-level fields', () => {
-    const updated = addVersion(current, build('2.0.5', '60'));
+    const updated = addVersion(base, build('2.0.5', '60'));
     const entry = rushHoursApp(updated);
     expect(entry.versions.map((v) => `${v.version} (${v.buildVersion})`)).toEqual(['2.0.5 (60)', '2.0.4 (1)']);
     expect(entry).toMatchObject({ version: '2.0.5', buildVersion: '60', versionDate: '2026-11-01', size: 1000 });
@@ -76,15 +84,15 @@ describe('SideStore source', () => {
   });
 
   it('refuses a build SideStore would not offer as an update', () => {
-    const updated = addVersion(current, build('2.0.5', '60'));
+    const updated = addVersion(base, build('2.0.5', '60'));
     expect(() => addVersion(updated, build('2.0.4', '70'))).toThrow('older than 2.0.5');
     expect(() => addVersion(updated, build('2.0.5', '59'))).toThrow('older than build 60');
   });
 
   it('finds what SideStore or the community source would refuse', () => {
-    const entry = rushHoursApp(current);
+    const entry = rushHoursApp(base);
     const broken: SideStoreSource = {
-      ...current,
+      ...base,
       apps: [
         {
           ...entry,
