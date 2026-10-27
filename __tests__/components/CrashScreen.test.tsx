@@ -1,11 +1,12 @@
 import './setup';
 import React from 'react';
-import { Alert, Text } from 'react-native';
+import { Alert, Linking, Text } from 'react-native';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
 import i18n from '@/utils/i18n';
-import CrashScreen, { crashDetails } from '@/components/CrashScreen';
+import CrashScreen, { crashDetails, crashIssueUrl, MAX_ISSUE_URL_LENGTH } from '@/components/CrashScreen';
+import { APP_URL } from '@/utils/shareResult';
 import { ErrorBoundary } from '@/app/_layout';
 import { decodeSave } from '@/utils/saveTransfer';
 import { useGameStore } from '@/store/gameStore';
@@ -70,6 +71,51 @@ describe('CrashScreen (ErrorBoundary of the root layout)', () => {
 
     await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalledWith(crashDetails(error)));
     expect(crashDetails(error)).toBe('Error: boom\nError: boom\n    at GameScreen');
+  });
+});
+
+describe('reporting the crash in a GitHub issue', () => {
+  const device = { version: '2.0.4', os: 'ios 18.1' };
+  const fields = (url: string) => Object.fromEntries(new URL(url).searchParams);
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  });
+
+  it('prefills the feedback form of the language: a bug, the version, the error and the device', () => {
+    const url = crashIssueUrl(error, i18n.getFixedT('fr'), 'fr', device);
+    expect(url.startsWith(`${APP_URL}/issues/new?`)).toBe(true);
+    const form = fields(url);
+    expect(form).toMatchObject({ template: 'retour.yml', type: 'Bug', version: '2.0.4', title: 'fix: plantage (Error: boom)' });
+    expect(form.description).toContain(crashDetails(error));
+    expect(form.description).toContain('ios 18.1 · 2.0.4');
+
+    expect(fields(crashIssueUrl(error, i18n.getFixedT('en'), 'en', device))).toMatchObject({ template: 'feedback.yml', title: 'fix: crash (Error: boom)' });
+  });
+
+  it('cuts a long stack so that GitHub accepts the link, keeping the error itself', () => {
+    const long = Object.assign(new Error('deep'), { stack: `Error: deep\n${'    at someFunction (bundle.js:1:2345)\n'.repeat(1000)}` });
+    const url = crashIssueUrl(long, i18n.getFixedT('en'), 'en', device);
+    expect(url.length).toBeLessThanOrEqual(MAX_ISSUE_URL_LENGTH);
+    expect(fields(url).description).toMatch(/```\nError: deep\nError: deep\n {4}at someFunction[\s\S]*\n…\n```/);
+  });
+
+  it('the button opens the prefilled issue: the player sends it, the app sends nothing', async () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    await render(<CrashScreen error={error} retry={jest.fn()} />);
+    await fireEvent.press(screen.getByRole('link', { name: i18n.t('crash.report_btn') }));
+
+    await waitFor(() => expect(openURL).toHaveBeenCalledTimes(1));
+    expect(fields(openURL.mock.calls[0][0])).toMatchObject({ type: 'Bug', description: expect.stringContaining('Error: boom') });
+  });
+
+  it('without a browser, the error details are copied instead', async () => {
+    jest.spyOn(Linking, 'openURL').mockRejectedValue(new Error('no browser'));
+    await render(<CrashScreen error={error} retry={jest.fn()} />);
+    await fireEvent.press(screen.getByRole('link', { name: i18n.t('crash.report_btn') }));
+
+    await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalledWith(crashDetails(error)));
   });
 });
 
