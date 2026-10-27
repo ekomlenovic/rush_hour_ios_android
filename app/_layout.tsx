@@ -1,3 +1,5 @@
+// First: the web version reads the size of its column, not of the window (before anything measures it)
+import '@/utils/webViewport';
 import React, { useEffect, useRef } from 'react';
 import { Alert } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
