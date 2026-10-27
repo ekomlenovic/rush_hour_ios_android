@@ -127,6 +127,16 @@
       },
       "versions": [
         {
+          "version": "2.0.5",
+          "buildVersion": "62",
+          "date": "2026-10-27",
+          "localizedDescription": "New:\n• If the app crashes, a screen reassures you instead of a blank one: your progress is kept, and you can retry or export it\n• Report a crash in one tap: the report is filled in, you review it before sending\n• Fixes and improvements",
+          "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.5-b62/rush-hours-unsigned.ipa",
+          "size": 18856987,
+          "sha256": "e01ef315ba0b7a48253924a8fb7e166fccda4c7880d8077cd66322b587bfd992",
+          "minOSVersion": "16.4"
+        },
+        {
           "version": "2.0.4",
           "buildVersion": "1",
           "date": "2026-10-26",
@@ -137,12 +147,12 @@
           "minOSVersion": "16.4"
         }
       ],
-      "version": "2.0.4",
-      "buildVersion": "1",
-      "versionDate": "2026-10-26",
-      "versionDescription": "New:\n• Home screen widget: your streak, freezes and the daily challenge\n• In duels, spectators can react and cheer the players on\n• Scan a QR code to join a server or import a level\n• The game music no longer stops your music or podcasts\n• Smoother map, garage and win effects on Android\n• New language: Serbian\n• A daily challenge left open past midnight no longer breaks your streak\n• Fixes and improvements",
-      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.4-b59/rush-hours-unsigned.ipa",
-      "size": 18853301
+      "version": "2.0.5",
+      "buildVersion": "62",
+      "versionDate": "2026-10-27",
+      "versionDescription": "New:\n• If the app crashes, a screen reassures you instead of a blank one: your progress is kept, and you can retry or export it\n• Report a crash in one tap: the report is filled in, you review it before sending\n• Fixes and improvements",
+      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.5-b62/rush-hours-unsigned.ipa",
+      "size": 18856987
     }
   ],
   "news": []
