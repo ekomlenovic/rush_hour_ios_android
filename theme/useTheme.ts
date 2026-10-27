@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo } from 'react';
-import { Appearance, useColorScheme } from 'react-native';
+import { Appearance, Platform, useColorScheme } from 'react-native';
 import { useGameStore } from '@/store/gameStore';
 import { getUiColors, resolveScheme, type ColorScheme, type UiColors } from './ui';
 import { getSkinnedBoard, type BoardColors, type BoardLook, type VehiclePaletteId } from './board';
@@ -32,7 +32,9 @@ export function useBoardTheme(look?: BoardLook): { board: BoardColors; palette: 
 export function useAppearanceSync(): void {
   const mode = useGameStore((s) => s.themeMode);
   useEffect(() => {
-    Appearance.setColorScheme(mode === 'system' ? 'unspecified' : mode);
+    // The web has no native UI to set: the page tells the browser its scheme (scroll bars, form fields)
+    if (Platform.OS === 'web') document.documentElement.style.colorScheme = mode === 'system' ? 'light dark' : mode;
+    else Appearance.setColorScheme(mode === 'system' ? 'unspecified' : mode);
   }, [mode]);
 }
 

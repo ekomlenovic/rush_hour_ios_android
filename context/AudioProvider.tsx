@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, Platform } from 'react-native';
 import { setAudioModeAsync, useAudioPlayer, type AudioMode, type AudioStatus } from 'expo-audio';
 import { useGameStore } from '@/store/gameStore';
 
@@ -55,12 +55,20 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const volume = useRef(0);
   // Runs the volume logic again right away (set by the effect 5, a no-op when it is not running)
   const wake = useRef(() => { });
+  // The browser refused to play: it only plays after the player touches the page (autoplay
+  // policy). Tried again at the next touch or key, never in a loop: each refusal sends a status
+  // event, which played again right away and froze the page
+  const playRefused = useRef(false);
 
   // The audio session is set up before the first play(): left as is, it is exclusive
   // (soloAmbient on iOS, transient audio focus on Android) and stops the player's audio
   const [audioModeReady, setAudioModeReady] = useState(false);
   useEffect(() => {
     let cancelled = false;
+    // Safari (16.4+) has the same session: ambient, else its <audio> stops the player's music
+    // and plays in silent mode. Its volume cannot be set by a page on iOS: the fades do nothing there
+    const audioSession = Platform.OS === 'web' ? (navigator as { audioSession?: { type: string } }).audioSession : undefined;
+    if (audioSession) audioSession.type = 'ambient';
     setAudioModeAsync(MUSIC_AUDIO_MODE)
       .catch(() => { })
       .finally(() => { if (!cancelled) setAudioModeReady(true); });
@@ -90,7 +98,26 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   // 3. Follow the player through its status events rather than reading its properties
   useEffect(() => {
     if (!player) return;
+    const retryOnGesture = () => {
+      const retry = () => {
+        document.removeEventListener('pointerdown', retry, true);
+        document.removeEventListener('keydown', retry, true);
+        playRefused.current = false;
+        // Within the touch: the browser lets it play
+        wake.current();
+      };
+      document.addEventListener('pointerdown', retry, true);
+      document.addEventListener('keydown', retry, true);
+    };
     const subscription = player.addListener('playbackStatusUpdate', (status: AudioStatus) => {
+      if (Platform.OS === 'web' && status.error && !status.playing) {
+        playerState.current = { ...playerState.current, playing: false, at: Date.now() };
+        if (!playRefused.current) {
+          playRefused.current = true;
+          retryOnGesture();
+        }
+        return;
+      }
       const previous = playerState.current;
       playerState.current = {
         currentTime: status.currentTime ?? previous.currentTime,
@@ -169,7 +196,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       // Handle play/pause with safety checks.
       // We no longer need the isActive check here because the timer
       // is guaranteed to be destroyed when the app is backgrounded.
-      if (isMusicEnabled && !state.playing) {
+      if (isMusicEnabled && !state.playing && !playRefused.current) {
         player.play();
         playerState.current = { ...state, currentTime: position, playing: true, at: now };
       } else if (!isMusicEnabled && state.playing && newVol <= 0.01) {

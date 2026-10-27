@@ -2,11 +2,10 @@ import React from 'react';
 import { View, Text, Pressable, Alert } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as DocumentPicker from 'expo-document-picker';
-import { File } from 'expo-file-system';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
 import { exportProgress, parseSave } from '@/utils/saveTransfer';
-import { shareSaveFile } from '@/utils/shareSave';
+import { readPickedFile, shareSaveFile } from '@/utils/shareSave';
 import { haptics, Haptics } from '@/utils/haptics';
 import type { UiColors } from '@/theme';
 import { settingsStyles as styles } from './styles';
@@ -88,7 +87,7 @@ export default function SaveSection({ colors, onClose }: Props) {
     if (picked.canceled || !picked.assets?.[0]) return;
     let code: string;
     try {
-      code = await new File(picked.assets[0].uri).text();
+      code = await readPickedFile(picked.assets[0]);
     } catch {
       Alert.alert(t('save.error_title'), t('save.error_read'));
       return;

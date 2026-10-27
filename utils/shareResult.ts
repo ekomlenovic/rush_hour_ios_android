@@ -1,9 +1,14 @@
+import { Platform } from 'react-native';
 import type { TFunction } from 'i18next';
 import type { ChallengeResult } from '../store/gameStore';
 import { dateLocale, formatDuration, parseLocalDateString } from './date';
+import { WEB_APP_URL } from './webApp';
 
 /** Where friends can get the game */
 export const APP_URL = 'https://github.com/ekomlenovic/rush_hour_ios_android';
+
+/** The link at the end of a shared result: the web version shares itself, friends play right away */
+export const GAME_URL = Platform.OS === 'web' ? WEB_APP_URL : APP_URL;
 
 interface ShareResultOptions {
   kind: 'daily' | 'weekly';
@@ -41,5 +46,5 @@ export function buildChallengeShareText(t: TFunction, { kind, key, result, strea
     kind === 'daily' && streak > 0 ? `🔥 ${t('share.streak', { count: streak })}` : null,
   ].filter(Boolean).join('   ');
 
-  return [`Rush Hours — ${title}`, `${stars}${moves}`, extras, APP_URL].filter(Boolean).join('\n');
+  return [`Rush Hours — ${title}`, `${stars}${moves}`, extras, GAME_URL].filter(Boolean).join('\n');
 }
