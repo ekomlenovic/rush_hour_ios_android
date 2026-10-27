@@ -2,11 +2,11 @@ import React from 'react';
 import { View, Text, Pressable, Alert } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as DocumentPicker from 'expo-document-picker';
-import * as Sharing from 'expo-sharing';
-import { File, Paths } from 'expo-file-system';
+import { File } from 'expo-file-system';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
-import { exportProgress, parseSave, saveFileName } from '@/utils/saveTransfer';
+import { exportProgress, parseSave } from '@/utils/saveTransfer';
+import { shareSaveFile } from '@/utils/shareSave';
 import { haptics, Haptics } from '@/utils/haptics';
 import type { UiColors } from '@/theme';
 import { settingsStyles as styles } from './styles';
@@ -32,16 +32,8 @@ export default function SaveSection({ colors, onClose }: Props) {
   const handleExportFile = async () => {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const code = exportProgress();
-    try {
-      if (!(await Sharing.isAvailableAsync())) throw new Error('sharing unavailable');
-      const file = new File(Paths.cache, saveFileName());
-      file.create({ overwrite: true });
-      file.write(code);
-      await Sharing.shareAsync(file.uri, { mimeType: 'text/plain', UTI: 'public.plain-text', dialogTitle: t('save.share_title') });
-    } catch {
-      // No file sharing on this device: the code still works
-      await copyCode(code);
-    }
+    // No file sharing on this device: the code still works
+    if (!(await shareSaveFile(code, t('save.share_title')))) await copyCode(code);
   };
 
   const handleCopyCode = async () => {
