@@ -128,12 +128,12 @@
       "versions": [
         {
           "version": "2.0.5",
-          "buildVersion": "62",
+          "buildVersion": "63",
           "date": "2026-10-27",
           "localizedDescription": "New:\n• If the app crashes, a screen reassures you instead of a blank one: your progress is kept, and you can retry or export it\n• Report a crash in one tap: the report is filled in, you review it before sending\n• Fixes and improvements",
-          "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.5-b62/rush-hours-unsigned.ipa",
-          "size": 18856987,
-          "sha256": "e01ef315ba0b7a48253924a8fb7e166fccda4c7880d8077cd66322b587bfd992",
+          "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.5-b63/rush-hours-unsigned.ipa",
+          "size": 18856984,
+          "sha256": "c7c56b581fa7453da8050e42ce826207799e5ba51b66ad3703a610991198053d",
           "minOSVersion": "16.4"
         },
         {
@@ -148,11 +148,11 @@
         }
       ],
       "version": "2.0.5",
-      "buildVersion": "62",
+      "buildVersion": "63",
       "versionDate": "2026-10-27",
       "versionDescription": "New:\n• If the app crashes, a screen reassures you instead of a blank one: your progress is kept, and you can retry or export it\n• Report a crash in one tap: the report is filled in, you review it before sending\n• Fixes and improvements",
-      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.5-b62/rush-hours-unsigned.ipa",
-      "size": 18856987
+      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.5-b63/rush-hours-unsigned.ipa",
+      "size": 18856984
     }
   ],
   "news": []
