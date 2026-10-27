@@ -20,8 +20,11 @@ import SaveSection from './SaveSection';
 import { settingsStyles } from './styles';
 
 const SPONSOR_URL = 'https://github.com/sponsors/ekomlenovic';
-/** Donation link only in the iOS build (SideStore): Google Play refuses links to an outside payment */
-const SHOW_SUPPORT = Platform.OS === 'ios';
+/**
+ * Donation link only outside Google Play, which refuses links to an outside payment: the iOS build
+ * (SideStore) and the APK of the GitHub releases (EXPO_PUBLIC_DONATION_LINK set by build.yml)
+ */
+const SHOW_SUPPORT = Platform.OS === 'ios' || process.env.EXPO_PUBLIC_DONATION_LINK === '1';
 
 const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 
