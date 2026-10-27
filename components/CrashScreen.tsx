@@ -13,7 +13,10 @@ import { getUiColors, resolveScheme } from '@/theme/ui';
 
 /** What the player can copy to report the crash: nothing is sent anywhere (no crash reporting, Privacy_Policy.md) */
 export function crashDetails(error: Error): string {
-  return [`${error.name}: ${error.message}`, error.stack ?? ''].join('\n').trim();
+  const header = `${error.name}: ${error.message}`;
+  const stack = error.stack ?? '';
+  // Hermes and V8 start the stack with the error itself: written once
+  return (stack.startsWith(header) ? stack : [header, stack].join('\n')).trim();
 }
 
 /** Longest issue link: GitHub refuses one of more than about 8 000 characters, the error details are cut to fit */
