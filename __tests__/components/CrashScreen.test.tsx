@@ -70,7 +70,9 @@ describe('CrashScreen (ErrorBoundary of the root layout)', () => {
     await fireEvent.press(screen.getByRole('button', { name: i18n.t('crash.copy_error_btn') }));
 
     await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalledWith(crashDetails(error)));
-    expect(crashDetails(error)).toBe('Error: boom\nError: boom\n    at GameScreen');
+    expect(crashDetails(error)).toBe('Error: boom\n    at GameScreen');
+    // A stack without the error at its top (some engines) gets it added
+    expect(crashDetails(Object.assign(new Error('boom'), { stack: '    at GameScreen' }))).toBe('Error: boom\n    at GameScreen');
   });
 });
 
@@ -98,7 +100,7 @@ describe('reporting the crash in a GitHub issue', () => {
     const long = Object.assign(new Error('deep'), { stack: `Error: deep\n${'    at someFunction (bundle.js:1:2345)\n'.repeat(1000)}` });
     const url = crashIssueUrl(long, i18n.getFixedT('en'), 'en', device);
     expect(url.length).toBeLessThanOrEqual(MAX_ISSUE_URL_LENGTH);
-    expect(fields(url).description).toMatch(/```\nError: deep\nError: deep\n {4}at someFunction[\s\S]*\n…\n```/);
+    expect(fields(url).description).toMatch(/```\nError: deep\n {4}at someFunction[\s\S]*\n…\n```/);
   });
 
   it('the button opens the prefilled issue: the player sends it, the app sends nothing', async () => {
