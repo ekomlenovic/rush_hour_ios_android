@@ -48,6 +48,10 @@ The game is **not on the App Store**. The `.ipa` file is published in the **[Git
 
 A bug, an idea, a level that looks broken, an opinion? **[Send your feedback here](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=feedback.yml)** (you need a free GitHub account). Prefer French? Use the [French template](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml).
 
+## Support the game
+
+Rush Hours is free, with no ads. If you enjoy it and want to help, you can **[make a donation on Ko-fi](https://ko-fi.com/ekomlenovic)** (no account needed: card, PayPal, Apple Pay or Google Pay). Already on GitHub? You can also [sponsor it on GitHub Sponsors](https://github.com/sponsors/ekomlenovic), with a one-time or a monthly donation. Thanks!
+
 ## License and publishing
 
 Rush Hours is © 2026 Imelein. The code is **source-available**, not open source: it is published under the [PolyForm Strict License 1.0.0](LICENSE).
@@ -125,6 +129,10 @@ Le jeu **n'est pas sur l'App Store**. Le fichier `.ipa` est publié dans les **[
 ## Faire un retour
 
 Un bug, une idée, un niveau qui te paraît cassé, un avis ? **[Envoie ton retour ici](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=retour.yml)** (il faut un compte GitHub gratuit). Tu préfères l'anglais ? Prends le [modèle anglais](https://github.com/ekomlenovic/rush_hour_ios_android/issues/new?template=feedback.yml).
+
+## Soutenir le jeu
+
+Rush Hours est gratuit et sans pub. Si tu l'aimes et que tu veux m'aider, tu peux **[faire un don sur Ko-fi](https://ko-fi.com/ekomlenovic)** (sans créer de compte : carte, PayPal, Apple Pay ou Google Pay). Tu as un compte GitHub ? Tu peux aussi [le soutenir sur GitHub Sponsors](https://github.com/sponsors/ekomlenovic), avec un don ponctuel ou mensuel. Merci !
 
 ## Licence et publication
 
