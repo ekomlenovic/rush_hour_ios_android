@@ -1073,6 +1073,7 @@
     "have_account": "Već imam nalog na ovom serveru",
     "new_account": "Nov sam na ovom serveru",
     "join_tip": "Savet: skeniraj QR kod ili nalepi link pozivnice ovde, sve će se samo popuniti.",
+    "join_tip_paste": "Savet: nalepi link pozivnice ovde, sve će se samo popuniti.",
     "scan_qr": "Skeniraj QR kod",
     "scan_hint": "Usmeri kameru na QR kod pozivnice ili oporavka",
     "already_joined_title": "Već si se pridružio",
@@ -1592,6 +1593,7 @@
     },
     "errors": {
       "network": "Server ne odgovara. Proveri vezu i adresu servera.",
+      "network_web": "Server ne odgovara. Proveri vezu i adresu servera. Server stariji od Rush Hours 2.0.6 ne pušta veb verziju: zamoli njegovog admina da ga ažurira.",
       "timeout": "Server predugo odgovara. Pokušaj ponovo.",
       "bad_response": "Ovo nije Rush Hours server (proveri adresu).",
       "internal": "Server je naišao na problem. Pokušaj ponovo kasnije.",

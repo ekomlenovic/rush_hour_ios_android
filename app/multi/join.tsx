@@ -199,8 +199,9 @@ export default function JoinScreen() {
           <Text style={[styles.switchText, { color: colors.primaryText }]}>{mode === 'join' ? t('multi.have_account') : t('multi.new_account')}</Text>
         </Pressable>
 
+        {/* Without a scanner (no camera, the web): only the link */}
         <View style={[styles.tip, { backgroundColor: colors.card }]}>
-          <IconText icon="bulb-outline" color={colors.textMuted} size={RFValue(16)} style={styles.tipRow} textStyle={styles.tipText}>{t('multi.join_tip')}</IconText>
+          <IconText icon="bulb-outline" color={colors.textMuted} size={RFValue(16)} style={styles.tipRow} textStyle={styles.tipText}>{t(canScanQr ? 'multi.join_tip' : 'multi.join_tip_paste')}</IconText>
         </View>
       </ScrollView>
       <QrScanner
