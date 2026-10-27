@@ -26,11 +26,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
       - name: Read version
         id: read-version
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # Before spending a macOS build: a version older than the source's, or a source
+      # SideStore would refuse (permissions, screenshots, category…), stops here
+      - name: Check the SideStore source
+        run: node --no-warnings scripts/sidestore/cli.ts check
 
   build-ios:
     name: Build iOS
@@ -74,6 +84,17 @@ jobs:
             DEVELOPMENT_TEAM="" \
             -allowProvisioningUpdates \
             | xcbeautify
+
+      # SideStore refuses an app whose build number is not the source's buildVersion:
+      # the build number is the run number, in the app and in its widget (signed after this)
+      - name: Set the build number
+        run: |
+          APP=build/RushHours.xcarchive/Products/Applications/RushHours.app
+          for PLIST in "$APP/Info.plist" "$APP/PlugIns/widget.appex/Info.plist"; do
+            /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" "$PLIST"
+            SHORT=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$PLIST")
+            [ "$SHORT" = "${{ needs.prepare.outputs.version }}" ] || { echo "$PLIST is version $SHORT"; exit 1; }
+          done
 
       # An unsigned build carries no entitlements: SideStore would not register the app group
       # the home screen widget shares with the app (issue 151). ldid writes them in the binaries.
@@ -170,6 +191,11 @@ jobs:
           name: android-build
         continue-on-error: true
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
       - name: Rename binaries
         run: |
           if [ -f "app-release.apk" ]; then
@@ -178,6 +204,19 @@ jobs:
           else
             echo "HAS_APK=false" >> $GITHUB_ENV
           fi
+
+      # Checksums in the release notes: the SideStore community source asks for them
+      - name: Checksums
+        run: |
+          {
+            echo 'CHECKSUMS<<EOF'
+            for FILE in rush-hours-unsigned.ipa rush-hours.apk; do
+              if [ -f "$FILE" ]; then
+                echo "| \`$FILE\` | \`$(md5sum "$FILE" | cut -d' ' -f1)\` | \`$(sha256sum "$FILE" | cut -d' ' -f1)\` |"
+              fi
+            done
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -196,6 +235,12 @@ jobs:
             
             ### Android (APK)
             Installation directe.
+
+            ### Checksums
+
+            | Fichier | MD5 | SHA-256 |
+            |---|---|---|
+            ${{ env.CHECKSUMS }}
           files: |
             rush-hours-unsigned.ipa
             rush-hours.apk
@@ -207,36 +252,21 @@ jobs:
 
       - name: Update Update Sources & Push Changes
         run: |
-          IPA_SIZE=$(stat -c%s rush-hours-unsigned.ipa)
+          TAG_NAME="v${{ needs.prepare.outputs.version }}-b${{ github.run_number }}"
+          IPA_URL="https://github.com/${{ github.repository }}/releases/download/${TAG_NAME}/rush-hours-unsigned.ipa"
 
-          VERSION="${{ needs.prepare.outputs.version }}"
-          TAG_NAME="v${VERSION}-b${{ github.run_number }}"
-          BASE_URL="https://github.com/${{ github.repository }}/releases/download/${TAG_NAME}"
-          IPA_URL="${BASE_URL}/rush-hours-unsigned.ipa"
-          DATE=$(date +'%Y-%m-%d')
-          
-          node -e "
-            const fs = require('fs');
-            
-            // Update sidestore-source.json (iOS)
-            const iosSource = JSON.parse(fs.readFileSync('sidestore-source.json', 'utf8'));
-            const iosApp = iosSource.apps[0];
-            iosApp.version = '${VERSION}';
-            iosApp.buildVersion = '${{ github.run_number }}';
-            iosApp.versionDate = '${DATE}';
-            iosApp.downloadURL = '${IPA_URL}';
-            iosApp.size = parseInt('${IPA_SIZE}');
-            fs.writeFileSync('sidestore-source.json', JSON.stringify(iosSource, null, 2));
-            
-            // android-source.json is NOT updated here: Android users update through
-            // Google Play, so it must only announce the version live on the Play Store
-            // (edited by hand when Google accepts a release, see docs/PLAY_STORE.md).
-          "
-          
+          # sidestore-source.json (iOS): this build becomes the newest version, with its
+          # size, sha256 and the English notes of docs/RELEASE_NOTES_<version>.md.
+          # android-source.json is NOT updated here: Android users update through
+          # Google Play, so it must only announce the version live on the Play Store
+          # (edited by hand when Google accepts a release, see docs/PLAY_STORE.md).
+          node --no-warnings scripts/sidestore/cli.ts add rush-hours-unsigned.ipa "${{ github.run_number }}" "$IPA_URL"
+          node --no-warnings scripts/sidestore/cli.ts check
+
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add sidestore-source.json
-          git diff --cached --quiet || git commit -m "chore: update update sources for ${VERSION} [skip ci]"
+          git diff --cached --quiet || git commit -m "chore: update update sources for ${{ needs.prepare.outputs.version }} [skip ci]"
           # The branch may have moved since the build started (a merge, or a re-run, which
           # checks out the original commit): replay the sources commit on its current head.
           # On a conflict (another sources commit), this build's values win.
