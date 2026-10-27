@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AudioProvider } from '@/context/AudioProvider';
 import AchievementToast from '@/components/AchievementToast';
+import CrashScreen from '@/components/CrashScreen';
 import { listenToReminderTaps, useReminderSync } from '@/utils/notifications';
 import { useWidgetSync } from '@/hooks/useWidgetSync';
 import { useAppOpenAlert } from '@/hooks/useAppOpenAlert';
@@ -14,6 +15,12 @@ import { useGameStore } from '@/store/gameStore';
 import { useMultiStore } from '@/store/multiStore';
 import i18n from '@/utils/i18n';
 import { useTheme, useAppearanceSync, statusBarStyle } from '@/theme';
+
+/**
+ * A render that throws shows the "oops" screen (try again, export the save) instead of a blank screen.
+ * Expo Router wraps the root layout and every screen under it in this boundary.
+ */
+export { CrashScreen as ErrorBoundary };
 
 /**
  * Records the app open whatever the first screen: the home screen, or a challenge opened

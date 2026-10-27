@@ -913,6 +913,17 @@
     "paste_code_btn": "Coller un code",
     "error_read": "Impossible de lire ce fichier."
   },
+  "crash": {
+    "title": "Oups, le jeu a planté",
+    "body": "Ta progression est toujours enregistrée sur ton téléphone. Réessaie ; si le problème revient, exporte ta sauvegarde pour la garder en lieu sûr.",
+    "retry_btn": "Réessayer",
+    "export_btn": "Exporter ma progression",
+    "copy_error_btn": "Copier le détail de l'erreur",
+    "error_copied_title": "Erreur copiée",
+    "error_copied_body": "Colle-la dans un signalement de bug pour aider à corriger le problème. Rien n'a été envoyé.",
+    "export_failed_title": "Export impossible",
+    "export_failed_body": "Ta sauvegarde n'a pas pu être exportée. Elle reste sur ton téléphone : ferme complètement le jeu et relance-le."
+  },
   "multi": {
     "title": "Multijoueur",
     "intro_title": "Affronte tes amis",
