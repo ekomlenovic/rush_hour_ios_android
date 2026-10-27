@@ -943,6 +943,21 @@
     "paste_code_btn": "Nalepi kod",
     "error_read": "Ovaj fajl nije mogao da se pročita."
   },
+  "crash": {
+    "title": "Ups, igra se srušila",
+    "body": "Tvoj napredak je i dalje sačuvan na telefonu. Pokušaj ponovo; ako se problem vrati, izvezi svoju sačuvanu igru da bude na sigurnom.",
+    "retry_btn": "Pokušaj ponovo",
+    "export_btn": "Izvezi moj napredak",
+    "report_btn": "Prijavi grešku na GitHubu",
+    "report_hint": "Otvara javnu, već popunjenu prijavu koju sam šalješ",
+    "copy_error_btn": "Kopiraj detalje greške",
+    "error_copied_title": "Greška kopirana",
+    "error_copied_body": "Nalepi je u prijavu greške da pomogneš da se problem ispravi. Ništa nije poslato.",
+    "export_failed_title": "Izvoz nije uspeo",
+    "export_failed_body": "Tvoja sačuvana igra nije mogla da se izveze. Ostaje na telefonu: potpuno zatvori igru i ponovo je pokreni.",
+    "issue_title": "fix: rušenje ({{error}})",
+    "issue_body": "Igra se srušila. Šta sam radio/la neposredno pre toga:"
+  },
   "multi": {
     "title": "Više igrača",
     "intro_title": "Izazovi prijatelje",
