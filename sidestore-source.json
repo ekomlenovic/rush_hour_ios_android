@@ -127,6 +127,16 @@
       },
       "versions": [
         {
+          "version": "2.0.6",
+          "buildVersion": "64",
+          "date": "2026-10-27",
+          "localizedDescription": "New:\n• Play directly in your browser on the web version (PWA)\n• Share level and multiplayer invite links that work in both web and app\n• Fixes and improvements",
+          "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.6-b64/rush-hours-unsigned.ipa",
+          "size": 18865590,
+          "sha256": "2cd8156027eeb424c6404fd4bcd2371e35df24bf3a607b5aeb7be1f440bfafe3",
+          "minOSVersion": "16.4"
+        },
+        {
           "version": "2.0.5",
           "buildVersion": "63",
           "date": "2026-10-27",
@@ -147,12 +157,12 @@
           "minOSVersion": "16.4"
         }
       ],
-      "version": "2.0.5",
-      "buildVersion": "63",
+      "version": "2.0.6",
+      "buildVersion": "64",
       "versionDate": "2026-10-27",
-      "versionDescription": "New:\n• If the app crashes, a screen reassures you instead of a blank one: your progress is kept, and you can retry or export it\n• Report a crash in one tap: the report is filled in, you review it before sending\n• Fixes and improvements",
-      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.5-b63/rush-hours-unsigned.ipa",
-      "size": 18856984
+      "versionDescription": "New:\n• Play directly in your browser on the web version (PWA)\n• Share level and multiplayer invite links that work in both web and app\n• Fixes and improvements",
+      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.6-b64/rush-hours-unsigned.ipa",
+      "size": 18865590
     }
   ],
   "news": []
