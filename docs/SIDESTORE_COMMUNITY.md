@@ -8,7 +8,7 @@ La [Community Source](https://github.com/SideStore/Community-Source) (`https://c
 |---|---|
 | 1. L'app marche et sa version change dans l'app | La version d'`app.json` / `package.json` est vérifiée avant chaque build (`cli.ts check`) ; `CFBundleVersion` = numéro du run = `buildVersion` |
 | 2. Entrée JSON bien formée, sur son propre hébergement | `sidestore-source.json` (AltStore 2.0), icône, captures et IPA dans ce dépôt et ses releases |
-| 3, 5, 8, 11. Contenu correct, pas piraté, pas malveillant, pas une copie | Jeu de réflexion original, open source (licence dans `LICENSE`) |
+| 3, 5, 8, 11. Contenu correct, pas piraté, pas malveillant, pas une copie | Jeu de réflexion original, code consultable (*source-available*, licence dans `LICENSE`) |
 | 4. Icône et captures de l'appareil | `store-listing/icon-512.png`, `store-listing/en/phone/` (iPhone) et `store-listing/en/tablet-10/` (iPad) |
 | 6. Prévenir des risques | Rien de risqué : pas de JIT, pas d'accès aux fichiers hors de l'app |
 | 7. Entitlements et permissions | `appPermissions` : App Group (widget), caméra (scan de QR codes), réseau local (serveur multijoueur sur le réseau local). Pas de JIT |
@@ -43,7 +43,7 @@ Description de la PR (en anglais, règle 16) :
 ```markdown
 ## Add Rush Hours
 
-**Rush Hours** is a free and open-source sliding-block traffic puzzle (the classic "Rush Hour" game): slide the cars and trucks along their lanes to free the red car. I am its developer: https://github.com/ekomlenovic/rush_hour_ios_android
+**Rush Hours** is a free, source-available sliding-block traffic puzzle (the classic "Rush Hour" game): slide the cars and trucks along their lanes to free the red car. I am its developer: https://github.com/ekomlenovic/rush_hour_ios_android
 
 ### What it does
 - 700+ campaign levels on a world map, from 6-move warm-ups to 63-move brain-burners (6×6 to 8×8 grids), plus endless levels generated on the device
