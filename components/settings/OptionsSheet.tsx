@@ -19,7 +19,8 @@ import MapLevelsSection from './MapLevelsSection';
 import SaveSection from './SaveSection';
 import { settingsStyles } from './styles';
 
-const SPONSOR_URL = 'https://github.com/sponsors/ekomlenovic';
+/** Ko-fi: a player can give without an account (card, PayPal, Apple Pay / Google Pay) */
+const DONATION_URL = 'https://ko-fi.com/ekomlenovic';
 /**
  * Donation link only outside Google Play, which refuses links to an outside payment: the iOS build
  * (SideStore) and the APK of the GitHub releases (EXPO_PUBLIC_DONATION_LINK set by build.yml)
@@ -202,7 +203,7 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
                   <Text style={[settingsStyles.settingSub, { color: colors.textMuted }]}>{t('home.support_desc')}</Text>
                 </View>
                 <Pressable
-                  onPress={() => Linking.openURL(SPONSOR_URL)}
+                  onPress={() => Linking.openURL(DONATION_URL)}
                   accessibilityRole="link"
                   style={[styles.updateButton, styles.supportButton, { backgroundColor: colors.primary }]}
                 >

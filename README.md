@@ -50,7 +50,7 @@ A bug, an idea, a level that looks broken, an opinion? **[Send your feedback her
 
 ## Support the game
 
-Rush Hours is free, with no ads. If you enjoy it and want to help, you can **[support it on GitHub Sponsors](https://github.com/sponsors/ekomlenovic)**, with a one-time or a monthly donation. Thanks!
+Rush Hours is free, with no ads. If you enjoy it and want to help, you can **[make a donation on Ko-fi](https://ko-fi.com/ekomlenovic)** (no account needed: card, PayPal, Apple Pay or Google Pay). Already on GitHub? You can also [sponsor it on GitHub Sponsors](https://github.com/sponsors/ekomlenovic), with a one-time or a monthly donation. Thanks!
 
 ## License and publishing
 
@@ -132,7 +132,7 @@ Un bug, une idée, un niveau qui te paraît cassé, un avis ? **[Envoie ton reto
 
 ## Soutenir le jeu
 
-Rush Hours est gratuit et sans pub. Si tu l'aimes et que tu veux m'aider, tu peux **[le soutenir sur GitHub Sponsors](https://github.com/sponsors/ekomlenovic)**, avec un don ponctuel ou mensuel. Merci !
+Rush Hours est gratuit et sans pub. Si tu l'aimes et que tu veux m'aider, tu peux **[faire un don sur Ko-fi](https://ko-fi.com/ekomlenovic)** (sans créer de compte : carte, PayPal, Apple Pay ou Google Pay). Tu as un compte GitHub ? Tu peux aussi [le soutenir sur GitHub Sponsors](https://github.com/sponsors/ekomlenovic), avec un don ponctuel ou mensuel. Merci !
 
 ## Licence et publication
 
