@@ -476,6 +476,10 @@ Les emojis ne restent que là où une icône ne peut pas s'afficher ou n'a pas d
 - Après **3 jours ou plus** d'absence : message de bienvenue (`recordAppOpen`, `hooks/useAppOpenAlert.ts`).
 - **Toute ouverture** de l'app est enregistrée, quel que soit le premier écran : l'accueil, ou un défi ouvert par le widget ou un rappel sans accueil dessous (#188). Le hook est monté par la racine (`app/_layout.tsx`), pas par l'accueil : pas de faux « Bon retour » pour un joueur qui ne passe que par le widget, et un gel consommé ou un streak perdu est annoncé **à l'ouverture qui le constate**, avant la victoire du défi, jamais par-dessus elle.
 
+## Dons
+
+- Les liens de don sont dans le README et dans `.github/FUNDING.yml` (Ko-fi et GitHub Sponsors). Dans l'app, le bouton ouvre **Ko-fi**, où l'on donne sans créer de compte (GitHub Sponsors en demande un). Il est dans les options de l'app (2e ligne, sous « Comment jouer ? »), **seulement hors Google Play** : build iOS (SideStore) et APK des releases GitHub, construit par `build.yml` avec `EXPO_PUBLIC_DONATION_LINK=1`. Google Play refuse un lien vers un paiement externe pour soutenir le développeur : ne jamais définir cette variable pour le build Play (`SHOW_SUPPORT`, `components/settings/OptionsSheet.tsx`).
+
 ## Roadmap
 
 Les évolutions prévues sont suivies dans l'epic #19 sur GitHub (multijoueur : #46). Chacune doit respecter les règles ci-dessus.

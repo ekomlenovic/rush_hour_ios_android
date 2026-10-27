@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Switch, Alert, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Switch, Alert, Modal, ScrollView, Platform } from 'react-native';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { useRouter } from '@/hooks/useRouter';
@@ -18,6 +18,14 @@ import ThemeModeSetting from '../ThemeModeSetting';
 import MapLevelsSection from './MapLevelsSection';
 import SaveSection from './SaveSection';
 import { settingsStyles } from './styles';
+
+/** Ko-fi: a player can give without an account (card, PayPal, Apple Pay / Google Pay) */
+const DONATION_URL = 'https://ko-fi.com/ekomlenovic';
+/**
+ * Donation link only outside Google Play, which refuses links to an outside payment: the iOS build
+ * (SideStore) and the APK of the GitHub releases (EXPO_PUBLIC_DONATION_LINK set by build.yml)
+ */
+const SHOW_SUPPORT = Platform.OS === 'ios' || process.env.EXPO_PUBLIC_DONATION_LINK === '1';
 
 const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 
@@ -187,6 +195,23 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
                 <Text style={[styles.updateButtonText, { color: colors.primaryText }]}>{t('home.open')}</Text>
               </Pressable>
             </View>
+
+            {SHOW_SUPPORT && (
+              <View style={settingsStyles.settingRow}>
+                <View style={settingsStyles.settingText}>
+                  <Text style={[settingsStyles.settingLabel, { color: colors.text }]}>{t('home.support')}</Text>
+                  <Text style={[settingsStyles.settingSub, { color: colors.textMuted }]}>{t('home.support_desc')}</Text>
+                </View>
+                <Pressable
+                  onPress={() => Linking.openURL(DONATION_URL)}
+                  accessibilityRole="link"
+                  style={[styles.updateButton, styles.supportButton, { backgroundColor: colors.primary }]}
+                >
+                  <Ionicons name="heart" size={RFValue(14)} color={colors.onPrimary} />
+                  <Text style={[styles.updateButtonText, { color: colors.onPrimary }]}>{t('home.support_button')}</Text>
+                </Pressable>
+              </View>
+            )}
 
             <View style={settingsStyles.settingRow}>
               <View style={settingsStyles.settingText}>
@@ -371,6 +396,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
+  },
+  supportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   updateButtonText: {
     fontSize: RFValue(14),
