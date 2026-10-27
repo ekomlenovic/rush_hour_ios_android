@@ -132,6 +132,9 @@ jobs:
       - name: Build Android APK
         working-directory: android
         run: ./gradlew assembleRelease
+        env:
+          # Donation button: this APK is not the Google Play build (see docs/GAME_DESIGN.md)
+          EXPO_PUBLIC_DONATION_LINK: '1'
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

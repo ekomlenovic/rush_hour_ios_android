@@ -477,7 +477,7 @@ Les emojis ne restent que là où une icône ne peut pas s'afficher ou n'a pas d
 
 ## Dons
 
-- Le lien de don (GitHub Sponsors) est dans le README, dans `.github/FUNDING.yml` et dans les options de l'app, **seulement sur iOS** (build SideStore) : Google Play refuse un lien vers un paiement externe pour soutenir le développeur. Ne jamais l'afficher dans le build Android (`SHOW_SUPPORT`, `components/settings/OptionsSheet.tsx`).
+- Le lien de don (GitHub Sponsors) est dans le README, dans `.github/FUNDING.yml` et dans les options de l'app (2e ligne, sous « Comment jouer ? »), **seulement hors Google Play** : build iOS (SideStore) et APK des releases GitHub, construit par `build.yml` avec `EXPO_PUBLIC_DONATION_LINK=1`. Google Play refuse un lien vers un paiement externe pour soutenir le développeur : ne jamais définir cette variable pour le build Play (`SHOW_SUPPORT`, `components/settings/OptionsSheet.tsx`).
 
 ## Roadmap
 
