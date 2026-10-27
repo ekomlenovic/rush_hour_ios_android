@@ -4,6 +4,13 @@
 
 A sliding-car puzzle game: move the cars to free the red one. 700+ levels on a world map, a daily challenge, a weekly challenge, a garage of styles to unlock, a level creator and multiplayer with friends.
 
+## Screenshots
+
+<table>
+  <tr><td><img src="store-listing/en/phone/01-gameplay.png" alt="Gameplay" width="200"></td><td><img src="store-listing/en/phone/02-map.png" alt="World map" width="200"></td><td><img src="store-listing/en/phone/03-daily.png" alt="Daily challenge" width="200"></td><td><img src="store-listing/en/phone/04-stars.png" alt="Stars" width="200"></td></tr>
+  <tr><td><img src="store-listing/en/phone/05-streak.png" alt="Streak" width="200"></td><td><img src="store-listing/en/phone/06-garage.png" alt="Garage" width="200"></td><td><img src="store-listing/en/phone/07-creator.png" alt="Level creator" width="200"></td><td><img src="store-listing/en/phone/08-friends.png" alt="Friends" width="200"></td></tr>
+</table>
+
 ## Install the game
 
 ### Android
@@ -85,6 +92,13 @@ If you see a copy of the game published by someone else, [please report it to me
 *[English version above](#rush-hours)*
 
 Un jeu de casse-tête où tu fais glisser les voitures pour libérer la rouge. Plus de 700 niveaux sur une carte du monde, un défi du jour, un défi hebdo, un garage de styles à débloquer, un créateur de niveaux et un mode multijoueur entre amis.
+
+## Captures d'écran
+
+<table>
+  <tr><td><img src="store-listing/fr/phone/01-gameplay.png" alt="Partie" width="200"></td><td><img src="store-listing/fr/phone/02-map.png" alt="Carte du monde" width="200"></td><td><img src="store-listing/fr/phone/03-daily.png" alt="Défi du jour" width="200"></td><td><img src="store-listing/fr/phone/04-stars.png" alt="Étoiles" width="200"></td></tr>
+  <tr><td><img src="store-listing/fr/phone/05-streak.png" alt="Série" width="200"></td><td><img src="store-listing/fr/phone/06-garage.png" alt="Garage" width="200"></td><td><img src="store-listing/fr/phone/07-creator.png" alt="Créateur de niveaux" width="200"></td><td><img src="store-listing/fr/phone/08-friends.png" alt="Amis" width="200"></td></tr>
+</table>
 
 ## Installer le jeu
 
