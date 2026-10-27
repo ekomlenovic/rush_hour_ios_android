@@ -31,11 +31,19 @@ export function useBoardTheme(look?: BoardLook): { board: BoardColors; palette: 
 /** Applies the player's choice to the native UI too (alerts, switches, keyboard): call once at the root */
 export function useAppearanceSync(): void {
   const mode = useGameStore((s) => s.themeMode);
+  const system = useColorScheme();
+  const background = getUiColors(resolveScheme(mode, system)).background;
   useEffect(() => {
-    // The web has no native UI to set: the page tells the browser its scheme (scroll bars, form fields)
-    if (Platform.OS === 'web') document.documentElement.style.colorScheme = mode === 'system' ? 'light dark' : mode;
-    else Appearance.setColorScheme(mode === 'system' ? 'unspecified' : mode);
+    if (Platform.OS !== 'web') Appearance.setColorScheme(mode === 'system' ? 'unspecified' : mode);
   }, [mode]);
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    // The web has no native UI to set: the page tells the browser its scheme (scroll bars, form fields),
+    // and paints the sides of the column (big screen) and the status bar of the iPhone (theme-color) like the app
+    document.documentElement.style.colorScheme = mode === 'system' ? 'light dark' : mode;
+    document.body.style.backgroundColor = background;
+    document.querySelectorAll('meta[name="theme-color"]').forEach(meta => meta.setAttribute('content', background));
+  }, [mode, background]);
 }
 
 /** Active theme: the player's light / dark choice and the selected cosmetics */
