@@ -46,8 +46,9 @@ Description de la PR (en anglais, règle 16) :
 **Rush Hours** is a free and open-source sliding-block traffic puzzle (the classic "Rush Hour" game): slide the cars and trucks along their lanes to free the red car. I am its developer: https://github.com/ekomlenovic/rush_hour_ios_android
 
 ### What it does
-- 300+ campaign levels on a world map (6×6 to 8×8 grids), plus levels generated on the device
-- A daily challenge and a weekly challenge, a streak with a calendar, missions and achievements
+- 700+ campaign levels on a world map, from 6-move warm-ups to 63-move brain-burners (6×6 to 8×8 grids), plus endless levels generated on the device
+- A daily challenge and a weekly challenge, a streak with a calendar, daily missions, XP and 80+ achievements
+- 40+ board themes, car skins and win effects, all unlocked by playing (none for sale)
 - A level creator with QR code / link sharing
 - Optional multiplayer (private daily challenge and 1v1 duels) on a small server the players host themselves: there is no central server
 - A home screen widget (streak and daily challenge)
