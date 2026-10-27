@@ -1,10 +1,18 @@
 {
-  "name": "RushHours Repo",
+  "name": "Rush Hours",
+  "subtitle": "The Rush Hours puzzle game, straight from its GitHub releases.",
+  "description": "Official source of Rush Hours, a free and open-source sliding-block traffic puzzle. Every build comes from the GitHub Actions workflow of the repository and is published in its releases.",
   "identifier": "com.rushhours.repo",
   "sourceURL": "https://raw.githubusercontent.com/ekomlenovic/rush_hour_ios_android/refs/heads/main/sidestore-source.json",
+  "iconURL": "https://raw.githubusercontent.com/ekomlenovic/rush_hour_ios_android/refs/heads/main/store-listing/icon-512.png",
+  "website": "https://github.com/ekomlenovic/rush_hour_ios_android",
+  "tintColor": "#e5a019",
+  "featuredApps": [
+    "com.rushhours.app"
+  ],
   "apps": [
     {
-      "name": "RushHours",
+      "name": "Rush Hours",
       "bundleIdentifier": "com.rushhours.app",
       "developerName": "eko",
       "localizedDescription": "Rush Hour puzzle game.",
@@ -16,5 +24,6 @@
       "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.5-b60/rush-hours-unsigned.ipa",
       "size": 18857225
     }
-  ]
+  ],
+  "news": []
 }
