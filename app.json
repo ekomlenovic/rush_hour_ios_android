@@ -37,7 +37,12 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "name": "Rush Hours",
+      "shortName": "Rush Hours",
+      "description": "Slide. Think. Escape. Rush Hour puzzles: daily challenge, campaign map, level creator.",
+      "backgroundColor": "#1A2B4C"
     },
     "plugins": [
       "expo-router",
@@ -89,6 +94,9 @@
         "projectId": "cdc1bf0b-e239-46b5-819b-401cbe9e2c83"
       }
     },
-    "owner": "ekomlenovic"
+    "owner": "ekomlenovic",
+    "experiments": {
+      "baseUrl": "/rush_hour_ios_android"
+    }
   }
 }

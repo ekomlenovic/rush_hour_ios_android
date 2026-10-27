@@ -1,7 +1,9 @@
+import { Platform } from 'react-native';
 import type { Level, Vehicle } from '@/store/types';
 import { validateLevel } from './solver';
 import { getExitSide, vehicleCells } from './creatorGeometry';
 import { CLASSIC_VEHICLE_COLORS } from '../theme/board';
+import { WEB_APP_URL } from './webApp';
 
 // Simple Base64 implementation for cross-platform compatibility
 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
@@ -115,11 +117,13 @@ export function deserializeLevel(data: string, id: number = 999998): Level | nul
 }
 
 /**
- * Generates the sharing URL
+ * Generates the sharing URL: the app's link, or on the web the link of the web version,
+ * which opens in any browser (both are read by parseSharedLevel)
  */
 export function getShareUrl(level: Level): string {
   const data = serializeLevel(level);
-  return `rush-hours://game?data=${encodeURIComponent(data)}`;
+  const base = Platform.OS === 'web' ? `${WEB_APP_URL}/` : 'rush-hours://';
+  return `${base}game?data=${encodeURIComponent(data)}`;
 }
 
 export const LEVEL_NAME_MAX_LENGTH = 40;
