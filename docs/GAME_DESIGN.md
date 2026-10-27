@@ -482,7 +482,7 @@ Le même jeu dans le navigateur, sur **GitHub Pages** : <https://ekomlenovic.git
 
 | Règle | Implémentation |
 |---|---|
-| Publiée depuis `main` à chaque push ; construite sur chaque PR (une modification qui casse le web s'y voit). Une fois dans les réglages du dépôt : Pages → Source : GitHub Actions | `.github/workflows/web.yml`, `npm run build:web` |
+| Publiée à chaque push sur `main` et sur une branche de version `X.Y.Z` (pour essayer une version avant `main`) ; un seul site : la dernière branche publiée l'emporte. Construite sur chaque PR (une modification qui casse le web s'y voit). Une fois dans les réglages du dépôt : Pages → Source : GitHub Actions, et Environments → `github-pages` → branches autorisées : `main` et `[0-9]*.[0-9]*.[0-9]*` | `.github/workflows/web.yml`, `npm run build:web` |
 | Chemin `/rush_hour_ios_android/` : `experiments.baseUrl` d'`app.json`, repris par `public/index.html`, `public/manifest.webmanifest` et `WEB_APP_URL`. Le changer oblige à changer les quatre | `utils/webApp.ts` |
 | Un lien vers un écran (`/game?data=…`) ouvre l'app : GitHub Pages sert `404.html` (copie d'`index.html`) pour un chemin qu'il ne connaît pas, le routeur lit l'adresse | `scripts/web/postExport.mjs` |
 | **Hors ligne** : un service worker garde tous les fichiers (la musique une fois jouée). Son cache porte le contenu des fichiers : une nouvelle version le remplace, la précédente reste une fois pour une page déjà ouverte. L'écran (navigation) vient du réseau d'abord | `sw.js` écrit par `postExport.mjs` |

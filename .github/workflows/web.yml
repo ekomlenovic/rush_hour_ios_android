@@ -1,13 +1,15 @@
 name: Web
 
 # Web version / PWA (see docs/GAME_DESIGN.md, Version web): built on each pull request (a change
-# that breaks the web shows there), published on GitHub Pages from main, at
-# https://ekomlenovic.github.io/rush_hour_ios_android/
-# Once in the repository settings: Pages → Source: GitHub Actions.
+# that breaks the web shows there), published on GitHub Pages from main and from the version
+# branches X.Y.Z (to try a version before main), at https://ekomlenovic.github.io/rush_hour_ios_android/
+# One site: the last branch published wins. A manual run publishes its branch.
+# Once in the repository settings: Pages → Source: GitHub Actions, and Environments → github-pages →
+# Deployment branches: main and the version branches (rule [0-9]*.[0-9]*.[0-9]*).
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, '[0-9]+.[0-9]+.[0-9]+']
   workflow_dispatch:
 
 concurrency:
@@ -33,14 +35,14 @@ jobs:
         env:
           EXPO_PUBLIC_DONATION_LINK: '1'
 
-      - if: github.ref == 'refs/heads/main'
+      - if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
     name: Deploy to GitHub Pages
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     permissions:
