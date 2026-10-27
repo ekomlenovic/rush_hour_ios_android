@@ -115,6 +115,7 @@ Le compte et toutes ses parties sont effacés. Rien n'est envoyé ailleurs que s
 - Tentatives limitées : 10 par quart d'heure et par IP pour rejoindre ou récupérer un compte, 120 requêtes par minute pour le reste.
 - Jetons et codes de récupération **hachés** en base. Pas de log par requête, donc pas d'adresse IP conservée.
 - Conteneur **non root**, en lecture seule sauf `/data`, sans capacités Linux.
+- **Version web** du jeu (navigateur, GitHub Pages) : l'API répond `access-control-allow-origin: *` pour qu'une page d'un autre site puisse la lire. Sans risque : pas de cookie, rien sans le jeton, qu'une autre page ne peut pas lire. Le reverse proxy n'a rien à ajouter (ni à retirer). Un serveur d'avant la 2.0.6 n'accepte que l'app, pas le navigateur.
 
 ## API (`/api/v1`)
 

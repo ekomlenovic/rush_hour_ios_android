@@ -1037,6 +1037,7 @@
     "have_account": "J'ai déjà un compte sur ce serveur",
     "new_account": "Je suis nouveau sur ce serveur",
     "join_tip": "Astuce : scanne le QR code ou colle ici le lien d'invitation, tout se remplit tout seul.",
+    "join_tip_paste": "Astuce : colle ici le lien d'invitation, tout se remplit tout seul.",
     "scan_qr": "Scanner un QR code",
     "scan_hint": "Vise le QR code d'invitation ou de récupération",
     "already_joined_title": "Déjà inscrit",
@@ -1531,6 +1532,7 @@
     },
     "errors": {
       "network": "Le serveur ne répond pas. Vérifie ta connexion et l'adresse du serveur.",
+      "network_web": "Le serveur ne répond pas. Vérifie ta connexion et l'adresse du serveur. Un serveur plus ancien que Rush Hours 2.0.6 ne laisse pas entrer la version web : demande à son admin de le mettre à jour.",
       "timeout": "Le serveur met trop de temps à répondre. Réessaie.",
       "bad_response": "Ce n'est pas un serveur Rush Hours (vérifie l'adresse).",
       "internal": "Le serveur a rencontré un problème. Réessaie plus tard.",
