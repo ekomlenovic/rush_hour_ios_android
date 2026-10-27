@@ -475,6 +475,10 @@ Les emojis ne restent que là où une icône ne peut pas s'afficher ou n'a pas d
 - Après **3 jours ou plus** d'absence : message de bienvenue (`recordAppOpen`, `hooks/useAppOpenAlert.ts`).
 - **Toute ouverture** de l'app est enregistrée, quel que soit le premier écran : l'accueil, ou un défi ouvert par le widget ou un rappel sans accueil dessous (#188). Le hook est monté par la racine (`app/_layout.tsx`), pas par l'accueil : pas de faux « Bon retour » pour un joueur qui ne passe que par le widget, et un gel consommé ou un streak perdu est annoncé **à l'ouverture qui le constate**, avant la victoire du défi, jamais par-dessus elle.
 
+## Dons
+
+- Le lien de don (GitHub Sponsors) est dans le README, dans `.github/FUNDING.yml` et dans les options de l'app, **seulement sur iOS** (build SideStore) : Google Play refuse un lien vers un paiement externe pour soutenir le développeur. Ne jamais l'afficher dans le build Android (`SHOW_SUPPORT`, `components/settings/OptionsSheet.tsx`).
+
 ## Roadmap
 
 Les évolutions prévues sont suivies dans l'epic #19 sur GitHub (multijoueur : #46). Chacune doit respecter les règles ci-dessus.

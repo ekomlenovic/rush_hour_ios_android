@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Switch, Alert, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Switch, Alert, Modal, ScrollView, Platform } from 'react-native';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { useRouter } from '@/hooks/useRouter';
@@ -18,6 +18,10 @@ import ThemeModeSetting from '../ThemeModeSetting';
 import MapLevelsSection from './MapLevelsSection';
 import SaveSection from './SaveSection';
 import { settingsStyles } from './styles';
+
+const SPONSOR_URL = 'https://github.com/sponsors/ekomlenovic';
+/** Donation link only in the iOS build (SideStore): Google Play refuses links to an outside payment */
+const SHOW_SUPPORT = Platform.OS === 'ios';
 
 const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 
@@ -251,6 +255,22 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
             {showMapLevels && <MapLevelsSection colors={colors} onClose={onClose} />}
 
             <SaveSection colors={colors} onClose={onClose} />
+
+            {SHOW_SUPPORT && (
+              <View style={settingsStyles.settingRow}>
+                <View style={settingsStyles.settingText}>
+                  <Text style={[settingsStyles.settingLabel, { color: colors.text }]}>{t('home.support')}</Text>
+                  <Text style={[settingsStyles.settingSub, { color: colors.textMuted }]}>{t('home.support_desc')}</Text>
+                </View>
+                <Pressable
+                  onPress={() => Linking.openURL(SPONSOR_URL)}
+                  accessibilityRole="link"
+                  style={[styles.updateButton, { backgroundColor: colors.card }]}
+                >
+                  <Text style={[styles.updateButtonText, { color: colors.primaryText }]}>{t('home.support_button')}</Text>
+                </Pressable>
+              </View>
+            )}
 
             <View style={settingsStyles.settingRow}>
               <View style={settingsStyles.settingText}>
