@@ -67,7 +67,7 @@ describe('SideStore source', () => {
 
   it('takes the English notes of the release notes', () => {
     const notes = fs.readFileSync(path.join(__dirname, '../docs/RELEASE_NOTES_2.0.5.md'), 'utf8');
-    expect(englishReleaseNotes(notes)).toMatch(/^New:\n• If the app crashes/);
+    expect(englishReleaseNotes(notes)).toMatch(/^New:\r?\n• If the app crashes/);
     expect(englishReleaseNotes('# No Play Store notes')).toBeUndefined();
   });
 

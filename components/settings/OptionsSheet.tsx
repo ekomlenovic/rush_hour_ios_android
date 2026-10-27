@@ -26,6 +26,8 @@ const DONATION_URL = 'https://ko-fi.com/ekomlenovic';
  * (SideStore) and the APK of the GitHub releases (EXPO_PUBLIC_DONATION_LINK set by build.yml)
  */
 const SHOW_SUPPORT = Platform.OS === 'ios' || process.env.EXPO_PUBLIC_DONATION_LINK === '1';
+// The web version has no local notifications, and is always up to date (see docs/GAME_DESIGN.md, Version web)
+const IS_WEB = Platform.OS === 'web';
 
 const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 
@@ -239,9 +241,9 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
               toggleVehicleLetters();
               haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             })}
-            {toggleRow(t('reminders.setting'), t('reminders.setting_desc'), notificationsEnabled, handleRemindersToggle)}
+            {!IS_WEB && toggleRow(t('reminders.setting'), t('reminders.setting_desc'), notificationsEnabled, handleRemindersToggle)}
 
-            {notificationsEnabled && (
+            {!IS_WEB && notificationsEnabled && (
               <View style={settingsStyles.settingRow}>
                 <View style={settingsStyles.settingText}>
                   <Text style={[settingsStyles.settingLabel, { color: colors.text }]}>{t('reminders.hour')}</Text>
@@ -259,7 +261,7 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
               </View>
             )}
 
-            {notificationsEnabled && (
+            {!IS_WEB && notificationsEnabled && (
               <View style={settingsStyles.settingRow}>
                 <View style={settingsStyles.settingText}>
                   <Text style={[settingsStyles.settingLabel, { color: colors.text }]}>{t('reminders.test')}</Text>
@@ -282,17 +284,19 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
                 <Text style={[settingsStyles.settingLabel, { color: colors.text }]}>{t('home.version')}</Text>
                 <Text style={[settingsStyles.settingSub, { color: colors.textMuted }]}>{Constants.expoConfig?.version || '1.0.0'}</Text>
               </View>
-              <Pressable
-                onPress={handleUpdateCheck}
-                disabled={isCheckingUpdate}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: isCheckingUpdate, busy: isCheckingUpdate }}
-                style={[styles.updateButton, { backgroundColor: colors.card }]}
-              >
-                <Text style={[styles.updateButtonText, { color: colors.primaryText }]}>
-                  {isCheckingUpdate ? t('common.checking') : t('home.check_for_update')}
-                </Text>
-              </Pressable>
+              {!IS_WEB && (
+                <Pressable
+                  onPress={handleUpdateCheck}
+                  disabled={isCheckingUpdate}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isCheckingUpdate, busy: isCheckingUpdate }}
+                  style={[styles.updateButton, { backgroundColor: colors.card }]}
+                >
+                  <Text style={[styles.updateButtonText, { color: colors.primaryText }]}>
+                    {isCheckingUpdate ? t('common.checking') : t('home.check_for_update')}
+                  </Text>
+                </Pressable>
+              )}
             </View>
 
             <Pressable

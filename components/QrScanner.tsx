@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Modal, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal, Linking, ActivityIndicator, Platform } from 'react-native';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,8 +15,11 @@ const REJECT_PAUSE_MS = 1500;
 /** The camera of the phone, read once: front only on most Chromebooks */
 const SCANNER_CAMERA = getScannerCamera();
 
-/** False on a device without a camera (Chromebook, TV, car…): the scan buttons are hidden */
-export const canScanQr = SCANNER_CAMERA !== null;
+/**
+ * False on a device without a camera (Chromebook, TV, car…): the scan buttons are hidden.
+ * Hidden on the web too: there, a link opens the game itself (see docs/GAME_DESIGN.md, Version web)
+ */
+export const canScanQr = SCANNER_CAMERA !== null && Platform.OS !== 'web';
 
 interface Props {
   visible: boolean;

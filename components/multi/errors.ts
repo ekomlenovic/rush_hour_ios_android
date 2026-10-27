@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import type { TFunction } from 'i18next';
 import { MultiApiError } from '@/utils/multi/api';
 
@@ -24,5 +25,8 @@ export function errorCode(error: unknown): MultiErrorCode {
 
 /** What to tell the player about an error of the multiplayer mode */
 export function multiErrorMessage(t: TFunction, error: unknown): string {
-  return t(`multi.errors.${errorCode(error)}`);
+  const code = errorCode(error);
+  // In a browser, a server without the headers of the web version (before 2.0.6) looks unreachable
+  if (code === 'network' && Platform.OS === 'web') return t('multi.errors.network_web');
+  return t(`multi.errors.${code}`);
 }
