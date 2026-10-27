@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <!-- viewport-fit=cover: the safe areas of the iPhone (notch, home bar) reach the app as env(safe-area-inset-*) -->
+    <!-- viewport-fit=cover: the bottom safe area of the iPhone (home bar) reaches the app as env(safe-area-inset-bottom) -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>%WEB_TITLE%</title>
     <!-- Installed on the home screen (PWA): full screen, its own icon and name. Paths: experiments.baseUrl of app.json -->
@@ -12,7 +12,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Rush Hours" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Not black-translucent: the page would go under the status bar, and iOS 26 gives it a top safe area of 0
+         (WebKit bug 301994): the header was under the clock and the page ended a status bar short of the bottom.
+         The status bar takes the theme-color, set by the app to its background (useAppearanceSync) -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F5F5FA" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0F0F1A" />
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
@@ -53,6 +56,25 @@
         display: flex;
         height: 100%;
         flex: 1;
+        /* A big screen: the game stays a phone, in a column in the middle (utils/webViewport.ts) */
+        max-width: 480px;
+        margin: 0 auto;
+      }
+      /* The modals (react-native-web portals, children of body): in the column too. A transform makes
+         the portal the frame of their position: fixed */
+      body > div:not(#root):has(> *) {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        width: 100%;
+        max-width: 480px;
+        transform: translateX(-50%);
+      }
+      @media (min-width: 520px) {
+        #root {
+          box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.2);
+        }
       }
     </style>
   </head>
