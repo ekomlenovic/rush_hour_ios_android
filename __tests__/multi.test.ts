@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+import { WEB_APP_URL } from '../utils/webApp';
 import { buildInviteLink, buildRecoveryLink, normalizeServerUrl, parseInviteLink, parseRecoveryLink, serverHost } from '../utils/multi/serverUrl';
 import { checkCompatibility, isOlderVersion, multiApi, MultiApiError } from '../utils/multi/api';
 import { gameKey, selectActiveAccount, useMultiStore, type MultiGame, type ServerAccount } from '../store/multiStore';
@@ -51,12 +53,28 @@ describe('invitation link', () => {
       .toEqual({ server: 'https://monserveur.duckdns.org', code: 'XYZ12345' });
   });
 
+  it('is a link of the web version on the web, which the app reads too', () => {
+    const restore = jest.replaceProperty(Platform, 'OS', 'web');
+    let invite: string, recovery: string;
+    try {
+      invite = buildInviteLink('https://monserveur.duckdns.org', 'AB33BAVJ11YYPVGK');
+      recovery = buildRecoveryLink('https://monserveur.duckdns.org', 'K7QM-3XPA-9TRB-V2HD');
+    } finally {
+      restore.restore();
+    }
+    expect(invite).toBe(`${WEB_APP_URL}/multi/join?server=https%3A%2F%2Fmonserveur.duckdns.org&code=AB33BAVJ11YYPVGK`);
+    expect(parseInviteLink(invite)).toEqual({ server: 'https://monserveur.duckdns.org', code: 'AB33BAVJ11YYPVGK' });
+    expect(parseRecoveryLink(recovery)).toEqual({ server: 'https://monserveur.duckdns.org', code: 'K7QM-3XPA-9TRB-V2HD' });
+    expect(parseInviteLink(recovery)).toBeNull();
+  });
+
   it.each([
     'rush-hours://game?data=abc',
     'rush-hours://multi/join?server=https%3A%2F%2Fexample.com',
     'rush-hours://multi/join?code=ABC',
     'rush-hours://multi/join?server=http%3A%2F%2Fexample.com&code=ABC',
     'https://example.com/multi/join?server=x&code=y',
+    `https://example.com/rush_hour_ios_android/multi/join?server=monserveur.duckdns.org&code=ABC`,
     'rush-hours://multi/join?server=%E0%A4%A&code=ABC',
   ])('is not %s', (link) => {
     expect(parseInviteLink(link)).toBeNull();
