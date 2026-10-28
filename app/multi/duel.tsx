@@ -30,8 +30,9 @@ import {
 } from '@/utils/multi/duel';
 import LoadingIndicator from '@/components/LoadingIndicator';
 
-/** Room for the two player bars and the clock around the boards */
+/** Room for the two player bars and the clock around the boards, until they are measured */
 const BARS_HEIGHT = RFValue(150);
+const ARENA_PADDING = RFValue(10);
 
 /**
  * Duel 1v1 in real time: two players of the server on the same puzzle, the board of
@@ -378,9 +379,18 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
   const countdown = countdownMs(duel, now);
   const won = iHaveWon(duel);
   const showTray = duel.spectating && duel.reactions.length > 0 && duel.status === 'playing';
-  const space = Math.max(0, height - BARS_HEIGHT - (showTray ? REACTION_TRAY_HEIGHT : 0) - insets.bottom);
+  // The bars as drawn (taller than the estimate with the fonts of the web): my board went under the bottom
+  // of the screen, the home bar of the iPhone took the finger there
+  const [barsHeight, setBarsHeight] = useState<number | null>(null);
+  const space = Math.max(0, height - (barsHeight ?? BARS_HEIGHT) - (showTray ? REACTION_TRAY_HEIGHT : 0) - insets.bottom);
   const mySize = Math.min(width - RFValue(32), space * (duel.spectating ? 0.5 : 0.62));
   const opponentSize = Math.min(duel.spectating ? mySize : width * 0.62, space - mySize);
+  // Everything above my board's bottom but the boards, and the padding under it
+  const onMyBoardLayout = (e: LayoutChangeEvent) => {
+    const { y, height: boardHeight } = e.nativeEvent.layout;
+    const bars = Math.ceil(y + boardHeight - mySize - opponentSize + ARENA_PADDING);
+    if (bars > 0 && bars !== barsHeight) setBarsHeight(bars);
+  };
   const time = formatDuration(duelElapsedMs(duel, now));
   // A duel on moves goes on after the first one out: who is out, and with how many moves
   const out = (player: DuelSide) => t('multi.duel.opponent_out', { pseudo: player.pseudo, count: player.moves.length });
@@ -536,7 +546,7 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
             onSelect={showTray ? () => setTargetId(duel.me.id) : undefined}
             selected={showTray && !targetOnTop}
           />
-          <View style={{ opacity: firstAway ? 0.5 : 1 }}>
+          <View style={{ opacity: firstAway ? 0.5 : 1 }} onLayout={onMyBoardLayout}>
             <Board
               gridSize={level.gridSize}
               vehicles={duel.me.vehicles}
@@ -1004,7 +1014,7 @@ const styles = StyleSheet.create({
   arena: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: RFValue(10),
+    paddingVertical: ARENA_PADDING,
   },
   clockRow: {
     flexDirection: 'row',
