@@ -127,6 +127,16 @@
       },
       "versions": [
         {
+          "version": "2.0.7",
+          "buildVersion": "65",
+          "date": "2026-10-28",
+          "localizedDescription": "Fixes:\n• Duel: your board no longer reaches the bottom of the screen\n• Level creator: the toolbox vehicles show in full again, with their names",
+          "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.7-b65/rush-hours-unsigned.ipa",
+          "size": 18865769,
+          "sha256": "379529c258e16cb94fca118569db9599bbbb698ba4f625f628a66260bbbe6098",
+          "minOSVersion": "16.4"
+        },
+        {
           "version": "2.0.6",
           "buildVersion": "64",
           "date": "2026-10-27",
@@ -157,12 +167,12 @@
           "minOSVersion": "16.4"
         }
       ],
-      "version": "2.0.6",
-      "buildVersion": "64",
-      "versionDate": "2026-10-27",
-      "versionDescription": "New:\n• Play directly in your browser on the web version (PWA)\n• Share level and multiplayer invite links that work in both web and app\n• Fixes and improvements",
-      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.6-b64/rush-hours-unsigned.ipa",
-      "size": 18865590
+      "version": "2.0.7",
+      "buildVersion": "65",
+      "versionDate": "2026-10-28",
+      "versionDescription": "Fixes:\n• Duel: your board no longer reaches the bottom of the screen\n• Level creator: the toolbox vehicles show in full again, with their names",
+      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.7-b65/rush-hours-unsigned.ipa",
+      "size": 18865769
     }
   ],
   "news": []
