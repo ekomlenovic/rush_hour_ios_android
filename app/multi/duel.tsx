@@ -30,8 +30,17 @@ import {
 } from '@/utils/multi/duel';
 import LoadingIndicator from '@/components/LoadingIndicator';
 
-/** Room for the two player bars and the clock around the boards */
-const BARS_HEIGHT = RFValue(150);
+/**
+ * Room for the two player bars, the clock and the padding around the boards: about 160 as drawn
+ * on an iPhone (2 × 42 for the bars, 56 for the clock, 20 of padding). An estimate, not a
+ * measure: the boards keep their size for the whole game, never resized under a finger
+ */
+const BARS_HEIGHT = RFValue(160);
+/**
+ * Room kept under my board at least, for the home bar of the iPhone: the web version may get a
+ * bottom safe area of 0, my board went down to the bottom of the screen, cut by its corners
+ */
+const MIN_BOTTOM_ROOM = RFValue(24);
 
 /**
  * Duel 1v1 in real time: two players of the server on the same puzzle, the board of
@@ -378,7 +387,7 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
   const countdown = countdownMs(duel, now);
   const won = iHaveWon(duel);
   const showTray = duel.spectating && duel.reactions.length > 0 && duel.status === 'playing';
-  const space = Math.max(0, height - BARS_HEIGHT - (showTray ? REACTION_TRAY_HEIGHT : 0) - insets.bottom);
+  const space = Math.max(0, height - BARS_HEIGHT - (showTray ? REACTION_TRAY_HEIGHT : 0) - Math.max(insets.bottom, MIN_BOTTOM_ROOM));
   const mySize = Math.min(width - RFValue(32), space * (duel.spectating ? 0.5 : 0.62));
   const opponentSize = Math.min(duel.spectating ? mySize : width * 0.62, space - mySize);
   const time = formatDuration(duelElapsedMs(duel, now));
