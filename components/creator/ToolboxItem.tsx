@@ -109,7 +109,8 @@ export default ToolboxItem;
 const styles = StyleSheet.create({
   // The truck lying down left too little room to its name: smaller previews, and the labels shrink rather than overflow the card
   toolSlot: { flexBasis: '48%' },
-  toolCard: { flex: 1, borderRadius: 14, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // flexGrow, not flex: 1 — its basis 0 squashed the card to its padding inside the slot (column)
+  toolCard: { flexGrow: 1, borderRadius: 14, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
   toolPreviewWrap: { justifyContent: 'center', alignItems: 'center', width: 52, height: 38 },
   toolPreview: { borderRadius: 5, overflow: 'hidden', justifyContent: 'flex-start' },
   toolPreviewShine: { position: 'absolute', top: 0, left: 0, right: 0, height: '40%' },
