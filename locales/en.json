@@ -1714,6 +1714,16 @@
     "install_title": "Install Rush Hours",
     "install_ios": "Tap Share, then “Add to Home Screen”: the game opens full screen, even offline. Otherwise Safari may erase your progress after 7 days without playing.",
     "install_prompt": "Put the game on your home screen: it opens full screen, even offline.",
-    "install_button": "Install"
+    "install_button": "Install",
+    "side_app_title": "Play on your phone",
+    "side_app_body": "Rush Hours is also an app: Google Play on Android, SideStore or LiveContainer on iPhone. Scan the code to install it.",
+    "side_app_qr": "QR code to the app's install page",
+    "side_app_android": "Google Play",
+    "side_app_ios": "iPhone and iPad",
+    "side_app_save": "To keep your progress, export it in Options → Save, then import it in the app.",
+    "side_code_title": "The source code",
+    "side_code_body": "Rush Hours is a personal project: the code of the game, of this web version and of the multiplayer server is available on GitHub.",
+    "side_code_github": "View on GitHub",
+    "side_code_issue": "Report a bug"
   }
 }

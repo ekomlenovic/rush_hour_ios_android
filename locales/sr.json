@@ -1804,6 +1804,16 @@
     "install_title": "Instaliraj Rush Hours",
     "install_ios": "Dodirni Deli, pa „Dodaj na početni ekran“: igra se otvara preko celog ekrana, čak i bez interneta. Inače Safari može da obriše tvoj napredak posle 7 dana bez igranja.",
     "install_prompt": "Stavi igru na početni ekran: otvara se preko celog ekrana, čak i bez interneta.",
-    "install_button": "Instaliraj"
+    "install_button": "Instaliraj",
+    "side_app_title": "Igraj na telefonu",
+    "side_app_body": "Rush Hours postoji i kao aplikacija: Google Play na Androidu, SideStore ili LiveContainer na iPhone-u. Skeniraj kod da je instaliraš.",
+    "side_app_qr": "QR kod do stranice za instalaciju aplikacije",
+    "side_app_android": "Google Play",
+    "side_app_ios": "iPhone i iPad",
+    "side_app_save": "Da sačuvaš napredak, izvezi ga u Opcije → Sačuvana igra, pa ga uvezi u aplikaciji.",
+    "side_code_title": "Izvorni kod",
+    "side_code_body": "Rush Hours je lični projekat: kod igre, ove veb verzije i servera za više igrača dostupan je na GitHub-u.",
+    "side_code_github": "Pogledaj na GitHub-u",
+    "side_code_issue": "Prijavi grešku"
   }
 }
