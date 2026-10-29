@@ -20,8 +20,8 @@ Le détail est dans la section « Progression des joueurs — règle absolue » 
 
 `npm run typecheck` et `npm test` (ou `npm run test:tz`) ; `cd server && npm test` si le serveur est touché. Commits en Semantic Commit Messages, textes du jeu au tutoiement (voir `docs/GAME_DESIGN.md`).
 
-Commits **au nom d'Emilien** (`Emilien Komlenovic <emilien.komlenovic@gmail.com>`, en auteur et en committer), Claude en co-auteur (ligne `Co-Authored-By:` du message), jamais Claude en auteur.
+Pas de ligne `Co-Authored-By:` ni de lien de session dans les messages de commit, ni de mention « Generated with » dans les descriptions de PR.
 
 ## Branches : toujours passer par une PR
 
-Ne jamais pousser directement sur une branche de prod : `main` ou une branche de version (`2.0.2`, …), même si elle est indiquée comme branche de travail. Créer une branche dédiée (par ex. `claude/<sujet>`) depuis la branche visée et ouvrir une PR vers elle.
+Ne jamais pousser directement sur une branche de prod : `main` ou une branche de version (`2.0.2`, …), même si elle est indiquée comme branche de travail. Créer une branche dédiée (par ex. `feat/<sujet>`) depuis la branche visée et ouvrir une PR vers elle.
