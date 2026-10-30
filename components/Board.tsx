@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { View, Text, StyleSheet, useWindowDimensions, Platform, type HostInstance } from 'react-native';
 import { Vehicle, useGameStore } from '@/store/gameStore';
 import { getMoveBounds } from '@/utils/collision';
 import Block, { BlockA11yStrings } from './Block';
@@ -43,6 +43,23 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
   const gridColor = board.grid;
   const boardBg = board.background;
   const exitColor = board.exit;
+
+  // The web version: the board never pans the page (see docs/GAME_DESIGN.md, Version web). In a browser tab
+  // (Firefox on iPhone), the browser's own pan (pull to refresh, toolbars) took the finger in the middle of a
+  // drag without the page ever hearing the end of the touch: the vehicle stayed where the finger left it,
+  // its move never played, and the others went through it. The touch-action gesture-handler puts on a vehicle
+  // also changes when it is enabled (end of a duel's countdown), and Safari on iOS can keep the old one.
+  // Set once on the board (the vehicles inside take it), and a touchmove refused, which iOS always respects
+  const boardRef = useRef<HostInstance>(null);
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const node = boardRef.current as unknown as HTMLElement | null;
+    if (!node) return;
+    node.style.touchAction = 'none';
+    const refuse = (event: TouchEvent) => { if (event.cancelable) event.preventDefault(); };
+    node.addEventListener('touchmove', refuse, { passive: false });
+    return () => node.removeEventListener('touchmove', refuse);
+  }, []);
 
   const { t } = useTranslation();
   const showVehicleLetters = useGameStore(s => s.showVehicleLetters);
@@ -105,6 +122,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
     // Its vehicles drawn with the same look
     <BoardLookProvider value={look ?? null}>
       <View
+        ref={boardRef}
         style={[
           styles.boardContainer,
           {
