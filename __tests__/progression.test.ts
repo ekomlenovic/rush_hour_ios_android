@@ -5,7 +5,7 @@ import {
 } from '../data/progression';
 import {
   COSMETICS, DEFAULT_COSMETICS, SEASONAL_EVENTS, isInEventDays, buildCosmeticContext, newlyUnlockedCosmetics, cosmeticKey, getLevelCosmetics, isCosmeticUnlocked,
-  lockedEventCosmetics, sanitizeSelection, seasonalEventOf, seasonalEventsOf, type CosmeticSource, type SeasonalEventId,
+  lockedEventCosmetics, sanitizeSelection, seasonalEventOf, seasonalEventsOf, type CosmeticSource, SEASONAL_EVENT_IDS, westernEaster, orthodoxEaster, movableEventDays,
 } from '../data/cosmetics';
 import en from '../locales/en.json';
 import fr from '../locales/fr.json';
@@ -324,6 +324,43 @@ describe('seasonal events', () => {
     expect(unlocked(['board:snow'], { '2026-12-31': won })).toEqual(['board:snow']);
   });
 
+  it("April Fools' Day from March 29 to April 2, Fête de la musique from June 18 to 24", () => {
+    expect(['2027-03-28', '2027-03-29', '2027-04-01', '2027-04-02', '2027-04-03'].map(d => seasonalEventsOf(d).includes('aprilfools'))).toEqual([false, true, true, true, false]);
+    expect(['2027-06-17', '2027-06-18', '2027-06-21', '2027-06-24', '2027-06-25'].map(seasonalEventOf)).toEqual([null, 'musicday', 'musicday', 'musicday', null]);
+  });
+
+  it('Easter moves every year: from Holy Thursday to Easter Monday, Catholic and Orthodox', () => {
+    // Known dates of Easter Sunday, Western then Orthodox
+    expect(westernEaster(2024)).toEqual([3, 31]);
+    expect(westernEaster(2025)).toEqual([4, 20]);
+    expect(westernEaster(2026)).toEqual([4, 5]);
+    expect(westernEaster(2027)).toEqual([3, 28]);
+    expect(westernEaster(2038)).toEqual([4, 25]);
+    expect(westernEaster(2285)).toEqual([3, 22]);
+    expect(orthodoxEaster(2024)).toEqual([5, 5]);
+    expect(orthodoxEaster(2025)).toEqual([4, 20]);
+    expect(orthodoxEaster(2026)).toEqual([4, 12]);
+    expect(orthodoxEaster(2027)).toEqual([5, 2]);
+    expect(movableEventDays('easter', 2026)).toEqual([{ from: '04-02', to: '04-06' }, { from: '04-09', to: '04-13' }]);
+    // 2026: Catholic Easter on April 5, Orthodox Easter on April 12
+    expect(['2026-04-01', '2026-04-02', '2026-04-06', '2026-04-07', '2026-04-09', '2026-04-13', '2026-04-14'].map(d => seasonalEventsOf(d).includes('easter')))
+      .toEqual([false, true, true, false, true, true, false]);
+    // Easter Monday 2027 is March 29: April Fools' Day too, a daily that day counts for both
+    expect(seasonalEventsOf('2027-03-29')).toEqual(['aprilfools', 'easter']);
+    expect(seasonalEventsOf('2027-03-25')).toEqual(['easter']);
+  });
+
+  it("an April Fools', Easter or Fête de la musique daily unlocks the four styles of its event", () => {
+    const APRIL = ['board:aprilfish', 'skin:goldfish', 'palette:prank', 'effect:paperfish'];
+    const EASTER = ['board:easter', 'skin:bunny', 'palette:eggs', 'effect:eggs'];
+    const MUSIC = ['board:music', 'skin:guitar', 'palette:concert', 'effect:notes'];
+    const all = [...APRIL, ...EASTER, ...MUSIC];
+    expect(unlocked(all, { '2027-04-01': won })).toEqual(APRIL);
+    expect(unlocked(all, { '2027-05-01': won })).toEqual(EASTER);
+    expect(unlocked(all, { '2027-06-21': won })).toEqual(MUSIC);
+    expect(unlocked(all, { '2027-03-29': won })).toEqual([...APRIL, ...EASTER]);
+  });
+
   it('gives every event of a day', () => {
     expect(seasonalEventsOf('2026-10-31')).toEqual(['halloween']);
     expect(seasonalEventsOf('2026-12-20')).toEqual(['christmas']);
@@ -358,7 +395,7 @@ describe('seasonal events', () => {
     const lookup = (strings: unknown, key: string) => key.split('.').reduce<unknown>(
       (node, part) => (node && typeof node === 'object' ? (node as Record<string, unknown>)[part] : undefined), strings);
     for (const strings of [en, fr]) {
-      for (const event of Object.keys(SEASONAL_EVENTS) as SeasonalEventId[]) {
+      for (const event of SEASONAL_EVENT_IDS) {
         expect(COSMETICS.some(def => def.unlock.type === 'event' && def.unlock.event === event)).toBe(true);
         for (const key of [`cosmetics.unlock.event.${event}`, `cosmetics.unlock_short.event.${event}`, `home.daily_event.${event}_one`, `home.daily_event.${event}_other`]) {
           expect({ key, text: typeof lookup(strings, key) }).toEqual({ key, text: 'string' });
