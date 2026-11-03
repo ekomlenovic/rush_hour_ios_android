@@ -4,6 +4,9 @@ import { type Backdrop, type BackdropOptions, CALM_TOP, rng } from './events/bac
 import { newYearBackdrop } from './events/newYear';
 import { valentineBackdrop } from './events/valentine';
 import { stPatrickBackdrop } from './events/stPatrick';
+import { aprilFoolsBackdrop } from './events/aprilFools';
+import { easterBackdrop } from './events/easter';
+import { musicDayBackdrop } from './events/musicDay';
 
 /**
  * Backdrops of the event boards: the whole screen of the game takes the theme, from top to bottom, behind
@@ -328,6 +331,9 @@ const BACKDROPS: Record<string, Backdrop> = {
   newyear: newYearBackdrop,
   valentine: valentineBackdrop,
   shamrock: stPatrickBackdrop,
+  aprilfish: aprilFoolsBackdrop,
+  easter: easterBackdrop,
+  music: musicDayBackdrop,
 };
 
 /** Board themes with a backdrop */
