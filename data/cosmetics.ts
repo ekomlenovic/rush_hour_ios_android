@@ -9,7 +9,8 @@ import { getPlayerLevel } from './progression';
  */
 
 export type CosmeticKind = 'board' | 'skin' | 'palette' | 'effect';
-export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed' | 'bubbles' | 'greenlight' | 'tommy' | 'broadside' | 'bats' | 'gifts' | 'champagne' | 'hearts' | 'clovers';
+export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed' | 'bubbles' | 'greenlight' | 'tommy' | 'broadside' | 'bats' | 'gifts' | 'champagne' | 'hearts' | 'clovers'
+  | 'paperfish' | 'eggs' | 'notes';
 
 export interface CosmeticSelection {
   board: BoardThemeId;
@@ -39,31 +40,93 @@ export type UnlockRule =
   | { type: 'event'; event: SeasonalEventId };
 
 /** Seasonal events, persisted nowhere: computed from the dates of the daily challenges won */
-export type SeasonalEventId = 'halloween' | 'christmas' | 'newyear' | 'valentine' | 'stpatrick';
+export type SeasonalEventId = FixedEventId | MovableEventId;
+/** Events on the same days every year */
+export type FixedEventId = 'halloween' | 'christmas' | 'newyear' | 'valentine' | 'stpatrick' | 'aprilfools' | 'musicday';
+/** Events whose days change every year, computed (Easter) */
+export type MovableEventId = 'easter';
 
 /**
- * Days of each event, MM-DD, both included, every year. A `to` before its `from` goes over the new year
+ * Days of each fixed event, MM-DD, both included, every year. A `to` before its `from` goes over the new year
  * (December 31st to January 3rd). Events may share days: a daily won on such a day counts for each of them
  */
-export const SEASONAL_EVENTS: Record<SeasonalEventId, { from: string; to: string }> = {
+export const SEASONAL_EVENTS: Record<FixedEventId, { from: string; to: string }> = {
   halloween: { from: '10-25', to: '10-31' },
   christmas: { from: '12-19', to: '12-25' },
   newyear: { from: '12-31', to: '01-03' },
   valentine: { from: '02-10', to: '02-14' },
   stpatrick: { from: '03-15', to: '03-17' },
+  aprilfools: { from: '03-29', to: '04-02' },
+  musicday: { from: '06-18', to: '06-24' },
 };
 
-const SEASONAL_EVENT_IDS = Object.keys(SEASONAL_EVENTS) as SeasonalEventId[];
+/** Every event, fixed then movable: the order of the home screen when a day has several */
+export const SEASONAL_EVENT_IDS: SeasonalEventId[] = [...(Object.keys(SEASONAL_EVENTS) as FixedEventId[]), 'easter'];
 
 /** Whether the day MM-DD is one of these days of an event (`to` before `from`: over the new year) */
 export function isInEventDays({ from, to }: { from: string; to: string }, day: string): boolean {
   return from <= to ? day >= from && day <= to : day >= from || day <= to;
 }
 
-/** Every event of a local date key YYYY-MM-DD, in the order of SEASONAL_EVENTS (read from the key, never with new Date()) */
+const pad = (n: number) => String(n).padStart(2, '0');
+
+/** The day MM-DD `offset` days after month/day of a year (computed in UTC: no time zone, no daylight saving) */
+function shiftDay(year: number, month: number, day: number, offset: number): string {
+  const d = new Date(Date.UTC(year, month - 1, day + offset));
+  return `${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+}
+
+/** Easter Sunday of a year in the Gregorian calendar (Catholic and Protestant), [month, day] */
+export function westernEaster(year: number): [number, number] {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  return [month, ((h + l - 7 * m + 114) % 31) + 1];
+}
+
+/** Orthodox Easter Sunday of a year (Julian computus), in the Gregorian calendar, [month, day] */
+export function orthodoxEaster(year: number): [number, number] {
+  const a = year % 4;
+  const b = year % 7;
+  const c = year % 19;
+  const d = (19 * c + 15) % 30;
+  const e = (2 * a + 4 * b - d + 34) % 7;
+  const month = Math.floor((d + e + 114) / 31);
+  const day = ((d + e + 114) % 31) + 1;
+  // From the Julian to the Gregorian calendar: 13 days from 1900 to 2099, one more each century not a leap one
+  const gap = Math.floor(year / 100) - Math.floor(year / 400) - 2;
+  const shifted = shiftDay(year, month, day, gap);
+  return [Number(shifted.slice(0, 2)), Number(shifted.slice(3, 5))];
+}
+
+/**
+ * Days of the movable events in a year, MM-DD: Easter from Holy Thursday to Easter Monday, the Catholic one and the
+ * Orthodox one (Serbia), often the same week
+ */
+export function movableEventDays(event: MovableEventId, year: number): { from: string; to: string }[] {
+  switch (event) {
+    case 'easter':
+      return [westernEaster(year), orthodoxEaster(year)].map(([month, day]) => ({ from: shiftDay(year, month, day, -3), to: shiftDay(year, month, day, 1) }));
+  }
+}
+
+/** Every event of a local date key YYYY-MM-DD, in the order of SEASONAL_EVENT_IDS (read from the key, never with new Date()) */
 export function seasonalEventsOf(dateKey: string): SeasonalEventId[] {
+  const year = Number(dateKey.slice(0, 4));
   const day = dateKey.slice(5, 10);
-  return SEASONAL_EVENT_IDS.filter(id => isInEventDays(SEASONAL_EVENTS[id], day));
+  return SEASONAL_EVENT_IDS.filter(id => (Object.hasOwn(SEASONAL_EVENTS, id)
+    ? isInEventDays(SEASONAL_EVENTS[id as FixedEventId], day)
+    : movableEventDays(id as MovableEventId, year).some(days => isInEventDays(days, day))));
 }
 
 /** The first event of a local date key YYYY-MM-DD, if any */
@@ -92,6 +155,9 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'board', id: 'newyear', icon: '🎆', unlock: { type: 'event', event: 'newyear' } },
   { kind: 'board', id: 'valentine', icon: '💝', unlock: { type: 'event', event: 'valentine' } },
   { kind: 'board', id: 'shamrock', icon: '☘️', unlock: { type: 'event', event: 'stpatrick' } },
+  { kind: 'board', id: 'aprilfish', icon: '🐠', unlock: { type: 'event', event: 'aprilfools' } },
+  { kind: 'board', id: 'easter', icon: '🌷', unlock: { type: 'event', event: 'easter' } },
+  { kind: 'board', id: 'music', icon: '🎼', unlock: { type: 'event', event: 'musicday' } },
   { kind: 'board', id: 'fire', icon: '🔥', unlock: { type: 'achievement', id: 'streak_30' } },
   { kind: 'board', id: 'beach', icon: '🏖️', unlock: { type: 'stars', count: 1200 } },
   { kind: 'board', id: 'space', icon: '🌌', unlock: { type: 'achievement', id: 'zone_perfect_10' } },
@@ -113,6 +179,9 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'skin', id: 'limo', icon: '🍾', unlock: { type: 'event', event: 'newyear' } },
   { kind: 'skin', id: 'wedding', icon: '💍', unlock: { type: 'event', event: 'valentine' } },
   { kind: 'skin', id: 'leprechaun', icon: '🍀', unlock: { type: 'event', event: 'stpatrick' } },
+  { kind: 'skin', id: 'goldfish', icon: '🐟', unlock: { type: 'event', event: 'aprilfools' } },
+  { kind: 'skin', id: 'bunny', icon: '🐰', unlock: { type: 'event', event: 'easter' } },
+  { kind: 'skin', id: 'guitar', icon: '🎸', unlock: { type: 'event', event: 'musicday' } },
 
   // Vehicle palettes
   { kind: 'palette', id: 'classic', icon: '🎨', unlock: { type: 'default' } },
@@ -130,6 +199,9 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'palette', id: 'party', icon: '🪩', unlock: { type: 'event', event: 'newyear' } },
   { kind: 'palette', id: 'lovers', icon: '🌹', unlock: { type: 'event', event: 'valentine' } },
   { kind: 'palette', id: 'emerald', icon: '🎩', unlock: { type: 'event', event: 'stpatrick' } },
+  { kind: 'palette', id: 'prank', icon: '🎣', unlock: { type: 'event', event: 'aprilfools' } },
+  { kind: 'palette', id: 'eggs', icon: '🥚', unlock: { type: 'event', event: 'easter' } },
+  { kind: 'palette', id: 'concert', icon: '🔊', unlock: { type: 'event', event: 'musicday' } },
 
   // Win effects
   { kind: 'effect', id: 'none', icon: '⏹️', unlock: { type: 'default' } },
@@ -145,6 +217,9 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'effect', id: 'champagne', icon: '🥂', unlock: { type: 'event', event: 'newyear' } },
   { kind: 'effect', id: 'hearts', icon: '💖', unlock: { type: 'event', event: 'valentine' } },
   { kind: 'effect', id: 'clovers', icon: '🪙', unlock: { type: 'event', event: 'stpatrick' } },
+  { kind: 'effect', id: 'paperfish', icon: '🎏', unlock: { type: 'event', event: 'aprilfools' } },
+  { kind: 'effect', id: 'eggs', icon: '🔔', unlock: { type: 'event', event: 'easter' } },
+  { kind: 'effect', id: 'notes', icon: '🎵', unlock: { type: 'event', event: 'musicday' } },
 ];
 
 export const cosmeticKey = (def: Pick<CosmeticDef, 'kind' | 'id'>): string => `${def.kind}:${def.id}`;

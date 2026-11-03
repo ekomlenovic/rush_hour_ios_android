@@ -66,7 +66,16 @@
       "valentine_other": "Dan zaljubljenih: pobedi i otključaj {{count}} stilova za Garažu",
       "stpatrick_one": "Dan Svetog Patrika: pobedi i otključaj {{count}} stil za Garažu",
       "stpatrick_few": "Dan Svetog Patrika: pobedi i otključaj {{count}} stila za Garažu",
-      "stpatrick_other": "Dan Svetog Patrika: pobedi i otključaj {{count}} stilova za Garažu"
+      "stpatrick_other": "Dan Svetog Patrika: pobedi i otključaj {{count}} stilova za Garažu",
+      "aprilfools_one": "Prvi april: pobedi i otključaj {{count}} stil za Garažu",
+      "aprilfools_few": "Prvi april: pobedi i otključaj {{count}} stila za Garažu",
+      "aprilfools_other": "Prvi april: pobedi i otključaj {{count}} stilova za Garažu",
+      "easter_one": "Uskrs: pobedi i otključaj {{count}} stil za Garažu",
+      "easter_few": "Uskrs: pobedi i otključaj {{count}} stila za Garažu",
+      "easter_other": "Uskrs: pobedi i otključaj {{count}} stilova za Garažu",
+      "musicday_one": "Praznik muzike: pobedi i otključaj {{count}} stil za Garažu",
+      "musicday_few": "Praznik muzike: pobedi i otključaj {{count}} stila za Garažu",
+      "musicday_other": "Praznik muzike: pobedi i otključaj {{count}} stilova za Garažu"
     },
     "daily_next": "Sledeći za {{time}}",
     "weekly_next_one": "Sledeći za {{count}} dan",
@@ -833,7 +842,10 @@
         "christmas": "Božićni dnevni",
         "newyear": "Novogodišnji dnevni",
         "valentine": "Dnevni za Dan zaljubljenih",
-        "stpatrick": "Dnevni za Svetog Patrika"
+        "stpatrick": "Dnevni za Svetog Patrika",
+        "aprilfools": "Dnevni za Prvi april",
+        "easter": "Uskršnji dnevni",
+        "musicday": "Dnevni za Praznik muzike"
       }
     },
     "kinds": {
@@ -859,7 +871,10 @@
         "christmas": "Pobedi u dnevnom izazovu za Božić (od 19. do 25. decembra)",
         "newyear": "Pobedi u dnevnom izazovu za Novu godinu (od 31. decembra do 3. januara)",
         "valentine": "Pobedi u dnevnom izazovu za Dan zaljubljenih (od 10. do 14. februara)",
-        "stpatrick": "Pobedi u dnevnom izazovu za Dan Svetog Patrika (od 15. do 17. marta)"
+        "stpatrick": "Pobedi u dnevnom izazovu za Dan Svetog Patrika (od 15. do 17. marta)",
+        "aprilfools": "Pobedi u dnevnom izazovu za Prvi april (od 29. marta do 2. aprila)",
+        "easter": "Pobedi u dnevnom izazovu za Uskrs (od Velikog četvrtka do Uskršnjeg ponedeljka, katolički ili pravoslavni)",
+        "musicday": "Pobedi u dnevnom izazovu za Praznik muzike (od 18. do 24. juna)"
       },
       "secret": "Tajno dostignuće"
     },
@@ -877,7 +892,10 @@
       "christmas": "Božić",
       "newyear": "Novogodišnja noć",
       "valentine": "Dan zaljubljenih",
-      "shamrock": "Deteline"
+      "shamrock": "Deteline",
+      "aprilfish": "Morsko dno",
+      "easter": "Uskrs",
+      "music": "Praznik muzike"
     },
     "skin": {
       "classic": "Crveni auto",
@@ -895,7 +913,10 @@
       "sleigh": "Deda Mrazove sanke",
       "limo": "Limuzina sa šampanjcem",
       "wedding": "Svadbeni auto",
-      "leprechaun": "Leprikonov auto"
+      "leprechaun": "Leprikonov auto",
+      "goldfish": "Auto zlatna ribica",
+      "bunny": "Čokoladni zeka",
+      "guitar": "Električna gitara"
     },
     "palette": {
       "classic": "Klasična",
@@ -912,7 +933,10 @@
       "festive": "Božićni konvoj",
       "party": "Žurka konvoj",
       "lovers": "Konvoj zaljubljenih",
-      "emerald": "Smaragdni konvoj"
+      "emerald": "Smaragdni konvoj",
+      "prank": "Šaljivi konvoj",
+      "eggs": "Konvoj jaja",
+      "concert": "Koncertni konvoj"
     },
     "effect": {
       "none": "Bez efekta",
@@ -927,7 +951,10 @@
       "gifts": "Kiša poklona",
       "champagne": "Čepovi šampanjca",
       "hearts": "Kiša srca",
-      "clovers": "Deteline i zlatnici"
+      "clovers": "Deteline i zlatnici",
+      "paperfish": "Papirne ribice",
+      "eggs": "Jaja i zvona",
+      "notes": "Note"
     },
     "equip": "Opremi",
     "equipped": "Opremljeno"
