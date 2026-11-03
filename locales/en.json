@@ -843,7 +843,9 @@
       "tractor": "Tractor",
       "ufo": "Flying saucer",
       "mafia": "Lost Heaven sedan",
-      "flagship": "Flagship schooner"
+      "flagship": "Flagship schooner",
+      "coach": "Pumpkin coach",
+      "sleigh": "Santa's sleigh"
     },
     "palette": {
       "classic": "Classic",
@@ -855,7 +857,9 @@
       "lava": "Lava",
       "jungle": "Jungle",
       "mafia": "Mafia",
-      "fleet": "1800 fleet"
+      "fleet": "1800 fleet",
+      "haunted": "Haunted convoy",
+      "festive": "Christmas convoy"
     },
     "effect": {
       "none": "None",

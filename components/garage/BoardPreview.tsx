@@ -5,6 +5,7 @@ import {
   type ColorScheme,
 } from '@/theme';
 import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
+import ArtSvg from '@/components/art/ArtSvg';
 import type { CosmeticSelection } from '@/data/cosmetics';
 import type { Level, Vehicle } from '@/store/types';
 import { getExitSide } from '@/utils/creatorGeometry';
@@ -53,6 +54,7 @@ function BoardPreview({ selection, scheme, size, level }: Props) {
       importantForAccessibility="no-hide-descendants"
       accessibilityElementsHidden
     >
+      {board.decor && <ArtSvg drawing={board.decor} width={size - FRAME * 2} height={size - FRAME * 2} style={styles.decor} />}
       {Array.from({ length: grid + 1 }, (_, i) => (
         <React.Fragment key={i}>
           <View style={[styles.lineH, { top: i * cell, backgroundColor: board.grid }]} />
@@ -108,6 +110,7 @@ const styles = StyleSheet.create({
   lineV: { position: 'absolute', top: 0, bottom: 0, width: 1 },
   vehicle: { position: 'absolute', borderWidth: 1, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   drawn: { position: 'absolute' },
+  decor: { position: 'absolute', left: 0, top: 0 },
   shine: { position: 'absolute', top: 2, left: 2, right: 2, height: '45%' },
   exit: { position: 'absolute', borderRadius: 3, borderWidth: 1 },
 });

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import Svg, { Circle, Defs, G, Line, LinearGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, ClipPath, Defs, G, Line, LinearGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { CLASSIC_VEHICLE_COLORS, PALETTE_ART, TARGET_CAR_COLOR, TRAFFIC_LIGHT, applyPalette, getSkinnedBoard, recapImageColors, type VehicleArt } from '@/theme';
 import { drawVehicle } from '@/theme/art/vehicles';
 import { ArtGroup } from '@/components/art/ArtSvg';
@@ -90,6 +90,9 @@ export default function RecapShareImage({
           <Stop offset="0" stopColor={IMAGE_COLORS.top} />
           <Stop offset="1" stopColor={IMAGE_COLORS.bottom} />
         </LinearGradient>
+        <ClipPath id="recapBoard">
+          <Rect x={BOARD_X} y={BOARD_Y} width={BOARD_SIZE} height={BOARD_SIZE} rx={28} />
+        </ClipPath>
       </Defs>
       <Rect x={0} y={0} width={SHARE_IMAGE_WIDTH} height={SHARE_IMAGE_HEIGHT} fill="url(#recapBackground)" />
 
@@ -121,6 +124,11 @@ export default function RecapShareImage({
         <Rect x={BOARD_X + 18} y={BOARD_Y + 26} width={BOARD_SIZE} height={BOARD_SIZE} rx={36} fill={IMAGE_COLORS.shadow} />
         <Rect x={BOARD_X - 14} y={BOARD_Y - 14} width={BOARD_SIZE + 28} height={BOARD_SIZE + 28} rx={40} fill={board.frame} />
         <Rect x={BOARD_X} y={BOARD_Y} width={BOARD_SIZE} height={BOARD_SIZE} rx={28} fill={board.background} />
+        {board.decor && (
+          <G clipPath="url(#recapBoard)">
+            <ArtGroup drawing={board.decor} x={BOARD_X} y={BOARD_Y} width={BOARD_SIZE} height={BOARD_SIZE} />
+          </G>
+        )}
         {Array.from({ length: GRID - 1 }, (_, i) => (
           <React.Fragment key={i}>
             <Line x1={BOARD_X + (i + 1) * CELL} y1={BOARD_Y} x2={BOARD_X + (i + 1) * CELL} y2={BOARD_Y + BOARD_SIZE} stroke={board.grid} strokeWidth={3} />

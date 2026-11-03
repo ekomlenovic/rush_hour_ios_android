@@ -1,5 +1,7 @@
 import type { ColorScheme } from './ui';
 import type { DrawnSkin } from './art/targetSkins';
+import type { ArtDrawing } from './art/art';
+import { boardDecor } from './art/boardDecor';
 
 /**
  * Board theme: colors of the grid and the vehicles (Board, Block, creator board),
@@ -52,6 +54,8 @@ export interface BoardColors {
   targetIcon?: string;
   /** Drawing of the target car instead of a colored block (car skin) */
   targetArt?: VehicleArt;
+  /** Decorations on the edges of the board, under the grid and the vehicles (event boards) */
+  decor?: ArtDrawing;
 }
 
 /**
@@ -59,7 +63,10 @@ export interface BoardColors {
  * 'ship' for the schooners and paddle steamers of the 1800 ones (Anno 1800 style),
  * and each target car skin with its own drawing (taxi, bus…)
  */
-export type VehicleArt = 'vintage' | 'ship' | DrawnSkin;
+export type VehicleArt = 'vintage' | 'ship' | DrawnSkin | EventArt;
+
+/** Drawings of the seasonal events: the target car of an event (skin) and the vehicles of its palette */
+export type EventArt = 'coach' | 'haunted' | 'sleigh' | 'festive';
 
 /** Board themes, persisted in the cosmetics selection: never rename one, only add */
 export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire' | 'beach' | 'space' | 'pumpkin' | 'christmas';
@@ -389,7 +396,7 @@ export function getBoardColors(id: BoardThemeId, scheme: ColorScheme): BoardColo
 
 // ─── Target car skins ─────────────────────────────────────────────────────────
 
-export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold' | 'tractor' | 'ufo' | 'mafia' | 'flagship';
+export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold' | 'tractor' | 'ufo' | 'mafia' | 'flagship' | 'coach' | 'sleigh';
 
 export interface CarSkin {
   /** Body color, the board's target car color when absent */
@@ -417,12 +424,15 @@ export const CAR_SKINS: Record<CarSkinId, CarSkin> = {
   mafia: { color: '#7A1424', icon: '🎩', art: 'vintage' },
   // Schooner of the industrial age (Anno 1800 style), crimson hull: the red one to get out
   flagship: { color: '#9B1B30', icon: '⛵', art: 'ship' },
+  // Seasonal events (theme/art/halloweenVehicles.ts, christmasVehicles.ts): the pumpkin coach, Santa's sleigh
+  coach: { color: '#F97316', icon: '🧙', art: 'coach' },
+  sleigh: { color: '#DC2626', icon: '🛷', art: 'sleigh' },
 };
 
 // ─── Vehicle palettes ─────────────────────────────────────────────────────────
 
 /** 'classic' keeps the colors saved in each level */
-export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy' | 'lava' | 'jungle' | 'mafia' | 'fleet';
+export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy' | 'lava' | 'jungle' | 'mafia' | 'fleet' | 'haunted' | 'festive';
 
 export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   classic: null,
@@ -438,12 +448,18 @@ export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   mafia: ['#292524', '#E7DCC4', '#14532D', '#5C3A21', '#1E3A5F', '#A8A29E', '#78716C', '#B08D57'],
   // Hulls of the industrial age: bottle green, navy, ochre, brick, slate, cream, teal, coal… no red for the target ship
   fleet: ['#1F4D3A', '#23395B', '#B8862B', '#7A3E1D', '#5B6770', '#E8DCC0', '#2E6F6A', '#2B2B2B'],
+  // Halloween: night purple, moss, coal, bone, witch teal, plum… no orange for the pumpkin coach
+  haunted: ['#4C1D95', '#14532D', '#1F2937', '#E7E5E4', '#0F766E', '#701A75', '#334155', '#3F6212'],
+  // Christmas: fir green, gold, snow, midnight blue, teal, chestnut… no red for Santa's sleigh
+  festive: ['#166534', '#CA8A04', '#E2E8F0', '#1E3A8A', '#0F766E', '#7C2D12', '#A16207', '#475569'],
 };
 
 /** Palettes whose vehicles are drawn rather than colored blocks */
 export const PALETTE_ART: Partial<Record<VehiclePaletteId, VehicleArt>> = {
   mafia: 'vintage',
   fleet: 'ship',
+  haunted: 'haunted',
+  festive: 'festive',
 };
 
 /** How a board looks: its theme, the skin of the target car and the palette of the others */
@@ -460,7 +476,7 @@ export function toBoardLook(look: { board: string; skin: string; palette: string
 export function getSkinnedBoard(id: BoardThemeId, skin: CarSkinId, scheme: ColorScheme): BoardColors {
   const board = getBoardColors(id, scheme);
   const carSkin = CAR_SKINS[skin] ?? CAR_SKINS.classic;
-  return { ...board, targetCar: carSkin.color ?? board.targetCar, targetIcon: carSkin.icon, targetArt: carSkin.art };
+  return { ...board, targetCar: carSkin.color ?? board.targetCar, targetIcon: carSkin.icon, targetArt: carSkin.art, decor: boardDecor(id, scheme) };
 }
 
 /** Color of each non-target vehicle in the order of the level, for a palette */

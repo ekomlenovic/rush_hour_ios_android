@@ -17,7 +17,10 @@ import {
   BATS, BAT_FLIGHT, LANTERN_OUT_START, batAt, buildBatsPlan, lanternScale, wingsUp,
 } from '../components/effects/batsPlan';
 import { BOUNCE, DROP_END, FADE_START, GIFTS, buildGiftsPlan, giftAt, landsAt } from '../components/effects/giftsPlan';
-import { CAR_SKINS, PALETTE_ART, VEHICLE_PALETTES } from '../theme/board';
+import { hauntedVehicle, pumpkinCoachDrawing } from '../theme/art/halloweenVehicles';
+import { festiveVehicle, sleighDrawing } from '../theme/art/christmasVehicles';
+import { DECORATED_BOARDS, DECOR_SIZE, boardDecor } from '../theme/art/boardDecor';
+import { BOARD_THEMES, CAR_SKINS, PALETTE_ART, TARGET_CAR_COLOR, VEHICLE_PALETTES, getSkinnedBoard } from '../theme/board';
 import { COSMETICS, buildCosmeticContext, cosmeticKey, isCosmeticUnlocked } from '../data/cosmetics';
 
 /** Every `url(#id)` of a drawing names one of its gradients */
@@ -85,7 +88,7 @@ describe('1800 ships (Anno 1800 style)', () => {
 describe('drawn vehicles', () => {
   it('every skin is drawn but the red car, and only the drawn palettes have a drawing', () => {
     expect(Object.entries(CAR_SKINS).filter(([, s]) => !s.art).map(([id]) => id)).toEqual(['classic']);
-    expect(Object.keys(PALETTE_ART).sort()).toEqual(['fleet', 'mafia']);
+    expect(Object.keys(PALETTE_ART).sort()).toEqual(['festive', 'fleet', 'haunted', 'mafia']);
     for (const id of Object.keys(PALETTE_ART)) expect(VEHICLE_PALETTES).toHaveProperty(id);
   });
 
@@ -93,6 +96,57 @@ describe('drawn vehicles', () => {
     expect(drawVehicle('vintage', 2, '#14532D')).toEqual(vintageVehicle(2, '#14532D'));
     expect(drawVehicle('ship', 3, '#14532D')).toEqual(annoShip(3, '#14532D'));
     expect(drawVehicle('taxi', 2, '#FACC15')).toEqual(skinDrawing('taxi', '#FACC15'));
+  });
+});
+
+describe('seasonal event vehicles', () => {
+  it.each([
+    ['Halloween', hauntedVehicle, '#4C1D95'],
+    ['Christmas', festiveVehicle, '#166534'],
+  ] as const)('%s: one drawing for 2 cells, another for 3, 100 units per cell, only their own gradients', (_, draw, color) => {
+    expect(draw(2, color)).toMatchObject({ width: 200, height: 100 });
+    expect(draw(3, color)).toMatchObject({ width: 300, height: 100 });
+    expect(draw(2, color).shapes).not.toEqual(draw(3, color).shapes);
+    expectGradientsDefined(draw(2, color));
+    expectGradientsDefined(draw(3, color));
+  });
+
+  it.each([['coach', pumpkinCoachDrawing], ['sleigh', sleighDrawing]] as const)('the %s target car is drawn on 2 cells', (skin, draw) => {
+    const drawing = draw(CAR_SKINS[skin].color!);
+    expect(drawing).toMatchObject({ width: 200, height: 100 });
+    expectGradientsDefined(drawing);
+    expect(drawVehicle(skin, 2, '#F97316')).toEqual(draw('#F97316'));
+  });
+
+  it('each event has its palette of drawn vehicles, without the color of its target car', () => {
+    expect(PALETTE_ART).toMatchObject({ haunted: 'haunted', festive: 'festive' });
+    expect(drawVehicle('haunted', 3, '#1F2937')).toEqual(hauntedVehicle(3, '#1F2937'));
+    expect(drawVehicle('festive', 2, '#CA8A04')).toEqual(festiveVehicle(2, '#CA8A04'));
+    expect(VEHICLE_PALETTES.haunted).not.toContain(CAR_SKINS.coach.color);
+    expect(VEHICLE_PALETTES.festive).not.toContain(CAR_SKINS.sleigh.color);
+    expect(VEHICLE_PALETTES.festive).not.toContain(TARGET_CAR_COLOR);
+  });
+});
+
+describe('board decorations', () => {
+  it('the Halloween and Christmas boards are decorated, in both schemes', () => {
+    expect(DECORATED_BOARDS.sort()).toEqual(['christmas', 'pumpkin']);
+    for (const id of DECORATED_BOARDS) {
+      expect(BOARD_THEMES).toHaveProperty(id);
+      for (const scheme of ['light', 'dark'] as const) {
+        const decor = boardDecor(id, scheme)!;
+        expect(decor).toMatchObject({ width: DECOR_SIZE, height: DECOR_SIZE });
+        expectGradientsDefined(decor);
+        // The same drawing every time: the board does not draw it again
+        expect(boardDecor(id, scheme)).toBe(decor);
+        expect(getSkinnedBoard(id as never, 'classic', scheme).decor).toBe(decor);
+      }
+    }
+  });
+
+  it('the other boards are plain', () => {
+    expect(boardDecor('classic', 'dark')).toBeUndefined();
+    expect(getSkinnedBoard('wood', 'taxi', 'light').decor).toBeUndefined();
   });
 });
 

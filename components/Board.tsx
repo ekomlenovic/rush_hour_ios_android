@@ -6,6 +6,7 @@ import { vehicleFacing } from '@/utils/facing';
 import Block, { BlockA11yStrings } from './Block';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import ArtSvg from '@/components/art/ArtSvg';
 import { getVehicleLetters, describeVehicle, describePosition, describeExit } from '@/utils/accessibility';
 import { useTheme, useBoardTheme, BoardLookProvider, applyPalette, PALETTE_ART, type BoardLook } from '@/theme';
 
@@ -135,6 +136,13 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
           },
         ]}
       >
+        {/* Decorations of an event board, on its edges: under the grid and the vehicles */}
+        {board.decor && (
+          <View pointerEvents="none" style={StyleSheet.absoluteFill} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+            <ArtSvg drawing={board.decor} width={boardSize - BOARD_BORDER * 2} height={boardSize - BOARD_BORDER * 2} />
+          </View>
+        )}
+
         {/* Grid lines */}
         {gridLines}
 

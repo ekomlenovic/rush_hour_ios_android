@@ -41,17 +41,31 @@ export type UnlockRule =
 /** Seasonal events, persisted nowhere: computed from the dates of the daily challenges won */
 export type SeasonalEventId = 'halloween' | 'christmas';
 
-/** Days of each event, MM-DD, both included, every year */
+/**
+ * Days of each event, MM-DD, both included, every year. A `to` before its `from` goes over the new year
+ * (December 31st to January 3rd). Events may share days: a daily won on such a day counts for each of them
+ */
 export const SEASONAL_EVENTS: Record<SeasonalEventId, { from: string; to: string }> = {
   halloween: { from: '10-25', to: '10-31' },
   christmas: { from: '12-19', to: '12-25' },
 };
 
-/** The event of a local date key YYYY-MM-DD, if any (read from the key, never with new Date()) */
-export function seasonalEventOf(dateKey: string): SeasonalEventId | null {
+const SEASONAL_EVENT_IDS = Object.keys(SEASONAL_EVENTS) as SeasonalEventId[];
+
+/** Whether the day MM-DD is one of these days of an event (`to` before `from`: over the new year) */
+export function isInEventDays({ from, to }: { from: string; to: string }, day: string): boolean {
+  return from <= to ? day >= from && day <= to : day >= from || day <= to;
+}
+
+/** Every event of a local date key YYYY-MM-DD, in the order of SEASONAL_EVENTS (read from the key, never with new Date()) */
+export function seasonalEventsOf(dateKey: string): SeasonalEventId[] {
   const day = dateKey.slice(5, 10);
-  const ids = Object.keys(SEASONAL_EVENTS) as SeasonalEventId[];
-  return ids.find(id => day >= SEASONAL_EVENTS[id].from && day <= SEASONAL_EVENTS[id].to) ?? null;
+  return SEASONAL_EVENT_IDS.filter(id => isInEventDays(SEASONAL_EVENTS[id], day));
+}
+
+/** The first event of a local date key YYYY-MM-DD, if any */
+export function seasonalEventOf(dateKey: string): SeasonalEventId | null {
+  return seasonalEventsOf(dateKey)[0] ?? null;
 }
 
 export interface CosmeticDef {
@@ -88,6 +102,8 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'skin', id: 'ufo', icon: '🛸', unlock: { type: 'stars', count: 2000 } },
   { kind: 'skin', id: 'mafia', icon: '🎩', unlock: { type: 'achievement', id: 'mafia' } },
   { kind: 'skin', id: 'flagship', icon: '⛵', unlock: { type: 'weeklies', count: 30 } },
+  { kind: 'skin', id: 'coach', icon: '🧙', unlock: { type: 'event', event: 'halloween' } },
+  { kind: 'skin', id: 'sleigh', icon: '🛷', unlock: { type: 'event', event: 'christmas' } },
 
   // Vehicle palettes
   { kind: 'palette', id: 'classic', icon: '🎨', unlock: { type: 'default' } },
@@ -100,6 +116,8 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'palette', id: 'jungle', icon: '🌴', unlock: { type: 'stars', count: 1600 } },
   { kind: 'palette', id: 'mafia', icon: '🎩', unlock: { type: 'achievement', id: 'mafia' } },
   { kind: 'palette', id: 'fleet', icon: '🚢', unlock: { type: 'weeklies', count: 30 } },
+  { kind: 'palette', id: 'haunted', icon: '👻', unlock: { type: 'event', event: 'halloween' } },
+  { kind: 'palette', id: 'festive', icon: '🎄', unlock: { type: 'event', event: 'christmas' } },
 
   // Win effects
   { kind: 'effect', id: 'none', icon: '⏹️', unlock: { type: 'default' } },
@@ -153,7 +171,7 @@ export function buildCosmeticContext(s: CosmeticSource): CosmeticContext {
     // Date keys are local YYYY-MM-DD: the month is read from the key, never with new Date()
     winterDaily: dailyKeys.some(k => WINTER_MONTHS.includes(k.slice(5, 7))),
     // Only the daily of the day itself: an archive won later is kept apart (archiveProgress)
-    events: new Set(dailyKeys.map(seasonalEventOf).filter((id): id is SeasonalEventId => id !== null)),
+    events: new Set(dailyKeys.flatMap(seasonalEventsOf)),
   };
 }
 
