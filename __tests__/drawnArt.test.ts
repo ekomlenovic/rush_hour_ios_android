@@ -158,7 +158,7 @@ describe('seasonal event vehicles', () => {
 
 describe('event backdrops', () => {
   it.each([[393, 760], [393, 330], [1024, 700], [300, 300]])('every event board is drawn for an area of %i × %i, in both schemes', (width, height) => {
-    expect([...BACKDROP_BOARDS].sort()).toEqual(['aprilfish', 'bastille', 'christmas', 'easter', 'holiday', 'music', 'neon', 'newyear', 'notebook', 'paper', 'pixel', 'pumpkin', 'shamrock', 'valentine', 'wood']);
+    expect([...BACKDROP_BOARDS].sort()).toEqual(['aprilfish', 'bastille', 'beach', 'christmas', 'easter', 'fire', 'holiday', 'music', 'neon', 'newyear', 'notebook', 'paper', 'pixel', 'pumpkin', 'shamrock', 'snow', 'space', 'valentine', 'wood']);
     for (const id of BACKDROP_BOARDS) {
       expect(BOARD_THEMES).toHaveProperty(id);
       for (const scheme of ['light', 'dark'] as const) {
