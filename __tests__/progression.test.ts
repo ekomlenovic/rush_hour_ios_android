@@ -4,8 +4,8 @@ import {
   getPlayerLevel, getPlayerTitle, levelWinXp, totalXpForLevel, weeklyWinXp, xpToNextLevel,
 } from '../data/progression';
 import {
-  COSMETICS, DEFAULT_COSMETICS, SEASONAL_EVENTS, buildCosmeticContext, newlyUnlockedCosmetics, cosmeticKey, getLevelCosmetics, isCosmeticUnlocked,
-  lockedEventCosmetics, sanitizeSelection, seasonalEventOf, type CosmeticSource, type SeasonalEventId,
+  COSMETICS, DEFAULT_COSMETICS, SEASONAL_EVENTS, isInEventDays, buildCosmeticContext, newlyUnlockedCosmetics, cosmeticKey, getLevelCosmetics, isCosmeticUnlocked,
+  lockedEventCosmetics, sanitizeSelection, seasonalEventOf, seasonalEventsOf, type CosmeticSource, type SeasonalEventId,
 } from '../data/cosmetics';
 import en from '../locales/en.json';
 import fr from '../locales/fr.json';
@@ -295,14 +295,26 @@ describe('seasonal events', () => {
     const c = context(dailies);
     return keys.filter(key => isCosmeticUnlocked(COSMETICS.find(d => cosmeticKey(d) === key)!, c));
   };
-  const HALLOWEEN = ['board:pumpkin', 'effect:bats'];
-  const CHRISTMAS = ['board:christmas', 'effect:gifts'];
+  const HALLOWEEN = ['board:pumpkin', 'skin:coach', 'palette:haunted', 'effect:bats'];
+  const CHRISTMAS = ['board:christmas', 'skin:sleigh', 'palette:festive', 'effect:gifts'];
 
   it('Halloween from October 25 to 31, Christmas from December 19 to 25, every year', () => {
     expect(['2026-10-24', '2026-10-25', '2026-10-31', '2026-11-01'].map(seasonalEventOf)).toEqual([null, 'halloween', 'halloween', null]);
     expect(['2026-12-18', '2026-12-19', '2026-12-25', '2026-12-26'].map(seasonalEventOf)).toEqual([null, 'christmas', 'christmas', null]);
     expect(seasonalEventOf('2031-10-28')).toBe('halloween');
     expect(seasonalEventOf('2027-07-14')).toBeNull();
+  });
+
+  it('gives every event of a day', () => {
+    expect(seasonalEventsOf('2026-10-31')).toEqual(['halloween']);
+    expect(seasonalEventsOf('2026-12-20')).toEqual(['christmas']);
+    expect(seasonalEventsOf('2026-03-03')).toEqual([]);
+  });
+
+  it('an event can go over the new year', () => {
+    const newYear = { from: '12-31', to: '01-03' };
+    expect(['12-30', '12-31', '01-01', '01-03', '01-04'].map(day => isInEventDays(newYear, day))).toEqual([false, true, true, true, false]);
+    expect(['10-24', '10-25', '10-31', '11-01'].map(day => isInEventDays(SEASONAL_EVENTS.halloween, day))).toEqual([false, true, true, false]);
   });
 
   it('a daily won during the event unlocks its board and its win effect, for good', () => {

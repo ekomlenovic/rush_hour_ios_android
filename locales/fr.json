@@ -843,7 +843,9 @@
       "tractor": "Tracteur",
       "ufo": "Soucoupe volante",
       "mafia": "Berline de Lost Heaven",
-      "flagship": "Goélette amirale"
+      "flagship": "Goélette amirale",
+      "coach": "Carrosse citrouille",
+      "sleigh": "Traîneau du Père Noël"
     },
     "palette": {
       "classic": "Classique",
@@ -855,7 +857,9 @@
       "lava": "Lave",
       "jungle": "Jungle",
       "mafia": "Mafia",
-      "fleet": "Flotte de 1800"
+      "fleet": "Flotte de 1800",
+      "haunted": "Convoi hanté",
+      "festive": "Convoi de Noël"
     },
     "effect": {
       "none": "Aucun",

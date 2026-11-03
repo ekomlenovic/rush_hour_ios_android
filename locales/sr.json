@@ -872,7 +872,9 @@
       "tractor": "Traktor",
       "ufo": "Leteći tanjir",
       "mafia": "Limuzina iz Lost Heavena",
-      "flagship": "Admiralska škuna"
+      "flagship": "Admiralska škuna",
+      "coach": "Kočija od bundeve",
+      "sleigh": "Deda Mrazove sanke"
     },
     "palette": {
       "classic": "Klasična",
@@ -884,7 +886,9 @@
       "lava": "Lava",
       "jungle": "Džungla",
       "mafia": "Mafija",
-      "fleet": "Flota iz 1800."
+      "fleet": "Flota iz 1800.",
+      "haunted": "Ukleti konvoj",
+      "festive": "Božićni konvoj"
     },
     "effect": {
       "none": "Bez efekta",

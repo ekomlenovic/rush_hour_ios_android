@@ -3,6 +3,7 @@ import Svg, { Circle, Defs, G, Line, LinearGradient, Rect, Stop, Text as SvgText
 import { CLASSIC_VEHICLE_COLORS, PALETTE_ART, TARGET_CAR_COLOR, TRAFFIC_LIGHT, applyPalette, getSkinnedBoard, recapImageColors, type VehicleArt } from '@/theme';
 import { drawVehicle } from '@/theme/art/vehicles';
 import { ArtGroup } from '@/components/art/ArtSvg';
+import { DECOR_OUTSET } from '@/theme/art/boardDecor';
 import type { CosmeticSelection } from '@/data/cosmetics';
 import type { Vehicle } from '@/store/types';
 
@@ -18,6 +19,8 @@ const GRID = 6;
 const BOARD_SIZE = 440;
 const BOARD_X = (SHARE_IMAGE_WIDTH - BOARD_SIZE) / 2;
 const BOARD_Y = 620;
+/** The decorations of an event board go around its frame (14 wide) */
+const DECOR_FRAMED_OUTSET = 14 + (BOARD_SIZE + 28) * DECOR_OUTSET;
 const BOARD_TILT = -5;
 const CELL = BOARD_SIZE / GRID;
 /** Row of the target car and of the exit */
@@ -119,6 +122,10 @@ export default function RecapShareImage({
       {/* The player's board, the target car on its way out */}
       <G transform={`rotate(${BOARD_TILT} ${SHARE_IMAGE_WIDTH / 2} ${BOARD_Y + BOARD_SIZE / 2})`}>
         <Rect x={BOARD_X + 18} y={BOARD_Y + 26} width={BOARD_SIZE} height={BOARD_SIZE} rx={36} fill={IMAGE_COLORS.shadow} />
+        {/* Decorations of an event board, around its frame */}
+        {board.decor && (
+          <ArtGroup drawing={board.decor} x={BOARD_X - DECOR_FRAMED_OUTSET} y={BOARD_Y - DECOR_FRAMED_OUTSET} width={BOARD_SIZE + 2 * DECOR_FRAMED_OUTSET} height={BOARD_SIZE + 2 * DECOR_FRAMED_OUTSET} />
+        )}
         <Rect x={BOARD_X - 14} y={BOARD_Y - 14} width={BOARD_SIZE + 28} height={BOARD_SIZE + 28} rx={40} fill={board.frame} />
         <Rect x={BOARD_X} y={BOARD_Y} width={BOARD_SIZE} height={BOARD_SIZE} rx={28} fill={board.background} />
         {Array.from({ length: GRID - 1 }, (_, i) => (
