@@ -7,7 +7,12 @@ import { type ArtDrawing, type ArtShape, circle, ellipse, line, path, rect } fro
  * and its bats, cobwebs, a spider, ghosts and a misty graveyard on a hill; Christmas: a garland of fir,
  * string lights down the sides, snowflakes and a snowy hill with fir trees and a snowman.
  * Drawn for the size of the area, in its pixels: nothing is stretched, whatever the screen.
+ * The texts of the screen stay readable: the top (title, back, the stats card) keeps calm, only the moon or a thin
+ * garland there; the busy parts go along the sides, in the margins of the board, and at the bottom, under the buttons.
  */
+
+/** Height of the calm top of a backdrop, in units: the header and the stats of the game screen */
+export const CALM_TOP = 130;
 
 /** Deterministic pseudo-random numbers, so a backdrop is the same every time */
 function rng(seed: number) {
@@ -124,8 +129,10 @@ function halloweenBackdrop(scheme: ColorScheme, w: number, h: number, { noSky }:
   const stoneEdge = dark ? '#2A2438' : '#6B6480';
   const rand = rng(1031);
   const stars = dark
-    ? Array.from({ length: Math.round((w * h) / 3500) }, () =>
-      circle(rand() * w, rand() * h * 0.85, (0.6 + rand() * 1.3) * u, { fill: '#FDE68A', opacity: 0.25 + rand() * 0.45 }))
+    ? Array.from({ length: Math.round((w * h) / 3500) }, () => ({ x: rand() * w, y: rand() * h * 0.85, r: (0.6 + rand() * 1.3) * u, o: 0.25 + rand() * 0.45 }))
+      // None among the texts of the top
+      .filter(p => p.y > (CALM_TOP + 40) * u || p.x < 18 * u || p.x > w - 18 * u)
+      .map(p => circle(p.x, p.y, p.r, { fill: '#FDE68A', opacity: p.o }))
     : [];
   // A hill along the bottom, the graveyard on it
   const ground = h - 46 * u;
@@ -149,20 +156,20 @@ function halloweenBackdrop(scheme: ColorScheme, w: number, h: number, { noSky }:
     shapes: [
       ...(noSky ? [] : [rect(0, 0, w, h, { fill: 'url(#sky)' })]),
       ...stars,
-      // The full moon high on the right, bats flying around it
-      circle(w - 70 * u, 90 * u, 90 * u, { fill: 'url(#halo)' }),
-      circle(w - 70 * u, 90 * u, 38 * u, { fill: 'url(#moon)' }),
-      circle(w - 82 * u, 80 * u, 7 * u, { fill: '#F59E0B', opacity: 0.22 }),
-      circle(w - 58 * u, 104 * u, 5 * u, { fill: '#F59E0B', opacity: 0.22 }),
-      circle(w - 56 * u, 72 * u, 4 * u, { fill: '#F59E0B', opacity: 0.22 }),
-      bat(w - 78 * u, 94 * u, 1.4 * u, ink),
-      bat(w - 160 * u, 58 * u, 0.9 * u, ink),
-      bat(w - 130 * u, 150 * u, 0.7 * u, ink),
-      bat(w - 30 * u, 180 * u, 0.6 * u, ink),
-      bat(w * 0.35, 40 * u, 0.6 * u, ink),
-      // Cobweb in the top left corner, the spider coming down from it
-      ...cornerWeb(0, 0, 1, 1, 150 * u, web, dark ? 0.55 : 0.45),
-      ...spider(13 * u, 70 * u, h * 0.3, 0.95 * u, ink, web),
+      // The full moon in the top right corner, beside the texts, bats flying around it
+      circle(w - 34 * u, 62 * u, 80 * u, { fill: 'url(#halo)' }),
+      circle(w - 34 * u, 62 * u, 34 * u, { fill: 'url(#moon)' }),
+      circle(w - 46 * u, 54 * u, 6 * u, { fill: '#F59E0B', opacity: 0.22 }),
+      circle(w - 24 * u, 76 * u, 5 * u, { fill: '#F59E0B', opacity: 0.22 }),
+      circle(w - 22 * u, 46 * u, 4 * u, { fill: '#F59E0B', opacity: 0.22 }),
+      // Bats around the moon only, on the right edge: none over the title
+      bat(w - 36 * u, 66 * u, 1.2 * u, ink),
+      bat(w - 16 * u, 160 * u, 0.6 * u, ink),
+      bat(w - 104 * u, 24 * u, 0.55 * u, ink),
+      // The spider coming down the left margin, from the top
+      ...spider(12 * u, 0, h * 0.32, 0.9 * u, ink, web),
+      // A cobweb low on the left, under the buttons
+      ...cornerWeb(0, ground + 8 * u, 1, -1, 120 * u, web, dark ? 0.5 : 0.4),
       // Ghosts drifting along the sides
       ...ghost(w - 26 * u, h * 0.42, 0.9 * u, dark ? 0.35 : 0.6),
       ...ghost(22 * u, h * 0.6, 0.75 * u, dark ? 0.3 : 0.55),
@@ -263,12 +270,13 @@ function christmasBackdrop(scheme: ColorScheme, w: number, h: number, { noSky }:
   const u = Math.min(1.6, w / 400, h / 420);
   const rand = rng(1225);
   const flakes = Array.from({ length: Math.round((w * h) / 6000) }, () =>
-    snowflake(rand() * w, 60 * u + rand() * (h - 140 * u), (3 + rand() * 6) * u, dark ? '#F8FAFC' : '#7DD3FC', dark ? 0.2 + rand() * 0.3 : 0.4 + rand() * 0.4)).flat();
-  // The garland across the top: swags of about 120, a bauble under each, bows where they meet
+    snowflake(rand() * w, CALM_TOP * u + rand() * (h - (CALM_TOP + 80) * u), (3 + rand() * 6) * u, dark ? '#F8FAFC' : '#7DD3FC', dark ? 0.2 + rand() * 0.3 : 0.4 + rand() * 0.4)).flat();
+  // A thin garland along the very top, above the texts: swags of about 120, bows where they meet;
+  // its baubles hang in the corners only, out of the way of the title
   const count = Math.max(2, Math.round(w / (120 * u)));
   const swag = w / count;
-  const sag = 34 * u;
-  const swags = Array.from({ length: count }, (_, i) => `M${i * swag} ${10 * u} Q${(i + 0.5) * swag} ${10 * u + sag * 2} ${(i + 1) * swag} ${10 * u}`);
+  const sag = 7 * u;
+  const swags = Array.from({ length: count }, (_, i) => `M${i * swag} 0 Q${(i + 0.5) * swag} ${sag * 2} ${(i + 1) * swag} 0`);
   const ballColors = ['#DC2626', '#EAB308', '#2563EB', '#E5E7EB', '#16A34A'];
   // String lights down both sides
   const step = 46 * u;
@@ -313,11 +321,14 @@ function christmasBackdrop(scheme: ColorScheme, w: number, h: number, { noSky }:
       ...firTree(w * 0.1, ground + 8 * u, 0.62 * u, true),
       ...firTree(w * 0.27, ground + 14 * u, 0.45 * u, false),
       ...snowman(w - 64 * u, ground + 22 * u, 0.62 * u),
-      ...swags.map(d => path(d, { fill: 'none', stroke: '#14532D', strokeWidth: 14 * u, strokeLinecap: 'round' })),
-      ...swags.map(d => path(d, { fill: 'none', stroke: '#16A34A', strokeWidth: 9 * u, strokeDasharray: `${3 * u} ${5 * u}`, strokeLinecap: 'round' })),
+      ...swags.map(d => path(d, { fill: 'none', stroke: '#14532D', strokeWidth: 10 * u, strokeLinecap: 'round' })),
+      ...swags.map(d => path(d, { fill: 'none', stroke: '#16A34A', strokeWidth: 6 * u, strokeDasharray: `${3 * u} ${5 * u}`, strokeLinecap: 'round' })),
       ...swags.map(d => path(d, { fill: 'none', stroke: '#4ADE80', strokeWidth: 2.5 * u, strokeDasharray: `${2 * u} ${9 * u}`, opacity: 0.8 })),
-      ...swags.flatMap((_, i) => bauble((i + 0.5) * swag, 10 * u + sag, 10 * u + sag + 16 * u, 9 * u, ballColors[i % ballColors.length])),
-      ...Array.from({ length: count + 1 }, (_, i) => bow(i * swag, 10 * u, u)).flat(),
+      ...bauble(9 * u, 4 * u, 34 * u, 6 * u, ballColors[0]),
+      ...bauble(22 * u, 6 * u, 22 * u, 5 * u, ballColors[1]),
+      ...bauble(w - 9 * u, 4 * u, 34 * u, 6 * u, ballColors[2]),
+      ...bauble(w - 22 * u, 6 * u, 22 * u, 5 * u, ballColors[4]),
+      ...Array.from({ length: count + 1 }, (_, i) => bow(i * swag, 3 * u, 0.6 * u)).flat(),
     ],
   };
 }
