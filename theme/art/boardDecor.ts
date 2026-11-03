@@ -14,6 +14,10 @@ import { paperBackdrop } from './boards/paper';
 import { woodBackdrop } from './boards/wood';
 import { neonBackdrop } from './boards/neon';
 import { pixelBackdrop } from './boards/pixel';
+import { snowBackdrop } from './boards/snow';
+import { fireBackdrop } from './boards/fire';
+import { beachBackdrop } from './boards/beach';
+import { spaceBackdrop } from './boards/space';
 
 /**
  * Backdrops of the event boards: the whole screen of the game takes the theme, from top to bottom, behind
@@ -349,6 +353,10 @@ const BACKDROPS: Record<string, Backdrop> = {
   wood: woodBackdrop,
   neon: neonBackdrop,
   pixel: pixelBackdrop,
+  snow: snowBackdrop,
+  fire: fireBackdrop,
+  beach: beachBackdrop,
+  space: spaceBackdrop,
 };
 
 /** Board themes with a backdrop */
