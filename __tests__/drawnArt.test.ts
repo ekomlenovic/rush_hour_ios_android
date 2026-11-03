@@ -158,7 +158,7 @@ describe('seasonal event vehicles', () => {
 
 describe('event backdrops', () => {
   it.each([[393, 760], [393, 330], [1024, 700], [300, 300]])('every event board is drawn for an area of %i × %i, in both schemes', (width, height) => {
-    expect([...BACKDROP_BOARDS].sort()).toEqual(['aprilfish', 'bastille', 'christmas', 'easter', 'holiday', 'music', 'newyear', 'notebook', 'pumpkin', 'shamrock', 'valentine']);
+    expect([...BACKDROP_BOARDS].sort()).toEqual(['aprilfish', 'bastille', 'christmas', 'easter', 'holiday', 'music', 'neon', 'newyear', 'notebook', 'paper', 'pixel', 'pumpkin', 'shamrock', 'valentine', 'wood']);
     for (const id of BACKDROP_BOARDS) {
       expect(BOARD_THEMES).toHaveProperty(id);
       for (const scheme of ['light', 'dark'] as const) {
@@ -182,7 +182,8 @@ describe('event backdrops', () => {
   it('the other boards have none, nor an empty area', () => {
     expect(boardBackdrop('classic', 'dark', 400, 800)).toBeUndefined();
     expect(boardBackdrop('pumpkin', 'dark', 0, 800)).toBeUndefined();
-    expect(getSkinnedBoard('wood', 'taxi', 'light').backdrop).toBeUndefined();
+    expect(getSkinnedBoard('classic', 'taxi', 'light').backdrop).toBeUndefined();
+    expect(getSkinnedBoard('wood', 'taxi', 'light').backdrop).toBe('wood');
   });
 });
 
