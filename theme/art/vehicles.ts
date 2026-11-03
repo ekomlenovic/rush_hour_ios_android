@@ -11,6 +11,9 @@ import { emeraldVehicle, leprechaunDrawing } from './events/stPatrick';
 import { goldfishDrawing, prankVehicle } from './events/aprilFools';
 import { bunnyDrawing, eggVehicle } from './events/easter';
 import { concertVehicle, guitarDrawing } from './events/musicDay';
+import { fireEngineDrawing, paradeVehicle } from './events/bastille';
+import { camperDrawing, roadtripVehicle } from './events/summerHoliday';
+import { pencilDrawing, schoolVehicle } from './events/backToSchool';
 
 const isDrawnSkin = (art: VehicleArt): art is DrawnSkin => (DRAWN_SKINS as string[]).includes(art);
 
@@ -35,6 +38,12 @@ export function drawVehicle(art: VehicleArt, length: number, color: string): Art
     case 'eggs': return eggVehicle(length, color);
     case 'guitar': return guitarDrawing(color);
     case 'concert': return concertVehicle(length, color);
+    case 'firetruck': return fireEngineDrawing(color);
+    case 'tricolor': return paradeVehicle(length, color);
+    case 'camper': return camperDrawing(color);
+    case 'roadtrip': return roadtripVehicle(length, color);
+    case 'pencil': return pencilDrawing(color);
+    case 'school': return schoolVehicle(length, color);
     default: return vintageVehicle(length, color);
   }
 }

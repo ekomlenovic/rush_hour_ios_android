@@ -6,9 +6,12 @@ import { CLOVER_DRAWINGS } from './stPatrick';
 import { PAPER_FISH_DRAWINGS } from './aprilFools';
 import { EASTER_DRAWINGS } from './easter';
 import { NOTE_DRAWINGS } from './musicDay';
+import { JET_DRAWINGS } from './bastille';
+import { HOLIDAY_DRAWINGS } from './summerHoliday';
+import { PLANE_DRAWINGS } from './backToSchool';
 
 /** Win effects of the seasonal events drawn by components/effects/SpritesEffect: their motion and drawings */
-export type SpriteEffectId = 'champagne' | 'hearts' | 'clovers' | 'paperfish' | 'eggs' | 'notes';
+export type SpriteEffectId = 'champagne' | 'hearts' | 'clovers' | 'paperfish' | 'eggs' | 'notes' | 'jets' | 'flipflops' | 'planes';
 
 export interface SpriteEffect {
   spec: SpriteSpec;
@@ -30,6 +33,12 @@ export const SPRITE_EFFECTS: Record<SpriteEffectId, SpriteEffect> = {
   eggs: effect(EASTER_DRAWINGS, { motion: 'fall', duration: 2600, count: 22, minSize: 0.07, maxSize: 0.11, spin: 200, seed: 405 }),
   // Fête de la musique: notes rising, swaying
   notes: effect(NOTE_DRAWINGS, { motion: 'rise', duration: 2600, count: 22, minSize: 0.07, maxSize: 0.11, spin: 30, seed: 621 }),
+  // Bastille Day: the jets of the Patrouille de France climb, trailing blue, white and red
+  jets: effect(JET_DRAWINGS, { motion: 'rise', duration: 2600, count: 9, minSize: 0.07, maxSize: 0.09, spin: 0, seed: 714 }),
+  // Summer holidays: flip-flops, sunglasses, beach balls and ice pops falling
+  flipflops: effect(HOLIDAY_DRAWINGS, { motion: 'fall', duration: 2600, count: 20, minSize: 0.08, maxSize: 0.12, spin: 260, seed: 815 }),
+  // Back to school: paper planes flying up
+  planes: effect(PLANE_DRAWINGS, { motion: 'rise', duration: 2600, count: 16, minSize: 0.08, maxSize: 0.12, spin: 20, seed: 901 }),
 };
 
 export const SPRITE_EFFECT_IDS = Object.keys(SPRITE_EFFECTS) as SpriteEffectId[];
