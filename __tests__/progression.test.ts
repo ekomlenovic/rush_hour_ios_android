@@ -305,6 +305,25 @@ describe('seasonal events', () => {
     expect(seasonalEventOf('2027-07-14')).toBeNull();
   });
 
+  it('New Year from December 31 to January 3, Valentine from February 10 to 14, Saint Patrick from March 15 to 17', () => {
+    expect(['2026-12-30', '2026-12-31', '2027-01-01', '2027-01-03', '2027-01-04'].map(seasonalEventOf)).toEqual([null, 'newyear', 'newyear', 'newyear', null]);
+    expect(['2027-02-09', '2027-02-10', '2027-02-14', '2027-02-15'].map(seasonalEventOf)).toEqual([null, 'valentine', 'valentine', null]);
+    expect(['2027-03-14', '2027-03-15', '2027-03-17', '2027-03-18'].map(seasonalEventOf)).toEqual([null, 'stpatrick', 'stpatrick', null]);
+  });
+
+  it('a New Year, Valentine or Saint Patrick daily unlocks the four styles of its event', () => {
+    const NEW_YEAR = ['board:newyear', 'skin:limo', 'palette:party', 'effect:champagne'];
+    const VALENTINE = ['board:valentine', 'skin:wedding', 'palette:lovers', 'effect:hearts'];
+    const ST_PATRICK = ['board:shamrock', 'skin:leprechaun', 'palette:emerald', 'effect:clovers'];
+    const all = [...NEW_YEAR, ...VALENTINE, ...ST_PATRICK];
+    expect(unlocked(all, { '2027-01-02': won })).toEqual(NEW_YEAR);
+    expect(unlocked(all, { '2027-02-14': won })).toEqual(VALENTINE);
+    expect(unlocked(all, { '2027-03-17': won })).toEqual(ST_PATRICK);
+    expect(lockedEventCosmetics('newyear', context({})).map(cosmeticKey)).toEqual(NEW_YEAR);
+    // New Year's Eve is in winter too
+    expect(unlocked(['board:snow'], { '2026-12-31': won })).toEqual(['board:snow']);
+  });
+
   it('gives every event of a day', () => {
     expect(seasonalEventsOf('2026-10-31')).toEqual(['halloween']);
     expect(seasonalEventsOf('2026-12-20')).toEqual(['christmas']);

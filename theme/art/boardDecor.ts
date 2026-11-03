@@ -1,33 +1,22 @@
 import type { ColorScheme } from '../ui';
 import { type ArtDrawing, type ArtShape, circle, ellipse, line, path, rect } from './art';
+import { type Backdrop, type BackdropOptions, CALM_TOP, rng } from './events/backdropKit';
+import { newYearBackdrop } from './events/newYear';
+import { valentineBackdrop } from './events/valentine';
+import { stPatrickBackdrop } from './events/stPatrick';
 
 /**
  * Backdrops of the event boards: the whole screen of the game takes the theme, from top to bottom, behind
  * the board and the buttons (half the screen for each player of a duel). Halloween: a night sky, the moon
  * and its bats, cobwebs, a spider, ghosts and a misty graveyard on a hill; Christmas: a garland of fir,
  * string lights down the sides, snowflakes and a snowy hill with fir trees and a snowman.
+ * The other events draw theirs in theme/art/events (New Year, Valentine's Day, Saint Patrick's Day…).
  * Drawn for the size of the area, in its pixels: nothing is stretched, whatever the screen.
  * The texts of the screen stay readable: the top (title, back, the stats card) keeps calm, only the moon or a thin
  * garland there; the busy parts go along the sides, in the margins of the board, and at the bottom, under the buttons.
  */
 
-/** Height of the calm top of a backdrop, in units: the header and the stats of the game screen */
-export const CALM_TOP = 130;
-
-/** Deterministic pseudo-random numbers, so a backdrop is the same every time */
-function rng(seed: number) {
-  let s = seed;
-  return () => {
-    s = (s * 1664525 + 1013904223) % 4294967296;
-    return s / 4294967296;
-  };
-}
-
-/** Options of a backdrop */
-export interface BackdropOptions {
-  /** Without its sky (the background color): drawn over another background, like the recap image */
-  noSky?: boolean;
-}
+export { CALM_TOP, type BackdropOptions } from './events/backdropKit';
 
 // ─── Halloween ────────────────────────────────────────────────────────────────
 
@@ -333,9 +322,12 @@ function christmasBackdrop(scheme: ColorScheme, w: number, h: number, { noSky }:
   };
 }
 
-const BACKDROPS: Record<string, (scheme: ColorScheme, w: number, h: number, options: BackdropOptions) => ArtDrawing> = {
+const BACKDROPS: Record<string, Backdrop> = {
   pumpkin: halloweenBackdrop,
   christmas: christmasBackdrop,
+  newyear: newYearBackdrop,
+  valentine: valentineBackdrop,
+  shamrock: stPatrickBackdrop,
 };
 
 /** Board themes with a backdrop */

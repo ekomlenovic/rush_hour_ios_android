@@ -55,7 +55,13 @@
       "halloween_one": "Halloween: win it to unlock {{count}} Garage style",
       "halloween_other": "Halloween: win it to unlock {{count}} Garage styles",
       "christmas_one": "Christmas: win it to unlock {{count}} Garage style",
-      "christmas_other": "Christmas: win it to unlock {{count}} Garage styles"
+      "christmas_other": "Christmas: win it to unlock {{count}} Garage styles",
+      "newyear_one": "New Year: win it to unlock {{count}} Garage style",
+      "newyear_other": "New Year: win it to unlock {{count}} Garage styles",
+      "valentine_one": "Valentine's Day: win it to unlock {{count}} Garage style",
+      "valentine_other": "Valentine's Day: win it to unlock {{count}} Garage styles",
+      "stpatrick_one": "St. Patrick's Day: win it to unlock {{count}} Garage style",
+      "stpatrick_other": "St. Patrick's Day: win it to unlock {{count}} Garage styles"
     },
     "daily_next": "Next in {{time}}",
     "weekly_next_one": "Next in {{count}} day",
@@ -794,7 +800,10 @@
       "winter": "Winter daily",
       "event": {
         "halloween": "Halloween daily",
-        "christmas": "Christmas daily"
+        "christmas": "Christmas daily",
+        "newyear": "New Year daily",
+        "valentine": "Valentine's daily",
+        "stpatrick": "St. Patrick's daily"
       }
     },
     "kinds": {
@@ -815,7 +824,10 @@
       "winter": "Win a daily challenge in winter (Dec. to Feb.)",
       "event": {
         "halloween": "Win a daily challenge during Halloween (October 25 to 31)",
-        "christmas": "Win a daily challenge during Christmas (December 19 to 25)"
+        "christmas": "Win a daily challenge during Christmas (December 19 to 25)",
+        "newyear": "Win a daily challenge during New Year (December 31 to January 3)",
+        "valentine": "Win a daily challenge during Valentine's Day (February 10 to 14)",
+        "stpatrick": "Win a daily challenge during St. Patrick's Day (March 15 to 17)"
       },
       "secret": "Secret achievement"
     },
@@ -830,7 +842,10 @@
       "beach": "Sandy beach",
       "space": "Outer space",
       "pumpkin": "Pumpkins",
-      "christmas": "Christmas"
+      "christmas": "Christmas",
+      "newyear": "New Year's Eve",
+      "valentine": "Valentine",
+      "shamrock": "Shamrocks"
     },
     "skin": {
       "classic": "Red car",
@@ -845,7 +860,10 @@
       "mafia": "Lost Heaven sedan",
       "flagship": "Flagship schooner",
       "coach": "Pumpkin coach",
-      "sleigh": "Santa's sleigh"
+      "sleigh": "Santa's sleigh",
+      "limo": "Champagne limo",
+      "wedding": "Wedding car",
+      "leprechaun": "Leprechaun's car"
     },
     "palette": {
       "classic": "Classic",
@@ -859,7 +877,10 @@
       "mafia": "Mafia",
       "fleet": "1800 fleet",
       "haunted": "Haunted convoy",
-      "festive": "Christmas convoy"
+      "festive": "Christmas convoy",
+      "party": "Party convoy",
+      "lovers": "Lovers' convoy",
+      "emerald": "Emerald convoy"
     },
     "effect": {
       "none": "None",
@@ -871,7 +892,10 @@
       "tommy": "Tommy gun",
       "broadside": "Broadside",
       "bats": "Bats",
-      "gifts": "Gift shower"
+      "gifts": "Gift shower",
+      "champagne": "Champagne corks",
+      "hearts": "Shower of hearts",
+      "clovers": "Clovers and gold"
     },
     "equip": "Equip",
     "equipped": "Equipped"
