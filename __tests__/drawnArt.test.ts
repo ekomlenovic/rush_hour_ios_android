@@ -2,6 +2,13 @@ import { mixColor, type ArtDrawing } from '../theme/art/art';
 import { vintageVehicle } from '../theme/art/vintageVehicles';
 import { annoShip } from '../theme/art/annoShips';
 import { drawVehicle } from '../theme/art/vehicles';
+import { oceanVehicle } from '../theme/art/palettes/ocean';
+import { pastelVehicle } from '../theme/art/palettes/pastel';
+import { earthVehicle } from '../theme/art/palettes/earth';
+import { neonVehicle } from '../theme/art/palettes/neon';
+import { candyVehicle } from '../theme/art/palettes/candy';
+import { lavaVehicle } from '../theme/art/palettes/lava';
+import { jungleVehicle } from '../theme/art/palettes/jungle';
 import { DRAWN_SKINS, skinDrawing } from '../theme/art/targetSkins';
 import { FRIGATE, waves } from '../theme/art/frigate';
 import {
@@ -99,7 +106,9 @@ describe('1800 ships (Anno 1800 style)', () => {
 describe('drawn vehicles', () => {
   it('every skin is drawn but the red car, and only the drawn palettes have a drawing', () => {
     expect(Object.entries(CAR_SKINS).filter(([, s]) => !s.art).map(([id]) => id)).toEqual(['classic']);
-    expect(Object.keys(PALETTE_ART).sort()).toEqual(['concert', 'eggs', 'emerald', 'festive', 'fleet', 'haunted', 'lovers', 'mafia', 'party', 'prank', 'roadtrip', 'school', 'tricolor']);
+    expect(Object.keys(PALETTE_ART).sort()).toEqual(['candy', 'concert', 'earth', 'eggs', 'emerald', 'festive', 'fleet', 'haunted', 'jungle', 'lava', 'lovers', 'mafia', 'neon', 'ocean', 'party', 'pastel', 'prank', 'roadtrip', 'school', 'tricolor']);
+    // Only the classic palette keeps the colored blocks
+    expect(Object.keys(VEHICLE_PALETTES).filter(id => !Object.hasOwn(PALETTE_ART, id))).toEqual(['classic']);
     for (const id of Object.keys(PALETTE_ART)) expect(VEHICLE_PALETTES).toHaveProperty(id);
   });
 
@@ -107,6 +116,28 @@ describe('drawn vehicles', () => {
     expect(drawVehicle('vintage', 2, '#14532D')).toEqual(vintageVehicle(2, '#14532D'));
     expect(drawVehicle('ship', 3, '#14532D')).toEqual(annoShip(3, '#14532D'));
     expect(drawVehicle('taxi', 2, '#FACC15')).toEqual(skinDrawing('taxi', '#FACC15'));
+  });
+});
+
+describe('garage palette vehicles', () => {
+  it.each([
+    ['ocean', 'boats', oceanVehicle],
+    ['pastel', 'retro', pastelVehicle],
+    ['earth', 'offroad', earthVehicle],
+    ['neon', 'lightcycle', neonVehicle],
+    ['candy', 'sweets', candyVehicle],
+    ['lava', 'works', lavaVehicle],
+    ['jungle', 'safari', jungleVehicle],
+  ] as const)('%s: one drawing for 2 cells, another for 3, in each of its colors', (palette, art, draw) => {
+    expect(PALETTE_ART[palette]).toBe(art);
+    for (const color of VEHICLE_PALETTES[palette]!) {
+      expect(drawVehicle(art, 2, color)).toEqual(draw(2, color));
+      expect(draw(2, color)).toMatchObject({ width: 200, height: 100 });
+      expect(draw(3, color)).toMatchObject({ width: 300, height: 100 });
+      expectGradientsDefined(draw(2, color));
+      expectGradientsDefined(draw(3, color));
+    }
+    expect(draw(2, '#3B82F6').shapes).not.toEqual(draw(3, '#3B82F6').shapes);
   });
 });
 
