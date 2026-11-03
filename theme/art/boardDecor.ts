@@ -10,6 +10,10 @@ import { musicDayBackdrop } from './events/musicDay';
 import { bastilleBackdrop } from './events/bastille';
 import { summerHolidayBackdrop } from './events/summerHoliday';
 import { backToSchoolBackdrop } from './events/backToSchool';
+import { paperBackdrop } from './boards/paper';
+import { woodBackdrop } from './boards/wood';
+import { neonBackdrop } from './boards/neon';
+import { pixelBackdrop } from './boards/pixel';
 
 /**
  * Backdrops of the event boards: the whole screen of the game takes the theme, from top to bottom, behind
@@ -340,6 +344,11 @@ const BACKDROPS: Record<string, Backdrop> = {
   bastille: bastilleBackdrop,
   holiday: summerHolidayBackdrop,
   notebook: backToSchoolBackdrop,
+  // Boards of the garage, drawn like the event ones (theme/art/boards)
+  paper: paperBackdrop,
+  wood: woodBackdrop,
+  neon: neonBackdrop,
+  pixel: pixelBackdrop,
 };
 
 /** Board themes with a backdrop */
