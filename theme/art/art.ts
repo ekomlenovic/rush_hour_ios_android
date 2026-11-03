@@ -20,12 +20,31 @@ export interface ArtGradient {
   stops: { offset: number; color: string; opacity?: number }[];
 }
 
+/** Where the front of a vehicle drawing (drawn facing right) points once on the board */
+export type Facing = 'right' | 'left' | 'up' | 'down';
+
 export interface ArtDrawing {
   width: number;
   height: number;
   gradients: ArtGradient[];
   shapes: ArtShape[];
 }
+
+/**
+ * A drawing facing right made to face `facing`, in its own units. Up and down fit a box of drawing.height × drawing.width:
+ * up is a quarter turn left, down its mirror (the light still comes from the same side), left a mirror of the drawing
+ */
+export function facingTransform(drawing: ArtDrawing, facing: Facing): string | undefined {
+  switch (facing) {
+    case 'up': return `rotate(-90) translate(-${drawing.width} 0)`;
+    case 'down': return 'matrix(0 1 1 0 0 0)';
+    case 'left': return `matrix(-1 0 0 1 ${drawing.width} 0)`;
+    default: return undefined;
+  }
+}
+
+/** Whether a drawing facing that way is upright: its box is drawing.height × drawing.width */
+export const isUpright = (facing: Facing) => facing === 'up' || facing === 'down';
 
 /** The color mixed toward `target` (0: unchanged, 1: target) */
 export function mixColor(color: string, target: string, amount: number): string {
