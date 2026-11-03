@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
-import Animated, { useAnimatedReaction, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
@@ -30,7 +28,7 @@ const KIND_ICONS: Record<CosmeticKind, IoniconName> = { board: 'grid', skin: 'ca
 export default function GarageScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const { colors, scheme, board } = useTheme();
   const selection = useGameStore(s => s.cosmetics);
   const selectCosmetic = useGameStore(s => s.selectCosmetic);
@@ -42,32 +40,16 @@ export default function GarageScreen() {
   const [previewed, setPreviewed] = useState<CosmeticDef | null>(null);
   const [effectKey, setEffectKey] = useState(0);
 
-  // Sticky tabs: stickyHeaderIndices re-renders its header every ~15 ms while scrolling on Android (Fabric),
-  // which made the garage lag. A fixed copy of the tabs is shown over the list once they reach the top instead
-  const scrollY = useSharedValue(0);
-  /** Top of the tabs in the list, -1 until measured */
-  const tabsTop = useSharedValue(-1);
-  const [tabsHeight, setTabsHeight] = useState(0);
-  const [stuck, setStuck] = useState(false);
-  const onScroll = useAnimatedScrollHandler(e => { scrollY.value = e.contentOffset.y; });
-  useAnimatedReaction(
-    () => tabsTop.value >= 0 && scrollY.value >= tabsTop.value,
-    (now, before) => { if (now !== before) scheduleOnRN(setStuck, now); },
-  );
-  // The copy shows on the UI thread at once; `stuck` only lets it take touches
-  const stuckStyle = useAnimatedStyle(() => ({ opacity: tabsTop.value >= 0 && scrollY.value >= tabsTop.value ? 1 : 0 }));
-  const onTabsLayout = (e: LayoutChangeEvent) => {
-    tabsTop.value = e.nativeEvent.layout.y;
-    setTabsHeight(e.nativeEvent.layout.height);
-  };
-
   // A new item keeps its badge until it is touched
   const newKeys = new Set(unseen);
 
   const previewSelection: CosmeticSelection = previewed
     ? { ...selection, [previewed.kind]: previewed.id }
     : selection;
-  const previewSize = Math.min(width - 96, 210);
+  // The preview and the tabs stay above the list, so the chosen style is always seen, even from the bottom of the list:
+  // smaller on a short screen to leave room for the items
+  const previewSize = Math.max(120, Math.min(width - 96, 210, Math.round(height * 0.24)));
+  const selectedDef = COSMETICS.find(def => def.kind === kind && def.id === selection[kind]);
 
   const handlePress = (def: CosmeticDef) => {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -129,39 +111,34 @@ export default function GarageScreen() {
         subtitle={t('cosmetics.unlocked_count', { unlocked: unlocked.length, total: COSMETICS.length })}
       />
 
-      <View style={styles.body}>
-      <Animated.ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
-        onScroll={onScroll}
-        scrollEventThrottle={16}
-      >
-        <View style={styles.previewWrap}>
-          <View>
-            <BoardPreview selection={previewSelection} scheme={scheme} size={previewSize} />
-            <WinEffect
-              effect={previewSelection.effect}
-              width={previewSize}
-              height={previewSize}
-              colors={[board.targetCar, ...board.vehicles.slice(0, 6)]}
-              playKey={effectKey}
-            />
-          </View>
-          {previewed && (
-            <IconText icon="lock-closed" color={colors.warning} textStyle={styles.previewNote}>
+      <View style={styles.previewWrap}>
+        <View>
+          <BoardPreview selection={previewSelection} scheme={scheme} size={previewSize} />
+          <WinEffect
+            effect={previewSelection.effect}
+            width={previewSize}
+            height={previewSize}
+            colors={[board.targetCar, ...board.vehicles.slice(0, 6)]}
+            playKey={effectKey}
+          />
+        </View>
+        {/* Always the same height: the list does not move when a locked style is previewed */}
+        <View style={styles.previewNoteWrap} accessibilityLiveRegion="polite">
+          {previewed ? (
+            <IconText icon="lock-closed" color={colors.warning} textStyle={styles.previewNote} numberOfLines={2}>
               {t(`cosmetics.${previewed.kind}.${previewed.id}`)} : {describeUnlock(t, previewed, context)}
+            </IconText>
+          ) : selectedDef && (
+            <IconText icon="checkmark-circle" color={colors.primaryText} textStyle={styles.previewNote} numberOfLines={2}>
+              {t(`cosmetics.${selectedDef.kind}.${selectedDef.id}`)}
             </IconText>
           )}
         </View>
+      </View>
 
-        <View
-          style={styles.tabsSticky}
-          onLayout={onTabsLayout}
-          importantForAccessibility={stuck ? 'no-hide-descendants' : 'auto'}
-          accessibilityElementsHidden={stuck}
-        >
-          {tabs}
-        </View>
+      <View style={styles.tabsWrap}>{tabs}</View>
 
+      <ScrollView style={styles.list} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}>
         <View style={styles.grid}>
           {items.map(def => {
             const key = cosmeticKey(def);
@@ -203,30 +180,19 @@ export default function GarageScreen() {
             );
           })}
         </View>
-      </Animated.ScrollView>
-
-      {/* The tabs stay at the top while the items scroll */}
-      <Animated.View
-        style={[styles.tabsStuck, styles.tabsSticky, { backgroundColor: colors.background, minHeight: tabsHeight }, stuckStyle]}
-        pointerEvents={stuck ? 'auto' : 'none'}
-        importantForAccessibility={stuck ? 'auto' : 'no-hide-descendants'}
-        accessibilityElementsHidden={!stuck}
-      >
-        {tabs}
-      </Animated.View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  body: { flex: 1 },
-  content: { paddingHorizontal: 20 },
-  previewWrap: { alignItems: 'center', marginBottom: 4, gap: 8 },
-  previewNote: { fontSize: RFValue(13), fontWeight: '700', textAlign: 'center' },
-  tabsSticky: { paddingTop: 8, paddingBottom: 12 },
-  tabsStuck: { position: 'absolute', top: 0, left: 20, right: 20 },
+  list: { flex: 1 },
+  content: { paddingHorizontal: 20, paddingTop: 4 },
+  previewWrap: { alignItems: 'center', paddingHorizontal: 20, gap: 6 },
+  previewNoteWrap: { minHeight: RFValue(18) * 2, justifyContent: 'center' },
+  previewNote: { fontSize: RFValue(13), lineHeight: RFValue(18), fontWeight: '700', textAlign: 'center' },
+  tabsWrap: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   tabs: { flexDirection: 'row', padding: 4, borderRadius: 12, gap: 4 },
   tab: { flex: 1, paddingVertical: 6, paddingHorizontal: 4, borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 2 },
   tabText: { fontSize: RFValue(12), fontWeight: '700', textAlign: 'center' },
