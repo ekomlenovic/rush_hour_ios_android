@@ -6,6 +6,7 @@ import {
 } from '@/theme';
 import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
 import ArtSvg from '@/components/art/ArtSvg';
+import { DECOR_OUTSET } from '@/theme/art/boardDecor';
 import type { CosmeticSelection } from '@/data/cosmetics';
 import type { Level, Vehicle } from '@/store/types';
 import { getExitSide } from '@/utils/creatorGeometry';
@@ -34,8 +35,27 @@ interface Props {
   level?: Pick<Level, 'vehicles' | 'gridSize' | 'exitRow' | 'exitCol'>;
 }
 
+/** Below this size, an event board is shown without its decorations (small thumbnails) */
+const DECOR_MIN_SIZE = 100;
+
 /** Static board drawn with a cosmetic selection (garage preview, thumbnail of a level) */
 function BoardPreview({ selection, scheme, size, level }: Props) {
+  const decor = size >= DECOR_MIN_SIZE ? getSkinnedBoard(selection.board, selection.skin, scheme).decor : undefined;
+  if (!decor) return <PlainBoardPreview selection={selection} scheme={scheme} size={size} level={level} />;
+  // The decorations of an event board go around it: the board gets smaller so the whole stays within `size`
+  const inner = size / (1 + 2 * DECOR_OUTSET);
+  return (
+    <View style={{ width: size, height: size }} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+      <ArtSvg drawing={decor} width={size} height={size} style={styles.decor} />
+      <View style={[styles.decor, { left: (size - inner) / 2, top: (size - inner) / 2 }]}>
+        <PlainBoardPreview selection={selection} scheme={scheme} size={inner} level={level} />
+      </View>
+    </View>
+  );
+}
+
+/** The board itself, without the decorations around it */
+function PlainBoardPreview({ selection, scheme, size, level }: Props) {
   const board = getSkinnedBoard(selection.board, selection.skin, scheme);
   const vehicles = level?.vehicles ?? SAMPLE;
   const grid = level?.gridSize ?? GRID;
@@ -54,7 +74,6 @@ function BoardPreview({ selection, scheme, size, level }: Props) {
       importantForAccessibility="no-hide-descendants"
       accessibilityElementsHidden
     >
-      {board.decor && <ArtSvg drawing={board.decor} width={size - FRAME * 2} height={size - FRAME * 2} style={styles.decor} />}
       {Array.from({ length: grid + 1 }, (_, i) => (
         <React.Fragment key={i}>
           <View style={[styles.lineH, { top: i * cell, backgroundColor: board.grid }]} />

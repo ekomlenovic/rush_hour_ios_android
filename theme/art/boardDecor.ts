@@ -2,13 +2,20 @@ import type { ColorScheme } from '../ui';
 import { type ArtDrawing, type ArtShape, circle, ellipse, line, path, rect } from './art';
 
 /**
- * Decorations drawn on the edges of an event board, under the grid and the vehicles: cobwebs, moon and pumpkins
- * for Halloween, a garland, baubles and snow for Christmas. The board is a square of SIZE units, whatever its grid:
- * the drawing keeps to its edges so the middle stays a plain road.
+ * Decorations around an event board, outside its frame: cobwebs, moon, bats and a graveyard for Halloween,
+ * a garland, string lights and snow for Christmas. Drawn behind the board, in a square of DECOR_SIZE units:
+ * the board takes its middle (BOARD units), the decorations the band of DECOR_BAND units around it, so they
+ * never cover a cell. Whatever the grid of the board.
  */
 
-export const DECOR_SIZE = 600;
-const S = DECOR_SIZE;
+/** Width of the board inside the decoration */
+const S = 600;
+/** Band around the board */
+const B = 40;
+export const DECOR_SIZE = S + 2 * B;
+const T = DECOR_SIZE;
+/** How far the decoration goes out of the board, as a share of the board's width */
+export const DECOR_OUTSET = B / S;
 
 /** Deterministic pseudo-random numbers, so a decoration is the same every time */
 function rng(seed: number) {
@@ -18,6 +25,9 @@ function rng(seed: number) {
     return s / 4294967296;
   };
 }
+
+/** Whether a point is in the band around the board (not under it) */
+const inBand = (x: number, y: number, margin = 0) => x < B - margin || x > B + S + margin || y < B - margin || y > B + S + margin;
 
 // ─── Halloween ────────────────────────────────────────────────────────────────
 
@@ -39,11 +49,11 @@ function cornerWeb(x: number, y: number, dx: number, dy: number, size: number, c
 }
 
 /** A spider hanging from its thread */
-function spider(x: number, y: number, color: string, thread: string): ArtShape[] {
+function spider(x: number, top: number, y: number, color: string, thread: string): ArtShape[] {
   const leg = (side: number, k: number) =>
     path(`M${x} ${y + 2 + k * 3} q${side * 9} ${-6 + k * 4} ${side * 13} ${4 + k * 4}`, { fill: 'none', stroke: color, strokeWidth: 1.8, strokeLinecap: 'round' });
   return [
-    line(x, 0, x, y - 8, { stroke: thread, strokeWidth: 1.2 }),
+    line(x, top, x, y - 8, { stroke: thread, strokeWidth: 1.2 }),
     ...[0, 1, 2, 3].flatMap(k => [leg(-1, k), leg(1, k)]),
     ellipse(x, y + 6, 7, 9, { fill: color }),
     circle(x, y - 4, 5, { fill: color }),
@@ -73,56 +83,64 @@ const bat = (x: number, y: number, s: number, color: string): ArtShape =>
 
 /** A tombstone sticking out of the grass at the bottom of the board */
 function tombstone(x: number, w: number, h: number, stone: string, edge: string): ArtShape[] {
+  const top = T - h;
   return [
-    path(`M${x} ${S} L${x} ${S - h + w / 2} Q${x} ${S - h} ${x + w / 2} ${S - h} Q${x + w} ${S - h} ${x + w} ${S - h + w / 2} L${x + w} ${S} Z`, { fill: stone, stroke: edge, strokeWidth: 1.5 }),
-    line(x + w / 2, S - h + 12, x + w / 2, S - h + 30, { stroke: edge, strokeWidth: 3 }),
-    line(x + w / 2 - 7, S - h + 18, x + w / 2 + 7, S - h + 18, { stroke: edge, strokeWidth: 3 }),
+    path(`M${x} ${T} L${x} ${top + w / 2} Q${x} ${top} ${x + w / 2} ${top} Q${x + w} ${top} ${x + w} ${top + w / 2} L${x + w} ${T} Z`, { fill: stone, stroke: edge, strokeWidth: 1.5 }),
+    line(x + w / 2, top + w * 0.3, x + w / 2, top + w * 0.95, { stroke: edge, strokeWidth: 2.5 }),
+    line(x + w * 0.28, top + w * 0.52, x + w * 0.72, top + w * 0.52, { stroke: edge, strokeWidth: 2.5 }),
   ];
 }
 
 function halloweenDecor(scheme: ColorScheme): ArtDrawing {
   const dark = scheme === 'dark';
   const web = dark ? '#C4B5FD' : '#5B21B6';
-  const ink = dark ? '#0B0614' : '#2E1065';
+  const ink = dark ? '#E9D5FF' : '#2E1065';
+  const stone = dark ? '#4B4560' : '#A8A2B8';
+  const stoneEdge = dark ? '#2A2438' : '#6B6480';
   const rand = rng(1031);
   const stars = dark
-    ? Array.from({ length: 26 }, () => circle(rand() * S, rand() * S, 0.8 + rand() * 1.4, { fill: '#FDE68A', opacity: 0.25 + rand() * 0.3 }))
+    ? Array.from({ length: 70 }, () => ({ x: rand() * T, y: rand() * T, r: 0.8 + rand() * 1.4, o: 0.3 + rand() * 0.4 }))
+      .filter(p => inBand(p.x, p.y, 3))
+      .map(p => circle(p.x, p.y, p.r, { fill: '#FDE68A', opacity: p.o }))
     : [];
-  const grass = Array.from({ length: 40 }, (_, i) => {
-    const x = 150 + i * 8 + rand() * 4;
-    const h = 8 + rand() * 12;
-    return path(`M${x} ${S} L${x + 2} ${S - h} L${x + 5} ${S}`, { fill: dark ? '#365314' : '#4D7C0F', opacity: 0.7 });
+  const grass = Array.from({ length: 80 }, (_, i) => {
+    const x = 150 + i * 6.5 + rand() * 3;
+    const h = 5 + rand() * 9;
+    return path(`M${x} ${T} L${x + 2} ${T - h} L${x + 4} ${T}`, { fill: dark ? '#4D7C0F' : '#4D7C0F', opacity: 0.8 });
   });
   return {
-    width: S,
-    height: S,
+    width: T,
+    height: T,
     gradients: [
       { id: 'moon', radial: true, stops: [{ offset: 0, color: '#FEF9C3' }, { offset: 0.8, color: '#FDE68A' }, { offset: 1, color: '#F59E0B' }] },
-      { id: 'halo', radial: true, stops: [{ offset: 0, color: '#FDE68A', opacity: dark ? 0.35 : 0.5 }, { offset: 1, color: '#FDE68A', opacity: 0 }] },
-      { id: 'mist', stops: [{ offset: 0, color: dark ? '#7C3AED' : '#A78BFA', opacity: 0 }, { offset: 1, color: dark ? '#7C3AED' : '#A78BFA', opacity: dark ? 0.28 : 0.3 }] },
+      { id: 'halo', radial: true, stops: [{ offset: 0, color: '#FDE68A', opacity: dark ? 0.45 : 0.55 }, { offset: 1, color: '#FDE68A', opacity: 0 }] },
+      { id: 'mist', stops: [{ offset: 0, color: '#A78BFA', opacity: 0 }, { offset: 1, color: '#A78BFA', opacity: dark ? 0.35 : 0.4 }] },
     ],
     shapes: [
       ...stars,
-      // Mist rising from the bottom
-      rect(0, S - 120, S, 120, { fill: 'url(#mist)' }),
-      // The full moon in the top right corner, bats crossing it
-      circle(S - 62, 62, 90, { fill: 'url(#halo)' }),
-      circle(S - 62, 62, 42, { fill: 'url(#moon)', opacity: dark ? 0.85 : 0.95 }),
-      circle(S - 76, 52, 8, { fill: '#F59E0B', opacity: 0.25 }),
-      circle(S - 50, 78, 6, { fill: '#F59E0B', opacity: 0.25 }),
-      circle(S - 48, 44, 4, { fill: '#F59E0B', opacity: 0.25 }),
-      bat(S - 70, 66, 1.3, ink),
-      bat(S - 140, 40, 0.9, ink),
-      bat(S - 118, 112, 0.7, ink),
-      ...cornerWeb(0, 0, 1, 1, 150, web, dark ? 0.45 : 0.4),
-      ...cornerWeb(S, S, -1, -1, 90, web, dark ? 0.4 : 0.35),
-      ...spider(200, 74, ink, web),
+      rect(0, T - B, T, B, { fill: 'url(#mist)' }),
+      // Cobwebs in two corners, behind the board
+      ...cornerWeb(0, 0, 1, 1, 120, web, dark ? 0.6 : 0.5),
+      ...cornerWeb(T, T, -1, -1, 80, web, dark ? 0.55 : 0.45),
+      // A spider coming down the left side
+      ...spider(20, 50, 190, ink, web),
+      // The full moon peeking from behind the top right corner, bats flying around
+      circle(T - 30, 30, 56, { fill: 'url(#halo)' }),
+      circle(T - 30, 30, 27, { fill: 'url(#moon)' }),
+      circle(T - 38, 24, 5, { fill: '#F59E0B', opacity: 0.25 }),
+      circle(T - 22, 40, 4, { fill: '#F59E0B', opacity: 0.25 }),
+      bat(T - 110, 24, 0.9, ink),
+      bat(T - 170, 14, 0.6, ink),
+      bat(T - 18, 120, 0.7, ink),
+      bat(T - 22, 300, 0.55, ink),
       // A graveyard along the bottom
       ...grass,
-      ...tombstone(240, 44, 62, dark ? '#4B4560' : '#A8A2B8', dark ? '#2A2438' : '#6B6480'),
-      ...tombstone(304, 34, 46, dark ? '#4B4560' : '#A8A2B8', dark ? '#2A2438' : '#6B6480'),
-      ...jackOLantern(54, S - 46, 34, '#FDE047'),
-      ...jackOLantern(114, S - 30, 22, '#FDE047'),
+      ...tombstone(250, 26, 36, stone, stoneEdge),
+      ...tombstone(290, 20, 28, stone, stoneEdge),
+      ...tombstone(470, 22, 30, stone, stoneEdge),
+      ...jackOLantern(64, T - 19, 15, '#FDE047'),
+      ...jackOLantern(98, T - 13, 10, '#FDE047'),
+      ...jackOLantern(20, T - 90, 12, '#FDE047'),
     ],
   };
 }
@@ -159,69 +177,85 @@ const bow = (x: number, y: number): ArtShape[] => [
   circle(x, y, 4, { fill: '#991B1B' }),
 ];
 
-/** The little snowman of the bottom right corner */
-function snowman(cx: number, ground: number): ArtShape[] {
+/** The little snowman of the bottom right corner, k times its size */
+function snowman(cx: number, ground: number, k: number): ArtShape[] {
+  const at = (dy: number) => ground - dy * k;
   return [
-    ellipse(cx, ground - 26, 28, 26, { fill: '#F8FAFC', stroke: '#CBD5E1', strokeWidth: 1.5 }),
-    circle(cx, ground - 66, 18, { fill: '#F8FAFC', stroke: '#CBD5E1', strokeWidth: 1.5 }),
-    rect(cx - 16, ground - 52, 32, 7, { rx: 3, fill: '#DC2626' }),
-    rect(cx + 6, ground - 50, 7, 18, { rx: 2, fill: '#B91C1C' }),
-    circle(cx - 6, ground - 70, 2.2, { fill: '#111111' }),
-    circle(cx + 6, ground - 70, 2.2, { fill: '#111111' }),
-    path(`M${cx} ${ground - 65} L${cx + 14} ${ground - 62} L${cx} ${ground - 61} Z`, { fill: '#F97316' }),
-    ...[-30, -20, -10].map(dy => circle(cx, ground + dy, 2.4, { fill: '#111111' })),
-    rect(cx - 14, ground - 90, 28, 6, { rx: 1, fill: '#1F2937' }),
-    rect(cx - 9, ground - 106, 18, 18, { rx: 2, fill: '#1F2937' }),
-    rect(cx - 9, ground - 92, 18, 3, { fill: '#DC2626' }),
+    ellipse(cx, at(26), 28 * k, 26 * k, { fill: '#F8FAFC', stroke: '#CBD5E1', strokeWidth: 1.5 }),
+    circle(cx, at(66), 18 * k, { fill: '#F8FAFC', stroke: '#CBD5E1', strokeWidth: 1.5 }),
+    rect(cx - 16 * k, at(52), 32 * k, 7 * k, { rx: 3 * k, fill: '#DC2626' }),
+    rect(cx + 6 * k, at(50), 7 * k, 18 * k, { rx: 2 * k, fill: '#B91C1C' }),
+    circle(cx - 6 * k, at(70), 2.2 * k, { fill: '#111111' }),
+    circle(cx + 6 * k, at(70), 2.2 * k, { fill: '#111111' }),
+    path(`M${cx} ${at(65)} L${cx + 14 * k} ${at(62)} L${cx} ${at(61)} Z`, { fill: '#F97316' }),
+    ...[30, 20, 10].map(dy => circle(cx, at(dy), 2.4 * k, { fill: '#111111' })),
+    rect(cx - 14 * k, at(90), 28 * k, 6 * k, { rx: 1, fill: '#1F2937' }),
+    rect(cx - 9 * k, at(106), 18 * k, 18 * k, { rx: 2, fill: '#1F2937' }),
+    rect(cx - 9 * k, at(92), 18 * k, 3 * k, { fill: '#DC2626' }),
   ];
 }
 
-/** A small fir tree with its star, in the bottom left corner */
-function firTree(cx: number, ground: number): ArtShape[] {
+/** A small fir tree with its star, k times its size */
+function firTree(cx: number, ground: number, k: number): ArtShape[] {
+  const at = (dy: number) => ground - dy * k;
   const tier = (top: number, half: number, bottom: number) =>
-    path(`M${cx} ${top} L${cx + half} ${bottom} Q${cx} ${bottom + 6} ${cx - half} ${bottom} Z`, { fill: 'url(#fir)', stroke: '#14532D', strokeWidth: 1 });
+    path(`M${cx} ${at(top)} L${cx + half * k} ${at(bottom)} Q${cx} ${at(bottom - 6)} ${cx - half * k} ${at(bottom)} Z`, { fill: 'url(#fir)', stroke: '#14532D', strokeWidth: 1 });
+  const balls: [number, number, string][] = [[-14, 26, '#DC2626'], [12, 40, '#FACC15'], [-6, 60, '#60A5FA'], [8, 84, '#DC2626'], [-10, 96, '#FACC15']];
+  const star = [[0, 132], [4, 122], [14, 122], [6, 116], [9, 106], [0, 112], [-9, 106], [-6, 116], [-14, 122], [-4, 122]];
   return [
-    rect(cx - 6, ground - 16, 12, 16, { fill: '#7C4A26' }),
-    tier(ground - 64, 34, ground - 14),
-    tier(ground - 92, 27, ground - 46),
-    tier(ground - 116, 20, ground - 76),
-    ...[[-14, -26, '#DC2626'], [12, -40, '#FACC15'], [-6, -60, '#60A5FA'], [8, -84, '#DC2626'], [-10, -96, '#FACC15']].map(([dx, dy, c]) =>
-      circle(cx + Number(dx), ground + Number(dy), 3.2, { fill: String(c) })),
-    path(`M${cx} ${ground - 132} L${cx + 4} ${ground - 122} L${cx + 14} ${ground - 122} L${cx + 6} ${ground - 116} L${cx + 9} ${ground - 106} L${cx} ${ground - 112} L${cx - 9} ${ground - 106} L${cx - 6} ${ground - 116} L${cx - 14} ${ground - 122} L${cx - 4} ${ground - 122} Z`,
-      { fill: '#FACC15', stroke: '#A16207', strokeWidth: 1 }),
+    rect(cx - 6 * k, at(16), 12 * k, 16 * k, { fill: '#7C4A26' }),
+    tier(64, 34, 14),
+    tier(92, 27, 46),
+    tier(116, 20, 76),
+    ...balls.map(([dx, dy, c]) => circle(cx + dx * k, at(dy), 3.2 * k, { fill: c })),
+    path(`M${star.map(([dx, dy]) => `${cx + dx * k} ${at(dy)}`).join(' L')} Z`, { fill: '#FACC15', stroke: '#A16207', strokeWidth: 1 }),
   ];
 }
 
 function christmasDecor(scheme: ColorScheme): ArtDrawing {
   const dark = scheme === 'dark';
   const rand = rng(1225);
-  const flakes = Array.from({ length: 16 }, () =>
-    snowflake(60 + rand() * (S - 120), 90 + rand() * (S - 220), 5 + rand() * 7, dark ? '#F8FAFC' : '#7DD3FC', dark ? 0.16 : 0.45)).flat();
-  // The garland: four swags along the top, a bauble hanging from the bottom of each, bows where they meet
-  const swags = [0, 1, 2, 3].map(i => {
-    const x = i * 150;
-    return `M${x} 6 Q${x + 75} 64 ${x + 150} 6`;
+  const flakes = Array.from({ length: 60 }, () => ({ x: rand() * T, y: 50 + rand() * (T - 110), r: 4 + rand() * 4 }))
+    .filter(f => inBand(f.x, f.y, f.r))
+    .flatMap(f => snowflake(f.x, f.y, f.r, dark ? '#F8FAFC' : '#7DD3FC', dark ? 0.45 : 0.7));
+  // The garland along the top: five swags, a bauble under each, bows where they meet
+  const SWAG = T / 5;
+  const swags = Array.from({ length: 5 }, (_, i) => `M${i * SWAG} 8 Q${(i + 0.5) * SWAG} 32 ${(i + 1) * SWAG} 8`);
+  const colors = ['#DC2626', '#EAB308', '#2563EB', '#E5E7EB', '#DC2626'];
+  // String lights down both sides
+  const lights = [B / 2, T - B / 2].flatMap((x, side) => {
+    const wire = Array.from({ length: 14 }, (_, i) => {
+      const y = 48 + i * 40;
+      return `Q${x + (i % 2 ? 9 : -9)} ${y + 20} ${x} ${y + 40}`;
+    }).join(' ');
+    const bulbs = Array.from({ length: 14 }, (_, i) => {
+      const y = 68 + i * 40;
+      const bx = x + (i % 2 ? 5 : -5);
+      const c = ['#FDE047', '#F87171', '#60A5FA', '#4ADE80', '#F472B6'][(i + side * 2) % 5];
+      return [circle(bx, y, 9, { fill: c, opacity: dark ? 0.3 : 0.2 }), ellipse(bx, y, 4, 5.5, { fill: c, stroke: '#000000', strokeOpacity: 0.35, strokeWidth: 0.6 }), rect(bx - 2, y - 8, 4, 3, { fill: '#4B5563' })];
+    }).flat();
+    return [path(`M${x} 48 ${wire}`, { fill: 'none', stroke: '#14532D', strokeWidth: 1.6 }), ...bulbs];
   });
-  const colors = ['#DC2626', '#EAB308', '#2563EB', '#E5E7EB'];
   // Snow piled along the bottom
-  const drift = `M0 ${S} L0 ${S - 30} Q60 ${S - 48} 130 ${S - 34} Q210 ${S - 18} 290 ${S - 36} Q380 ${S - 52} 460 ${S - 32} Q530 ${S - 18} ${S} ${S - 40} L${S} ${S} Z`;
+  const drift = `M0 ${T} L0 ${T - 30} Q70 ${T - 42} 150 ${T - 30} Q240 ${T - 18} 330 ${T - 32} Q420 ${T - 44} 510 ${T - 30} Q590 ${T - 18} ${T} ${T - 34} L${T} ${T} Z`;
   return {
-    width: S,
-    height: S,
+    width: T,
+    height: T,
     gradients: [
       { id: 'fir', horizontal: true, stops: [{ offset: 0, color: '#14532D' }, { offset: 1, color: '#22C55E' }] },
       { id: 'snow', stops: [{ offset: 0, color: '#FFFFFF' }, { offset: 1, color: dark ? '#CBD5E1' : '#DBEAFE' }] },
     ],
     shapes: [
       ...flakes,
-      ...swags.map(d => path(d, { fill: 'none', stroke: '#14532D', strokeWidth: 16, strokeLinecap: 'round' })),
-      ...swags.map(d => path(d, { fill: 'none', stroke: '#16A34A', strokeWidth: 10, strokeDasharray: '3 5', strokeLinecap: 'round' })),
-      ...swags.map(d => path(d, { fill: 'none', stroke: '#4ADE80', strokeWidth: 3, strokeDasharray: '2 9', opacity: 0.8 })),
-      ...[0, 1, 2, 3].flatMap(i => bauble(i * 150 + 75, 36, 62, 11, colors[i])),
-      ...[0, 150, 300, 450, 600].flatMap(x => bow(x, 8)),
-      path(drift, { fill: 'url(#snow)', stroke: dark ? '#E2E8F0' : '#BFDBFE', strokeWidth: 1.5, opacity: dark ? 0.92 : 1 }),
-      ...firTree(56, S - 26),
-      ...snowman(S - 56, S - 22),
+      ...lights,
+      path(drift, { fill: 'url(#snow)', stroke: dark ? '#E2E8F0' : '#BFDBFE', strokeWidth: 1.5 }),
+      ...swags.map(d => path(d, { fill: 'none', stroke: '#14532D', strokeWidth: 13, strokeLinecap: 'round' })),
+      ...swags.map(d => path(d, { fill: 'none', stroke: '#16A34A', strokeWidth: 8, strokeDasharray: '3 5', strokeLinecap: 'round' })),
+      ...swags.map(d => path(d, { fill: 'none', stroke: '#4ADE80', strokeWidth: 2.5, strokeDasharray: '2 9', opacity: 0.8 })),
+      ...swags.flatMap((_, i) => bauble((i + 0.5) * SWAG, 20, 29, 6.5, colors[i])),
+      ...Array.from({ length: 6 }, (_, i) => bow(i * SWAG, 9)).flat(),
+      ...firTree(B / 2, T - 6, 0.52),
+      ...snowman(T - B / 2, T - 8, 0.62),
     ],
   };
 }
