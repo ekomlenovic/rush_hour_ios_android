@@ -14,6 +14,13 @@ import { concertVehicle, guitarDrawing } from './events/musicDay';
 import { fireEngineDrawing, paradeVehicle } from './events/bastille';
 import { camperDrawing, roadtripVehicle } from './events/summerHoliday';
 import { pencilDrawing, schoolVehicle } from './events/backToSchool';
+import { oceanVehicle } from './palettes/ocean';
+import { pastelVehicle } from './palettes/pastel';
+import { earthVehicle } from './palettes/earth';
+import { neonVehicle } from './palettes/neon';
+import { candyVehicle } from './palettes/candy';
+import { lavaVehicle } from './palettes/lava';
+import { jungleVehicle } from './palettes/jungle';
 
 const isDrawnSkin = (art: VehicleArt): art is DrawnSkin => (DRAWN_SKINS as string[]).includes(art);
 
@@ -44,6 +51,13 @@ export function drawVehicle(art: VehicleArt, length: number, color: string): Art
     case 'roadtrip': return roadtripVehicle(length, color);
     case 'pencil': return pencilDrawing(color);
     case 'school': return schoolVehicle(length, color);
+    case 'boats': return oceanVehicle(length, color);
+    case 'retro': return pastelVehicle(length, color);
+    case 'offroad': return earthVehicle(length, color);
+    case 'lightcycle': return neonVehicle(length, color);
+    case 'sweets': return candyVehicle(length, color);
+    case 'works': return lavaVehicle(length, color);
+    case 'safari': return jungleVehicle(length, color);
     default: return vintageVehicle(length, color);
   }
 }

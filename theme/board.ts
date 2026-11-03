@@ -62,12 +62,15 @@ export interface BoardColors {
  * 'ship' for the schooners and paddle steamers of the 1800 ones (Anno 1800 style),
  * and each target car skin with its own drawing (taxi, bus…)
  */
-export type VehicleArt = 'vintage' | 'ship' | DrawnSkin | EventArt;
+export type VehicleArt = 'vintage' | 'ship' | DrawnSkin | EventArt | PaletteArt;
 
 /** Drawings of the seasonal events: the target car of an event (skin) and the vehicles of its palette */
 export type EventArt = 'coach' | 'haunted' | 'sleigh' | 'festive' | 'limo' | 'party' | 'wedding' | 'lovers' | 'leprechaun' | 'emerald'
   | 'goldfish' | 'prank' | 'bunny' | 'eggs' | 'guitar' | 'concert'
   | 'firetruck' | 'tricolor' | 'camper' | 'roadtrip' | 'pencil' | 'school';
+
+/** Drawings of the palettes of the garage (theme/art/palettes) */
+export type PaletteArt = 'boats' | 'retro' | 'offroad' | 'lightcycle' | 'sweets' | 'works' | 'safari';
 
 /** Board themes, persisted in the cosmetics selection: never rename one, only add */
 export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire' | 'beach' | 'space' | 'pumpkin' | 'christmas' | 'newyear' | 'valentine' | 'shamrock'
@@ -791,6 +794,13 @@ export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
 
 /** Palettes whose vehicles are drawn rather than colored blocks */
 export const PALETTE_ART: Partial<Record<VehiclePaletteId, VehicleArt>> = {
+  ocean: 'boats',
+  pastel: 'retro',
+  earth: 'offroad',
+  neon: 'lightcycle',
+  candy: 'sweets',
+  lava: 'works',
+  jungle: 'safari',
   mafia: 'vintage',
   fleet: 'ship',
   haunted: 'haunted',
