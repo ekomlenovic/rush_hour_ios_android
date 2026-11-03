@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, useWindowDimensions, Platform, type HostInstance } from 'react-native';
 import { Vehicle, useGameStore } from '@/store/gameStore';
 import { getMoveBounds } from '@/utils/collision';
+import { vehicleFacing } from '@/utils/facing';
 import Block, { BlockA11yStrings } from './Block';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -159,6 +160,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
               a11yStrings={a11yStrings}
               letter={showVehicleLetters ? (v.isTarget ? '★' : letters[v.id]) : undefined}
               art={v.isTarget ? board.targetArt : PALETTE_ART[palette]}
+              facing={vehicleFacing(v, exitRow, exitCol, gridSize)}
             />
           );
         })}

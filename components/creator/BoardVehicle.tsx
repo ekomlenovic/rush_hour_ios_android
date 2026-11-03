@@ -8,11 +8,14 @@ import { SNAP } from './snap';
 import { vehicleStyles as styles } from './vehicleStyles';
 import { useTheme, PALETTE_ART } from '@/theme';
 import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
+import type { Facing } from '@/theme/art/art';
 
 type BoardVehicleProps = {
   vehicle: Vehicle;
   /** Displayed color (vehicle palette), the vehicle's color if undefined */
   color?: string;
+  /** Where the front of a drawn vehicle points (the target car toward the exit) */
+  facing?: Facing;
   cellSize: number;
   isGhost: boolean;
   onDragStart: () => void;
@@ -27,7 +30,7 @@ type BoardVehicleProps = {
 };
 
 /** A vehicle on the creator board: drag to move, tap to pivot, long press to remove */
-const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, color, cellSize, isGhost, onDragStart, onDragMove, onDragEnd, onRemove, onPress, a11yLabel, a11yValue, a11yStrings }: BoardVehicleProps) {
+const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, color, facing, cellSize, isGhost, onDragStart, onDragMove, onDragEnd, onRemove, onPress, a11yLabel, a11yValue, a11yStrings }: BoardVehicleProps) {
   const { board, palette } = useTheme();
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
@@ -110,7 +113,7 @@ const BoardVehicle = React.memo(function BoardVehicle({ vehicle: v, color, cellS
         art && styles.drawnBlock,
       ]}>
         {art ? (
-          <DrawnVehicle art={art} length={v.length} orientation={v.orientation} color={fill} width={w} height={h} />
+          <DrawnVehicle art={art} length={v.length} orientation={v.orientation} facing={facing} color={fill} width={w} height={h} />
         ) : (<>
         <View style={[styles.vehicleShine, { borderRadius: radius, backgroundColor: board.vehicleShine }, v.orientation === 'vertical' && styles.vehicleShineV]} />
         {v.isTarget

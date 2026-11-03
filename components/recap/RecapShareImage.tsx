@@ -152,7 +152,7 @@ export default function RecapShareImage({
           const art = artOf(v.isTarget);
           if (art) {
             const color = v.isTarget ? board.targetCar : palette.get(v.id) ?? v.color;
-            return <ArtGroup key={v.id} drawing={drawVehicle(art, v.length, color)} x={x} y={y} width={w} height={h} turnUp={v.orientation === 'vertical'} />;
+            return <ArtGroup key={v.id} drawing={drawVehicle(art, v.length, color)} x={x} y={y} width={w} height={h} facing={v.orientation === 'vertical' ? 'up' : 'right'} />;
           }
           return (
             <React.Fragment key={v.id}>

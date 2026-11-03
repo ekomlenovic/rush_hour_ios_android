@@ -8,6 +8,7 @@ import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
 import type { CosmeticSelection } from '@/data/cosmetics';
 import type { Level, Vehicle } from '@/store/types';
 import { getExitSide } from '@/utils/creatorGeometry';
+import { vehicleFacing } from '@/utils/facing';
 
 const GRID = 6;
 /** Width of the frame: the cells fit inside it */
@@ -37,6 +38,8 @@ function BoardPreview({ selection, scheme, size, level }: Props) {
   const board = getSkinnedBoard(selection.board, selection.skin, scheme);
   const vehicles = level?.vehicles ?? SAMPLE;
   const grid = level?.gridSize ?? GRID;
+  const exitRow = level?.exitRow ?? 2;
+  const exitCol = level?.exitCol ?? GRID;
   const colors = useMemo(() => applyPalette(vehicles, selection.palette), [vehicles, selection.palette]);
   // Absolute children are laid out inside the frame: the grid must fit in what is left
   const cell = (size - FRAME * 2) / grid;
@@ -64,7 +67,7 @@ function BoardPreview({ selection, scheme, size, level }: Props) {
         if (art) {
           return (
             <View key={v.id} style={[styles.drawn, { left: v.col * cell + inset, top: v.row * cell + inset, width: w, height: h }]}>
-              <DrawnVehicle art={art} length={v.length} orientation={v.orientation} color={color} width={w} height={h} />
+              <DrawnVehicle art={art} length={v.length} orientation={v.orientation} facing={vehicleFacing(v, exitRow, exitCol, grid)} color={color} width={w} height={h} />
             </View>
           );
         }
@@ -82,7 +85,7 @@ function BoardPreview({ selection, scheme, size, level }: Props) {
           </View>
         );
       })}
-      <View style={[styles.exit, exitPosition(level?.exitRow ?? 2, level?.exitCol ?? GRID, grid, cell), { backgroundColor: board.exit, borderColor: board.exitOutline }]} />
+      <View style={[styles.exit, exitPosition(exitRow, exitCol, grid, cell), { backgroundColor: board.exit, borderColor: board.exitOutline }]} />
     </View>
   );
 }

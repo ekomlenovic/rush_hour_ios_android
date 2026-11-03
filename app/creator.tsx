@@ -30,6 +30,7 @@ import LevelNameSheet from '@/components/share/LevelNameSheet';
 import { vehicleStyles } from '@/components/creator/vehicleStyles';
 import { useTheme, fixedColors, applyPalette, PALETTE_ART, VEHICLE_PALETTES, TARGET_CAR_COLOR } from '@/theme';
 import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
+import { vehicleFacing } from '@/utils/facing';
 
 const BOARD_BORDER = 1.5;
 const EXIT_SIDES = ['Right', 'Left', 'Top', 'Bottom'] as const;
@@ -522,7 +523,7 @@ export default function LevelCreatorScreen() {
 
             {vehicles.map(v => (
               <BoardVehicle
-                key={v.id} vehicle={v} color={displayColors.get(v.id)} cellSize={cellSize} isGhost={activeDrag?.id === v.id}
+                key={v.id} vehicle={v} color={displayColors.get(v.id)} facing={vehicleFacing(v, exitRow, exitCol, gridSize)} cellSize={cellSize} isGhost={activeDrag?.id === v.id}
                 onDragStart={() => {
                   const { cx, cy } = getVehicleVisualCenter(v, 0, 0);
                   updateDrag(v.id, v.orientation, v.length, v.color, cx, cy, v.id);
