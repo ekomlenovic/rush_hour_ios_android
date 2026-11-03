@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { haptics, Haptics } from '@/utils/haptics';
 import Board from '@/components/Board';
+import BoardBackdrop from '@/components/BoardBackdrop';
 import { useGameStore } from '@/store/gameStore';
 import type { MissionReward } from '@/data/missions';
 import { isBossLevel } from '@/data/bosses';
@@ -398,6 +399,8 @@ export default function GameScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]} onTouchStart={handleScreenTouch}>
+      {/* The theme of an event board takes the whole screen */}
+      <BoardBackdrop />
       {/* Header */}
       <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
         <Pressable onPress={goBack} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>

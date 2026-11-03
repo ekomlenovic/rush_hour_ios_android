@@ -1,7 +1,6 @@
 import type { ColorScheme } from './ui';
 import type { DrawnSkin } from './art/targetSkins';
-import type { ArtDrawing } from './art/art';
-import { boardDecor } from './art/boardDecor';
+import { hasBackdrop } from './art/boardDecor';
 
 /**
  * Board theme: colors of the grid and the vehicles (Board, Block, creator board),
@@ -54,8 +53,8 @@ export interface BoardColors {
   targetIcon?: string;
   /** Drawing of the target car instead of a colored block (car skin) */
   targetArt?: VehicleArt;
-  /** Decorations on the edges of the board, under the grid and the vehicles (event boards) */
-  decor?: ArtDrawing;
+  /** The board theme drawing the backdrop of the screen (event boards: theme/art/boardDecor.ts) */
+  backdrop?: BoardThemeId;
 }
 
 /**
@@ -476,7 +475,7 @@ export function toBoardLook(look: { board: string; skin: string; palette: string
 export function getSkinnedBoard(id: BoardThemeId, skin: CarSkinId, scheme: ColorScheme): BoardColors {
   const board = getBoardColors(id, scheme);
   const carSkin = CAR_SKINS[skin] ?? CAR_SKINS.classic;
-  return { ...board, targetCar: carSkin.color ?? board.targetCar, targetIcon: carSkin.icon, targetArt: carSkin.art, decor: boardDecor(id, scheme) };
+  return { ...board, targetCar: carSkin.color ?? board.targetCar, targetIcon: carSkin.icon, targetArt: carSkin.art, backdrop: hasBackdrop(id) ? id : undefined };
 }
 
 /** Color of each non-target vehicle in the order of the level, for a palette */

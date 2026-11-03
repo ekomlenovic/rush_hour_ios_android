@@ -7,6 +7,7 @@ import { RFValue } from '@/utils/responsive';
 import { formatDuration } from '@/utils/date';
 import { toBoardLook, useTheme } from '@/theme';
 import Board from '@/components/Board';
+import BoardBackdrop from '@/components/BoardBackdrop';
 import MultiHeader from '@/components/multi/MultiHeader';
 import { multiErrorMessage } from '@/components/multi/errors';
 import { reasonsText, verdictIcon } from '@/components/multi/verdict';
@@ -98,6 +99,7 @@ export default function ReplayScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <BoardBackdrop look={look} />
       <MultiHeader title={t('multi.replay_of', { pseudo: replay.pseudo })} colors={colors} />
       <View style={styles.content}>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>

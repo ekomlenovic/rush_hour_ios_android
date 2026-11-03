@@ -6,6 +6,7 @@ import Animated, { FadeIn, FadeInDown, FadeOut, Layout, ZoomIn } from 'react-nat
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Board from '@/components/Board';
+import BoardBackdrop from '@/components/BoardBackdrop';
 import { Vehicle, useGameStore } from '@/store/gameStore';
 import { checkWin, isLegalMove } from '@/utils/collision';
 import { fixedColors, useTheme, CLASSIC_VEHICLE_COLORS, TARGET_CAR_COLOR } from '@/theme';
@@ -100,6 +101,7 @@ export default function TutorialScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]}>
+      <BoardBackdrop />
       {/* Header */}
        <View style={styles.header}>
         <Pressable onPress={skip} style={styles.backButton} accessibilityRole="button" hitSlop={8}>
