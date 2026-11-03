@@ -302,7 +302,7 @@ describe('seasonal events', () => {
     expect(['2026-10-24', '2026-10-25', '2026-10-31', '2026-11-01'].map(seasonalEventOf)).toEqual([null, 'halloween', 'halloween', null]);
     expect(['2026-12-18', '2026-12-19', '2026-12-25', '2026-12-26'].map(seasonalEventOf)).toEqual([null, 'christmas', 'christmas', null]);
     expect(seasonalEventOf('2031-10-28')).toBe('halloween');
-    expect(seasonalEventOf('2027-07-14')).toBeNull();
+    expect(seasonalEventOf('2027-05-20')).toBeNull();
   });
 
   it('New Year from December 31 to January 3, Valentine from February 10 to 14, Saint Patrick from March 15 to 17', () => {
@@ -359,6 +359,22 @@ describe('seasonal events', () => {
     expect(unlocked(all, { '2027-05-01': won })).toEqual(EASTER);
     expect(unlocked(all, { '2027-06-21': won })).toEqual(MUSIC);
     expect(unlocked(all, { '2027-03-29': won })).toEqual([...APRIL, ...EASTER]);
+  });
+
+  it('Bastille Day from July 10 to 14, the summer getaway from August 1 to 15, back to school from September 1 to 7', () => {
+    expect(['2027-07-09', '2027-07-10', '2027-07-14', '2027-07-15'].map(seasonalEventOf)).toEqual([null, 'bastille', 'bastille', null]);
+    expect(['2027-07-31', '2027-08-01', '2027-08-15', '2027-08-16'].map(seasonalEventOf)).toEqual([null, 'summer', 'summer', null]);
+    expect(['2027-08-31', '2027-09-01', '2027-09-07', '2027-09-08'].map(seasonalEventOf)).toEqual([null, 'backtoschool', 'backtoschool', null]);
+  });
+
+  it('a Bastille Day, summer getaway or back to school daily unlocks the four styles of its event', () => {
+    const BASTILLE = ['board:bastille', 'skin:firetruck', 'palette:tricolor', 'effect:jets'];
+    const SUMMER = ['board:holiday', 'skin:camper', 'palette:roadtrip', 'effect:flipflops'];
+    const SCHOOL = ['board:notebook', 'skin:pencil', 'palette:school', 'effect:planes'];
+    const all = [...BASTILLE, ...SUMMER, ...SCHOOL];
+    expect(unlocked(all, { '2027-07-14': won })).toEqual(BASTILLE);
+    expect(unlocked(all, { '2027-08-08': won })).toEqual(SUMMER);
+    expect(unlocked(all, { '2027-09-02': won })).toEqual(SCHOOL);
   });
 
   it('gives every event of a day', () => {

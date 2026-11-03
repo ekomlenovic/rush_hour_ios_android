@@ -67,7 +67,13 @@
       "easter_one": "Easter: win it to unlock {{count}} Garage style",
       "easter_other": "Easter: win it to unlock {{count}} Garage styles",
       "musicday_one": "Music Day: win it to unlock {{count}} Garage style",
-      "musicday_other": "Music Day: win it to unlock {{count}} Garage styles"
+      "musicday_other": "Music Day: win it to unlock {{count}} Garage styles",
+      "bastille_one": "Bastille Day: win it to unlock {{count}} Garage style",
+      "bastille_other": "Bastille Day: win it to unlock {{count}} Garage styles",
+      "summer_one": "Summer getaway: win it to unlock {{count}} Garage style",
+      "summer_other": "Summer getaway: win it to unlock {{count}} Garage styles",
+      "backtoschool_one": "Back to school: win it to unlock {{count}} Garage style",
+      "backtoschool_other": "Back to school: win it to unlock {{count}} Garage styles"
     },
     "daily_next": "Next in {{time}}",
     "weekly_next_one": "Next in {{count}} day",
@@ -812,7 +818,10 @@
         "stpatrick": "St. Patrick's daily",
         "aprilfools": "April Fools' daily",
         "easter": "Easter daily",
-        "musicday": "Music Day daily"
+        "musicday": "Music Day daily",
+        "bastille": "Bastille Day daily",
+        "summer": "Summer getaway daily",
+        "backtoschool": "Back to school daily"
       }
     },
     "kinds": {
@@ -839,7 +848,10 @@
         "stpatrick": "Win a daily challenge during St. Patrick's Day (March 15 to 17)",
         "aprilfools": "Win a daily challenge during April Fools' Day (March 29 to April 2)",
         "easter": "Win a daily challenge during Easter (Holy Thursday to Easter Monday, Catholic or Orthodox)",
-        "musicday": "Win a daily challenge during Music Day (June 18 to 24)"
+        "musicday": "Win a daily challenge during Music Day (June 18 to 24)",
+        "bastille": "Win a daily challenge during Bastille Day (July 10 to 14)",
+        "summer": "Win a daily challenge during the summer getaway (August 1 to 15)",
+        "backtoschool": "Win a daily challenge during back to school (September 1 to 7)"
       },
       "secret": "Secret achievement"
     },
@@ -860,7 +872,10 @@
       "shamrock": "Shamrocks",
       "aprilfish": "Under the sea",
       "easter": "Easter",
-      "music": "Music Day"
+      "music": "Music Day",
+      "bastille": "Bastille Day",
+      "holiday": "Holiday road",
+      "notebook": "Notebook and chalkboard"
     },
     "skin": {
       "classic": "Red car",
@@ -881,7 +896,10 @@
       "leprechaun": "Leprechaun's car",
       "goldfish": "Goldfish car",
       "bunny": "Chocolate bunny",
-      "guitar": "Electric guitar"
+      "guitar": "Electric guitar",
+      "firetruck": "Fire engine",
+      "camper": "Camper van",
+      "pencil": "Pencil car"
     },
     "palette": {
       "classic": "Classic",
@@ -901,7 +919,10 @@
       "emerald": "Emerald convoy",
       "prank": "Prankster convoy",
       "eggs": "Egg convoy",
-      "concert": "Concert convoy"
+      "concert": "Concert convoy",
+      "tricolor": "Parade convoy",
+      "roadtrip": "Road trip convoy",
+      "school": "School convoy"
     },
     "effect": {
       "none": "None",
@@ -919,7 +940,10 @@
       "clovers": "Clovers and gold",
       "paperfish": "Paper fish",
       "eggs": "Eggs and bells",
-      "notes": "Music notes"
+      "notes": "Music notes",
+      "jets": "Tricolor jets",
+      "flipflops": "Flip-flops and shades",
+      "planes": "Paper planes"
     },
     "equip": "Equip",
     "equipped": "Equipped"

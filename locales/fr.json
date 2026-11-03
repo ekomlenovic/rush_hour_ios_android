@@ -67,7 +67,13 @@
       "easter_one": "Pâques : gagne {{count}} style du Garage",
       "easter_other": "Pâques : gagne {{count}} styles du Garage",
       "musicday_one": "Fête de la musique : gagne {{count}} style du Garage",
-      "musicday_other": "Fête de la musique : gagne {{count}} styles du Garage"
+      "musicday_other": "Fête de la musique : gagne {{count}} styles du Garage",
+      "bastille_one": "14 juillet : gagne {{count}} style du Garage",
+      "bastille_other": "14 juillet : gagne {{count}} styles du Garage",
+      "summer_one": "Grands départs : gagne {{count}} style du Garage",
+      "summer_other": "Grands départs : gagne {{count}} styles du Garage",
+      "backtoschool_one": "Rentrée : gagne {{count}} style du Garage",
+      "backtoschool_other": "Rentrée : gagne {{count}} styles du Garage"
     },
     "daily_next": "Prochain dans {{time}}",
     "weekly_next_one": "Prochain dans {{count}} jour",
@@ -812,7 +818,10 @@
         "stpatrick": "Défi de la Saint-Patrick",
         "aprilfools": "Défi du 1er avril",
         "easter": "Défi de Pâques",
-        "musicday": "Défi de la Fête de la musique"
+        "musicday": "Défi de la Fête de la musique",
+        "bastille": "Défi du 14 juillet",
+        "summer": "Défi des grands départs",
+        "backtoschool": "Défi de la rentrée"
       }
     },
     "kinds": {
@@ -839,7 +848,10 @@
         "stpatrick": "Réussis un défi du jour de la Saint-Patrick (du 15 au 17 mars)",
         "aprilfools": "Réussis un défi du jour du poisson d'avril (du 29 mars au 2 avril)",
         "easter": "Réussis un défi du jour de Pâques (du jeudi au lundi de Pâques, catholique ou orthodoxe)",
-        "musicday": "Réussis un défi du jour de la Fête de la musique (du 18 au 24 juin)"
+        "musicday": "Réussis un défi du jour de la Fête de la musique (du 18 au 24 juin)",
+        "bastille": "Réussis un défi du jour du 14 juillet (du 10 au 14 juillet)",
+        "summer": "Réussis un défi du jour des grands départs (du 1er au 15 août)",
+        "backtoschool": "Réussis un défi du jour de la rentrée (du 1er au 7 septembre)"
       },
       "secret": "Succès secret"
     },
@@ -860,7 +872,10 @@
       "shamrock": "Trèfles",
       "aprilfish": "Fond marin",
       "easter": "Pâques",
-      "music": "Fête de la musique"
+      "music": "Fête de la musique",
+      "bastille": "14 juillet",
+      "holiday": "Route des vacances",
+      "notebook": "Cahier et tableau"
     },
     "skin": {
       "classic": "Voiture rouge",
@@ -881,7 +896,10 @@
       "leprechaun": "Voiture du leprechaun",
       "goldfish": "Voiture poisson rouge",
       "bunny": "Lapin en chocolat",
-      "guitar": "Guitare électrique"
+      "guitar": "Guitare électrique",
+      "firetruck": "Camion de pompiers",
+      "camper": "Combi des vacances",
+      "pencil": "Voiture crayon"
     },
     "palette": {
       "classic": "Classique",
@@ -901,7 +919,10 @@
       "emerald": "Convoi émeraude",
       "prank": "Convoi farceur",
       "eggs": "Convoi des œufs",
-      "concert": "Convoi du concert"
+      "concert": "Convoi du concert",
+      "tricolor": "Convoi du défilé",
+      "roadtrip": "Convoi des vacances",
+      "school": "Convoi de la rentrée"
     },
     "effect": {
       "none": "Aucun",
@@ -919,7 +940,10 @@
       "clovers": "Trèfles et pièces d’or",
       "paperfish": "Poissons en papier",
       "eggs": "Œufs et cloches",
-      "notes": "Notes de musique"
+      "notes": "Notes de musique",
+      "jets": "Patrouille tricolore",
+      "flipflops": "Tongs et lunettes",
+      "planes": "Avions en papier"
     },
     "equip": "Équiper",
     "equipped": "Équipé"

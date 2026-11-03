@@ -7,6 +7,9 @@ import { stPatrickBackdrop } from './events/stPatrick';
 import { aprilFoolsBackdrop } from './events/aprilFools';
 import { easterBackdrop } from './events/easter';
 import { musicDayBackdrop } from './events/musicDay';
+import { bastilleBackdrop } from './events/bastille';
+import { summerHolidayBackdrop } from './events/summerHoliday';
+import { backToSchoolBackdrop } from './events/backToSchool';
 
 /**
  * Backdrops of the event boards: the whole screen of the game takes the theme, from top to bottom, behind
@@ -334,6 +337,9 @@ const BACKDROPS: Record<string, Backdrop> = {
   aprilfish: aprilFoolsBackdrop,
   easter: easterBackdrop,
   music: musicDayBackdrop,
+  bastille: bastilleBackdrop,
+  holiday: summerHolidayBackdrop,
+  notebook: backToSchoolBackdrop,
 };
 
 /** Board themes with a backdrop */

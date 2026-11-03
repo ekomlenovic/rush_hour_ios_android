@@ -25,6 +25,9 @@ import { emeraldVehicle, leprechaunDrawing } from '../theme/art/events/stPatrick
 import { goldfishDrawing, prankVehicle } from '../theme/art/events/aprilFools';
 import { bunnyDrawing, eggVehicle } from '../theme/art/events/easter';
 import { concertVehicle, guitarDrawing } from '../theme/art/events/musicDay';
+import { fireEngineDrawing, paradeVehicle } from '../theme/art/events/bastille';
+import { camperDrawing, roadtripVehicle } from '../theme/art/events/summerHoliday';
+import { pencilDrawing, schoolVehicle } from '../theme/art/events/backToSchool';
 import { SPRITE_EFFECTS, SPRITE_EFFECT_IDS } from '../theme/art/events/effects';
 import { LAUNCH_END, buildSpritesPlan, spriteAt } from '../components/effects/spritesPlan';
 import { BACKDROP_BOARDS, boardBackdrop } from '../theme/art/boardDecor';
@@ -96,7 +99,7 @@ describe('1800 ships (Anno 1800 style)', () => {
 describe('drawn vehicles', () => {
   it('every skin is drawn but the red car, and only the drawn palettes have a drawing', () => {
     expect(Object.entries(CAR_SKINS).filter(([, s]) => !s.art).map(([id]) => id)).toEqual(['classic']);
-    expect(Object.keys(PALETTE_ART).sort()).toEqual(['concert', 'eggs', 'emerald', 'festive', 'fleet', 'haunted', 'lovers', 'mafia', 'party', 'prank']);
+    expect(Object.keys(PALETTE_ART).sort()).toEqual(['concert', 'eggs', 'emerald', 'festive', 'fleet', 'haunted', 'lovers', 'mafia', 'party', 'prank', 'roadtrip', 'school', 'tricolor']);
     for (const id of Object.keys(PALETTE_ART)) expect(VEHICLE_PALETTES).toHaveProperty(id);
   });
 
@@ -117,6 +120,9 @@ describe('seasonal event vehicles', () => {
     ["April Fools' Day", prankVehicle, '#0EA5E9'],
     ['Easter', eggVehicle, '#60A5FA'],
     ['Fête de la musique', concertVehicle, '#7C3AED'],
+    ['Bastille Day', paradeVehicle, '#1E3A8A'],
+    ['Summer holidays', roadtripVehicle, '#F472B6'],
+    ['Back to school', schoolVehicle, '#2563EB'],
   ] as const)('%s: one drawing for 2 cells, another for 3, 100 units per cell, only their own gradients', (_, draw, color) => {
     expect(draw(2, color)).toMatchObject({ width: 200, height: 100 });
     expect(draw(3, color)).toMatchObject({ width: 300, height: 100 });
@@ -125,7 +131,7 @@ describe('seasonal event vehicles', () => {
     expectGradientsDefined(draw(3, color));
   });
 
-  it.each([['coach', pumpkinCoachDrawing], ['sleigh', sleighDrawing], ['limo', limoDrawing], ['wedding', weddingDrawing], ['leprechaun', leprechaunDrawing], ['goldfish', goldfishDrawing], ['bunny', bunnyDrawing], ['guitar', guitarDrawing]] as const)('the %s target car is drawn on 2 cells', (skin, draw) => {
+  it.each([['coach', pumpkinCoachDrawing], ['sleigh', sleighDrawing], ['limo', limoDrawing], ['wedding', weddingDrawing], ['leprechaun', leprechaunDrawing], ['goldfish', goldfishDrawing], ['bunny', bunnyDrawing], ['guitar', guitarDrawing], ['firetruck', fireEngineDrawing], ['camper', camperDrawing], ['pencil', pencilDrawing]] as const)('the %s target car is drawn on 2 cells', (skin, draw) => {
     const drawing = draw(CAR_SKINS[skin].color!);
     expect(drawing).toMatchObject({ width: 200, height: 100 });
     expectGradientsDefined(drawing);
@@ -139,7 +145,7 @@ describe('seasonal event vehicles', () => {
     expect(VEHICLE_PALETTES.haunted).not.toContain(CAR_SKINS.coach.color);
     expect(VEHICLE_PALETTES.festive).not.toContain(CAR_SKINS.sleigh.color);
     expect(VEHICLE_PALETTES.festive).not.toContain(TARGET_CAR_COLOR);
-    for (const [palette, skin] of [['party', 'limo'], ['lovers', 'wedding'], ['emerald', 'leprechaun'], ['prank', 'goldfish'], ['eggs', 'bunny'], ['concert', 'guitar']] as const) {
+    for (const [palette, skin] of [['party', 'limo'], ['lovers', 'wedding'], ['emerald', 'leprechaun'], ['prank', 'goldfish'], ['eggs', 'bunny'], ['concert', 'guitar'], ['tricolor', 'firetruck'], ['roadtrip', 'camper'], ['school', 'pencil']] as const) {
       expect(PALETTE_ART[palette]).toBe(palette);
       expect(CAR_SKINS[skin].art).toBe(skin);
       expect(VEHICLE_PALETTES[palette]).not.toContain(CAR_SKINS[skin].color);
@@ -152,7 +158,7 @@ describe('seasonal event vehicles', () => {
 
 describe('event backdrops', () => {
   it.each([[393, 760], [393, 330], [1024, 700], [300, 300]])('every event board is drawn for an area of %i × %i, in both schemes', (width, height) => {
-    expect([...BACKDROP_BOARDS].sort()).toEqual(['aprilfish', 'christmas', 'easter', 'music', 'newyear', 'pumpkin', 'shamrock', 'valentine']);
+    expect([...BACKDROP_BOARDS].sort()).toEqual(['aprilfish', 'bastille', 'christmas', 'easter', 'holiday', 'music', 'newyear', 'notebook', 'pumpkin', 'shamrock', 'valentine']);
     for (const id of BACKDROP_BOARDS) {
       expect(BOARD_THEMES).toHaveProperty(id);
       for (const scheme of ['light', 'dark'] as const) {
@@ -375,7 +381,7 @@ describe('Gift shower win effect (Christmas)', () => {
 describe('drawn win effects of the seasonal events (hearts, clovers, champagne)', () => {
   it('each one has its drawings, each drawing only its own gradients, and is unlocked by its event', () => {
     const unlock = (key: string) => COSMETICS.find(c => cosmeticKey(c) === key)!.unlock;
-    expect([...SPRITE_EFFECT_IDS].sort()).toEqual(['champagne', 'clovers', 'eggs', 'hearts', 'notes', 'paperfish']);
+    expect([...SPRITE_EFFECT_IDS].sort()).toEqual(['champagne', 'clovers', 'eggs', 'flipflops', 'hearts', 'jets', 'notes', 'paperfish', 'planes']);
     for (const id of SPRITE_EFFECT_IDS) {
       const { spec, drawings } = SPRITE_EFFECTS[id];
       expect(spec.drawings).toBe(drawings.length);
@@ -389,6 +395,9 @@ describe('drawn win effects of the seasonal events (hearts, clovers, champagne)'
     expect(unlock('effect:paperfish')).toEqual(unlock('board:aprilfish'));
     expect(unlock('effect:eggs')).toEqual(unlock('board:easter'));
     expect(unlock('effect:notes')).toEqual(unlock('board:music'));
+    expect(unlock('effect:jets')).toEqual(unlock('board:bastille'));
+    expect(unlock('effect:flipflops')).toEqual(unlock('board:holiday'));
+    expect(unlock('effect:planes')).toEqual(unlock('board:notebook'));
   });
 
   it.each(SPRITE_EFFECT_IDS.flatMap(id => [[id, 300, 300], [id, 390, 844], [id, 120, 120]] as const))('%s, in an area of %i × %i: every drawing comes in from outside, shows, then fades out', (id, width, height) => {

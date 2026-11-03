@@ -75,7 +75,16 @@
       "easter_other": "Uskrs: pobedi i otključaj {{count}} stilova za Garažu",
       "musicday_one": "Praznik muzike: pobedi i otključaj {{count}} stil za Garažu",
       "musicday_few": "Praznik muzike: pobedi i otključaj {{count}} stila za Garažu",
-      "musicday_other": "Praznik muzike: pobedi i otključaj {{count}} stilova za Garažu"
+      "musicday_other": "Praznik muzike: pobedi i otključaj {{count}} stilova za Garažu",
+      "bastille_one": "Dan Bastilje: pobedi i otključaj {{count}} stil za Garažu",
+      "bastille_few": "Dan Bastilje: pobedi i otključaj {{count}} stila za Garažu",
+      "bastille_other": "Dan Bastilje: pobedi i otključaj {{count}} stilova za Garažu",
+      "summer_one": "Odlazak na more: pobedi i otključaj {{count}} stil za Garažu",
+      "summer_few": "Odlazak na more: pobedi i otključaj {{count}} stila za Garažu",
+      "summer_other": "Odlazak na more: pobedi i otključaj {{count}} stilova za Garažu",
+      "backtoschool_one": "Polazak u školu: pobedi i otključaj {{count}} stil za Garažu",
+      "backtoschool_few": "Polazak u školu: pobedi i otključaj {{count}} stila za Garažu",
+      "backtoschool_other": "Polazak u školu: pobedi i otključaj {{count}} stilova za Garažu"
     },
     "daily_next": "Sledeći za {{time}}",
     "weekly_next_one": "Sledeći za {{count}} dan",
@@ -845,7 +854,10 @@
         "stpatrick": "Dnevni za Svetog Patrika",
         "aprilfools": "Dnevni za Prvi april",
         "easter": "Uskršnji dnevni",
-        "musicday": "Dnevni za Praznik muzike"
+        "musicday": "Dnevni za Praznik muzike",
+        "bastille": "Dnevni za Dan Bastilje",
+        "summer": "Dnevni za odlazak na more",
+        "backtoschool": "Školski dnevni"
       }
     },
     "kinds": {
@@ -874,7 +886,10 @@
         "stpatrick": "Pobedi u dnevnom izazovu za Dan Svetog Patrika (od 15. do 17. marta)",
         "aprilfools": "Pobedi u dnevnom izazovu za Prvi april (od 29. marta do 2. aprila)",
         "easter": "Pobedi u dnevnom izazovu za Uskrs (od Velikog četvrtka do Uskršnjeg ponedeljka, katolički ili pravoslavni)",
-        "musicday": "Pobedi u dnevnom izazovu za Praznik muzike (od 18. do 24. juna)"
+        "musicday": "Pobedi u dnevnom izazovu za Praznik muzike (od 18. do 24. juna)",
+        "bastille": "Pobedi u dnevnom izazovu za Dan Bastilje (od 10. do 14. jula)",
+        "summer": "Pobedi u dnevnom izazovu za odlazak na more (od 1. do 15. avgusta)",
+        "backtoschool": "Pobedi u dnevnom izazovu za polazak u školu (od 1. do 7. septembra)"
       },
       "secret": "Tajno dostignuće"
     },
@@ -895,7 +910,10 @@
       "shamrock": "Deteline",
       "aprilfish": "Morsko dno",
       "easter": "Uskrs",
-      "music": "Praznik muzike"
+      "music": "Praznik muzike",
+      "bastille": "Dan Bastilje",
+      "holiday": "Put na odmor",
+      "notebook": "Sveska i tabla"
     },
     "skin": {
       "classic": "Crveni auto",
@@ -916,7 +934,10 @@
       "leprechaun": "Leprikonov auto",
       "goldfish": "Auto zlatna ribica",
       "bunny": "Čokoladni zeka",
-      "guitar": "Električna gitara"
+      "guitar": "Električna gitara",
+      "firetruck": "Vatrogasno vozilo",
+      "camper": "Kamper",
+      "pencil": "Auto olovka"
     },
     "palette": {
       "classic": "Klasična",
@@ -936,7 +957,10 @@
       "emerald": "Smaragdni konvoj",
       "prank": "Šaljivi konvoj",
       "eggs": "Konvoj jaja",
-      "concert": "Koncertni konvoj"
+      "concert": "Koncertni konvoj",
+      "tricolor": "Paradni konvoj",
+      "roadtrip": "Konvoj za odmor",
+      "school": "Školski konvoj"
     },
     "effect": {
       "none": "Bez efekta",
@@ -954,7 +978,10 @@
       "clovers": "Deteline i zlatnici",
       "paperfish": "Papirne ribice",
       "eggs": "Jaja i zvona",
-      "notes": "Note"
+      "notes": "Note",
+      "jets": "Trobojni avioni",
+      "flipflops": "Japanke i naočare",
+      "planes": "Papirni avioni"
     },
     "equip": "Opremi",
     "equipped": "Opremljeno"

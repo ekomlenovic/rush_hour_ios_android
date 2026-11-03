@@ -10,7 +10,8 @@ import { getPlayerLevel } from './progression';
 
 export type CosmeticKind = 'board' | 'skin' | 'palette' | 'effect';
 export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed' | 'bubbles' | 'greenlight' | 'tommy' | 'broadside' | 'bats' | 'gifts' | 'champagne' | 'hearts' | 'clovers'
-  | 'paperfish' | 'eggs' | 'notes';
+  | 'paperfish' | 'eggs' | 'notes'
+  | 'jets' | 'flipflops' | 'planes';
 
 export interface CosmeticSelection {
   board: BoardThemeId;
@@ -42,7 +43,8 @@ export type UnlockRule =
 /** Seasonal events, persisted nowhere: computed from the dates of the daily challenges won */
 export type SeasonalEventId = FixedEventId | MovableEventId;
 /** Events on the same days every year */
-export type FixedEventId = 'halloween' | 'christmas' | 'newyear' | 'valentine' | 'stpatrick' | 'aprilfools' | 'musicday';
+export type FixedEventId = 'halloween' | 'christmas' | 'newyear' | 'valentine' | 'stpatrick' | 'aprilfools' | 'musicday'
+  | 'bastille' | 'summer' | 'backtoschool';
 /** Events whose days change every year, computed (Easter) */
 export type MovableEventId = 'easter';
 
@@ -58,6 +60,9 @@ export const SEASONAL_EVENTS: Record<FixedEventId, { from: string; to: string }>
   stpatrick: { from: '03-15', to: '03-17' },
   aprilfools: { from: '03-29', to: '04-02' },
   musicday: { from: '06-18', to: '06-24' },
+  bastille: { from: '07-10', to: '07-14' },
+  summer: { from: '08-01', to: '08-15' },
+  backtoschool: { from: '09-01', to: '09-07' },
 };
 
 /** Every event, fixed then movable: the order of the home screen when a day has several */
@@ -158,6 +163,9 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'board', id: 'aprilfish', icon: '🐠', unlock: { type: 'event', event: 'aprilfools' } },
   { kind: 'board', id: 'easter', icon: '🌷', unlock: { type: 'event', event: 'easter' } },
   { kind: 'board', id: 'music', icon: '🎼', unlock: { type: 'event', event: 'musicday' } },
+  { kind: 'board', id: 'bastille', icon: '🇫🇷', unlock: { type: 'event', event: 'bastille' } },
+  { kind: 'board', id: 'holiday', icon: '🛣️', unlock: { type: 'event', event: 'summer' } },
+  { kind: 'board', id: 'notebook', icon: '📓', unlock: { type: 'event', event: 'backtoschool' } },
   { kind: 'board', id: 'fire', icon: '🔥', unlock: { type: 'achievement', id: 'streak_30' } },
   { kind: 'board', id: 'beach', icon: '🏖️', unlock: { type: 'stars', count: 1200 } },
   { kind: 'board', id: 'space', icon: '🌌', unlock: { type: 'achievement', id: 'zone_perfect_10' } },
@@ -182,6 +190,9 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'skin', id: 'goldfish', icon: '🐟', unlock: { type: 'event', event: 'aprilfools' } },
   { kind: 'skin', id: 'bunny', icon: '🐰', unlock: { type: 'event', event: 'easter' } },
   { kind: 'skin', id: 'guitar', icon: '🎸', unlock: { type: 'event', event: 'musicday' } },
+  { kind: 'skin', id: 'firetruck', icon: '🚒', unlock: { type: 'event', event: 'bastille' } },
+  { kind: 'skin', id: 'camper', icon: '🚐', unlock: { type: 'event', event: 'summer' } },
+  { kind: 'skin', id: 'pencil', icon: '✏️', unlock: { type: 'event', event: 'backtoschool' } },
 
   // Vehicle palettes
   { kind: 'palette', id: 'classic', icon: '🎨', unlock: { type: 'default' } },
@@ -202,6 +213,9 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'palette', id: 'prank', icon: '🎣', unlock: { type: 'event', event: 'aprilfools' } },
   { kind: 'palette', id: 'eggs', icon: '🥚', unlock: { type: 'event', event: 'easter' } },
   { kind: 'palette', id: 'concert', icon: '🔊', unlock: { type: 'event', event: 'musicday' } },
+  { kind: 'palette', id: 'tricolor', icon: '🎖️', unlock: { type: 'event', event: 'bastille' } },
+  { kind: 'palette', id: 'roadtrip', icon: '🧳', unlock: { type: 'event', event: 'summer' } },
+  { kind: 'palette', id: 'school', icon: '🖍️', unlock: { type: 'event', event: 'backtoschool' } },
 
   // Win effects
   { kind: 'effect', id: 'none', icon: '⏹️', unlock: { type: 'default' } },
@@ -220,6 +234,9 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'effect', id: 'paperfish', icon: '🎏', unlock: { type: 'event', event: 'aprilfools' } },
   { kind: 'effect', id: 'eggs', icon: '🔔', unlock: { type: 'event', event: 'easter' } },
   { kind: 'effect', id: 'notes', icon: '🎵', unlock: { type: 'event', event: 'musicday' } },
+  { kind: 'effect', id: 'jets', icon: '✈️', unlock: { type: 'event', event: 'bastille' } },
+  { kind: 'effect', id: 'flipflops', icon: '🩴', unlock: { type: 'event', event: 'summer' } },
+  { kind: 'effect', id: 'planes', icon: '📄', unlock: { type: 'event', event: 'backtoschool' } },
 ];
 
 export const cosmeticKey = (def: Pick<CosmeticDef, 'kind' | 'id'>): string => `${def.kind}:${def.id}`;
