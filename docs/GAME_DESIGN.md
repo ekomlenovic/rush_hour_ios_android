@@ -204,7 +204,7 @@ Chaque victoire fait avancer une barre d'XP : la progression se voit même sur u
 
 ## Cosmétiques
 
-Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dans le **Garage** (accueil → Garage), avec un aperçu (même pour un style verrouillé).
+Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dans le **Garage** (accueil → Garage), avec un aperçu (même pour un style verrouillé). L'aperçu, le nom du style choisi (ou la condition d'un style verrouillé) et les onglets restent **en haut de l'écran**, seule la liste défile : on voit toujours ce qu'on choisit, même en bas de la liste (plus petit sur un écran court).
 
 | Règle | Implémentation |
 |---|---|
