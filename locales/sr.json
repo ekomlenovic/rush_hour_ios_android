@@ -57,7 +57,16 @@
       "halloween_other": "Noć veštica: pobedi i otključaj {{count}} stilova za Garažu",
       "christmas_one": "Božić: pobedi i otključaj {{count}} stil za Garažu",
       "christmas_few": "Božić: pobedi i otključaj {{count}} stila za Garažu",
-      "christmas_other": "Božić: pobedi i otključaj {{count}} stilova za Garažu"
+      "christmas_other": "Božić: pobedi i otključaj {{count}} stilova za Garažu",
+      "newyear_one": "Nova godina: pobedi i otključaj {{count}} stil za Garažu",
+      "newyear_few": "Nova godina: pobedi i otključaj {{count}} stila za Garažu",
+      "newyear_other": "Nova godina: pobedi i otključaj {{count}} stilova za Garažu",
+      "valentine_one": "Dan zaljubljenih: pobedi i otključaj {{count}} stil za Garažu",
+      "valentine_few": "Dan zaljubljenih: pobedi i otključaj {{count}} stila za Garažu",
+      "valentine_other": "Dan zaljubljenih: pobedi i otključaj {{count}} stilova za Garažu",
+      "stpatrick_one": "Dan Svetog Patrika: pobedi i otključaj {{count}} stil za Garažu",
+      "stpatrick_few": "Dan Svetog Patrika: pobedi i otključaj {{count}} stila za Garažu",
+      "stpatrick_other": "Dan Svetog Patrika: pobedi i otključaj {{count}} stilova za Garažu"
     },
     "daily_next": "Sledeći za {{time}}",
     "weekly_next_one": "Sledeći za {{count}} dan",
@@ -821,7 +830,10 @@
       "winter": "Zimski dnevni",
       "event": {
         "halloween": "Dnevni za Noć veštica",
-        "christmas": "Božićni dnevni"
+        "christmas": "Božićni dnevni",
+        "newyear": "Novogodišnji dnevni",
+        "valentine": "Dnevni za Dan zaljubljenih",
+        "stpatrick": "Dnevni za Svetog Patrika"
       }
     },
     "kinds": {
@@ -844,7 +856,10 @@
       "winter": "Pobedi u dnevnom izazovu zimi (od dec. do feb.)",
       "event": {
         "halloween": "Pobedi u dnevnom izazovu za Noć veštica (od 25. do 31. oktobra)",
-        "christmas": "Pobedi u dnevnom izazovu za Božić (od 19. do 25. decembra)"
+        "christmas": "Pobedi u dnevnom izazovu za Božić (od 19. do 25. decembra)",
+        "newyear": "Pobedi u dnevnom izazovu za Novu godinu (od 31. decembra do 3. januara)",
+        "valentine": "Pobedi u dnevnom izazovu za Dan zaljubljenih (od 10. do 14. februara)",
+        "stpatrick": "Pobedi u dnevnom izazovu za Dan Svetog Patrika (od 15. do 17. marta)"
       },
       "secret": "Tajno dostignuće"
     },
@@ -859,7 +874,10 @@
       "beach": "Peščana plaža",
       "space": "Svemir",
       "pumpkin": "Bundeve",
-      "christmas": "Božić"
+      "christmas": "Božić",
+      "newyear": "Novogodišnja noć",
+      "valentine": "Dan zaljubljenih",
+      "shamrock": "Deteline"
     },
     "skin": {
       "classic": "Crveni auto",
@@ -874,7 +892,10 @@
       "mafia": "Limuzina iz Lost Heavena",
       "flagship": "Admiralska škuna",
       "coach": "Kočija od bundeve",
-      "sleigh": "Deda Mrazove sanke"
+      "sleigh": "Deda Mrazove sanke",
+      "limo": "Limuzina sa šampanjcem",
+      "wedding": "Svadbeni auto",
+      "leprechaun": "Leprikonov auto"
     },
     "palette": {
       "classic": "Klasična",
@@ -888,7 +909,10 @@
       "mafia": "Mafija",
       "fleet": "Flota iz 1800.",
       "haunted": "Ukleti konvoj",
-      "festive": "Božićni konvoj"
+      "festive": "Božićni konvoj",
+      "party": "Žurka konvoj",
+      "lovers": "Konvoj zaljubljenih",
+      "emerald": "Smaragdni konvoj"
     },
     "effect": {
       "none": "Bez efekta",
@@ -900,7 +924,10 @@
       "tommy": "Tomson",
       "broadside": "Bočna salva",
       "bats": "Slepi miševi",
-      "gifts": "Kiša poklona"
+      "gifts": "Kiša poklona",
+      "champagne": "Čepovi šampanjca",
+      "hearts": "Kiša srca",
+      "clovers": "Deteline i zlatnici"
     },
     "equip": "Opremi",
     "equipped": "Opremljeno"

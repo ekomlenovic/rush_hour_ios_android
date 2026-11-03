@@ -9,6 +9,8 @@ import TommyGunEffect from './TommyGunEffect';
 import BroadsideEffect from './BroadsideEffect';
 import BatsEffect from './BatsEffect';
 import GiftsEffect from './GiftsEffect';
+import SpritesEffect from './SpritesEffect';
+import { SPRITE_EFFECTS, type SpriteEffectId } from '@/theme/art/events/effects';
 
 interface Props {
   effect: WinEffectId;
@@ -237,7 +239,8 @@ export default function WinEffect({ effect, width, height, colors, playKey = 0 }
   const reduceMotion = useReducedMotion();
   const particles = useMemo(() => buildParticles(effect, width, height, colors), [effect, width, height, colors]);
   const lights = useMemo(() => (effect === 'greenlight' ? buildLights(width, height) : []), [effect, width, height]);
-  const drawn = effect === 'tommy' || effect === 'broadside' || effect === 'bats' || effect === 'gifts';
+  const sprites = Object.hasOwn(SPRITE_EFFECTS, effect);
+  const drawn = effect === 'tommy' || effect === 'broadside' || effect === 'bats' || effect === 'gifts' || sprites;
   if (reduceMotion || (particles.length === 0 && !drawn)) return null;
 
   return (
@@ -247,6 +250,7 @@ export default function WinEffect({ effect, width, height, colors, playKey = 0 }
       {effect === 'broadside' && <BroadsideEffect width={width} height={height} playKey={playKey} />}
       {effect === 'bats' && <BatsEffect width={width} height={height} playKey={playKey} />}
       {effect === 'gifts' && <GiftsEffect width={width} height={height} playKey={playKey} />}
+      {sprites && <SpritesEffect effect={effect as SpriteEffectId} width={width} height={height} playKey={playKey} />}
       {!drawn && particles.map((p, i) => <AnimatedParticle key={`${effect}-${i}`} p={p} playKey={playKey} />)}
     </View>
   );

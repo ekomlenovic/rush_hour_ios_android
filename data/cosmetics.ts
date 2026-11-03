@@ -9,7 +9,7 @@ import { getPlayerLevel } from './progression';
  */
 
 export type CosmeticKind = 'board' | 'skin' | 'palette' | 'effect';
-export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed' | 'bubbles' | 'greenlight' | 'tommy' | 'broadside' | 'bats' | 'gifts';
+export type WinEffectId = 'none' | 'confetti' | 'fireworks' | 'speed' | 'bubbles' | 'greenlight' | 'tommy' | 'broadside' | 'bats' | 'gifts' | 'champagne' | 'hearts' | 'clovers';
 
 export interface CosmeticSelection {
   board: BoardThemeId;
@@ -39,7 +39,7 @@ export type UnlockRule =
   | { type: 'event'; event: SeasonalEventId };
 
 /** Seasonal events, persisted nowhere: computed from the dates of the daily challenges won */
-export type SeasonalEventId = 'halloween' | 'christmas';
+export type SeasonalEventId = 'halloween' | 'christmas' | 'newyear' | 'valentine' | 'stpatrick';
 
 /**
  * Days of each event, MM-DD, both included, every year. A `to` before its `from` goes over the new year
@@ -48,6 +48,9 @@ export type SeasonalEventId = 'halloween' | 'christmas';
 export const SEASONAL_EVENTS: Record<SeasonalEventId, { from: string; to: string }> = {
   halloween: { from: '10-25', to: '10-31' },
   christmas: { from: '12-19', to: '12-25' },
+  newyear: { from: '12-31', to: '01-03' },
+  valentine: { from: '02-10', to: '02-14' },
+  stpatrick: { from: '03-15', to: '03-17' },
 };
 
 const SEASONAL_EVENT_IDS = Object.keys(SEASONAL_EVENTS) as SeasonalEventId[];
@@ -86,6 +89,9 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'board', id: 'snow', icon: '❄️', unlock: { type: 'winter' } },
   { kind: 'board', id: 'pumpkin', icon: '🎃', unlock: { type: 'event', event: 'halloween' } },
   { kind: 'board', id: 'christmas', icon: '🎄', unlock: { type: 'event', event: 'christmas' } },
+  { kind: 'board', id: 'newyear', icon: '🎆', unlock: { type: 'event', event: 'newyear' } },
+  { kind: 'board', id: 'valentine', icon: '💝', unlock: { type: 'event', event: 'valentine' } },
+  { kind: 'board', id: 'shamrock', icon: '☘️', unlock: { type: 'event', event: 'stpatrick' } },
   { kind: 'board', id: 'fire', icon: '🔥', unlock: { type: 'achievement', id: 'streak_30' } },
   { kind: 'board', id: 'beach', icon: '🏖️', unlock: { type: 'stars', count: 1200 } },
   { kind: 'board', id: 'space', icon: '🌌', unlock: { type: 'achievement', id: 'zone_perfect_10' } },
@@ -104,6 +110,9 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'skin', id: 'flagship', icon: '⛵', unlock: { type: 'weeklies', count: 30 } },
   { kind: 'skin', id: 'coach', icon: '🧙', unlock: { type: 'event', event: 'halloween' } },
   { kind: 'skin', id: 'sleigh', icon: '🛷', unlock: { type: 'event', event: 'christmas' } },
+  { kind: 'skin', id: 'limo', icon: '🍾', unlock: { type: 'event', event: 'newyear' } },
+  { kind: 'skin', id: 'wedding', icon: '💍', unlock: { type: 'event', event: 'valentine' } },
+  { kind: 'skin', id: 'leprechaun', icon: '🍀', unlock: { type: 'event', event: 'stpatrick' } },
 
   // Vehicle palettes
   { kind: 'palette', id: 'classic', icon: '🎨', unlock: { type: 'default' } },
@@ -118,6 +127,9 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'palette', id: 'fleet', icon: '🚢', unlock: { type: 'weeklies', count: 30 } },
   { kind: 'palette', id: 'haunted', icon: '👻', unlock: { type: 'event', event: 'halloween' } },
   { kind: 'palette', id: 'festive', icon: '🎄', unlock: { type: 'event', event: 'christmas' } },
+  { kind: 'palette', id: 'party', icon: '🪩', unlock: { type: 'event', event: 'newyear' } },
+  { kind: 'palette', id: 'lovers', icon: '🌹', unlock: { type: 'event', event: 'valentine' } },
+  { kind: 'palette', id: 'emerald', icon: '🎩', unlock: { type: 'event', event: 'stpatrick' } },
 
   // Win effects
   { kind: 'effect', id: 'none', icon: '⏹️', unlock: { type: 'default' } },
@@ -130,6 +142,9 @@ export const COSMETICS: CosmeticDef[] = [
   { kind: 'effect', id: 'broadside', icon: '⚓', unlock: { type: 'weeklies', count: 30 } },
   { kind: 'effect', id: 'bats', icon: '🦇', unlock: { type: 'event', event: 'halloween' } },
   { kind: 'effect', id: 'gifts', icon: '🎁', unlock: { type: 'event', event: 'christmas' } },
+  { kind: 'effect', id: 'champagne', icon: '🥂', unlock: { type: 'event', event: 'newyear' } },
+  { kind: 'effect', id: 'hearts', icon: '💖', unlock: { type: 'event', event: 'valentine' } },
+  { kind: 'effect', id: 'clovers', icon: '🪙', unlock: { type: 'event', event: 'stpatrick' } },
 ];
 
 export const cosmeticKey = (def: Pick<CosmeticDef, 'kind' | 'id'>): string => `${def.kind}:${def.id}`;

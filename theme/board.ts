@@ -65,10 +65,10 @@ export interface BoardColors {
 export type VehicleArt = 'vintage' | 'ship' | DrawnSkin | EventArt;
 
 /** Drawings of the seasonal events: the target car of an event (skin) and the vehicles of its palette */
-export type EventArt = 'coach' | 'haunted' | 'sleigh' | 'festive';
+export type EventArt = 'coach' | 'haunted' | 'sleigh' | 'festive' | 'limo' | 'party' | 'wedding' | 'lovers' | 'leprechaun' | 'emerald';
 
 /** Board themes, persisted in the cosmetics selection: never rename one, only add */
-export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire' | 'beach' | 'space' | 'pumpkin' | 'christmas';
+export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire' | 'beach' | 'space' | 'pumpkin' | 'christmas' | 'newyear' | 'valentine' | 'shamrock';
 
 /** Vehicle colors of the classic board (also the creator palette) */
 export const CLASSIC_VEHICLE_COLORS = [
@@ -385,8 +385,107 @@ const christmas: Record<ColorScheme, BoardColors> = {
   },
 };
 
+/** New Year's Eve: a midnight blue night, champagne gold frame, pink hint */
+const newyear: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#EEF0FB',
+    frame: '#B08D2B',
+    grid: 'rgba(30,27,75,0.14)',
+    exit: '#CA8A04',
+    exitOutline: '#1E1B4B',
+    vehicleBorder: 'rgba(30,27,75,0.3)',
+    hint: '#EC4899',
+    hintOutline: '#1E1B4B',
+    winVeil: 'rgba(238,240,251,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(176,141,43,0.6)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#100F33',
+    frame: '#E7C873',
+    grid: 'rgba(231,200,115,0.16)',
+    exit: '#E7C873',
+    exitOutline: '#FFFFFF',
+    vehicleBorder: 'rgba(255,255,255,0.35)',
+    vehicleShine: 'rgba(255,255,255,0.25)',
+    hint: '#F472B6',
+    hintOutline: '#FFFFFF',
+    winVeil: 'rgba(16,15,51,0.72)',
+    winBadge: 'rgba(30,27,75,0.92)',
+    winBadgeBorder: 'rgba(231,200,115,0.55)',
+  },
+};
+
+/** Valentine's Day: blush pink, crimson frame, gold hint */
+const valentine: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#FFF0F5',
+    frame: '#E11D48',
+    grid: 'rgba(225,29,72,0.16)',
+    exit: '#E11D48',
+    exitOutline: '#881337',
+    vehicleBorder: 'rgba(136,19,55,0.3)',
+    hint: '#F59E0B',
+    hintOutline: '#881337',
+    winVeil: 'rgba(255,240,245,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(225,29,72,0.45)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#2A0F1F',
+    frame: '#FB7185',
+    grid: 'rgba(251,113,133,0.18)',
+    exit: '#FB7185',
+    exitOutline: '#FFFFFF',
+    vehicleBorder: 'rgba(253,164,175,0.4)',
+    vehicleShine: 'rgba(255,255,255,0.25)',
+    hint: '#FBBF24',
+    hintOutline: '#881337',
+    winVeil: 'rgba(42,15,31,0.72)',
+    winBadge: 'rgba(64,22,46,0.92)',
+    winBadgeBorder: 'rgba(251,113,133,0.55)',
+  },
+};
+
+/** Saint Patrick's Day: meadow green, gold exit and hint */
+const shamrock: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#ECF7E6',
+    frame: '#15803D',
+    grid: 'rgba(21,128,61,0.2)',
+    exit: '#EA580C',
+    exitOutline: '#14532D',
+    vehicleBorder: 'rgba(20,83,45,0.3)',
+    hint: '#FACC15',
+    hintOutline: '#14532D',
+    winVeil: 'rgba(236,247,230,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(21,128,61,0.5)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#0E2418',
+    frame: '#22C55E',
+    grid: 'rgba(34,197,94,0.18)',
+    exit: '#F59E0B',
+    exitOutline: '#FFFFFF',
+    vehicleBorder: 'rgba(134,239,172,0.35)',
+    vehicleShine: 'rgba(255,255,255,0.22)',
+    hint: '#FACC15',
+    hintOutline: '#14532D',
+    winVeil: 'rgba(14,36,24,0.72)',
+    winBadge: 'rgba(20,54,34,0.92)',
+    winBadgeBorder: 'rgba(34,197,94,0.55)',
+  },
+};
+
 export const BOARD_THEMES: Record<BoardThemeId, Record<ColorScheme, BoardColors>> = {
-  classic, paper, wood, neon, pixel, snow, fire, beach, space, pumpkin, christmas,
+  classic, paper, wood, neon, pixel, snow, fire, beach, space, pumpkin, christmas, newyear, valentine, shamrock,
 };
 
 export function getBoardColors(id: BoardThemeId, scheme: ColorScheme): BoardColors {
@@ -395,7 +494,7 @@ export function getBoardColors(id: BoardThemeId, scheme: ColorScheme): BoardColo
 
 // ─── Target car skins ─────────────────────────────────────────────────────────
 
-export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold' | 'tractor' | 'ufo' | 'mafia' | 'flagship' | 'coach' | 'sleigh';
+export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold' | 'tractor' | 'ufo' | 'mafia' | 'flagship' | 'coach' | 'sleigh' | 'limo' | 'wedding' | 'leprechaun';
 
 export interface CarSkin {
   /** Body color, the board's target car color when absent */
@@ -426,12 +525,16 @@ export const CAR_SKINS: Record<CarSkinId, CarSkin> = {
   // Seasonal events (theme/art/halloweenVehicles.ts, christmasVehicles.ts): the pumpkin coach, Santa's sleigh
   coach: { color: '#F97316', icon: '🧙', art: 'coach' },
   sleigh: { color: '#DC2626', icon: '🛷', art: 'sleigh' },
+  // theme/art/events: the champagne limousine, the wedding car, the leprechaun's car of gold
+  limo: { color: '#E9D18A', icon: '🍾', art: 'limo' },
+  wedding: { color: '#F8FAFC', icon: '💍', art: 'wedding' },
+  leprechaun: { color: '#F59E0B', icon: '🍀', art: 'leprechaun' },
 };
 
 // ─── Vehicle palettes ─────────────────────────────────────────────────────────
 
 /** 'classic' keeps the colors saved in each level */
-export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy' | 'lava' | 'jungle' | 'mafia' | 'fleet' | 'haunted' | 'festive';
+export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy' | 'lava' | 'jungle' | 'mafia' | 'fleet' | 'haunted' | 'festive' | 'party' | 'lovers' | 'emerald';
 
 export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   classic: null,
@@ -451,6 +554,12 @@ export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   haunted: ['#4C1D95', '#14532D', '#1F2937', '#E7E5E4', '#0F766E', '#701A75', '#334155', '#3F6212'],
   // Christmas: fir green, gold, snow, midnight blue, teal, chestnut… no red for Santa's sleigh
   festive: ['#166534', '#CA8A04', '#E2E8F0', '#1E3A8A', '#0F766E', '#7C2D12', '#A16207', '#475569'],
+  // New Year: midnight blue, violet, silver, teal, fuchsia… no champagne gold for the limousine
+  party: ['#1E1B4B', '#7C3AED', '#94A3B8', '#0F766E', '#DB2777', '#1D4ED8', '#475569', '#9333EA'],
+  // Valentine's Day: crimson, raspberry, pink, plum… no white for the wedding car
+  lovers: ['#BE185D', '#9D174D', '#F472B6', '#7E22CE', '#E11D48', '#FB7185', '#A21CAF', '#881337'],
+  // Saint Patrick's Day: every green, and cream… no gold for the leprechaun's car
+  emerald: ['#166534', '#22C55E', '#4D7C0F', '#0F766E', '#84CC16', '#14532D', '#047857', '#E7E5C8'],
 };
 
 /** Palettes whose vehicles are drawn rather than colored blocks */
@@ -459,6 +568,9 @@ export const PALETTE_ART: Partial<Record<VehiclePaletteId, VehicleArt>> = {
   fleet: 'ship',
   haunted: 'haunted',
   festive: 'festive',
+  party: 'party',
+  lovers: 'lovers',
+  emerald: 'emerald',
 };
 
 /** How a board looks: its theme, the skin of the target car and the palette of the others */

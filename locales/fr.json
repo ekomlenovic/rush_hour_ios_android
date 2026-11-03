@@ -55,7 +55,13 @@
       "halloween_one": "Halloween : gagne {{count}} style du Garage",
       "halloween_other": "Halloween : gagne {{count}} styles du Garage",
       "christmas_one": "Noël : gagne {{count}} style du Garage",
-      "christmas_other": "Noël : gagne {{count}} styles du Garage"
+      "christmas_other": "Noël : gagne {{count}} styles du Garage",
+      "newyear_one": "Nouvel An : gagne {{count}} style du Garage",
+      "newyear_other": "Nouvel An : gagne {{count}} styles du Garage",
+      "valentine_one": "Saint-Valentin : gagne {{count}} style du Garage",
+      "valentine_other": "Saint-Valentin : gagne {{count}} styles du Garage",
+      "stpatrick_one": "Saint-Patrick : gagne {{count}} style du Garage",
+      "stpatrick_other": "Saint-Patrick : gagne {{count}} styles du Garage"
     },
     "daily_next": "Prochain dans {{time}}",
     "weekly_next_one": "Prochain dans {{count}} jour",
@@ -794,7 +800,10 @@
       "winter": "Défi en hiver",
       "event": {
         "halloween": "Défi d'Halloween",
-        "christmas": "Défi de Noël"
+        "christmas": "Défi de Noël",
+        "newyear": "Défi du Nouvel An",
+        "valentine": "Défi de la Saint-Valentin",
+        "stpatrick": "Défi de la Saint-Patrick"
       }
     },
     "kinds": {
@@ -815,7 +824,10 @@
       "winter": "Réussis un défi du jour en hiver (déc. à fév.)",
       "event": {
         "halloween": "Réussis un défi du jour d'Halloween (du 25 au 31 octobre)",
-        "christmas": "Réussis un défi du jour de Noël (du 19 au 25 décembre)"
+        "christmas": "Réussis un défi du jour de Noël (du 19 au 25 décembre)",
+        "newyear": "Réussis un défi du jour du Nouvel An (du 31 décembre au 3 janvier)",
+        "valentine": "Réussis un défi du jour de la Saint-Valentin (du 10 au 14 février)",
+        "stpatrick": "Réussis un défi du jour de la Saint-Patrick (du 15 au 17 mars)"
       },
       "secret": "Succès secret"
     },
@@ -830,7 +842,10 @@
       "beach": "Plage de sable",
       "space": "Espace",
       "pumpkin": "Citrouilles",
-      "christmas": "Noël"
+      "christmas": "Noël",
+      "newyear": "Réveillon",
+      "valentine": "Saint-Valentin",
+      "shamrock": "Trèfles"
     },
     "skin": {
       "classic": "Voiture rouge",
@@ -845,7 +860,10 @@
       "mafia": "Berline de Lost Heaven",
       "flagship": "Goélette amirale",
       "coach": "Carrosse citrouille",
-      "sleigh": "Traîneau du Père Noël"
+      "sleigh": "Traîneau du Père Noël",
+      "limo": "Limousine champagne",
+      "wedding": "Voiture des mariés",
+      "leprechaun": "Voiture du leprechaun"
     },
     "palette": {
       "classic": "Classique",
@@ -859,7 +877,10 @@
       "mafia": "Mafia",
       "fleet": "Flotte de 1800",
       "haunted": "Convoi hanté",
-      "festive": "Convoi de Noël"
+      "festive": "Convoi de Noël",
+      "party": "Convoi de la fête",
+      "lovers": "Convoi des amoureux",
+      "emerald": "Convoi émeraude"
     },
     "effect": {
       "none": "Aucun",
@@ -871,7 +892,10 @@
       "tommy": "Sulfateuse",
       "broadside": "Bordée",
       "bats": "Chauves-souris",
-      "gifts": "Pluie de cadeaux"
+      "gifts": "Pluie de cadeaux",
+      "champagne": "Bouchons de champagne",
+      "hearts": "Pluie de cœurs",
+      "clovers": "Trèfles et pièces d’or"
     },
     "equip": "Équiper",
     "equipped": "Équipé"

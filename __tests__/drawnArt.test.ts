@@ -19,6 +19,11 @@ import {
 import { BOUNCE, DROP_END, FADE_START, GIFTS, buildGiftsPlan, giftAt, landsAt } from '../components/effects/giftsPlan';
 import { hauntedVehicle, pumpkinCoachDrawing } from '../theme/art/halloweenVehicles';
 import { festiveVehicle, sleighDrawing } from '../theme/art/christmasVehicles';
+import { limoDrawing, partyVehicle } from '../theme/art/events/newYear';
+import { loversVehicle, weddingDrawing } from '../theme/art/events/valentine';
+import { emeraldVehicle, leprechaunDrawing } from '../theme/art/events/stPatrick';
+import { SPRITE_EFFECTS, SPRITE_EFFECT_IDS } from '../theme/art/events/effects';
+import { LAUNCH_END, buildSpritesPlan, spriteAt } from '../components/effects/spritesPlan';
 import { BACKDROP_BOARDS, boardBackdrop } from '../theme/art/boardDecor';
 import { BOARD_THEMES, CAR_SKINS, PALETTE_ART, TARGET_CAR_COLOR, VEHICLE_PALETTES, getSkinnedBoard } from '../theme/board';
 import { COSMETICS, buildCosmeticContext, cosmeticKey, isCosmeticUnlocked } from '../data/cosmetics';
@@ -88,7 +93,7 @@ describe('1800 ships (Anno 1800 style)', () => {
 describe('drawn vehicles', () => {
   it('every skin is drawn but the red car, and only the drawn palettes have a drawing', () => {
     expect(Object.entries(CAR_SKINS).filter(([, s]) => !s.art).map(([id]) => id)).toEqual(['classic']);
-    expect(Object.keys(PALETTE_ART).sort()).toEqual(['festive', 'fleet', 'haunted', 'mafia']);
+    expect(Object.keys(PALETTE_ART).sort()).toEqual(['emerald', 'festive', 'fleet', 'haunted', 'lovers', 'mafia', 'party']);
     for (const id of Object.keys(PALETTE_ART)) expect(VEHICLE_PALETTES).toHaveProperty(id);
   });
 
@@ -103,6 +108,9 @@ describe('seasonal event vehicles', () => {
   it.each([
     ['Halloween', hauntedVehicle, '#4C1D95'],
     ['Christmas', festiveVehicle, '#166534'],
+    ['New Year', partyVehicle, '#1E1B4B'],
+    ["Valentine's Day", loversVehicle, '#BE185D'],
+    ["Saint Patrick's Day", emeraldVehicle, '#166534'],
   ] as const)('%s: one drawing for 2 cells, another for 3, 100 units per cell, only their own gradients', (_, draw, color) => {
     expect(draw(2, color)).toMatchObject({ width: 200, height: 100 });
     expect(draw(3, color)).toMatchObject({ width: 300, height: 100 });
@@ -111,7 +119,7 @@ describe('seasonal event vehicles', () => {
     expectGradientsDefined(draw(3, color));
   });
 
-  it.each([['coach', pumpkinCoachDrawing], ['sleigh', sleighDrawing]] as const)('the %s target car is drawn on 2 cells', (skin, draw) => {
+  it.each([['coach', pumpkinCoachDrawing], ['sleigh', sleighDrawing], ['limo', limoDrawing], ['wedding', weddingDrawing], ['leprechaun', leprechaunDrawing]] as const)('the %s target car is drawn on 2 cells', (skin, draw) => {
     const drawing = draw(CAR_SKINS[skin].color!);
     expect(drawing).toMatchObject({ width: 200, height: 100 });
     expectGradientsDefined(drawing);
@@ -125,12 +133,20 @@ describe('seasonal event vehicles', () => {
     expect(VEHICLE_PALETTES.haunted).not.toContain(CAR_SKINS.coach.color);
     expect(VEHICLE_PALETTES.festive).not.toContain(CAR_SKINS.sleigh.color);
     expect(VEHICLE_PALETTES.festive).not.toContain(TARGET_CAR_COLOR);
+    for (const [palette, skin] of [['party', 'limo'], ['lovers', 'wedding'], ['emerald', 'leprechaun']] as const) {
+      expect(PALETTE_ART[palette]).toBe(palette);
+      expect(CAR_SKINS[skin].art).toBe(skin);
+      expect(VEHICLE_PALETTES[palette]).not.toContain(CAR_SKINS[skin].color);
+    }
+    expect(drawVehicle('party', 3, '#7C3AED')).toEqual(partyVehicle(3, '#7C3AED'));
+    expect(drawVehicle('lovers', 2, '#BE185D')).toEqual(loversVehicle(2, '#BE185D'));
+    expect(drawVehicle('emerald', 3, '#22C55E')).toEqual(emeraldVehicle(3, '#22C55E'));
   });
 });
 
 describe('event backdrops', () => {
-  it.each([[393, 760], [393, 330], [1024, 700], [300, 300]])('Halloween and Christmas are drawn for an area of %i × %i, in both schemes', (width, height) => {
-    expect(BACKDROP_BOARDS.sort()).toEqual(['christmas', 'pumpkin']);
+  it.each([[393, 760], [393, 330], [1024, 700], [300, 300]])('every event board is drawn for an area of %i × %i, in both schemes', (width, height) => {
+    expect([...BACKDROP_BOARDS].sort()).toEqual(['christmas', 'newyear', 'pumpkin', 'shamrock', 'valentine']);
     for (const id of BACKDROP_BOARDS) {
       expect(BOARD_THEMES).toHaveProperty(id);
       for (const scheme of ['light', 'dark'] as const) {
@@ -347,5 +363,46 @@ describe('Gift shower win effect (Christmas)', () => {
     const unlock = (key: string) => COSMETICS.find(c => cosmeticKey(c) === key)!.unlock;
     expect(unlock('effect:gifts')).toEqual({ type: 'event', event: 'christmas' });
     expect(unlock('board:christmas')).toEqual(unlock('effect:gifts'));
+  });
+});
+
+describe('drawn win effects of the seasonal events (hearts, clovers, champagne)', () => {
+  it('each one has its drawings, each drawing only its own gradients, and is unlocked by its event', () => {
+    const unlock = (key: string) => COSMETICS.find(c => cosmeticKey(c) === key)!.unlock;
+    expect(SPRITE_EFFECT_IDS.sort()).toEqual(['champagne', 'clovers', 'hearts']);
+    for (const id of SPRITE_EFFECT_IDS) {
+      const { spec, drawings } = SPRITE_EFFECTS[id];
+      expect(spec.drawings).toBe(drawings.length);
+      expect(drawings.length).toBeGreaterThan(1);
+      for (const drawing of drawings) expectGradientsDefined(drawing);
+      expect(unlock(`effect:${id}`).type).toBe('event');
+    }
+    expect(unlock('effect:champagne')).toEqual(unlock('board:newyear'));
+    expect(unlock('effect:hearts')).toEqual(unlock('board:valentine'));
+    expect(unlock('effect:clovers')).toEqual(unlock('board:shamrock'));
+  });
+
+  it.each(SPRITE_EFFECT_IDS.flatMap(id => [[id, 300, 300], [id, 390, 844], [id, 120, 120]] as const))('%s, in an area of %i × %i: every drawing comes in from outside, shows, then fades out', (id, width, height) => {
+    const { spec } = SPRITE_EFFECTS[id];
+    const plan = buildSpritesPlan(spec, width, height);
+    expect(plan).toHaveLength(spec.count);
+    for (const sprite of plan) {
+      expect(sprite.t0).toBeLessThanOrEqual(LAUNCH_END);
+      expect(sprite.t0 + sprite.life).toBeLessThanOrEqual(1);
+      expect(sprite.drawing).toBeLessThan(spec.drawings);
+      // Comes in from above (falling) or from below (rising, bursting)
+      if (spec.motion === 'fall') expect(sprite.from.y).toBeLessThan(0);
+      else expect(sprite.from.y).toBeGreaterThan(height);
+      // Its way stays across the area
+      expect(sprite.to.x).toBeGreaterThan(-sprite.size);
+      expect(sprite.to.x).toBeLessThan(width + sprite.size);
+      expect(spriteAt(sprite, spec.motion, sprite.t0 - 0.01).opacity).toBe(0);
+      expect(spriteAt(sprite, spec.motion, sprite.t0 + sprite.life / 2).opacity).toBe(1);
+      expect(spriteAt(sprite, spec.motion, 1).opacity).toBe(0);
+    }
+  });
+
+  it('plays the same on every replay', () => {
+    for (const id of SPRITE_EFFECT_IDS) expect(buildSpritesPlan(SPRITE_EFFECTS[id].spec, 300, 300)).toEqual(buildSpritesPlan(SPRITE_EFFECTS[id].spec, 300, 300));
   });
 });

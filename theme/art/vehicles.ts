@@ -5,6 +5,9 @@ import { DRAWN_SKINS, skinDrawing, type DrawnSkin } from './targetSkins';
 import { vintageVehicle } from './vintageVehicles';
 import { hauntedVehicle, pumpkinCoachDrawing } from './halloweenVehicles';
 import { festiveVehicle, sleighDrawing } from './christmasVehicles';
+import { limoDrawing, partyVehicle } from './events/newYear';
+import { loversVehicle, weddingDrawing } from './events/valentine';
+import { emeraldVehicle, leprechaunDrawing } from './events/stPatrick';
 
 const isDrawnSkin = (art: VehicleArt): art is DrawnSkin => (DRAWN_SKINS as string[]).includes(art);
 
@@ -17,6 +20,12 @@ export function drawVehicle(art: VehicleArt, length: number, color: string): Art
     case 'haunted': return hauntedVehicle(length, color);
     case 'sleigh': return sleighDrawing(color);
     case 'festive': return festiveVehicle(length, color);
+    case 'limo': return limoDrawing(color);
+    case 'party': return partyVehicle(length, color);
+    case 'wedding': return weddingDrawing(color);
+    case 'lovers': return loversVehicle(length, color);
+    case 'leprechaun': return leprechaunDrawing(color);
+    case 'emerald': return emeraldVehicle(length, color);
     default: return vintageVehicle(length, color);
   }
 }
