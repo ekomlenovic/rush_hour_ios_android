@@ -10,6 +10,7 @@ import { RFValue } from '@/utils/responsive';
 import { formatDuration } from '@/utils/date';
 import { toBoardLook, useTheme } from '@/theme';
 import Board from '@/components/Board';
+import BoardBackdrop from '@/components/BoardBackdrop';
 import MultiHeader from '@/components/multi/MultiHeader';
 import DuelPlayerBar from '@/components/multi/DuelPlayerBar';
 import { multiErrorMessage } from '@/components/multi/errors';
@@ -122,6 +123,9 @@ export default function DuelReplayScreen() {
       <View key="arena" style={[styles.arena, { paddingBottom: insets.bottom + RFValue(8) }]} onLayout={(e: LayoutChangeEvent) => setHeight(e.nativeEvent.layout.height)}>
         {height > 0 && (
           <>
+            {/* Each player's half of the screen in the theme of their board */}
+            <BoardBackdrop look={looks[0]} style={[styles.half, { top: 0, height: height / 2 }]} />
+            <BoardBackdrop look={looks[1]} style={[styles.half, { top: height / 2, height: height / 2 }]} />
             <DuelPlayerBar name={name(top)} moves={counts[0]} colors={colors} width={topSize} winner={finished && replay.winnerId === top.id} />
             <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
               <Board gridSize={replay.level.gridSize} vehicles={boards[0]} exitRow={replay.level.exitRow} exitCol={replay.level.exitCol} onMoveEnd={noop} readOnly size={topSize} look={looks[0]} />
@@ -190,6 +194,7 @@ const styles = StyleSheet.create({
     fontSize: RFValue(16),
     textAlign: 'center',
   },
+  half: { position: 'absolute', left: 0, right: 0 },
   arena: {
     flex: 1,
     alignItems: 'center',

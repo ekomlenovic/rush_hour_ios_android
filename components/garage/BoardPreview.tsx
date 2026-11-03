@@ -6,7 +6,7 @@ import {
 } from '@/theme';
 import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
 import ArtSvg from '@/components/art/ArtSvg';
-import { DECOR_OUTSET } from '@/theme/art/boardDecor';
+import { boardBackdrop } from '@/theme/art/boardDecor';
 import type { CosmeticSelection } from '@/data/cosmetics';
 import type { Level, Vehicle } from '@/store/types';
 import { getExitSide } from '@/utils/creatorGeometry';
@@ -35,18 +35,21 @@ interface Props {
   level?: Pick<Level, 'vehicles' | 'gridSize' | 'exitRow' | 'exitCol'>;
 }
 
-/** Below this size, an event board is shown without its decorations (small thumbnails) */
-const DECOR_MIN_SIZE = 100;
+/** Below this size, an event board is shown without its backdrop (small thumbnails) */
+const BACKDROP_MIN_SIZE = 100;
+/** Share of the preview the board takes in front of its backdrop */
+const BACKDROP_BOARD = 0.72;
 
 /** Static board drawn with a cosmetic selection (garage preview, thumbnail of a level) */
 function BoardPreview({ selection, scheme, size, level }: Props) {
-  const decor = size >= DECOR_MIN_SIZE ? getSkinnedBoard(selection.board, selection.skin, scheme).decor : undefined;
-  if (!decor) return <PlainBoardPreview selection={selection} scheme={scheme} size={size} level={level} />;
-  // The decorations of an event board go around it: the board gets smaller so the whole stays within `size`
-  const inner = size / (1 + 2 * DECOR_OUTSET);
+  const theme = getSkinnedBoard(selection.board, selection.skin, scheme).backdrop;
+  const backdrop = theme && size >= BACKDROP_MIN_SIZE ? boardBackdrop(theme, scheme, size, size) : undefined;
+  if (!backdrop) return <PlainBoardPreview selection={selection} scheme={scheme} size={size} level={level} />;
+  // An event board in front of its backdrop, like the game screen: smaller, so the whole stays within `size`
+  const inner = size * BACKDROP_BOARD;
   return (
-    <View style={{ width: size, height: size }} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-      <ArtSvg drawing={decor} width={size} height={size} style={styles.decor} />
+    <View style={[styles.backdrop, { width: size, height: size }]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+      <ArtSvg drawing={backdrop} width={size} height={size} style={styles.decor} />
       <View style={[styles.decor, { left: (size - inner) / 2, top: (size - inner) / 2 }]}>
         <PlainBoardPreview selection={selection} scheme={scheme} size={inner} level={level} />
       </View>
@@ -54,7 +57,7 @@ function BoardPreview({ selection, scheme, size, level }: Props) {
   );
 }
 
-/** The board itself, without the decorations around it */
+/** The board itself, without its backdrop */
 function PlainBoardPreview({ selection, scheme, size, level }: Props) {
   const board = getSkinnedBoard(selection.board, selection.skin, scheme);
   const vehicles = level?.vehicles ?? SAMPLE;
@@ -130,6 +133,7 @@ const styles = StyleSheet.create({
   vehicle: { position: 'absolute', borderWidth: 1, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   drawn: { position: 'absolute' },
   decor: { position: 'absolute', left: 0, top: 0 },
+  backdrop: { borderRadius: 16, overflow: 'hidden' },
   shine: { position: 'absolute', top: 2, left: 2, right: 2, height: '45%' },
   exit: { position: 'absolute', borderRadius: 3, borderWidth: 1 },
 });

@@ -19,7 +19,7 @@ import {
 import { BOUNCE, DROP_END, FADE_START, GIFTS, buildGiftsPlan, giftAt, landsAt } from '../components/effects/giftsPlan';
 import { hauntedVehicle, pumpkinCoachDrawing } from '../theme/art/halloweenVehicles';
 import { festiveVehicle, sleighDrawing } from '../theme/art/christmasVehicles';
-import { DECORATED_BOARDS, DECOR_SIZE, boardDecor } from '../theme/art/boardDecor';
+import { BACKDROP_BOARDS, boardBackdrop } from '../theme/art/boardDecor';
 import { BOARD_THEMES, CAR_SKINS, PALETTE_ART, TARGET_CAR_COLOR, VEHICLE_PALETTES, getSkinnedBoard } from '../theme/board';
 import { COSMETICS, buildCosmeticContext, cosmeticKey, isCosmeticUnlocked } from '../data/cosmetics';
 
@@ -128,25 +128,33 @@ describe('seasonal event vehicles', () => {
   });
 });
 
-describe('board decorations', () => {
-  it('the Halloween and Christmas boards are decorated, in both schemes', () => {
-    expect(DECORATED_BOARDS.sort()).toEqual(['christmas', 'pumpkin']);
-    for (const id of DECORATED_BOARDS) {
+describe('event backdrops', () => {
+  it.each([[393, 760], [393, 330], [1024, 700], [300, 300]])('Halloween and Christmas are drawn for an area of %i × %i, in both schemes', (width, height) => {
+    expect(BACKDROP_BOARDS.sort()).toEqual(['christmas', 'pumpkin']);
+    for (const id of BACKDROP_BOARDS) {
       expect(BOARD_THEMES).toHaveProperty(id);
       for (const scheme of ['light', 'dark'] as const) {
-        const decor = boardDecor(id, scheme)!;
-        expect(decor).toMatchObject({ width: DECOR_SIZE, height: DECOR_SIZE });
-        expectGradientsDefined(decor);
-        // The same drawing every time: the board does not draw it again
-        expect(boardDecor(id, scheme)).toBe(decor);
-        expect(getSkinnedBoard(id as never, 'classic', scheme).decor).toBe(decor);
+        const backdrop = boardBackdrop(id, scheme, width, height)!;
+        // In the pixels of the area: nothing stretched
+        expect(backdrop).toMatchObject({ width, height });
+        expectGradientsDefined(backdrop);
+        // The same drawing for the same size: the screen does not draw it again
+        expect(boardBackdrop(id, scheme, width + 0.2, height - 0.2)).toBe(backdrop);
+        expect(getSkinnedBoard(id as never, 'classic', scheme).backdrop).toBe(id);
       }
     }
   });
 
-  it('the other boards are plain', () => {
-    expect(boardDecor('classic', 'dark')).toBeUndefined();
-    expect(getSkinnedBoard('wood', 'taxi', 'light').decor).toBeUndefined();
+  it('has its sky (the background of the screen) unless drawn over another background', () => {
+    const sky = (d: ArtDrawing) => d.shapes.some(s => s.attrs.fill === 'url(#sky)');
+    expect(sky(boardBackdrop('christmas', 'dark', 400, 800)!)).toBe(true);
+    expect(sky(boardBackdrop('pumpkin', 'light', 400, 400, { noSky: true })!)).toBe(false);
+  });
+
+  it('the other boards have none, nor an empty area', () => {
+    expect(boardBackdrop('classic', 'dark', 400, 800)).toBeUndefined();
+    expect(boardBackdrop('pumpkin', 'dark', 0, 800)).toBeUndefined();
+    expect(getSkinnedBoard('wood', 'taxi', 'light').backdrop).toBeUndefined();
   });
 });
 
