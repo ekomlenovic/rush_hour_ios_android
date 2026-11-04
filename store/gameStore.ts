@@ -206,7 +206,8 @@ interface GameState {
   cancelGeneration: () => void;
   hardReset: () => void;
   /** Replaces the progress with an imported save (utils/saveTransfer.ts), keeping the device settings */
-  importProgress: (imported: Record<string, unknown>) => void;
+  /** Replaces the progress; what the days missed since the export did, to tell the player (issue 175) */
+  importProgress: (imported: Record<string, unknown>) => AppOpenInfo;
   updateStreak: (dateKey: string) => void;
   recordAppOpen: () => AppOpenInfo;
   /** The game screen opens (a day) or closes (null) a daily not won yet */
@@ -994,7 +995,7 @@ export const useGameStore = create<GameState>()(
         });
         // Achievements the progress already earns (no toast flood), then the days missed since the export
         get().checkAchievements({ silent: true });
-        get().recordAppOpen();
+        return get().recordAppOpen();
       },
       };
     },
