@@ -618,6 +618,27 @@ describe('multiplayer accounts v2: secrets in the secure storage (#84)', () => {
     expect(next.getState().accounts).toEqual(v1Save.state.accounts);
   });
 
+  it('drops the games past their deadline at launch, keeps the others (issue 177)', async () => {
+    const game = (date: string, deadline: number) => ({
+      serverUrl: 'https://rush.example', date, number: 1, level: { id: 1, gridSize: 6, exitRow: 2, exitCol: 6, minMoves: 1, vehicles: [] },
+      vehicles: [], moveLog: [], startedAt: 0, clockOffset: 0, localStartedAt: 0, deadline, backgroundMs: 0,
+    });
+    const now = Date.now();
+    const games = {
+      'https://rush.example|2026-01-02': game('2026-01-02', now - 2 * 24 * 3600_000),
+      'https://rush.example|2026-01-04': game('2026-01-04', now + 3600_000),
+      // Just past its deadline: kept for a phone clock a little off
+      'https://rush.example|2026-01-03': game('2026-01-03', now - 60_000),
+    };
+    await AsyncStorage.setItem(KEY, JSON.stringify({ ...v1Save, state: { ...v1Save.state, games } }));
+    const store = launchMulti();
+    await flush();
+    const kept = ['https://rush.example|2026-01-03', 'https://rush.example|2026-01-04'];
+    expect(Object.keys(store.getState().games).sort()).toEqual(kept);
+    expect(Object.keys((await stored()).state.games).sort()).toEqual(kept);
+    expect(store.getState().accounts).toEqual(v1Save.state.accounts);
+  });
+
   it('forgets the secrets of a server left', async () => {
     const store = launchMulti();
     await flush();

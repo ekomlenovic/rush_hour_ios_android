@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { createGuardedStorage } from './guardedStorage';
 import { createSecureAccountStorage } from './secureAccounts';
 import type { Level, MoveRecord, Vehicle } from './types';
+import { pruneGames } from '../utils/multi/game';
 
 /**
  * Multiplayer (#46): the servers joined and the games in progress.
@@ -145,7 +146,8 @@ export const useMultiStore = create<MultiState>()(
           return;
         }
         multiStorage.allowWrites();
-        useMultiStore.setState({});
+        // Written again at once, without the games past their deadline (issue 177)
+        useMultiStore.setState({ games: pruneGames(state.games ?? {}, Date.now()) });
       },
       partialize: ({ accounts, activeUrl, introSeen, games, blocked }) => ({ accounts, activeUrl, introSeen, games, blocked }),
     },

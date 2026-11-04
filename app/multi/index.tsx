@@ -85,7 +85,18 @@ function Intro() {
   );
 }
 
+/**
+ * Everything shown comes from the active server: the screen starts afresh on another one (issue 187),
+ * so that an answer of the former server, still on its way, is never shown under the new one.
+ * The open tab is kept.
+ */
 export default function MultiplayerScreen() {
+  const activeUrl = useMultiStore(s => selectActiveAccount(s)?.url ?? null);
+  const [tab, setTab] = useState<MultiTab>('challenge');
+  return <ServerScreen key={activeUrl ?? ''} tab={tab} setTab={setTab} />;
+}
+
+function ServerScreen({ tab, setTab }: { tab: MultiTab; setTab: (tab: MultiTab) => void }) {
   const { t, i18n } = useTranslation();
   const { colors, isDark } = useTheme();
   const router = useRouter();
@@ -111,7 +122,6 @@ export default function MultiplayerScreen() {
   const [isNewDuelVisible, setNewDuelVisible] = useState(false);
   const [isDuelCodeVisible, setDuelCodeVisible] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<RowPlayer | null>(null);
-  const [tab, setTab] = useState<MultiTab>('challenge');
   const [rankingKind, setRankingKind] = useState<'challenges' | 'duels'>('challenges');
   const [rankingView, setRankingView] = useState<RankingView>(() => ({
     mode: 'week', offset: 0, dates: { from: addDays(getLocalDateString(), -6), to: getLocalDateString() },
@@ -123,17 +133,19 @@ export default function MultiplayerScreen() {
   const serverDuels = useServerDuels(api, tab === 'duels');
   const joinable = joinableCount(serverDuels.duels);
 
+  const url = account?.url;
   const load = useCallback(async () => {
-    if (!api) return;
+    if (!api || !url) return;
     setLoading(true);
     setError(null);
     try {
       const [info, day] = await Promise.all([api.info(), api.today()]);
       setCompat(checkCompatibility(info, APP_VERSION));
       setFeatures(info.features ?? []);
-      // The admin may have renamed the server in the app
-      const current = selectActiveAccount(useMultiStore.getState());
-      if (current && info.name && info.name !== current.name) useMultiStore.getState().updateAccount(current.url, { name: info.name });
+      // The admin may have renamed the server in the app: the account of this server, never the active
+      // one, which may be another server by now (issue 187)
+      const current = useMultiStore.getState().accounts.find(a => a.url === url);
+      if (current && info.name && info.name !== current.name) useMultiStore.getState().updateAccount(url, { name: info.name });
       setToday(day);
       setClockOffset(day.serverNow - Date.now());
       // The clock on screen may have stood still while a game was played
@@ -144,7 +156,7 @@ export default function MultiplayerScreen() {
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, url]);
 
   // Reload when coming back (from a game) or when the server changes
   useFocusEffect(useCallback(() => {
