@@ -120,6 +120,7 @@ Le streak compte les jours consécutifs avec le défi du jour réussi.
 | Stock limité à **2 gels** au départ, **+1 emplacement** aux niveaux joueur 5, 10, 20 et 30 (6 au maximum) | `getFreezeCapacity` (`data/progression.ts`) |
 | On gagne un gel **tous les 7 jours de streak**, en finissant les **3 missions du jour** et à **chaque niveau joueur atteint** (rien si le stock est plein) | `advanceStreak` (`store/streak.ts`), missions, `addXp` (`store/gameStore.ts`) |
 | Pas de monnaie : un gel ne s'achète pas | |
+| Un défi d'un jour **déjà derrière le streak** (la date locale a reculé : vol vers l'est par-dessus la ligne de changement de date, fuseau changé à la main) ne casse pas le streak ; si ce jour était gelé, il est réussi après tout et son gel revient (s'il reste de la place) | `advanceStreak` (`store/streak.ts`) |
 | Les jours gelés apparaissent en bleu dans le calendrier du profil | `frozenDates`, `StreakCalendar` |
 | Le profil montre les gels comme des **emplacements** (remplis ou libres) et le niveau joueur du prochain emplacement | `StreakCard` |
 
