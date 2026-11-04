@@ -4,7 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as DocumentPicker from 'expo-document-picker';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
-import { exportProgress, parseSave } from '@/utils/saveTransfer';
+import { canTransferSave, exportProgress, parseSave } from '@/utils/saveTransfer';
 import { readPickedFile, shareSaveFile } from '@/utils/shareSave';
 import { haptics, Haptics } from '@/utils/haptics';
 import type { UiColors } from '@/theme';
@@ -28,8 +28,17 @@ export default function SaveSection({ colors, onClose }: Props) {
     Alert.alert(t('save.copied_title'), t('save.copied_body'));
   };
 
+  /** Nothing to export nor to replace while the game's save is not loaded: it says so instead (issue 174) */
+  const saveReady = () => {
+    if (canTransferSave()) return true;
+    haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    Alert.alert(t('save.not_loaded_title'), t('save.not_loaded_body'));
+    return false;
+  };
+
   const handleExportFile = async () => {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!saveReady()) return;
     const code = exportProgress();
     // No file sharing on this device: the code still works
     if (!(await shareSaveFile(code, t('save.share_title')))) await copyCode(code);
@@ -37,6 +46,7 @@ export default function SaveSection({ colors, onClose }: Props) {
 
   const handleCopyCode = async () => {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!saveReady()) return;
     await copyCode(exportProgress());
   };
 
@@ -70,6 +80,7 @@ export default function SaveSection({ colors, onClose }: Props) {
           text: t('save.confirm_btn'),
           style: 'destructive',
           onPress: () => {
+            if (!saveReady()) return;
             importProgress(result.state);
             haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             onClose();
@@ -82,6 +93,7 @@ export default function SaveSection({ colors, onClose }: Props) {
 
   const handleImportFile = async () => {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!saveReady()) return;
     // A .rushsave file has no known type: any file can be picked, the checks refuse the others
     const picked = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
     if (picked.canceled || !picked.assets?.[0]) return;
@@ -97,6 +109,7 @@ export default function SaveSection({ colors, onClose }: Props) {
 
   const handlePasteCode = async () => {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!saveReady()) return;
     confirmImport(await Clipboard.getStringAsync());
   };
 

@@ -967,6 +967,8 @@
   "save": {
     "load_error_title": "Save could not be read",
     "load_error_body": "Your progress could not be loaded. It has not been erased: nothing will be saved over it. Close the game completely and open it again to retry.",
+    "not_loaded_title": "Save not loaded yet",
+    "not_loaded_body": "Your progress could not be loaded, so there is nothing to export or replace for now. It has not been erased from your phone. Close the game completely and open it again, then retry.",
     "write_error_title": "Progress not saved",
     "write_error_body": "Your progress could not be saved: your phone storage is probably full. Free up some space, then come back to the game: it will be saved again. Don't close the game until then, or what you played since will be lost.",
     "title": "Save",

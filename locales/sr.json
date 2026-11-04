@@ -1006,6 +1006,8 @@
   "save": {
     "load_error_title": "Sačuvana igra nije mogla da se pročita",
     "load_error_body": "Tvoj napredak nije mogao da se učita. Nije obrisan: ništa neće biti sačuvano preko njega. Potpuno zatvori igru i ponovo je otvori da pokušaš opet.",
+    "not_loaded_title": "Sačuvana igra još nije učitana",
+    "not_loaded_body": "Tvoj napredak nije mogao da se učita, pa za sada nema šta da se izveze ili zameni. Nije obrisan sa tvog telefona. Potpuno zatvori igru i ponovo je otvori, pa pokušaj opet.",
     "write_error_title": "Napredak nije sačuvan",
     "write_error_body": "Tvoj napredak nije mogao da se sačuva: memorija tvog telefona je verovatno puna. Oslobodi malo prostora, pa se vrati u igru: biće ponovo sačuvan. Ne zatvaraj igru do tada, inače ćeš izgubiti ono što je od tada odigrano.",
     "title": "Sačuvana igra",
