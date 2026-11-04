@@ -326,10 +326,11 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
           />
         )}
         {letter === undefined && vehicle.isTarget && !art && board.targetIcon && (
-          <Text style={{ fontSize: cellSize * 0.5 }} importantForAccessibility="no" accessibilityElementsHidden>{board.targetIcon}</Text>
+          <Text allowFontScaling={false} style={{ fontSize: cellSize * 0.5 }} importantForAccessibility="no" accessibilityElementsHidden>{board.targetIcon}</Text>
         )}
+        {/* Sized on the cell, which already grows: never with the system font (issue 156) */}
         {letter !== undefined && (
-          <Text style={[styles.letter, { fontSize: cellSize * 0.42, color: board.vehicleLabel, textShadowColor: board.vehicleLabelShadow }]}>{letter}</Text>
+          <Text allowFontScaling={false} style={[styles.letter, { fontSize: cellSize * 0.42, color: board.vehicleLabel, textShadowColor: board.vehicleLabelShadow }]}>{letter}</Text>
         )}
       </Animated.View>
 

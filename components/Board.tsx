@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, useWindowDimensions, Platform, type HostInstance } from 'react-native';
 import { Vehicle, useGameStore } from '@/store/gameStore';
 import { getMoveBounds } from '@/utils/collision';
+import { boardSizeFor } from '@/utils/boardSize';
 import { vehicleFacing } from '@/utils/facing';
 import Block, { BlockA11yStrings } from './Block';
 import { useTranslation } from 'react-i18next';
@@ -28,7 +29,6 @@ interface BoardProps {
 }
 
 
-const BOARD_PADDING = 24;
 // The frame border is drawn inside the board's width: cells only get what is left
 const BOARD_BORDER = 2;
 
@@ -37,8 +37,8 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
   const { colors } = useTheme();
   const { board, palette } = useBoardTheme(look);
 
-  const { width: screenWidth } = useWindowDimensions();
-  const boardSize = size ?? screenWidth - BOARD_PADDING * 2;
+  const window = useWindowDimensions();
+  const boardSize = size ?? boardSizeFor(window);
   const cellSize = (boardSize - BOARD_BORDER * 2) / gridSize;
 
   const gridColor = board.grid;

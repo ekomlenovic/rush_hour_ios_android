@@ -138,7 +138,9 @@ const LevelNode = React.memo(({
             ]}
           >
             {!isLocked && <View style={[styles.shine, { backgroundColor: colors.shine }]} />}
+            {/* Sized on the token: never with the system font, "123" stays inside it (issue 156) */}
             <Text
+              allowFontScaling={false}
               style={[
                 styles.nodeText,
                 { fontSize: labelSize, color: labelColor },

@@ -39,6 +39,7 @@ import type { SolutionSource } from '@/components/game/SolutionPlayer';
 import IconText from '@/components/IconText';
 import HintLoadingPill from '@/components/game/HintLoadingPill';
 import SolutionPlayer from '@/components/game/SolutionPlayer';
+import { MAX_UI_FONT_SCALE } from '@/utils/boardSize';
 
 export default function GameScreen() {
   const { t, i18n } = useTranslation();
@@ -405,9 +406,9 @@ export default function GameScreen() {
       <Animated.View entering={FadeInUp.delay(100).springify()} style={styles.header}>
         <Pressable onPress={goBack} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('a11y.back')} hitSlop={8}>
           {/* "Map" only where it leads: challenges come from the home screen, archives from the profile */}
-          <Text style={[styles.backText, { color: colors.textMuted }]} numberOfLines={1}>← {customKind || challengeKind || isArchive ? t('a11y.back') : t('common.map')}</Text>
+          <Text maxFontSizeMultiplier={MAX_UI_FONT_SCALE} style={[styles.backText, { color: colors.textMuted }]} numberOfLines={1}>← {customKind || challengeKind || isArchive ? t('a11y.back') : t('common.map')}</Text>
         </Pressable>
-        <Text style={[styles.levelTitle, { color: colors.text }]} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+        <Text maxFontSizeMultiplier={MAX_UI_FONT_SCALE} style={[styles.levelTitle, { color: colors.text }]} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
           {challengeKind === 'daily' ? t('home.daily_challenge')
             : challengeKind === 'weekly' ? t('home.weekly_challenge')
             : isArchive ? t('game.archive_title', {
