@@ -9,13 +9,13 @@ import Board from '@/components/Board';
 import BoardBackdrop from '@/components/BoardBackdrop';
 import { useGameStore } from '@/store/gameStore';
 import type { MissionReward } from '@/data/missions';
-import { isBossLevel } from '@/data/bosses';
 import { newlyUnlockedCosmetics } from '@/data/cosmetics';
 import { checkWin } from '@/utils/collision';
 import { solvePuzzleAsync } from '@/utils/solver.background';
-import { customLevelKind, customLevelTitle } from '@/utils/customLevels';
+import { customLevelKind } from '@/utils/customLevels';
+import { gameTitle } from '@/utils/gameTitle';
 import { useTranslation } from 'react-i18next';
-import { dateLocale, parseLocalDateString } from '@/utils/date';
+import { parseLocalDateString } from '@/utils/date';
 import { buildChallengeShareText } from '@/utils/shareResult';
 import { requestReminderPermission } from '@/utils/notifications';
 import { calculateScore, getStars } from '@/utils/scoring';
@@ -27,7 +27,7 @@ import { sampleLevels } from '@/data/sampleLevels';
 import { fullMoveLog } from '@/utils/solutionReplay';
 import { useActivePlayTime } from '@/hooks/useActivePlayTime';
 import { useOpenDaily } from '@/hooks/useOpenDaily';
-import { describeVehicle, getVehicleLetters, getMoveDirection } from '@/utils/accessibility';
+import { describeShownVehicle, getMoveDirection } from '@/utils/accessibility';
 import { useTheme } from '@/theme';
 import GameLoading from '@/components/game/GameLoading';
 import GameStatsBar from '@/components/game/GameStatsBar';
@@ -44,7 +44,7 @@ import { MAX_UI_FONT_SCALE } from '@/utils/boardSize';
 
 export default function GameScreen() {
   const { t, i18n } = useTranslation();
-  const { colors, isDark, board } = useTheme();
+  const { colors, isDark, board, palette } = useTheme();
   const winEffect = useGameStore(s => s.cosmetics.effect);
   const winEffectColors = useMemo(() => [board.targetCar, ...board.vehicles.slice(0, 6)], [board]);
   const router = useRouter();
@@ -236,10 +236,10 @@ export default function GameScreen() {
   // A daily left open past midnight can still be won: while it is open, its day is not missed (see docs/GAME_DESIGN.md)
   useOpenDaily(challengeKind === 'daily' && !isLoading && !isChallengeCompleted ? params.date! : null);
 
-  const handleMoveEnd = useCallback((vehicleId: string, newRow: number, newCol: number) => {
+  const handleMoveEnd = useCallback((vehicleId: string, newRow: number, newCol: number, step?: boolean) => {
     if (won || isChallengeCompleted) return false;
     // Refused when another vehicle took the room meanwhile (two fingers): the block goes back
-    if (!moveVehicle(vehicleId, newRow, newCol)) return false;
+    if (!moveVehicle(vehicleId, newRow, newCol, step)) return false;
 
     setHintVehicleId(null); // Clear hint highlight on any move
     setHintRemainingMoves(null);
@@ -331,6 +331,8 @@ export default function GameScreen() {
         await new Promise(resolve => setTimeout(resolve, 800 - duration));
       }
 
+      // The screen left during the search: no vibration nor announcement on the next one (issue 169)
+      if (!isMounted.current) return;
       // A move, an undo or a reset during the search: the hint is for a board that is gone
       const latest = useGameStore.getState();
       if (latest.vehicles !== vehicles || latest.currentLevel !== currentLevel) return;
@@ -346,7 +348,8 @@ export default function GameScreen() {
         if (hinted) {
           const direction = getMoveDirection(hinted, hintMove);
           AccessibilityInfo.announceForAccessibility(t('a11y.hint_found', {
-            vehicle: describeVehicle(t, hinted, getVehicleLetters(vehicles)[hinted.id]),
+            // Named as the board shows it: in the color of the selected palette (issue 167)
+            vehicle: describeShownVehicle(t, vehicles, palette, hinted.id),
             direction: t(`a11y.dir_${direction}`),
           }));
         }
@@ -357,7 +360,7 @@ export default function GameScreen() {
       }
     } catch (error) {
       console.error("Hint calculation failed:", error);
-      haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      if (isMounted.current) haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsHintLoading(false);
     }
@@ -386,9 +389,9 @@ export default function GameScreen() {
   // A custom level is called by its name (or "Level 3"), never by its id (a timestamp)
   const customKind = currentLevel ? customLevelKind(currentLevel.id, createdLevels, importedLevels) : null;
   const customLevels = customKind === 'created' ? createdLevels : importedLevels;
+  // One title for the header and the share sheet (issue 170)
   const levelTitle = !currentLevel ? ''
-    : customKind ? customLevelTitle(t, customLevels.find(l => l.id === currentLevel.id) ?? currentLevel, customKind, customLevels)
-    : t('game.level_count', { id: currentLevel.id });
+    : gameTitle(t, { level: currentLevel, challengeKind, archiveDate: isArchive ? params.date! : null, customKind, customLevels, language: i18n.language });
   // A level of the map (campaign or generated) has a next one, until the last one
   const nextLevelId = currentLevel && !customKind && !challengeKind && !isArchive
     ? nextMapLevel(currentLevel.id, sampleLevels.length + generatedLevels.length)
@@ -410,13 +413,7 @@ export default function GameScreen() {
           <Text maxFontSizeMultiplier={MAX_UI_FONT_SCALE} style={[styles.backText, { color: colors.textMuted }]} numberOfLines={1}>← {customKind || challengeKind || isArchive ? t('a11y.back') : t('common.map')}</Text>
         </Pressable>
         <Text maxFontSizeMultiplier={MAX_UI_FONT_SCALE} style={[styles.levelTitle, { color: colors.text }]} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-          {challengeKind === 'daily' ? t('home.daily_challenge')
-            : challengeKind === 'weekly' ? t('home.weekly_challenge')
-            : isArchive ? t('game.archive_title', {
-                date: parseLocalDateString(params.date!).toLocaleDateString(dateLocale(i18n.language), { day: 'numeric', month: 'short' }),
-              })
-            : !customKind && isBossLevel(currentLevel.id) ? t('game.level_boss', { id: currentLevel.id })
-            : levelTitle}
+          {levelTitle}
         </Text>
         <Pressable onPress={() => setShareVisible(true)} style={styles.shareHeaderBtn} accessibilityRole="button" accessibilityLabel={t('a11y.share_level')}>
           <ShareIcon size={24} color={colors.primaryText} />

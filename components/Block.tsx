@@ -10,7 +10,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { haptics, Haptics } from '@/utils/haptics';
 import { Vehicle } from '@/store/gameStore';
-import { stepVehicle } from '@/utils/accessibility';
+import { actionStep, stepVehicle } from '@/utils/accessibility';
 import { startHintGlow, stopHintGlow } from '@/utils/hintGlow';
 import { useBoardTheme, type VehicleArt } from '@/theme';
 import { labelOn } from '@/theme/contrast';
@@ -22,7 +22,8 @@ interface BlockProps {
   allVehicles: Vehicle[];
   gridSize: number;
   cellSize: number;
-  onMoveEnd: (vehicleId: string, newRow: number, newCol: number) => boolean | void;
+  /** `step`: a one-cell move of the screen reader (merged with the steps just before it, issue 158) */
+  onMoveEnd: (vehicleId: string, newRow: number, newCol: number, step?: boolean) => boolean | void;
   isHinted?: boolean;
   min: number;
   max: number;
@@ -216,14 +217,13 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
   ), [disabled, isHorizontal, a11yStrings]);
 
   const handleA11yAction = useCallback((event: AccessibilityActionEvent) => {
-    const forward = ['increment', 'right', 'down'].includes(event.nativeEvent.actionName);
-    const next = stepVehicle(vehicle, { min, max }, forward ? 1 : -1);
+    const next = stepVehicle(vehicle, { min, max }, actionStep(vehicle.orientation, event.nativeEvent.actionName));
     if (!next) {
       AccessibilityInfo.announceForAccessibility(a11yStrings.blocked);
       triggerCollisionHaptic();
       return;
     }
-    if (onMoveEnd(vehicle.id, next.row, next.col) === false) {
+    if (onMoveEnd(vehicle.id, next.row, next.col, true) === false) {
       AccessibilityInfo.announceForAccessibility(a11yStrings.blocked);
       triggerCollisionHaptic();
       return;

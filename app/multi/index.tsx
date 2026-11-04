@@ -119,7 +119,8 @@ export default function MultiplayerScreen() {
   // Rankings between two dates: only on a server that has them
   const [features, setFeatures] = useState<string[]>([]);
   const insets = useSafeAreaInsets();
-  const serverDuels = useServerDuels(api);
+  // Read often on the Duels tab only; elsewhere just for its number (issue 165)
+  const serverDuels = useServerDuels(api, tab === 'duels');
   const joinable = joinableCount(serverDuels.duels);
 
   const load = useCallback(async () => {

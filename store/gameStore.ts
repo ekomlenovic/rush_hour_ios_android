@@ -167,7 +167,11 @@ interface GameState {
   // Actions
   loadLevel: (level: Level, savedState?: LevelSaveState) => void;
   /** Plays a move; false (nothing changes) for a move through another vehicle or off its axis */
-  moveVehicle: (vehicleId: string, newRow: number, newCol: number) => boolean;
+  /**
+   * Plays a move; `step`: a one-cell move of the screen reader, merged with the steps of the same vehicle
+   * just before it into a single move, as a drag of that length would be (issue 158)
+   */
+  moveVehicle: (vehicleId: string, newRow: number, newCol: number, step?: boolean) => boolean;
   undo: () => void;
   resetLevel: () => void;
   recordHintUsed: () => void;
@@ -206,7 +210,8 @@ interface GameState {
   cancelGeneration: () => void;
   hardReset: () => void;
   /** Replaces the progress with an imported save (utils/saveTransfer.ts), keeping the device settings */
-  importProgress: (imported: Record<string, unknown>) => void;
+  /** Replaces the progress; what the days missed since the export did, to tell the player (issue 175) */
+  importProgress: (imported: Record<string, unknown>) => AppOpenInfo;
   updateStreak: (dateKey: string) => void;
   recordAppOpen: () => AppOpenInfo;
   /** The game screen opens (a day) or closes (null) a daily not won yet */
@@ -256,6 +261,12 @@ const saveStorage = createGuardedStorage<Partial<GameState>>({
   separateFields: SEPARATE_SAVE_FIELDS,
   onWriteFailed: (failed) => useGameStore.setState({ saveWriteFailed: failed }),
 });
+
+/**
+ * The screen reader steps being merged into one move (issue 158): the vehicle, and the state of the game
+ * after its last step. Any other change (another move, an undo, a reset, another level) breaks the chain.
+ */
+let stepChain: { level: Level; vehicleId: string; moveCount: number; historyLength: number } | null = null;
 
 export const useGameStore = create<GameState>()(
   persist(
@@ -447,12 +458,35 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-      moveVehicle: (vehicleId, newRow, newCol) => {
+      moveVehicle: (vehicleId, newRow, newCol, step = false) => {
         const { vehicles, history, moveLog, attemptStartedAt, moveCount, currentLevel, stats } = get();
         if (!currentLevel || !isLegalMove(vehicles, vehicleId, newRow, newCol, currentLevel.gridSize)) return false;
         // Once the target car is out the game is over: a second finger released late is refused (issue 168),
         // as the server refuses a move after the win in a move log
         if (checkWin(vehicles, currentLevel.exitRow, currentLevel.exitCol, currentLevel.gridSize)) return false;
+
+        // Screen reader steps of the same vehicle, nothing else played since: one move, as a drag (issue 158)
+        const chain = stepChain;
+        stepChain = null;
+        if (step && chain && chain.level === currentLevel && chain.vehicleId === vehicleId
+          && chain.moveCount === moveCount && chain.historyLength === history.length && moveLog.length > 0) {
+          const moved = vehicles.find(v => v.id === vehicleId)!;
+          const extra = toMoveRecord(moved, newRow, newCol, Date.now() - attemptStartedAt);
+          const last = moveLog[moveLog.length - 1];
+          if (extra && last.vehicleId === vehicleId) {
+            const updated = vehicles.map(v => (v.id === vehicleId ? { ...v, row: newRow, col: newCol } : v));
+            const delta = last.delta + extra.delta;
+            saveStorage.deferNextWrite();
+            if (delta === 0) {
+              // Back where it started: the move is taken back, as if never played
+              set(withSnapshot({ vehicles: updated, moveCount: moveCount - 1, history: history.slice(0, -1), moveLog: moveLog.slice(0, -1) }));
+            } else {
+              set(withSnapshot({ vehicles: updated, moveLog: [...moveLog.slice(0, -1), { ...last, delta, t: extra.t }] }));
+              stepChain = { ...chain };
+            }
+            return true;
+          }
+        }
 
         const snapshot = vehicles.map((v) => ({ ...v }));
         const updated = vehicles.map((v) =>
@@ -472,6 +506,7 @@ export const useGameStore = create<GameState>()(
           }),
           ...periodsWith({ moves: 1 }),
         });
+        if (step) stepChain = { level: currentLevel, vehicleId, moveCount: moveCount + 1, historyLength: history.length + 1 };
         return true;
       },
 
@@ -994,7 +1029,7 @@ export const useGameStore = create<GameState>()(
         });
         // Achievements the progress already earns (no toast flood), then the days missed since the export
         get().checkAchievements({ silent: true });
-        get().recordAppOpen();
+        return get().recordAppOpen();
       },
       };
     },

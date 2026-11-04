@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { LEVEL, LONG_SOLUTION, SOLUTION, paris, testServer, INVITE } from './helpers';
-import { MAX_MOVES } from '../src/app';
+import { MAX_MOVES, RATE_LIMIT_PER_IP, ipKey } from '../src/app';
 
 let server: ReturnType<typeof testServer>;
 const open = (options?: Parameters<typeof testServer>[0]) => (server = testServer(options));
@@ -84,6 +84,65 @@ describe('joining a server', () => {
     expect((await tryJoin('L\u0435\u0301o')).body).toEqual({ error: 'pseudo_taken' });
     // A look-alike that does not resemble a member is accepted
     expect((await tryJoin('M\u0435\u0438a')).status).toBe(201);
+  });
+});
+
+describe('rate limits (issue 165)', () => {
+  /** `count` players who joined each from their own address */
+  async function friends(count: number) {
+    const players: { token: string }[] = [];
+    for (let i = 0; i < count; i++) {
+      const res = await server.app.inject({ method: 'POST', url: '/api/v1/join', payload: { inviteCode: INVITE, pseudo: `Ami${i}` },
+        headers: { 'x-forwarded-for': `198.51.100.${i + 1}` } });
+      players.push(res.json() as { token: string });
+    }
+    return players;
+  }
+  /** A request from the shared address of a home or a school */
+  const viaHome = (method: 'GET' | 'POST', url: string, token: string, payload?: object) => server.app.inject({
+    method, url: `/api/v1${url}`, payload, headers: { authorization: `Bearer ${token}`, 'x-forwarded-for': '203.0.113.7' } });
+
+  it('players behind one address each have their own quota', async () => {
+    open();
+    const players = await friends(13);
+    for (let poll = 0; poll < 15; poll++) for (const p of players.slice(0, 12)) expect((await viaHome('GET', '/duels', p.token)).statusCode).toBe(200);
+    const start = await viaHome('POST', '/challenge/start', players[12].token, {});
+    expect(start.statusCode).toBe(200);
+    server.clock.now += 30_000;
+    expect((await viaHome('POST', '/challenge/submit', players[12].token, { date: start.json().date, moves: SOLUTION })).statusCode).toBe(200);
+  });
+
+  it('one player is still limited, from any address', async () => {
+    open();
+    const [player] = await friends(1);
+    const statuses: number[] = [];
+    for (let i = 0; i < 122; i++) statuses.push((await viaHome('GET', '/me', player.token)).statusCode);
+    expect(statuses.slice(0, 120).every(s => s === 200)).toBe(true);
+    expect(statuses.slice(120)).toEqual([429, 429]);
+  });
+
+  it('invented tokens from one address are bounded by its ceiling', async () => {
+    open();
+    const statuses: number[] = [];
+    for (let i = 0; i < RATE_LIMIT_PER_IP + 2; i++) statuses.push((await viaHome('GET', '/me', `invented-${i}`)).statusCode);
+    expect(statuses.slice(0, RATE_LIMIT_PER_IP).every(s => s === 401)).toBe(true);
+    expect(statuses.slice(RATE_LIMIT_PER_IP)).toEqual([429, 429]);
+  });
+
+  it('guessing the admin token stays limited per address, whatever the tokens', async () => {
+    open();
+    const players = await friends(12);
+    const statuses: number[] = [];
+    for (const p of players) statuses.push((await viaHome('POST', '/admin/claim', p.token, { adminToken: 'guess' })).statusCode);
+    expect(statuses.slice(10)).toEqual([429, 429]);
+  });
+
+  it('counts an IPv6 address by its /64', () => {
+    expect(ipKey('2001:db8:1:2:3:4:5:6')).toBe('2001:db8:1:2::/64');
+    expect(ipKey('2001:db8:1:2::9')).toBe('2001:db8:1:2::/64');
+    expect(ipKey('2001:db8::1')).toBe('2001:db8:0:0::/64');
+    expect(ipKey('::ffff:192.0.2.1')).toBe('192.0.2.1');
+    expect(ipKey('192.0.2.1')).toBe('192.0.2.1');
   });
 });
 

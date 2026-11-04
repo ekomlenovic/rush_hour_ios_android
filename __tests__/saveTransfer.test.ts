@@ -145,6 +145,41 @@ describe('export then import', () => {
     expect(store().bestStreak).toBe(3);
   });
 
+  describe('tells what the missed days did at import (issue 175)', () => {
+    const importOn = (day: string, freezes?: number) => {
+      playSomeDays();
+      if (freezes !== undefined) useGameStore.setState({ streakFreezes: freezes });
+      const code = exportProgress();
+      resetStore();
+      setToday(day);
+      const result = parseSave(code);
+      if (!result.ok) throw new Error(result.error);
+      return store().importProgress(result.state);
+    };
+
+    it('the streak lost', () => {
+      expect(importOn('2026-10-20', 0)).toMatchObject({ lostStreak: 3, frozenDays: 0 });
+    });
+
+    it('the freezes used', () => {
+      expect(importOn('2026-10-15', 2)).toMatchObject({ lostStreak: 0, frozenDays: 2 });
+      expect(store().currentStreak).toBe(3);
+    });
+
+    it('nothing the next day', () => {
+      expect(importOn('2026-10-13')).toMatchObject({ lostStreak: 0, frozenDays: 0 });
+    });
+
+    it('in the words of the app open alert', () => {
+      const { streakLines } = require('../hooks/useAppOpenAlert') as typeof import('../hooks/useAppOpenAlert');
+      const i18n = require('../utils/i18n').default;
+      const t = i18n.getFixedT('en');
+      expect(streakLines({ isComeback: true, missedDays: 7, frozenDays: 0, lostStreak: 3 }, t, 0)).toEqual([t('home.streak_lost', { count: 3 })]);
+      expect(streakLines({ isComeback: false, missedDays: 2, frozenDays: 2, lostStreak: 0 }, t, 3)).toEqual([t('home.freeze_used', { count: 2, streak: 3 })]);
+      expect(streakLines({ isComeback: false, missedDays: 0, frozenDays: 0, lostStreak: 0 }, t, 3)).toEqual([]);
+    });
+  });
+
   // Guard: openDailyDate is never saved nor exported (a game screen open on another phone means nothing here)
   it('never carries the daily left open past midnight: imported, its day is missed and its game is an archive', () => {
     winDaily('2026-10-18');

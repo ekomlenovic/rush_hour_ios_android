@@ -133,12 +133,22 @@ export default function MultiPlayScreen() {
   }, [api, account, removeGame, t]);
   sendRef.current = send;
 
-  const handleMoveEnd = useCallback((vehicleId: string, row: number, col: number) => {
+  // The screen reader steps being merged into one move (issue 158): the vehicle and the length of the log after them
+  const stepChainRef = useRef<{ vehicleId: string; logLength: number } | null>(null);
+
+  const handleMoveEnd = useCallback((vehicleId: string, row: number, col: number, step?: boolean) => {
     const current = gameRef.current;
     if (!current) return false;
-    const played = playMove(current, vehicleId, row, col, Date.now());
+    const chain = stepChainRef.current;
+    const merge = !!step && chain?.vehicleId === vehicleId && chain.logLength === current.moveLog.length;
+    const played = playMove(current, vehicleId, row, col, Date.now(), merge);
+    stepChainRef.current = null;
     // Refused (a move through a vehicle): the block goes back
     if (!played) return false;
+    // Back where the steps started: the next step is a new move
+    if (step && played.game.moveLog.length >= current.moveLog.length) {
+      stepChainRef.current = { vehicleId, logLength: played.game.moveLog.length };
+    }
     update(played.game);
     if (played.won) void send(played.game);
     return true;
