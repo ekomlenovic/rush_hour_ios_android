@@ -1,6 +1,6 @@
 # Play Store : ce qu'il faut déclarer
 
-Notes pour la fiche Google Play, liées au **mode multijoueur** (#46). Sans multijoueur, l'app ne transmet rien du jeu : seule la vérification des mises à jour, lancée par le joueur, télécharge un fichier de version depuis GitHub ; les liens (don Ko-fi, issues GitHub, signalement de plantage prérempli que le joueur relit et envoie lui-même) s'ouvrent dans le navigateur (voir `Privacy_Policy.md`, sections 1 et 5).
+Notes pour la fiche Google Play, liées au **mode multijoueur** (#46). Sans multijoueur, l'app ne transmet rien du jeu : seule la vérification des mises à jour, lancée par le joueur, télécharge un fichier de version depuis GitHub ; les liens (issues GitHub, signalement de plantage prérempli que le joueur relit et envoie lui-même) s'ouvrent dans le navigateur ; le build Play n'a pas de lien de don (Ko-fi seulement sur iOS, l'APK des releases et le web) (voir `Privacy_Policy.md`, sections 1 et 5).
 
 ## Sécurité des données (Data safety)
 

@@ -13,7 +13,7 @@ The app works offline and does not require an internet connection. It only goes 
 - the optional **multiplayer mode** (section 4), if you choose to use it;
 - **Check for updates** (Options), which downloads a small version file from GitHub (`raw.githubusercontent.com`). Nothing about you or your game is sent; like any website, GitHub sees your IP address and the type of device.
 
-The app also has links that open in your browser, only when you tap them: the donation page (Ko-fi), the page to report a problem or request levels (GitHub issues), and the download page of an update. After a crash, the app offers to open a GitHub issue prefilled with the error details (the error message, the app version and the system of the phone, never your progress): you read it and decide whether to send it, from your browser, with your own GitHub account. What happens on those websites is covered by their own privacy policies.
+The app also has links that open in your browser, only when you tap them: the page to report a problem or request levels (GitHub issues), the page of an update (Google Play, or its download page outside Google Play), and, **outside Google Play only** (iOS build, APK of the GitHub releases, web version), the donation page (Ko-fi). The Google Play version has no donation link. After a crash, the app offers to open a GitHub issue prefilled with the error details (the error message, the app version and the system of the phone, never your progress): you read it and decide whether to send it, from your browser, with your own GitHub account. What happens on those websites is covered by their own privacy policies.
 
 The **web version** of the game is hosted on GitHub Pages: GitHub serves its files and sees your IP address, like any website. The game itself runs in your browser and keeps your progress there.
 
@@ -39,7 +39,7 @@ The multiplayer mode lets you play a daily challenge with friends on a **server 
 
 ## 5. Third-Party Services
 
-Rush Hours does not use any third-party service in the app: no advertising, no analytics, no automatic crash reporting, no in-app purchases, no social login. The only outside services are those of section 1, each reached only when you ask: GitHub (update check, issues, hosting of the web version) and Ko-fi (donation page, in your browser). Every QR code (shared levels, multiplayer invitations) is drawn on your device: nothing is sent to an online service to make it.
+Rush Hours does not use any third-party service in the app: no advertising, no analytics, no automatic crash reporting, no in-app purchases, no social login. The only outside services are those of section 1, each reached only when you ask: GitHub (update check, issues, hosting of the web version) and, outside Google Play, Ko-fi (donation page, in your browser). Every QR code (shared levels, multiplayer invitations) is drawn on your device: nothing is sent to an online service to make it.
 
 ## 6. Data Usage
 
