@@ -4,6 +4,7 @@ import { sampleLevels } from '../data/sampleLevels';
 import { getShareUrl, isSameBoard, parseSharedLevel, serializeLevel } from '../utils/sharing';
 import { MAX_VALIDATE_STATES, solvePuzzle, validateLevel } from '../utils/solver';
 import { parseSharedLevelAsync, validateLevelAsync } from '../utils/solver.background';
+import { getVehicleLetters } from '../utils/accessibility';
 import { resetStore } from './helpers';
 
 const level: Level = sampleLevels[3];
@@ -112,5 +113,36 @@ describe('importing', () => {
     expect(useGameStore.getState().importedLevels[0].name).toBe('Le mien');
     useGameStore.getState().renameCustomLevel(1, 'imported', '   ');
     expect(useGameStore.getState().importedLevels[0].name).toBeUndefined();
+  });
+});
+
+describe('vehicle ids of a received link (issue 181)', () => {
+  const linkOf = (text: string) => Buffer.from(text, 'latin1').toString('base64');
+
+  it('renames a vehicle called __proto__, and its letter is a string', () => {
+    const received = parseSharedLevel(linkOf('6|2|6|5|2,0,2,h,1,ff0000,target;0,2,2,v,0,00ff00,__proto__'), 1);
+    expect(received).not.toBeNull();
+    expect(received!.vehicles.map(v => v.id)).toEqual(['target', 'v0']);
+    const letters = getVehicleLetters(received!.vehicles);
+    expect(letters.v0).toBe('A');
+  });
+
+  it('renames ids the app never writes, without taking an id in use', () => {
+    const received = parseSharedLevel(linkOf('6|2|6|5|2,0,2,h,1,ff0000,target;0,2,2,v,0,00ff00,a b;0,3,2,v,0,0000ff,v0'), 1);
+    expect(received!.vehicles.map(v => v.id)).toEqual(['target', 'v1', 'v0']);
+  });
+
+  it('keeps the ids of a link made by the app', () => {
+    expect(parseSharedLevel(code(level), 1)!.vehicles.map(v => v.id)).toEqual(level.vehicles.map(v => v.id));
+  });
+
+  it('gives a string letter even to a level saved before with a __proto__ vehicle', () => {
+    const vehicles = [
+      { id: 'target', row: 2, col: 0, length: 2, orientation: 'horizontal' as const, isTarget: true, color: '#ff0000' },
+      { id: '__proto__', row: 0, col: 2, length: 2, orientation: 'vertical' as const, isTarget: false, color: '#00ff00' },
+    ];
+    const letters = getVehicleLetters(vehicles);
+    expect(Object.prototype.hasOwnProperty.call(letters, '__proto__')).toBe(true);
+    expect(letters['__proto__']).toBe('A');
   });
 });
