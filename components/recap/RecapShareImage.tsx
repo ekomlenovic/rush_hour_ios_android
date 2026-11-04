@@ -3,6 +3,7 @@ import Svg, { Circle, Defs, G, Line, LinearGradient, Rect, Stop, Text as SvgText
 import { CLASSIC_VEHICLE_COLORS, PALETTE_ART, TARGET_CAR_COLOR, TRAFFIC_LIGHT, applyPalette, getSkinnedBoard, recapImageColors, type VehicleArt } from '@/theme';
 import { drawVehicle } from '@/theme/art/vehicles';
 import { ArtGroup } from '@/components/art/ArtSvg';
+import { boardBackdrop } from '@/theme/art/boardDecor';
 import type { CosmeticSelection } from '@/data/cosmetics';
 import type { Vehicle } from '@/store/types';
 
@@ -18,6 +19,9 @@ const GRID = 6;
 const BOARD_SIZE = 440;
 const BOARD_X = (SHARE_IMAGE_WIDTH - BOARD_SIZE) / 2;
 const BOARD_Y = 620;
+/** The backdrop of an event board goes around its frame (14 wide), this far out of it */
+const BACKDROP_OUTSET = 14 + 90;
+const BACKDROP_SIZE = BOARD_SIZE + 2 * BACKDROP_OUTSET;
 const BOARD_TILT = -5;
 const CELL = BOARD_SIZE / GRID;
 /** Row of the target car and of the exit */
@@ -77,6 +81,8 @@ export default function RecapShareImage({
 }: Props) {
   const height = (width * SHARE_IMAGE_HEIGHT) / SHARE_IMAGE_WIDTH;
   const board = getSkinnedBoard(cosmetics.board, cosmetics.skin, 'dark');
+  // The theme of an event board around it, over the background of the image
+  const backdrop = board.backdrop ? boardBackdrop(board.backdrop, 'dark', BACKDROP_SIZE, BACKDROP_SIZE, { noSky: true }) : undefined;
   const palette = useMemo(() => applyPalette(VEHICLES, cosmetics.palette), [cosmetics.palette]);
   const vehicleColors = VEHICLES.filter(v => !v.isTarget).map(v => palette.get(v.id) ?? v.color);
   // Drawn skin and palette (Mafia, 1800, every car but the red one): the vehicles of the image are drawn too
@@ -119,6 +125,8 @@ export default function RecapShareImage({
       {/* The player's board, the target car on its way out */}
       <G transform={`rotate(${BOARD_TILT} ${SHARE_IMAGE_WIDTH / 2} ${BOARD_Y + BOARD_SIZE / 2})`}>
         <Rect x={BOARD_X + 18} y={BOARD_Y + 26} width={BOARD_SIZE} height={BOARD_SIZE} rx={36} fill={IMAGE_COLORS.shadow} />
+        {/* The backdrop of an event board, around its frame */}
+        {backdrop && <ArtGroup drawing={backdrop} x={BOARD_X - BACKDROP_OUTSET} y={BOARD_Y - BACKDROP_OUTSET} width={BACKDROP_SIZE} height={BACKDROP_SIZE} />}
         <Rect x={BOARD_X - 14} y={BOARD_Y - 14} width={BOARD_SIZE + 28} height={BOARD_SIZE + 28} rx={40} fill={board.frame} />
         <Rect x={BOARD_X} y={BOARD_Y} width={BOARD_SIZE} height={BOARD_SIZE} rx={28} fill={board.background} />
         {Array.from({ length: GRID - 1 }, (_, i) => (
@@ -152,7 +160,7 @@ export default function RecapShareImage({
           const art = artOf(v.isTarget);
           if (art) {
             const color = v.isTarget ? board.targetCar : palette.get(v.id) ?? v.color;
-            return <ArtGroup key={v.id} drawing={drawVehicle(art, v.length, color)} x={x} y={y} width={w} height={h} turnUp={v.orientation === 'vertical'} />;
+            return <ArtGroup key={v.id} drawing={drawVehicle(art, v.length, color)} x={x} y={y} width={w} height={h} facing={v.orientation === 'vertical' ? 'up' : 'right'} />;
           }
           return (
             <React.Fragment key={v.id}>

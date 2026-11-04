@@ -4,8 +4,8 @@ import {
   getPlayerLevel, getPlayerTitle, levelWinXp, totalXpForLevel, weeklyWinXp, xpToNextLevel,
 } from '../data/progression';
 import {
-  COSMETICS, DEFAULT_COSMETICS, SEASONAL_EVENTS, buildCosmeticContext, newlyUnlockedCosmetics, cosmeticKey, getLevelCosmetics, isCosmeticUnlocked,
-  lockedEventCosmetics, sanitizeSelection, seasonalEventOf, type CosmeticSource, type SeasonalEventId,
+  COSMETICS, DEFAULT_COSMETICS, SEASONAL_EVENTS, isInEventDays, buildCosmeticContext, newlyUnlockedCosmetics, cosmeticKey, getLevelCosmetics, isCosmeticUnlocked,
+  lockedEventCosmetics, sanitizeSelection, seasonalEventOf, seasonalEventsOf, type CosmeticSource, SEASONAL_EVENT_IDS, westernEaster, orthodoxEaster, movableEventDays,
 } from '../data/cosmetics';
 import en from '../locales/en.json';
 import fr from '../locales/fr.json';
@@ -295,14 +295,98 @@ describe('seasonal events', () => {
     const c = context(dailies);
     return keys.filter(key => isCosmeticUnlocked(COSMETICS.find(d => cosmeticKey(d) === key)!, c));
   };
-  const HALLOWEEN = ['board:pumpkin', 'effect:bats'];
-  const CHRISTMAS = ['board:christmas', 'effect:gifts'];
+  const HALLOWEEN = ['board:pumpkin', 'skin:coach', 'palette:haunted', 'effect:bats'];
+  const CHRISTMAS = ['board:christmas', 'skin:sleigh', 'palette:festive', 'effect:gifts'];
 
   it('Halloween from October 25 to 31, Christmas from December 19 to 25, every year', () => {
     expect(['2026-10-24', '2026-10-25', '2026-10-31', '2026-11-01'].map(seasonalEventOf)).toEqual([null, 'halloween', 'halloween', null]);
     expect(['2026-12-18', '2026-12-19', '2026-12-25', '2026-12-26'].map(seasonalEventOf)).toEqual([null, 'christmas', 'christmas', null]);
     expect(seasonalEventOf('2031-10-28')).toBe('halloween');
-    expect(seasonalEventOf('2027-07-14')).toBeNull();
+    expect(seasonalEventOf('2027-05-20')).toBeNull();
+  });
+
+  it('New Year from December 31 to January 3, Valentine from February 10 to 14, Saint Patrick from March 15 to 17', () => {
+    expect(['2026-12-30', '2026-12-31', '2027-01-01', '2027-01-03', '2027-01-04'].map(seasonalEventOf)).toEqual([null, 'newyear', 'newyear', 'newyear', null]);
+    expect(['2027-02-09', '2027-02-10', '2027-02-14', '2027-02-15'].map(seasonalEventOf)).toEqual([null, 'valentine', 'valentine', null]);
+    expect(['2027-03-14', '2027-03-15', '2027-03-17', '2027-03-18'].map(seasonalEventOf)).toEqual([null, 'stpatrick', 'stpatrick', null]);
+  });
+
+  it('a New Year, Valentine or Saint Patrick daily unlocks the four styles of its event', () => {
+    const NEW_YEAR = ['board:newyear', 'skin:limo', 'palette:party', 'effect:champagne'];
+    const VALENTINE = ['board:valentine', 'skin:wedding', 'palette:lovers', 'effect:hearts'];
+    const ST_PATRICK = ['board:shamrock', 'skin:leprechaun', 'palette:emerald', 'effect:clovers'];
+    const all = [...NEW_YEAR, ...VALENTINE, ...ST_PATRICK];
+    expect(unlocked(all, { '2027-01-02': won })).toEqual(NEW_YEAR);
+    expect(unlocked(all, { '2027-02-14': won })).toEqual(VALENTINE);
+    expect(unlocked(all, { '2027-03-17': won })).toEqual(ST_PATRICK);
+    expect(lockedEventCosmetics('newyear', context({})).map(cosmeticKey)).toEqual(NEW_YEAR);
+    // New Year's Eve is in winter too
+    expect(unlocked(['board:snow'], { '2026-12-31': won })).toEqual(['board:snow']);
+  });
+
+  it("April Fools' Day from March 29 to April 2, Fête de la musique from June 18 to 24", () => {
+    expect(['2027-03-28', '2027-03-29', '2027-04-01', '2027-04-02', '2027-04-03'].map(d => seasonalEventsOf(d).includes('aprilfools'))).toEqual([false, true, true, true, false]);
+    expect(['2027-06-17', '2027-06-18', '2027-06-21', '2027-06-24', '2027-06-25'].map(seasonalEventOf)).toEqual([null, 'musicday', 'musicday', 'musicday', null]);
+  });
+
+  it('Easter moves every year: from Holy Thursday to Easter Monday, Catholic and Orthodox', () => {
+    // Known dates of Easter Sunday, Western then Orthodox
+    expect(westernEaster(2024)).toEqual([3, 31]);
+    expect(westernEaster(2025)).toEqual([4, 20]);
+    expect(westernEaster(2026)).toEqual([4, 5]);
+    expect(westernEaster(2027)).toEqual([3, 28]);
+    expect(westernEaster(2038)).toEqual([4, 25]);
+    expect(westernEaster(2285)).toEqual([3, 22]);
+    expect(orthodoxEaster(2024)).toEqual([5, 5]);
+    expect(orthodoxEaster(2025)).toEqual([4, 20]);
+    expect(orthodoxEaster(2026)).toEqual([4, 12]);
+    expect(orthodoxEaster(2027)).toEqual([5, 2]);
+    expect(movableEventDays('easter', 2026)).toEqual([{ from: '04-02', to: '04-06' }, { from: '04-09', to: '04-13' }]);
+    // 2026: Catholic Easter on April 5, Orthodox Easter on April 12
+    expect(['2026-04-01', '2026-04-02', '2026-04-06', '2026-04-07', '2026-04-09', '2026-04-13', '2026-04-14'].map(d => seasonalEventsOf(d).includes('easter')))
+      .toEqual([false, true, true, false, true, true, false]);
+    // Easter Monday 2027 is March 29: April Fools' Day too, a daily that day counts for both
+    expect(seasonalEventsOf('2027-03-29')).toEqual(['aprilfools', 'easter']);
+    expect(seasonalEventsOf('2027-03-25')).toEqual(['easter']);
+  });
+
+  it("an April Fools', Easter or Fête de la musique daily unlocks the four styles of its event", () => {
+    const APRIL = ['board:aprilfish', 'skin:goldfish', 'palette:prank', 'effect:paperfish'];
+    const EASTER = ['board:easter', 'skin:bunny', 'palette:eggs', 'effect:eggs'];
+    const MUSIC = ['board:music', 'skin:guitar', 'palette:concert', 'effect:notes'];
+    const all = [...APRIL, ...EASTER, ...MUSIC];
+    expect(unlocked(all, { '2027-04-01': won })).toEqual(APRIL);
+    expect(unlocked(all, { '2027-05-01': won })).toEqual(EASTER);
+    expect(unlocked(all, { '2027-06-21': won })).toEqual(MUSIC);
+    expect(unlocked(all, { '2027-03-29': won })).toEqual([...APRIL, ...EASTER]);
+  });
+
+  it('Bastille Day from July 10 to 14, the summer getaway from August 1 to 15, back to school from September 1 to 7', () => {
+    expect(['2027-07-09', '2027-07-10', '2027-07-14', '2027-07-15'].map(seasonalEventOf)).toEqual([null, 'bastille', 'bastille', null]);
+    expect(['2027-07-31', '2027-08-01', '2027-08-15', '2027-08-16'].map(seasonalEventOf)).toEqual([null, 'summer', 'summer', null]);
+    expect(['2027-08-31', '2027-09-01', '2027-09-07', '2027-09-08'].map(seasonalEventOf)).toEqual([null, 'backtoschool', 'backtoschool', null]);
+  });
+
+  it('a Bastille Day, summer getaway or back to school daily unlocks the four styles of its event', () => {
+    const BASTILLE = ['board:bastille', 'skin:firetruck', 'palette:tricolor', 'effect:jets'];
+    const SUMMER = ['board:holiday', 'skin:camper', 'palette:roadtrip', 'effect:flipflops'];
+    const SCHOOL = ['board:notebook', 'skin:pencil', 'palette:school', 'effect:planes'];
+    const all = [...BASTILLE, ...SUMMER, ...SCHOOL];
+    expect(unlocked(all, { '2027-07-14': won })).toEqual(BASTILLE);
+    expect(unlocked(all, { '2027-08-08': won })).toEqual(SUMMER);
+    expect(unlocked(all, { '2027-09-02': won })).toEqual(SCHOOL);
+  });
+
+  it('gives every event of a day', () => {
+    expect(seasonalEventsOf('2026-10-31')).toEqual(['halloween']);
+    expect(seasonalEventsOf('2026-12-20')).toEqual(['christmas']);
+    expect(seasonalEventsOf('2026-03-03')).toEqual([]);
+  });
+
+  it('an event can go over the new year', () => {
+    const newYear = { from: '12-31', to: '01-03' };
+    expect(['12-30', '12-31', '01-01', '01-03', '01-04'].map(day => isInEventDays(newYear, day))).toEqual([false, true, true, true, false]);
+    expect(['10-24', '10-25', '10-31', '11-01'].map(day => isInEventDays(SEASONAL_EVENTS.halloween, day))).toEqual([false, true, true, false]);
   });
 
   it('a daily won during the event unlocks its board and its win effect, for good', () => {
@@ -327,7 +411,7 @@ describe('seasonal events', () => {
     const lookup = (strings: unknown, key: string) => key.split('.').reduce<unknown>(
       (node, part) => (node && typeof node === 'object' ? (node as Record<string, unknown>)[part] : undefined), strings);
     for (const strings of [en, fr]) {
-      for (const event of Object.keys(SEASONAL_EVENTS) as SeasonalEventId[]) {
+      for (const event of SEASONAL_EVENT_IDS) {
         expect(COSMETICS.some(def => def.unlock.type === 'event' && def.unlock.event === event)).toBe(true);
         for (const key of [`cosmetics.unlock.event.${event}`, `cosmetics.unlock_short.event.${event}`, `home.daily_event.${event}_one`, `home.daily_event.${event}_other`]) {
           expect({ key, text: typeof lookup(strings, key) }).toEqual({ key, text: 'string' });

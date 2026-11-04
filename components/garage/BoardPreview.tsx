@@ -5,9 +5,12 @@ import {
   type ColorScheme,
 } from '@/theme';
 import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
+import ArtSvg from '@/components/art/ArtSvg';
+import { boardBackdrop } from '@/theme/art/boardDecor';
 import type { CosmeticSelection } from '@/data/cosmetics';
 import type { Level, Vehicle } from '@/store/types';
 import { getExitSide } from '@/utils/creatorGeometry';
+import { vehicleFacing } from '@/utils/facing';
 
 const GRID = 6;
 /** Width of the frame: the cells fit inside it */
@@ -32,11 +35,35 @@ interface Props {
   level?: Pick<Level, 'vehicles' | 'gridSize' | 'exitRow' | 'exitCol'>;
 }
 
+/** Below this size, an event board is shown without its backdrop (small thumbnails) */
+const BACKDROP_MIN_SIZE = 100;
+/** Share of the preview the board takes in front of its backdrop */
+const BACKDROP_BOARD = 0.72;
+
 /** Static board drawn with a cosmetic selection (garage preview, thumbnail of a level) */
 function BoardPreview({ selection, scheme, size, level }: Props) {
+  const theme = getSkinnedBoard(selection.board, selection.skin, scheme).backdrop;
+  const backdrop = theme && size >= BACKDROP_MIN_SIZE ? boardBackdrop(theme, scheme, size, size) : undefined;
+  if (!backdrop) return <PlainBoardPreview selection={selection} scheme={scheme} size={size} level={level} />;
+  // An event board in front of its backdrop, like the game screen: smaller, so the whole stays within `size`
+  const inner = size * BACKDROP_BOARD;
+  return (
+    <View style={[styles.backdrop, { width: size, height: size }]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+      <ArtSvg drawing={backdrop} width={size} height={size} style={styles.decor} />
+      <View style={[styles.decor, { left: (size - inner) / 2, top: (size - inner) / 2 }]}>
+        <PlainBoardPreview selection={selection} scheme={scheme} size={inner} level={level} />
+      </View>
+    </View>
+  );
+}
+
+/** The board itself, without its backdrop */
+function PlainBoardPreview({ selection, scheme, size, level }: Props) {
   const board = getSkinnedBoard(selection.board, selection.skin, scheme);
   const vehicles = level?.vehicles ?? SAMPLE;
   const grid = level?.gridSize ?? GRID;
+  const exitRow = level?.exitRow ?? 2;
+  const exitCol = level?.exitCol ?? GRID;
   const colors = useMemo(() => applyPalette(vehicles, selection.palette), [vehicles, selection.palette]);
   // Absolute children are laid out inside the frame: the grid must fit in what is left
   const cell = (size - FRAME * 2) / grid;
@@ -64,7 +91,7 @@ function BoardPreview({ selection, scheme, size, level }: Props) {
         if (art) {
           return (
             <View key={v.id} style={[styles.drawn, { left: v.col * cell + inset, top: v.row * cell + inset, width: w, height: h }]}>
-              <DrawnVehicle art={art} length={v.length} orientation={v.orientation} color={color} width={w} height={h} />
+              <DrawnVehicle art={art} length={v.length} orientation={v.orientation} facing={vehicleFacing(v, exitRow, exitCol, grid)} color={color} width={w} height={h} />
             </View>
           );
         }
@@ -82,7 +109,7 @@ function BoardPreview({ selection, scheme, size, level }: Props) {
           </View>
         );
       })}
-      <View style={[styles.exit, exitPosition(level?.exitRow ?? 2, level?.exitCol ?? GRID, grid, cell), { backgroundColor: board.exit, borderColor: board.exitOutline }]} />
+      <View style={[styles.exit, exitPosition(exitRow, exitCol, grid, cell), { backgroundColor: board.exit, borderColor: board.exitOutline }]} />
     </View>
   );
 }
@@ -105,6 +132,8 @@ const styles = StyleSheet.create({
   lineV: { position: 'absolute', top: 0, bottom: 0, width: 1 },
   vehicle: { position: 'absolute', borderWidth: 1, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   drawn: { position: 'absolute' },
+  decor: { position: 'absolute', left: 0, top: 0 },
+  backdrop: { borderRadius: 16, overflow: 'hidden' },
   shine: { position: 'absolute', top: 2, left: 2, right: 2, height: '45%' },
   exit: { position: 'absolute', borderRadius: 3, borderWidth: 1 },
 });

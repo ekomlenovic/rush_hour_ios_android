@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { getLocalDateString, getWeekKey, getDaysLeftInWeek, formatTimeLeft } from '@/utils/date';
 import { getMissionsForDay, countMissionsDone } from '@/data/missions';
 import { getFreezeCapacity, getPlayerLevel, dailyWinXp, weeklyWinXp } from '@/data/progression';
-import { lockedEventCosmetics, seasonalEventOf } from '@/data/cosmetics';
+import { lockedEventCosmetics, seasonalEventsOf } from '@/data/cosmetics';
 import { sampleLevels } from '@/data/sampleLevels';
 import { useNow } from '@/hooks/useNow';
 import { useTheme, fixedColors } from '@/theme';
@@ -77,8 +77,10 @@ export default function HomeScreen() {
 
   const dailyStatus = dailyChallengeProgress[dateStr];
   // During a seasonal event, the daily challenge tells what it unlocks while there is something left to unlock
-  const seasonalEvent = seasonalEventOf(dateStr);
-  const eventCosmetics = seasonalEvent ? lockedEventCosmetics(seasonalEvent, cosmeticContext).length : 0;
+  // Events may share a day: the first one with styles left names the card, which counts what all of them unlock
+  const lockedByEvent = seasonalEventsOf(dateStr).map(event => ({ event, count: lockedEventCosmetics(event, cosmeticContext).length }));
+  const seasonalEvent = lockedByEvent.find(e => e.count > 0)?.event ?? null;
+  const eventCosmetics = lockedByEvent.reduce((sum, e) => sum + e.count, 0);
 
   const todayMissions = getMissionsForDay(dailyMissions, dateStr);
   const missionsDone = countMissionsDone(todayMissions);

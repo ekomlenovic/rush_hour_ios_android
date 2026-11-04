@@ -14,6 +14,7 @@ import { stepVehicle } from '@/utils/accessibility';
 import { startHintGlow, stopHintGlow } from '@/utils/hintGlow';
 import { useBoardTheme, type VehicleArt } from '@/theme';
 import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
+import type { Facing } from '@/theme/art/art';
 
 interface BlockProps {
   vehicle: Vehicle;
@@ -36,6 +37,8 @@ interface BlockProps {
   color?: string;
   /** Drawn vehicle (Mafia or 1800 skin or palette) instead of a colored block */
   art?: VehicleArt;
+  /** Where the front of a drawn vehicle points (the target car toward the exit) */
+  facing?: Facing;
 }
 
 export interface BlockA11yStrings {
@@ -60,7 +63,7 @@ const BOUNCE_SPRING = {
   mass: 0.5,
 };
 
-function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, disabled = false, a11yLabel, a11yValue, a11yStrings, letter, color, art }: BlockProps) {
+function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, disabled = false, a11yLabel, a11yValue, a11yStrings, letter, color, art, facing }: BlockProps) {
 
   const { board } = useBoardTheme();
   const fillColor = vehicle.isTarget ? board.targetCar : color ?? vehicle.color;
@@ -283,7 +286,7 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
         ]}
       >
         {art && (
-          <DrawnVehicle art={art} length={vehicle.length} orientation={vehicle.orientation} color={fillColor} width={width - 4} height={height - 4} />
+          <DrawnVehicle art={art} length={vehicle.length} orientation={vehicle.orientation} facing={facing} color={fillColor} width={width - 4} height={height - 4} />
         )}
         {isHinted && (
           <Animated.View

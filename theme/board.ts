@@ -1,5 +1,6 @@
 import type { ColorScheme } from './ui';
 import type { DrawnSkin } from './art/targetSkins';
+import { hasBackdrop } from './art/boardDecor';
 
 /**
  * Board theme: colors of the grid and the vehicles (Board, Block, creator board),
@@ -52,6 +53,8 @@ export interface BoardColors {
   targetIcon?: string;
   /** Drawing of the target car instead of a colored block (car skin) */
   targetArt?: VehicleArt;
+  /** The board theme drawing the backdrop of the screen (event boards: theme/art/boardDecor.ts) */
+  backdrop?: BoardThemeId;
 }
 
 /**
@@ -59,10 +62,20 @@ export interface BoardColors {
  * 'ship' for the schooners and paddle steamers of the 1800 ones (Anno 1800 style),
  * and each target car skin with its own drawing (taxi, bus…)
  */
-export type VehicleArt = 'vintage' | 'ship' | DrawnSkin;
+export type VehicleArt = 'vintage' | 'ship' | DrawnSkin | EventArt | PaletteArt;
+
+/** Drawings of the seasonal events: the target car of an event (skin) and the vehicles of its palette */
+export type EventArt = 'coach' | 'haunted' | 'sleigh' | 'festive' | 'limo' | 'party' | 'wedding' | 'lovers' | 'leprechaun' | 'emerald'
+  | 'goldfish' | 'prank' | 'bunny' | 'eggs' | 'guitar' | 'concert'
+  | 'firetruck' | 'tricolor' | 'camper' | 'roadtrip' | 'pencil' | 'school';
+
+/** Drawings of the palettes of the garage (theme/art/palettes) */
+export type PaletteArt = 'boats' | 'retro' | 'offroad' | 'lightcycle' | 'sweets' | 'works' | 'safari';
 
 /** Board themes, persisted in the cosmetics selection: never rename one, only add */
-export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire' | 'beach' | 'space' | 'pumpkin' | 'christmas';
+export type BoardThemeId = 'classic' | 'paper' | 'wood' | 'neon' | 'pixel' | 'snow' | 'fire' | 'beach' | 'space' | 'pumpkin' | 'christmas' | 'newyear' | 'valentine' | 'shamrock'
+  | 'aprilfish' | 'easter' | 'music'
+  | 'bastille' | 'holiday' | 'notebook';
 
 /** Vehicle colors of the classic board (also the creator palette) */
 export const CLASSIC_VEHICLE_COLORS = [
@@ -379,8 +392,306 @@ const christmas: Record<ColorScheme, BoardColors> = {
   },
 };
 
+/** New Year's Eve: a midnight blue night, champagne gold frame, pink hint */
+const newyear: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#EEF0FB',
+    frame: '#B08D2B',
+    grid: 'rgba(30,27,75,0.14)',
+    exit: '#CA8A04',
+    exitOutline: '#1E1B4B',
+    vehicleBorder: 'rgba(30,27,75,0.3)',
+    hint: '#EC4899',
+    hintOutline: '#1E1B4B',
+    winVeil: 'rgba(238,240,251,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(176,141,43,0.6)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#100F33',
+    frame: '#E7C873',
+    grid: 'rgba(231,200,115,0.16)',
+    exit: '#E7C873',
+    exitOutline: '#FFFFFF',
+    vehicleBorder: 'rgba(255,255,255,0.35)',
+    vehicleShine: 'rgba(255,255,255,0.25)',
+    hint: '#F472B6',
+    hintOutline: '#FFFFFF',
+    winVeil: 'rgba(16,15,51,0.72)',
+    winBadge: 'rgba(30,27,75,0.92)',
+    winBadgeBorder: 'rgba(231,200,115,0.55)',
+  },
+};
+
+/** Valentine's Day: blush pink, crimson frame, gold hint */
+const valentine: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#FFF0F5',
+    frame: '#E11D48',
+    grid: 'rgba(225,29,72,0.16)',
+    exit: '#E11D48',
+    exitOutline: '#881337',
+    vehicleBorder: 'rgba(136,19,55,0.3)',
+    hint: '#F59E0B',
+    hintOutline: '#881337',
+    winVeil: 'rgba(255,240,245,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(225,29,72,0.45)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#2A0F1F',
+    frame: '#FB7185',
+    grid: 'rgba(251,113,133,0.18)',
+    exit: '#FB7185',
+    exitOutline: '#FFFFFF',
+    vehicleBorder: 'rgba(253,164,175,0.4)',
+    vehicleShine: 'rgba(255,255,255,0.25)',
+    hint: '#FBBF24',
+    hintOutline: '#881337',
+    winVeil: 'rgba(42,15,31,0.72)',
+    winBadge: 'rgba(64,22,46,0.92)',
+    winBadgeBorder: 'rgba(251,113,133,0.55)',
+  },
+};
+
+/** Saint Patrick's Day: meadow green, gold exit and hint */
+const shamrock: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#ECF7E6',
+    frame: '#15803D',
+    grid: 'rgba(21,128,61,0.2)',
+    exit: '#EA580C',
+    exitOutline: '#14532D',
+    vehicleBorder: 'rgba(20,83,45,0.3)',
+    hint: '#FACC15',
+    hintOutline: '#14532D',
+    winVeil: 'rgba(236,247,230,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(21,128,61,0.5)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#0E2418',
+    frame: '#22C55E',
+    grid: 'rgba(34,197,94,0.18)',
+    exit: '#F59E0B',
+    exitOutline: '#FFFFFF',
+    vehicleBorder: 'rgba(134,239,172,0.35)',
+    vehicleShine: 'rgba(255,255,255,0.22)',
+    hint: '#FACC15',
+    hintOutline: '#14532D',
+    winVeil: 'rgba(14,36,24,0.72)',
+    winBadge: 'rgba(20,54,34,0.92)',
+    winBadgeBorder: 'rgba(34,197,94,0.55)',
+  },
+};
+
+/** April Fools' Day: under the sea, lagoon blue, goldfish orange exit */
+const aprilfish: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#E0F7FA',
+    frame: '#0891B2',
+    grid: 'rgba(8,145,178,0.2)',
+    exit: '#F97316',
+    exitOutline: '#164E63',
+    vehicleBorder: 'rgba(22,78,99,0.3)',
+    hint: '#FACC15',
+    hintOutline: '#164E63',
+    winVeil: 'rgba(224,247,250,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(8,145,178,0.5)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#062A3D',
+    frame: '#22D3EE',
+    grid: 'rgba(34,211,238,0.18)',
+    exit: '#FB923C',
+    exitOutline: '#FFFFFF',
+    vehicleBorder: 'rgba(165,243,252,0.35)',
+    vehicleShine: 'rgba(255,255,255,0.22)',
+    hint: '#FACC15',
+    hintOutline: '#164E63',
+    winVeil: 'rgba(6,42,61,0.72)',
+    winBadge: 'rgba(10,60,85,0.92)',
+    winBadgeBorder: 'rgba(34,211,238,0.55)',
+  },
+};
+
+/** Easter: spring meadow, lilac frame, pink exit */
+const easter: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#F5FBEF',
+    frame: '#A78BFA',
+    grid: 'rgba(124,58,237,0.14)',
+    exit: '#F472B6',
+    exitOutline: '#5B21B6',
+    vehicleBorder: 'rgba(91,33,182,0.25)',
+    hint: '#FACC15',
+    hintOutline: '#5B21B6',
+    winVeil: 'rgba(245,251,239,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(167,139,250,0.6)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#1C2238',
+    frame: '#C4B5FD',
+    grid: 'rgba(196,181,253,0.18)',
+    exit: '#F9A8D4',
+    exitOutline: '#FFFFFF',
+    vehicleBorder: 'rgba(221,214,254,0.35)',
+    vehicleShine: 'rgba(255,255,255,0.22)',
+    hint: '#FACC15',
+    hintOutline: '#5B21B6',
+    winVeil: 'rgba(28,34,56,0.72)',
+    winBadge: 'rgba(40,48,80,0.92)',
+    winBadgeBorder: 'rgba(196,181,253,0.55)',
+  },
+};
+
+/** Fête de la musique: a stage at night, violet and pink under the spotlights */
+const music: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#F5F0FF',
+    frame: '#7C3AED',
+    grid: 'rgba(124,58,237,0.16)',
+    exit: '#EC4899',
+    exitOutline: '#3B0764',
+    vehicleBorder: 'rgba(59,7,100,0.3)',
+    hint: '#FACC15',
+    hintOutline: '#3B0764',
+    winVeil: 'rgba(245,240,255,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(124,58,237,0.5)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#140C2B',
+    frame: '#EC4899',
+    grid: 'rgba(236,72,153,0.18)',
+    exit: '#22D3EE',
+    exitOutline: '#FFFFFF',
+    vehicleBorder: 'rgba(249,168,212,0.35)',
+    vehicleShine: 'rgba(255,255,255,0.22)',
+    hint: '#FACC15',
+    hintOutline: '#3B0764',
+    winVeil: 'rgba(20,12,43,0.72)',
+    winBadge: 'rgba(40,22,75,0.92)',
+    winBadgeBorder: 'rgba(236,72,153,0.55)',
+  },
+};
+
+/** Bastille Day: navy blue frame, white and red, a summer evening */
+const bastille: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#EEF3FB',
+    frame: '#1E3A8A',
+    grid: 'rgba(30,58,138,0.16)',
+    exit: '#DC2626',
+    exitOutline: '#1E3A8A',
+    vehicleBorder: 'rgba(30,58,138,0.3)',
+    hint: '#FACC15',
+    hintOutline: '#1E3A8A',
+    winVeil: 'rgba(238,243,251,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(30,58,138,0.45)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#0E1A3A',
+    frame: '#F8FAFC',
+    grid: 'rgba(248,250,252,0.14)',
+    exit: '#EF4444',
+    exitOutline: '#FFFFFF',
+    vehicleBorder: 'rgba(248,250,252,0.35)',
+    vehicleShine: 'rgba(255,255,255,0.22)',
+    hint: '#FACC15',
+    hintOutline: '#1E3A8A',
+    winVeil: 'rgba(14,26,58,0.72)',
+    winBadge: 'rgba(25,40,80,0.92)',
+    winBadgeBorder: 'rgba(248,250,252,0.5)',
+  },
+};
+
+/** Summer holidays: the asphalt of the motorway, a seaside blue frame, orange exit */
+const holiday: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#E8E4DA',
+    frame: '#0EA5E9',
+    grid: 'rgba(120,113,108,0.25)',
+    exit: '#F97316',
+    exitOutline: '#0C4A6E',
+    vehicleBorder: 'rgba(68,64,60,0.3)',
+    hint: '#FACC15',
+    hintOutline: '#0C4A6E',
+    winVeil: 'rgba(232,228,218,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(14,165,233,0.5)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#2B2B30',
+    frame: '#38BDF8',
+    grid: 'rgba(255,255,255,0.12)',
+    exit: '#FB923C',
+    exitOutline: '#FFFFFF',
+    vehicleBorder: 'rgba(255,255,255,0.3)',
+    vehicleShine: 'rgba(255,255,255,0.22)',
+    hint: '#FACC15',
+    hintOutline: '#0C4A6E',
+    winVeil: 'rgba(43,43,48,0.72)',
+    winBadge: 'rgba(55,55,62,0.92)',
+    winBadgeBorder: 'rgba(56,189,248,0.55)',
+  },
+};
+
+/** Back to school: a squared notebook page (light), a chalkboard in its wooden frame (dark) */
+const notebook: Record<ColorScheme, BoardColors> = {
+  light: {
+    ...classicShared,
+    background: '#FBFBF7',
+    frame: '#1E40AF',
+    grid: 'rgba(59,130,246,0.28)',
+    exit: '#DC2626',
+    exitOutline: '#1E40AF',
+    vehicleBorder: 'rgba(30,64,175,0.3)',
+    hint: '#F59E0B',
+    hintOutline: '#1E40AF',
+    winVeil: 'rgba(251,251,247,0.6)',
+    winBadge: 'rgba(255,255,255,0.95)',
+    winBadgeBorder: 'rgba(30,64,175,0.4)',
+  },
+  dark: {
+    ...classicShared,
+    background: '#1F3A2E',
+    frame: '#8B5E34',
+    grid: 'rgba(255,255,255,0.18)',
+    exit: '#F8FAFC',
+    exitOutline: '#1F3A2E',
+    vehicleBorder: 'rgba(255,255,255,0.35)',
+    vehicleShine: 'rgba(255,255,255,0.2)',
+    hint: '#FDE68A',
+    hintOutline: '#1F3A2E',
+    winVeil: 'rgba(31,58,46,0.72)',
+    winBadge: 'rgba(36,70,56,0.92)',
+    winBadgeBorder: 'rgba(248,250,252,0.45)',
+  },
+};
+
 export const BOARD_THEMES: Record<BoardThemeId, Record<ColorScheme, BoardColors>> = {
-  classic, paper, wood, neon, pixel, snow, fire, beach, space, pumpkin, christmas,
+  classic, paper, wood, neon, pixel, snow, fire, beach, space, pumpkin, christmas, newyear, valentine, shamrock, aprilfish, easter, music,
+  bastille, holiday, notebook,
 };
 
 export function getBoardColors(id: BoardThemeId, scheme: ColorScheme): BoardColors {
@@ -389,7 +700,9 @@ export function getBoardColors(id: BoardThemeId, scheme: ColorScheme): BoardColo
 
 // ─── Target car skins ─────────────────────────────────────────────────────────
 
-export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold' | 'tractor' | 'ufo' | 'mafia' | 'flagship';
+export type CarSkinId = 'classic' | 'taxi' | 'bus' | 'police' | 'sport' | 'rocket' | 'gold' | 'tractor' | 'ufo' | 'mafia' | 'flagship' | 'coach' | 'sleigh' | 'limo' | 'wedding' | 'leprechaun'
+  | 'goldfish' | 'bunny' | 'guitar'
+  | 'firetruck' | 'camper' | 'pencil';
 
 export interface CarSkin {
   /** Body color, the board's target car color when absent */
@@ -417,12 +730,29 @@ export const CAR_SKINS: Record<CarSkinId, CarSkin> = {
   mafia: { color: '#7A1424', icon: '🎩', art: 'vintage' },
   // Schooner of the industrial age (Anno 1800 style), crimson hull: the red one to get out
   flagship: { color: '#9B1B30', icon: '⛵', art: 'ship' },
+  // Seasonal events (theme/art/halloweenVehicles.ts, christmasVehicles.ts): the pumpkin coach, Santa's sleigh
+  coach: { color: '#F97316', icon: '🧙', art: 'coach' },
+  sleigh: { color: '#DC2626', icon: '🛷', art: 'sleigh' },
+  // theme/art/events: the champagne limousine, the wedding car, the leprechaun's car of gold
+  limo: { color: '#E9D18A', icon: '🍾', art: 'limo' },
+  wedding: { color: '#F8FAFC', icon: '💍', art: 'wedding' },
+  leprechaun: { color: '#F59E0B', icon: '🍀', art: 'leprechaun' },
+  // The goldfish car, the chocolate bunny, the red electric guitar
+  goldfish: { color: '#F97316', icon: '🐟', art: 'goldfish' },
+  bunny: { color: '#7C4A26', icon: '🐰', art: 'bunny' },
+  guitar: { color: '#DC2626', icon: '🎸', art: 'guitar' },
+  // The fire engine of the firemen's ball, the camper van, the pencil car
+  firetruck: { color: '#DC2626', icon: '🚒', art: 'firetruck' },
+  camper: { color: '#0D9488', icon: '🚐', art: 'camper' },
+  pencil: { color: '#FACC15', icon: '✏️', art: 'pencil' },
 };
 
 // ─── Vehicle palettes ─────────────────────────────────────────────────────────
 
 /** 'classic' keeps the colors saved in each level */
-export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy' | 'lava' | 'jungle' | 'mafia' | 'fleet';
+export type VehiclePaletteId = 'classic' | 'pastel' | 'ocean' | 'earth' | 'neon' | 'candy' | 'lava' | 'jungle' | 'mafia' | 'fleet' | 'haunted' | 'festive' | 'party' | 'lovers' | 'emerald'
+  | 'prank' | 'eggs' | 'concert'
+  | 'tricolor' | 'roadtrip' | 'school';
 
 export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   classic: null,
@@ -438,12 +768,52 @@ export const VEHICLE_PALETTES: Record<VehiclePaletteId, string[] | null> = {
   mafia: ['#292524', '#E7DCC4', '#14532D', '#5C3A21', '#1E3A5F', '#A8A29E', '#78716C', '#B08D57'],
   // Hulls of the industrial age: bottle green, navy, ochre, brick, slate, cream, teal, coal… no red for the target ship
   fleet: ['#1F4D3A', '#23395B', '#B8862B', '#7A3E1D', '#5B6770', '#E8DCC0', '#2E6F6A', '#2B2B2B'],
+  // Halloween: night purple, moss, coal, bone, witch teal, plum… no orange for the pumpkin coach
+  haunted: ['#4C1D95', '#14532D', '#1F2937', '#E7E5E4', '#0F766E', '#701A75', '#334155', '#3F6212'],
+  // Christmas: fir green, gold, snow, midnight blue, teal, chestnut… no red for Santa's sleigh
+  festive: ['#166534', '#CA8A04', '#E2E8F0', '#1E3A8A', '#0F766E', '#7C2D12', '#A16207', '#475569'],
+  // New Year: midnight blue, violet, silver, teal, fuchsia… no champagne gold for the limousine
+  party: ['#1E1B4B', '#7C3AED', '#94A3B8', '#0F766E', '#DB2777', '#1D4ED8', '#475569', '#9333EA'],
+  // Valentine's Day: crimson, raspberry, pink, plum… no white for the wedding car
+  lovers: ['#BE185D', '#9D174D', '#F472B6', '#7E22CE', '#E11D48', '#FB7185', '#A21CAF', '#881337'],
+  // Saint Patrick's Day: every green, and cream… no gold for the leprechaun's car
+  emerald: ['#166534', '#22C55E', '#4D7C0F', '#0F766E', '#84CC16', '#14532D', '#047857', '#E7E5C8'],
+  // April Fools' Day: lagoon blues and greens, lime, pink… no orange for the goldfish car
+  prank: ['#0EA5E9', '#14B8A6', '#6366F1', '#84CC16', '#F472B6', '#1D4ED8', '#FDE047', '#0F766E'],
+  // Easter: painted egg colors… no chocolate brown for the bunny
+  eggs: ['#60A5FA', '#4ADE80', '#FACC15', '#A78BFA', '#F472B6', '#2DD4BF', '#FB923C', '#38BDF8'],
+  // Fête de la musique: stage black, violet, electric blue, gold… no red for the guitar
+  concert: ['#1F2937', '#7C3AED', '#0EA5E9', '#FACC15', '#10B981', '#F472B6', '#475569', '#F97316'],
+  // Bastille Day: navy, white, royal blue, khaki, gold… no red for the fire engine
+  tricolor: ['#1E3A8A', '#F8FAFC', '#2563EB', '#4D7C0F', '#CA8A04', '#1E40AF', '#94A3B8', '#365314'],
+  // Summer holidays: ice pop colors… no teal for the camper van
+  roadtrip: ['#F472B6', '#FB923C', '#FACC15', '#A3E635', '#60A5FA', '#C084FC', '#F87171', '#2563EB'],
+  // Back to school: colored pencils… no yellow for the pencil car
+  school: ['#2563EB', '#16A34A', '#DC2626', '#7C3AED', '#EA580C', '#0891B2', '#DB2777', '#4B5563'],
 };
 
 /** Palettes whose vehicles are drawn rather than colored blocks */
 export const PALETTE_ART: Partial<Record<VehiclePaletteId, VehicleArt>> = {
+  ocean: 'boats',
+  pastel: 'retro',
+  earth: 'offroad',
+  neon: 'lightcycle',
+  candy: 'sweets',
+  lava: 'works',
+  jungle: 'safari',
   mafia: 'vintage',
   fleet: 'ship',
+  haunted: 'haunted',
+  festive: 'festive',
+  party: 'party',
+  lovers: 'lovers',
+  emerald: 'emerald',
+  prank: 'prank',
+  eggs: 'eggs',
+  concert: 'concert',
+  tricolor: 'tricolor',
+  roadtrip: 'roadtrip',
+  school: 'school',
 };
 
 /** How a board looks: its theme, the skin of the target car and the palette of the others */
@@ -460,7 +830,7 @@ export function toBoardLook(look: { board: string; skin: string; palette: string
 export function getSkinnedBoard(id: BoardThemeId, skin: CarSkinId, scheme: ColorScheme): BoardColors {
   const board = getBoardColors(id, scheme);
   const carSkin = CAR_SKINS[skin] ?? CAR_SKINS.classic;
-  return { ...board, targetCar: carSkin.color ?? board.targetCar, targetIcon: carSkin.icon, targetArt: carSkin.art };
+  return { ...board, targetCar: carSkin.color ?? board.targetCar, targetIcon: carSkin.icon, targetArt: carSkin.art, backdrop: hasBackdrop(id) ? id : undefined };
 }
 
 /** Color of each non-target vehicle in the order of the level, for a palette */

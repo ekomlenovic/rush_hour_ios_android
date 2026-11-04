@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Board from '@/components/Board';
+import BoardBackdrop from '@/components/BoardBackdrop';
 import { Level } from '@/store/gameStore';
 import type { MoveRecord } from '@/store/types';
 import { Move } from '@/utils/solver';
@@ -164,6 +165,7 @@ export default function SolutionPlayer({ visible, level, colors, playerMoves, st
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       {/* A modal is a new root on Android: the board's gesture detectors need their own root view */}
       <GestureHandlerRootView style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 12 }]}>
+        <BoardBackdrop />
         <View style={styles.header}>
           <View style={{ width: 44 }} />
           <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">{t(source === 'mine' ? 'solution.title_mine' : 'solution.title')}</Text>

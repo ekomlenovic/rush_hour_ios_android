@@ -15,6 +15,7 @@ import { RFValue } from '@/utils/responsive';
 import { formatDuration } from '@/utils/date';
 import { fixedColors, toBoardLook, useTheme, type UiColors } from '@/theme';
 import Board from '@/components/Board';
+import BoardBackdrop from '@/components/BoardBackdrop';
 import MultiHeader from '@/components/multi/MultiHeader';
 import DuelPlayerBar from '@/components/multi/DuelPlayerBar';
 import {
@@ -449,6 +450,9 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
     <View style={styles.arena} onLayout={onLayout} onTouchStart={closePickerOutside}>
       {height > 0 && opponent && (
         <>
+          {/* Each player's half of the screen in the theme of their board */}
+          <BoardBackdrop look={opponentLook} style={[styles.half, { top: 0, height: height / 2 }]} />
+          <BoardBackdrop look={firstLook} style={[styles.half, { top: height / 2, height: height / 2 }]} />
           <DuelPlayerBar
             name={opponent.pseudo}
             moves={opponent.moves.length}
@@ -1010,6 +1014,7 @@ const styles = StyleSheet.create({
     fontSize: RFValue(15),
     fontWeight: '700',
   },
+  half: { position: 'absolute', left: 0, right: 0 },
   arena: {
     flex: 1,
     alignItems: 'center',

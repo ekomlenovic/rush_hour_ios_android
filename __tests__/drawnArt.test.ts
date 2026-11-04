@@ -2,6 +2,13 @@ import { mixColor, type ArtDrawing } from '../theme/art/art';
 import { vintageVehicle } from '../theme/art/vintageVehicles';
 import { annoShip } from '../theme/art/annoShips';
 import { drawVehicle } from '../theme/art/vehicles';
+import { oceanVehicle } from '../theme/art/palettes/ocean';
+import { pastelVehicle } from '../theme/art/palettes/pastel';
+import { earthVehicle } from '../theme/art/palettes/earth';
+import { neonVehicle } from '../theme/art/palettes/neon';
+import { candyVehicle } from '../theme/art/palettes/candy';
+import { lavaVehicle } from '../theme/art/palettes/lava';
+import { jungleVehicle } from '../theme/art/palettes/jungle';
 import { DRAWN_SKINS, skinDrawing } from '../theme/art/targetSkins';
 import { FRIGATE, waves } from '../theme/art/frigate';
 import {
@@ -17,7 +24,21 @@ import {
   BATS, BAT_FLIGHT, LANTERN_OUT_START, batAt, buildBatsPlan, lanternScale, wingsUp,
 } from '../components/effects/batsPlan';
 import { BOUNCE, DROP_END, FADE_START, GIFTS, buildGiftsPlan, giftAt, landsAt } from '../components/effects/giftsPlan';
-import { CAR_SKINS, PALETTE_ART, VEHICLE_PALETTES } from '../theme/board';
+import { hauntedVehicle, pumpkinCoachDrawing } from '../theme/art/halloweenVehicles';
+import { festiveVehicle, sleighDrawing } from '../theme/art/christmasVehicles';
+import { limoDrawing, partyVehicle } from '../theme/art/events/newYear';
+import { loversVehicle, weddingDrawing } from '../theme/art/events/valentine';
+import { emeraldVehicle, leprechaunDrawing } from '../theme/art/events/stPatrick';
+import { goldfishDrawing, prankVehicle } from '../theme/art/events/aprilFools';
+import { bunnyDrawing, eggVehicle } from '../theme/art/events/easter';
+import { concertVehicle, guitarDrawing } from '../theme/art/events/musicDay';
+import { fireEngineDrawing, paradeVehicle } from '../theme/art/events/bastille';
+import { camperDrawing, roadtripVehicle } from '../theme/art/events/summerHoliday';
+import { pencilDrawing, schoolVehicle } from '../theme/art/events/backToSchool';
+import { SPRITE_EFFECTS, SPRITE_EFFECT_IDS } from '../theme/art/events/effects';
+import { LAUNCH_END, buildSpritesPlan, spriteAt } from '../components/effects/spritesPlan';
+import { BACKDROP_BOARDS, boardBackdrop } from '../theme/art/boardDecor';
+import { BOARD_THEMES, CAR_SKINS, PALETTE_ART, TARGET_CAR_COLOR, VEHICLE_PALETTES, getSkinnedBoard } from '../theme/board';
 import { COSMETICS, buildCosmeticContext, cosmeticKey, isCosmeticUnlocked } from '../data/cosmetics';
 
 /** Every `url(#id)` of a drawing names one of its gradients */
@@ -85,7 +106,9 @@ describe('1800 ships (Anno 1800 style)', () => {
 describe('drawn vehicles', () => {
   it('every skin is drawn but the red car, and only the drawn palettes have a drawing', () => {
     expect(Object.entries(CAR_SKINS).filter(([, s]) => !s.art).map(([id]) => id)).toEqual(['classic']);
-    expect(Object.keys(PALETTE_ART).sort()).toEqual(['fleet', 'mafia']);
+    expect(Object.keys(PALETTE_ART).sort()).toEqual(['candy', 'concert', 'earth', 'eggs', 'emerald', 'festive', 'fleet', 'haunted', 'jungle', 'lava', 'lovers', 'mafia', 'neon', 'ocean', 'party', 'pastel', 'prank', 'roadtrip', 'school', 'tricolor']);
+    // Only the classic palette keeps the colored blocks
+    expect(Object.keys(VEHICLE_PALETTES).filter(id => !Object.hasOwn(PALETTE_ART, id))).toEqual(['classic']);
     for (const id of Object.keys(PALETTE_ART)) expect(VEHICLE_PALETTES).toHaveProperty(id);
   });
 
@@ -93,6 +116,105 @@ describe('drawn vehicles', () => {
     expect(drawVehicle('vintage', 2, '#14532D')).toEqual(vintageVehicle(2, '#14532D'));
     expect(drawVehicle('ship', 3, '#14532D')).toEqual(annoShip(3, '#14532D'));
     expect(drawVehicle('taxi', 2, '#FACC15')).toEqual(skinDrawing('taxi', '#FACC15'));
+  });
+});
+
+describe('garage palette vehicles', () => {
+  it.each([
+    ['ocean', 'boats', oceanVehicle],
+    ['pastel', 'retro', pastelVehicle],
+    ['earth', 'offroad', earthVehicle],
+    ['neon', 'lightcycle', neonVehicle],
+    ['candy', 'sweets', candyVehicle],
+    ['lava', 'works', lavaVehicle],
+    ['jungle', 'safari', jungleVehicle],
+  ] as const)('%s: one drawing for 2 cells, another for 3, in each of its colors', (palette, art, draw) => {
+    expect(PALETTE_ART[palette]).toBe(art);
+    for (const color of VEHICLE_PALETTES[palette]!) {
+      expect(drawVehicle(art, 2, color)).toEqual(draw(2, color));
+      expect(draw(2, color)).toMatchObject({ width: 200, height: 100 });
+      expect(draw(3, color)).toMatchObject({ width: 300, height: 100 });
+      expectGradientsDefined(draw(2, color));
+      expectGradientsDefined(draw(3, color));
+    }
+    expect(draw(2, '#3B82F6').shapes).not.toEqual(draw(3, '#3B82F6').shapes);
+  });
+});
+
+describe('seasonal event vehicles', () => {
+  it.each([
+    ['Halloween', hauntedVehicle, '#4C1D95'],
+    ['Christmas', festiveVehicle, '#166534'],
+    ['New Year', partyVehicle, '#1E1B4B'],
+    ["Valentine's Day", loversVehicle, '#BE185D'],
+    ["Saint Patrick's Day", emeraldVehicle, '#166534'],
+    ["April Fools' Day", prankVehicle, '#0EA5E9'],
+    ['Easter', eggVehicle, '#60A5FA'],
+    ['Fête de la musique', concertVehicle, '#7C3AED'],
+    ['Bastille Day', paradeVehicle, '#1E3A8A'],
+    ['Summer holidays', roadtripVehicle, '#F472B6'],
+    ['Back to school', schoolVehicle, '#2563EB'],
+  ] as const)('%s: one drawing for 2 cells, another for 3, 100 units per cell, only their own gradients', (_, draw, color) => {
+    expect(draw(2, color)).toMatchObject({ width: 200, height: 100 });
+    expect(draw(3, color)).toMatchObject({ width: 300, height: 100 });
+    expect(draw(2, color).shapes).not.toEqual(draw(3, color).shapes);
+    expectGradientsDefined(draw(2, color));
+    expectGradientsDefined(draw(3, color));
+  });
+
+  it.each([['coach', pumpkinCoachDrawing], ['sleigh', sleighDrawing], ['limo', limoDrawing], ['wedding', weddingDrawing], ['leprechaun', leprechaunDrawing], ['goldfish', goldfishDrawing], ['bunny', bunnyDrawing], ['guitar', guitarDrawing], ['firetruck', fireEngineDrawing], ['camper', camperDrawing], ['pencil', pencilDrawing]] as const)('the %s target car is drawn on 2 cells', (skin, draw) => {
+    const drawing = draw(CAR_SKINS[skin].color!);
+    expect(drawing).toMatchObject({ width: 200, height: 100 });
+    expectGradientsDefined(drawing);
+    expect(drawVehicle(skin, 2, '#F97316')).toEqual(draw('#F97316'));
+  });
+
+  it('each event has its palette of drawn vehicles, without the color of its target car', () => {
+    expect(PALETTE_ART).toMatchObject({ haunted: 'haunted', festive: 'festive' });
+    expect(drawVehicle('haunted', 3, '#1F2937')).toEqual(hauntedVehicle(3, '#1F2937'));
+    expect(drawVehicle('festive', 2, '#CA8A04')).toEqual(festiveVehicle(2, '#CA8A04'));
+    expect(VEHICLE_PALETTES.haunted).not.toContain(CAR_SKINS.coach.color);
+    expect(VEHICLE_PALETTES.festive).not.toContain(CAR_SKINS.sleigh.color);
+    expect(VEHICLE_PALETTES.festive).not.toContain(TARGET_CAR_COLOR);
+    for (const [palette, skin] of [['party', 'limo'], ['lovers', 'wedding'], ['emerald', 'leprechaun'], ['prank', 'goldfish'], ['eggs', 'bunny'], ['concert', 'guitar'], ['tricolor', 'firetruck'], ['roadtrip', 'camper'], ['school', 'pencil']] as const) {
+      expect(PALETTE_ART[palette]).toBe(palette);
+      expect(CAR_SKINS[skin].art).toBe(skin);
+      expect(VEHICLE_PALETTES[palette]).not.toContain(CAR_SKINS[skin].color);
+    }
+    expect(drawVehicle('party', 3, '#7C3AED')).toEqual(partyVehicle(3, '#7C3AED'));
+    expect(drawVehicle('lovers', 2, '#BE185D')).toEqual(loversVehicle(2, '#BE185D'));
+    expect(drawVehicle('emerald', 3, '#22C55E')).toEqual(emeraldVehicle(3, '#22C55E'));
+  });
+});
+
+describe('event backdrops', () => {
+  it.each([[393, 760], [393, 330], [1024, 700], [300, 300]])('every event board is drawn for an area of %i × %i, in both schemes', (width, height) => {
+    expect([...BACKDROP_BOARDS].sort()).toEqual(['aprilfish', 'bastille', 'beach', 'christmas', 'easter', 'fire', 'holiday', 'music', 'neon', 'newyear', 'notebook', 'paper', 'pixel', 'pumpkin', 'shamrock', 'snow', 'space', 'valentine', 'wood']);
+    for (const id of BACKDROP_BOARDS) {
+      expect(BOARD_THEMES).toHaveProperty(id);
+      for (const scheme of ['light', 'dark'] as const) {
+        const backdrop = boardBackdrop(id, scheme, width, height)!;
+        // In the pixels of the area: nothing stretched
+        expect(backdrop).toMatchObject({ width, height });
+        expectGradientsDefined(backdrop);
+        // The same drawing for the same size: the screen does not draw it again
+        expect(boardBackdrop(id, scheme, width + 0.2, height - 0.2)).toBe(backdrop);
+        expect(getSkinnedBoard(id as never, 'classic', scheme).backdrop).toBe(id);
+      }
+    }
+  });
+
+  it('has its sky (the background of the screen) unless drawn over another background', () => {
+    const sky = (d: ArtDrawing) => d.shapes.some(s => s.attrs.fill === 'url(#sky)');
+    expect(sky(boardBackdrop('christmas', 'dark', 400, 800)!)).toBe(true);
+    expect(sky(boardBackdrop('pumpkin', 'light', 400, 400, { noSky: true })!)).toBe(false);
+  });
+
+  it('the other boards have none, nor an empty area', () => {
+    expect(boardBackdrop('classic', 'dark', 400, 800)).toBeUndefined();
+    expect(boardBackdrop('pumpkin', 'dark', 0, 800)).toBeUndefined();
+    expect(getSkinnedBoard('classic', 'taxi', 'light').backdrop).toBeUndefined();
+    expect(getSkinnedBoard('wood', 'taxi', 'light').backdrop).toBe('wood');
   });
 });
 
@@ -285,5 +407,52 @@ describe('Gift shower win effect (Christmas)', () => {
     const unlock = (key: string) => COSMETICS.find(c => cosmeticKey(c) === key)!.unlock;
     expect(unlock('effect:gifts')).toEqual({ type: 'event', event: 'christmas' });
     expect(unlock('board:christmas')).toEqual(unlock('effect:gifts'));
+  });
+});
+
+describe('drawn win effects of the seasonal events (hearts, clovers, champagne)', () => {
+  it('each one has its drawings, each drawing only its own gradients, and is unlocked by its event', () => {
+    const unlock = (key: string) => COSMETICS.find(c => cosmeticKey(c) === key)!.unlock;
+    expect([...SPRITE_EFFECT_IDS].sort()).toEqual(['champagne', 'clovers', 'eggs', 'flipflops', 'hearts', 'jets', 'notes', 'paperfish', 'planes']);
+    for (const id of SPRITE_EFFECT_IDS) {
+      const { spec, drawings } = SPRITE_EFFECTS[id];
+      expect(spec.drawings).toBe(drawings.length);
+      expect(drawings.length).toBeGreaterThan(1);
+      for (const drawing of drawings) expectGradientsDefined(drawing);
+      expect(unlock(`effect:${id}`).type).toBe('event');
+    }
+    expect(unlock('effect:champagne')).toEqual(unlock('board:newyear'));
+    expect(unlock('effect:hearts')).toEqual(unlock('board:valentine'));
+    expect(unlock('effect:clovers')).toEqual(unlock('board:shamrock'));
+    expect(unlock('effect:paperfish')).toEqual(unlock('board:aprilfish'));
+    expect(unlock('effect:eggs')).toEqual(unlock('board:easter'));
+    expect(unlock('effect:notes')).toEqual(unlock('board:music'));
+    expect(unlock('effect:jets')).toEqual(unlock('board:bastille'));
+    expect(unlock('effect:flipflops')).toEqual(unlock('board:holiday'));
+    expect(unlock('effect:planes')).toEqual(unlock('board:notebook'));
+  });
+
+  it.each(SPRITE_EFFECT_IDS.flatMap(id => [[id, 300, 300], [id, 390, 844], [id, 120, 120]] as const))('%s, in an area of %i × %i: every drawing comes in from outside, shows, then fades out', (id, width, height) => {
+    const { spec } = SPRITE_EFFECTS[id];
+    const plan = buildSpritesPlan(spec, width, height);
+    expect(plan).toHaveLength(spec.count);
+    for (const sprite of plan) {
+      expect(sprite.t0).toBeLessThanOrEqual(LAUNCH_END);
+      expect(sprite.t0 + sprite.life).toBeLessThanOrEqual(1);
+      expect(sprite.drawing).toBeLessThan(spec.drawings);
+      // Comes in from above (falling) or from below (rising, bursting)
+      if (spec.motion === 'fall') expect(sprite.from.y).toBeLessThan(0);
+      else expect(sprite.from.y).toBeGreaterThan(height);
+      // Its way stays across the area
+      expect(sprite.to.x).toBeGreaterThan(-sprite.size);
+      expect(sprite.to.x).toBeLessThan(width + sprite.size);
+      expect(spriteAt(sprite, spec.motion, sprite.t0 - 0.01).opacity).toBe(0);
+      expect(spriteAt(sprite, spec.motion, sprite.t0 + sprite.life / 2).opacity).toBe(1);
+      expect(spriteAt(sprite, spec.motion, 1).opacity).toBe(0);
+    }
+  });
+
+  it('plays the same on every replay', () => {
+    for (const id of SPRITE_EFFECT_IDS) expect(buildSpritesPlan(SPRITE_EFFECTS[id].spec, 300, 300)).toEqual(buildSpritesPlan(SPRITE_EFFECTS[id].spec, 300, 300));
   });
 });

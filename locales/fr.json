@@ -55,7 +55,25 @@
       "halloween_one": "Halloween : gagne {{count}} style du Garage",
       "halloween_other": "Halloween : gagne {{count}} styles du Garage",
       "christmas_one": "Noël : gagne {{count}} style du Garage",
-      "christmas_other": "Noël : gagne {{count}} styles du Garage"
+      "christmas_other": "Noël : gagne {{count}} styles du Garage",
+      "newyear_one": "Nouvel An : gagne {{count}} style du Garage",
+      "newyear_other": "Nouvel An : gagne {{count}} styles du Garage",
+      "valentine_one": "Saint-Valentin : gagne {{count}} style du Garage",
+      "valentine_other": "Saint-Valentin : gagne {{count}} styles du Garage",
+      "stpatrick_one": "Saint-Patrick : gagne {{count}} style du Garage",
+      "stpatrick_other": "Saint-Patrick : gagne {{count}} styles du Garage",
+      "aprilfools_one": "Poisson d'avril : gagne {{count}} style du Garage",
+      "aprilfools_other": "Poisson d'avril : gagne {{count}} styles du Garage",
+      "easter_one": "Pâques : gagne {{count}} style du Garage",
+      "easter_other": "Pâques : gagne {{count}} styles du Garage",
+      "musicday_one": "Fête de la musique : gagne {{count}} style du Garage",
+      "musicday_other": "Fête de la musique : gagne {{count}} styles du Garage",
+      "bastille_one": "14 juillet : gagne {{count}} style du Garage",
+      "bastille_other": "14 juillet : gagne {{count}} styles du Garage",
+      "summer_one": "Grands départs : gagne {{count}} style du Garage",
+      "summer_other": "Grands départs : gagne {{count}} styles du Garage",
+      "backtoschool_one": "Rentrée : gagne {{count}} style du Garage",
+      "backtoschool_other": "Rentrée : gagne {{count}} styles du Garage"
     },
     "daily_next": "Prochain dans {{time}}",
     "weekly_next_one": "Prochain dans {{count}} jour",
@@ -794,7 +812,16 @@
       "winter": "Défi en hiver",
       "event": {
         "halloween": "Défi d'Halloween",
-        "christmas": "Défi de Noël"
+        "christmas": "Défi de Noël",
+        "newyear": "Défi du Nouvel An",
+        "valentine": "Défi de la Saint-Valentin",
+        "stpatrick": "Défi de la Saint-Patrick",
+        "aprilfools": "Défi du 1er avril",
+        "easter": "Défi de Pâques",
+        "musicday": "Défi de la Fête de la musique",
+        "bastille": "Défi du 14 juillet",
+        "summer": "Défi des grands départs",
+        "backtoschool": "Défi de la rentrée"
       }
     },
     "kinds": {
@@ -815,7 +842,16 @@
       "winter": "Réussis un défi du jour en hiver (déc. à fév.)",
       "event": {
         "halloween": "Réussis un défi du jour d'Halloween (du 25 au 31 octobre)",
-        "christmas": "Réussis un défi du jour de Noël (du 19 au 25 décembre)"
+        "christmas": "Réussis un défi du jour de Noël (du 19 au 25 décembre)",
+        "newyear": "Réussis un défi du jour du Nouvel An (du 31 décembre au 3 janvier)",
+        "valentine": "Réussis un défi du jour de la Saint-Valentin (du 10 au 14 février)",
+        "stpatrick": "Réussis un défi du jour de la Saint-Patrick (du 15 au 17 mars)",
+        "aprilfools": "Réussis un défi du jour du poisson d'avril (du 29 mars au 2 avril)",
+        "easter": "Réussis un défi du jour de Pâques (du jeudi au lundi de Pâques, catholique ou orthodoxe)",
+        "musicday": "Réussis un défi du jour de la Fête de la musique (du 18 au 24 juin)",
+        "bastille": "Réussis un défi du jour du 14 juillet (du 10 au 14 juillet)",
+        "summer": "Réussis un défi du jour des grands départs (du 1er au 15 août)",
+        "backtoschool": "Réussis un défi du jour de la rentrée (du 1er au 7 septembre)"
       },
       "secret": "Succès secret"
     },
@@ -830,7 +866,16 @@
       "beach": "Plage de sable",
       "space": "Espace",
       "pumpkin": "Citrouilles",
-      "christmas": "Noël"
+      "christmas": "Noël",
+      "newyear": "Réveillon",
+      "valentine": "Saint-Valentin",
+      "shamrock": "Trèfles",
+      "aprilfish": "Fond marin",
+      "easter": "Pâques",
+      "music": "Fête de la musique",
+      "bastille": "14 juillet",
+      "holiday": "Route des vacances",
+      "notebook": "Cahier et tableau"
     },
     "skin": {
       "classic": "Voiture rouge",
@@ -843,7 +888,18 @@
       "tractor": "Tracteur",
       "ufo": "Soucoupe volante",
       "mafia": "Berline de Lost Heaven",
-      "flagship": "Goélette amirale"
+      "flagship": "Goélette amirale",
+      "coach": "Carrosse citrouille",
+      "sleigh": "Traîneau du Père Noël",
+      "limo": "Limousine champagne",
+      "wedding": "Voiture des mariés",
+      "leprechaun": "Voiture du leprechaun",
+      "goldfish": "Voiture poisson rouge",
+      "bunny": "Lapin en chocolat",
+      "guitar": "Guitare électrique",
+      "firetruck": "Camion de pompiers",
+      "camper": "Combi des vacances",
+      "pencil": "Voiture crayon"
     },
     "palette": {
       "classic": "Classique",
@@ -855,7 +911,18 @@
       "lava": "Lave",
       "jungle": "Jungle",
       "mafia": "Mafia",
-      "fleet": "Flotte de 1800"
+      "fleet": "Flotte de 1800",
+      "haunted": "Convoi hanté",
+      "festive": "Convoi de Noël",
+      "party": "Convoi de la fête",
+      "lovers": "Convoi des amoureux",
+      "emerald": "Convoi émeraude",
+      "prank": "Convoi farceur",
+      "eggs": "Convoi des œufs",
+      "concert": "Convoi du concert",
+      "tricolor": "Convoi du défilé",
+      "roadtrip": "Convoi des vacances",
+      "school": "Convoi de la rentrée"
     },
     "effect": {
       "none": "Aucun",
@@ -867,7 +934,16 @@
       "tommy": "Sulfateuse",
       "broadside": "Bordée",
       "bats": "Chauves-souris",
-      "gifts": "Pluie de cadeaux"
+      "gifts": "Pluie de cadeaux",
+      "champagne": "Bouchons de champagne",
+      "hearts": "Pluie de cœurs",
+      "clovers": "Trèfles et pièces d’or",
+      "paperfish": "Poissons en papier",
+      "eggs": "Œufs et cloches",
+      "notes": "Notes de musique",
+      "jets": "Patrouille tricolore",
+      "flipflops": "Tongs et lunettes",
+      "planes": "Avions en papier"
     },
     "equip": "Équiper",
     "equipped": "Équipé"

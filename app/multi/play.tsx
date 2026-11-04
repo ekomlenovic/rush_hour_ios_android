@@ -10,6 +10,7 @@ import { RFValue } from '@/utils/responsive';
 import { formatDuration } from '@/utils/date';
 import { fixedColors, useTheme } from '@/theme';
 import Board from '@/components/Board';
+import BoardBackdrop from '@/components/BoardBackdrop';
 import MultiHeader from '@/components/multi/MultiHeader';
 import { errorCode, multiErrorMessage } from '@/components/multi/errors';
 import { gameKey, selectActiveAccount, useMultiStore, type MultiGame } from '@/store/multiStore';
@@ -170,6 +171,7 @@ export default function MultiPlayScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <BoardBackdrop />
       <MultiHeader title={title} colors={colors} />
 
       {phase === 'loading' && <LoadingIndicator fill />}
