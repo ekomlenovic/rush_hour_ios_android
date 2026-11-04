@@ -22,7 +22,8 @@ interface BlockProps {
   allVehicles: Vehicle[];
   gridSize: number;
   cellSize: number;
-  onMoveEnd: (vehicleId: string, newRow: number, newCol: number) => boolean | void;
+  /** `step`: a one-cell move of the screen reader (merged with the steps just before it, issue 158) */
+  onMoveEnd: (vehicleId: string, newRow: number, newCol: number, step?: boolean) => boolean | void;
   isHinted?: boolean;
   min: number;
   max: number;
@@ -223,7 +224,7 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
       triggerCollisionHaptic();
       return;
     }
-    if (onMoveEnd(vehicle.id, next.row, next.col) === false) {
+    if (onMoveEnd(vehicle.id, next.row, next.col, true) === false) {
       AccessibilityInfo.announceForAccessibility(a11yStrings.blocked);
       triggerCollisionHaptic();
       return;

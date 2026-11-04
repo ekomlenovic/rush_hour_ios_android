@@ -442,7 +442,7 @@ Le jeu se joue entièrement avec VoiceOver (iOS) et TalkBack (Android).
 | Règle | Implémentation |
 |---|---|
 | Chaque véhicule est annoncé : type, **lettre**, couleur, puis sa position (« Voiture B (bleu), à l'horizontale, ligne 3, colonnes 2 à 3 ») | `describeVehicle`, `describePosition` (`utils/accessibility.ts`) |
-| On déplace un véhicule **d'une case** sans glisser : balayage haut / bas (élément « ajustable ») ou actions « Déplacer à gauche / droite / haut / bas ». Ce déplacement est un **coup normal** (même chemin que le glisser) | `stepVehicle`, `components/Block.tsx` |
+| On déplace un véhicule **d'une case** sans glisser : balayage haut / bas (élément « ajustable ») ou actions « Déplacer à gauche / droite / haut / bas ». Les pas successifs d'un même véhicule, sans autre coup entre eux, comptent pour **un seul coup**, comme un glisser de cette longueur : le journal de coups est celui d'un glisser, une annulation ramène le véhicule d'avant ses pas, et revenir au point de départ retire le coup. La solution optimale jouée au lecteur d'écran donne donc 3 étoiles. En duel, chaque coup part tout de suite au serveur : un pas y reste un coup | `stepVehicle`, `components/Block.tsx`, `moveVehicle(…, step)` (`store/gameStore.ts`), `playMove(…, mergeWithLast)` (`utils/multi/game.ts`) |
 | La lettre d'un véhicule suit l'ordre du niveau et ne change pas pendant la partie ; la voiture cible n'en a pas | `getVehicleLetters` |
 | L'indice est **annoncé** (véhicule et direction), pas seulement surligné | `handleHint` (`app/game.tsx`) |
 | La victoire, les succès et les missions terminées sont annoncés | `WinModal`, `AchievementToast` |

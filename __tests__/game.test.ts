@@ -4,6 +4,8 @@ import { sampleLevels } from '../data/sampleLevels';
 import { GENERATOR_MAX_STATES, solvePuzzle, getHint } from '../utils/solver';
 import { checkWin, getMoveBounds, isLegalMove } from '../utils/collision';
 import { resetStore, setToday } from './helpers';
+import { getStars } from '../utils/scoring';
+import { applyMoves } from '../utils/moveLog';
 
 const state = () => useGameStore.getState();
 const level = sampleLevels[0];
@@ -214,6 +216,78 @@ describe('hardReset', () => {
     expect(s).toMatchObject({ currentStreak: 0, bestStreak: 0, streakFreezes: 0, achievements: [], dailyChallengeProgress: {}, dailyMissions: null });
     expect(s.stats).toEqual(useGameStore.getInitialState().stats);
     jest.useRealTimers();
+  });
+});
+
+describe('screen reader steps (issue 158)', () => {
+  const level = sampleLevels[0];
+  /** Steps one cell at a time from where the vehicle is to (row, col), as the adjustable does */
+  function stepTo(vehicleId: string, row: number, col: number) {
+    for (;;) {
+      const v = state().vehicles.find(x => x.id === vehicleId)!;
+      if (v.row === row && v.col === col) return;
+      const next = v.orientation === 'horizontal' ? [v.row, v.col + Math.sign(col - v.col)] : [v.row + Math.sign(row - v.row), v.col];
+      expect(state().moveVehicle(vehicleId, next[0], next[1], true)).toBe(true);
+    }
+  }
+  /** A vehicle with room for `cells` cells forward, and where that leads */
+  function roomy(cells: number) {
+    const v = state().vehicles.find(x => {
+      const b = getMoveBounds(x, state().vehicles, level.gridSize);
+      return b.max - (x.orientation === 'horizontal' ? x.col : x.row) >= cells;
+    })!;
+    return v;
+  }
+
+  beforeEach(() => {
+    resetStore();
+    state().loadLevel(level);
+  });
+
+  it('of the same vehicle make one move, undone in one go', () => {
+    const v = roomy(2);
+    const horizontal = v.orientation === 'horizontal';
+    stepTo(v.id, horizontal ? v.row : v.row + 2, horizontal ? v.col + 2 : v.col);
+    expect(state().moveCount).toBe(1);
+    expect(state().history).toHaveLength(1);
+    expect(state().moveLog).toEqual([expect.objectContaining({ vehicleId: v.id, delta: 2 })]);
+    state().undo();
+    expect(state().vehicles.find(x => x.id === v.id)).toMatchObject({ row: v.row, col: v.col });
+  });
+
+  it('back where they started count no move', () => {
+    const v = roomy(1);
+    stepTo(v.id, v.orientation === 'horizontal' ? v.row : v.row + 1, v.orientation === 'horizontal' ? v.col + 1 : v.col);
+    stepTo(v.id, v.row, v.col);
+    expect(state().moveCount).toBe(0);
+    expect(state().moveLog).toEqual([]);
+    expect(state().history).toEqual([]);
+  });
+
+  it('of another vehicle, or after a drag, start a new move', () => {
+    const { moves } = solvePuzzle(level.vehicles, level.gridSize, level.exitRow, level.exitCol);
+    stepTo(moves[0].vehicleId, moves[0].toRow, moves[0].toCol);
+    stepTo(moves[1].vehicleId, moves[1].toRow, moves[1].toCol);
+    expect(state().moveCount).toBe(2);
+    // A drag between two steps of the same vehicle breaks the chain
+    const v = state().vehicles.find(x => x.id === moves[1].vehicleId)!;
+    const b = getMoveBounds(v, state().vehicles, level.gridSize);
+    const cur = v.orientation === 'horizontal' ? v.col : v.row;
+    const to = cur > b.min ? cur - 1 : cur + 1;
+    const [row, col] = v.orientation === 'horizontal' ? [v.row, to] : [to, v.col];
+    expect(state().moveVehicle(v.id, row, col)).toBe(true);
+    expect(state().moveCount).toBe(3);
+    stepTo(v.id, moves[1].toRow, moves[1].toCol);
+    expect(state().moveCount).toBe(4);
+  });
+
+  it('play the optimal solution in as many moves as a drag: 3 stars', () => {
+    const { moves } = solvePuzzle(level.vehicles, level.gridSize, level.exitRow, level.exitCol);
+    for (const m of moves) stepTo(m.vehicleId, m.toRow, m.toCol);
+    expect(checkWin(state().vehicles, level.exitRow, level.exitCol, level.gridSize)).toBe(true);
+    expect(state().moveCount).toBe(moves.length);
+    expect(getStars(state().moveCount, level.minMoves)).toBe(3);
+    expect(applyMoves(level, state().moveLog)).toMatchObject({ ok: true, won: true, moveCount: moves.length });
   });
 });
 

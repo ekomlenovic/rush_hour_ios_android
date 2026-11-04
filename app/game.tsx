@@ -235,10 +235,10 @@ export default function GameScreen() {
   // A daily left open past midnight can still be won: while it is open, its day is not missed (see docs/GAME_DESIGN.md)
   useOpenDaily(challengeKind === 'daily' && !isLoading && !isChallengeCompleted ? params.date! : null);
 
-  const handleMoveEnd = useCallback((vehicleId: string, newRow: number, newCol: number) => {
+  const handleMoveEnd = useCallback((vehicleId: string, newRow: number, newCol: number, step?: boolean) => {
     if (won || isChallengeCompleted) return false;
     // Refused when another vehicle took the room meanwhile (two fingers): the block goes back
-    if (!moveVehicle(vehicleId, newRow, newCol)) return false;
+    if (!moveVehicle(vehicleId, newRow, newCol, step)) return false;
 
     setHintVehicleId(null); // Clear hint highlight on any move
     setHintRemainingMoves(null);
