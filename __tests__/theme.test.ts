@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { darkColors, lightColors, resolveScheme, statusBarStyle, type UiColors } from '../theme/ui';
-import { BOARD_THEMES, toBoardLook } from '../theme/board';
-import { contrastRatio, over } from '../theme/contrast';
+import { BOARD_THEMES, CAR_SKINS, CLASSIC_VEHICLE_COLORS, GENERATOR_VEHICLE_COLORS, TARGET_CAR_COLOR, VEHICLE_PALETTES, toBoardLook } from '../theme/board';
+import { LABEL_MIN_CONTRAST, contrastRatio, labelOn, over } from '../theme/contrast';
+import { fixedColors } from '../theme/ui';
 
 const SCHEMES: [string, UiColors][] = [['dark', darkColors], ['light', lightColors]];
 
@@ -40,6 +41,39 @@ describe('theme variants', () => {
     for (const variants of Object.values(BOARD_THEMES)) {
       expect(Object.keys(variants.light).sort()).toEqual(Object.keys(variants.dark).sort());
     }
+  });
+});
+
+describe('labels on fills (issue 157)', () => {
+  const fills = [
+    ...CLASSIC_VEHICLE_COLORS,
+    ...GENERATOR_VEHICLE_COLORS,
+    ...Object.values(VEHICLE_PALETTES).flatMap(colors => colors ?? []),
+    TARGET_CAR_COLOR,
+    ...Object.values(CAR_SKINS).flatMap(skin => (skin.color ? [skin.color] : [])),
+  ];
+
+  it.each(Object.keys(BOARD_THEMES))('vehicle letters and the target star are readable on every vehicle of the %s board', id => {
+    for (const board of Object.values(BOARD_THEMES[id as keyof typeof BOARD_THEMES])) {
+      for (const fill of [...fills, ...board.vehicles, board.targetCar]) {
+        const label = labelOn(fill, board.vehicleLabel, board.vehicleLabelDark);
+        expect(contrastRatio(label, fill)).toBeGreaterThanOrEqual(LABEL_MIN_CONTRAST);
+      }
+    }
+  });
+
+  it('the number of a map node is readable on every face', () => {
+    const faces = [...fills, fixedColors.levelEasy, fixedColors.levelMedium, fixedColors.levelHard, fixedColors.levelUnknown,
+      fixedColors.levelTutorial, fixedColors.levelCustom, lightColors.primary, darkColors.primary];
+    for (const face of faces) {
+      expect(contrastRatio(labelOn(face, fixedColors.onPrimary, fixedColors.onLightFill), face)).toBeGreaterThanOrEqual(LABEL_MIN_CONTRAST);
+    }
+  });
+
+  it('keeps white where it already reads, and on a color it cannot read', () => {
+    expect(labelOn('#1D4ED8', '#FFFFFF', '#0F0F1A')).toBe('#FFFFFF');
+    expect(labelOn('#FACC15', '#FFFFFF', '#0F0F1A')).toBe('#0F0F1A');
+    expect(labelOn('red', '#FFFFFF', '#0F0F1A')).toBe('#FFFFFF');
   });
 });
 

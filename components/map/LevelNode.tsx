@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Level } from '@/store/gameStore';
 import { fixedColors, type BoardColors, type UiColors } from '@/theme';
+import { labelOn } from '@/theme/contrast';
 import { PathPoint } from './path';
 
 const TOKEN = 60;
@@ -104,7 +105,9 @@ const LevelNode = React.memo(({
   const glyph = isPadlockNode ? 'lock-closed' : isTutorial ? 'school' : null;
   const label = isCustom ? '∞' : String(point.id);
   const labelSize = glyph ? 24 : label.length >= 3 ? 19 : 23;
-  const labelColor = isLocked ? colors.mapLockedText : fixedColors.onPrimary;
+  // White on dark faces, dark on light ones (the taxi or gold skin, the generated levels): issue 157
+  const labelColor = isLocked ? colors.mapLockedText : labelOn(face, fixedColors.onPrimary, fixedColors.onLightFill);
+  const darkLabel = labelColor === fixedColors.onLightFill;
 
   return (
     <View style={[styles.nodeContainer, { left: point.x - 45, top: point.y - TOKEN / 2 - 4 }]}>
@@ -142,7 +145,7 @@ const LevelNode = React.memo(({
               style={[
                 styles.nodeText,
                 { fontSize: labelSize, color: labelColor },
-                isLocked && styles.nodeTextFlat,
+                (isLocked || darkLabel) && styles.nodeTextFlat,
               ]}
             >
               {glyph ? <Ionicons name={glyph} size={labelSize} color={labelColor} /> : label}
