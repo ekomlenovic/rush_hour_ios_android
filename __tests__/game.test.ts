@@ -1,3 +1,4 @@
+import { buildCosmeticContext } from '../data/cosmetics';
 import { useGameStore, DAILY_LEVEL_ID, isSaveForLevel } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
 import { GENERATOR_MAX_STATES, solvePuzzle, getHint } from '../utils/solver';
@@ -238,5 +239,27 @@ describe('resetting the generated levels', () => {
     expect(state().maxUnlockedLevel).toBe(base + 1);
     expect(Object.keys(state().savedStates).sort()).toEqual(['2', 'daily-2026-10-14']);
     expect(state().lastPlayedLevelId).toBeNull();
+  });
+
+  it('keeps the progress of created and imported levels (issue 160)', () => {
+    resetStore();
+    const base = sampleLevels.length;
+    const created = { ...level, id: 1760000000000, name: 'Créé' };
+    const imported = { ...level, id: 1760000000001, name: 'Importé' };
+    useGameStore.setState({
+      generatedLevels: [{ ...level, id: base + 1 }],
+      createdLevels: [created],
+      importedLevels: [imported],
+      progress: [
+        { levelId: 0, completed: true, bestScore: 300, stars: 3 },
+        { levelId: 1, completed: true, bestScore: 300, stars: 3 },
+        { levelId: base + 1, completed: true, bestScore: 300, stars: 3 },
+        { levelId: created.id, completed: true, bestScore: 300, stars: 3 },
+        { levelId: imported.id, completed: true, bestScore: 300, stars: 3 },
+      ],
+    });
+    state().purgeCustomLevels(base);
+    expect(state().progress.map(p => p.levelId)).toEqual([0, 1, created.id, imported.id]);
+    expect(buildCosmeticContext(state()).totalStars).toBe(12);
   });
 });
