@@ -9,7 +9,7 @@ import { sampleLevels } from '../data/sampleLevels';
 import { isBossLevel } from '../data/bosses';
 import { ACHIEVEMENTS } from '../data/achievements';
 import {
-  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp, REPLAY_XP_FACTOR,
+  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp,
 } from '../data/progression';
 import { getLocalDateString } from './date';
 import { starsFromScore } from './scoring';
@@ -146,6 +146,14 @@ export function decodeSave(code: string): SaveFile | ImportError {
 }
 
 // ─── Export ───────────────────────────────────────────────────────────────────
+
+/**
+ * Whether the save can be exported or replaced: not before the game's save is read back, nor after it
+ * failed to (issue 174). The state in memory is then the empty one of a first launch, and the writes are
+ * ignored until the next launch: an export would hold nothing and an import would vanish.
+ */
+export const canTransferSave = (): boolean => useGameStore.persist.hasHydrated() && !useGameStore.getState().saveLoadFailed;
+
 
 /** The code of the current progress: what the app persists, minus the device settings and the undo stacks */
 /** What the app persists of the current state */
@@ -356,15 +364,19 @@ function wellFormedRecap(state: Record<string, any>, now: Date): Record<string, 
   };
 }
 
-/** Most XP the save's wins can have given: first wins at their best stars, every other win as a replay */
+/**
+ * Most XP the save's wins can have given: first wins at their best stars, every other win as the
+ * first win of a level as hard as can be. A win missing from the progress is not always a replay:
+ * "Supprimer les niveaux générés" takes the progress of these levels but leaves their XP (issue 163).
+ */
 export function maxPlausibleXp(state: Record<string, any>): number {
   const levels = fixedLevelsOf(state);
   const completed = (state.progress as LevelProgress[]).filter(p => p.completed);
   // A custom level (maybe edited or deleted since) is counted as hard as a level can be
   let xp = completed.reduce((sum, p) => sum + levelWinXp(levels.get(p.levelId)?.minMoves ?? 60, p.stars || 1, true), 0);
   xp += completed.filter(p => isBossLevel(p.levelId)).length * BOSS_WIN_XP;
-  const replays = Math.max(0, (state.stats?.totalWins ?? 0) - completed.length);
-  xp += replays * levelWinXp(60, 3, true) * REPLAY_XP_FACTOR;
+  const otherWins = Math.max(0, (state.stats?.totalWins ?? 0) - completed.length);
+  xp += otherWins * levelWinXp(60, 3, true);
   for (const r of Object.values((state.dailyChallengeProgress ?? {}) as Record<string, ChallengeResult>)) {
     if (r.completed) xp += dailyWinXp(r.stars || 1);
   }

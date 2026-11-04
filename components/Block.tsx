@@ -13,6 +13,7 @@ import { Vehicle } from '@/store/gameStore';
 import { stepVehicle } from '@/utils/accessibility';
 import { startHintGlow, stopHintGlow } from '@/utils/hintGlow';
 import { useBoardTheme, type VehicleArt } from '@/theme';
+import { labelOn } from '@/theme/contrast';
 import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
 import type { Facing } from '@/theme/art/art';
 
@@ -67,6 +68,8 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
 
   const { board } = useBoardTheme();
   const fillColor = vehicle.isTarget ? board.targetCar : color ?? vehicle.color;
+  // White on dark vehicles, dark on light ones: readable on every palette and skin (issue 157)
+  const labelColor = labelOn(fillColor, board.vehicleLabel, board.vehicleLabelDark);
   const radius = cellSize * board.vehicleRadius;
 
   const width = vehicle.orientation === 'horizontal' ? cellSize * vehicle.length : cellSize;
@@ -329,7 +332,7 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
           <Text style={{ fontSize: cellSize * 0.5 }} importantForAccessibility="no" accessibilityElementsHidden>{board.targetIcon}</Text>
         )}
         {letter !== undefined && (
-          <Text style={[styles.letter, { fontSize: cellSize * 0.42, color: board.vehicleLabel, textShadowColor: board.vehicleLabelShadow }]}>{letter}</Text>
+          <Text style={[styles.letter, { fontSize: cellSize * 0.42, color: labelColor, textShadowColor: labelColor === board.vehicleLabel ? board.vehicleLabelShadow : board.vehicleLabelDarkShadow }]}>{letter}</Text>
         )}
       </Animated.View>
 

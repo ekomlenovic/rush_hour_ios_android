@@ -94,6 +94,32 @@ describe('the save on the device', () => {
     warn.mockRestore();
   });
 
+  it('cannot be exported nor replaced from the save screen when it cannot be read back (issue 174)', async () => {
+    (AsyncStorage.getItem as jest.Mock).mockRejectedValueOnce(new Error('Row too big to fit into CursorWindow'));
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    let canTransferSave!: () => boolean;
+    jest.isolateModules(() => {
+      require('../store/gameStore');
+      canTransferSave = require('../utils/saveTransfer').canTransferSave;
+    });
+    expect(canTransferSave()).toBe(false);
+    await flush();
+    expect(canTransferSave()).toBe(false);
+    warn.mockRestore();
+  });
+
+  it('can be exported and replaced once loaded', async () => {
+    let canTransferSave!: () => boolean;
+    jest.isolateModules(() => {
+      require('../store/gameStore');
+      canTransferSave = require('../utils/saveTransfer').canTransferSave;
+    });
+    // Not before it is read back: the state in memory is still the empty one
+    expect(canTransferSave()).toBe(false);
+    await flush();
+    expect(canTransferSave()).toBe(true);
+  });
+
   it('writes the migrated save once loaded', async () => {
     await AsyncStorage.setItem(KEY, JSON.stringify({ state: { savedStates: { 12: { vehicles: [], moveCount: 80, history: Array.from({ length: 80 }, () => []) } } }, version: 5 }));
     launch();

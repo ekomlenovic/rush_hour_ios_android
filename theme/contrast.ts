@@ -40,3 +40,16 @@ export function over(color: string, background: string): string {
   const under = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   return '#' + rgb.map((c, i) => Math.round(c * alpha + under[i] * (1 - alpha)).toString(16).padStart(2, '0')).join('');
 }
+
+/** Least contrast of a label on a fill: bold text this size is large text for WCAG (3:1) */
+export const LABEL_MIN_CONTRAST = 3;
+
+/**
+ * The label color readable on a fill (issue 157): `light` (white) as long as it reaches 3:1, else `dark`
+ * when it reads better. A fill that is not an opaque '#RRGGBB' color (an old imported level) keeps `light`.
+ */
+export function labelOn(fill: string, light: string, dark: string): string {
+  if (!/^#[0-9a-f]{6}$/i.test(fill)) return light;
+  const onLight = contrastRatio(light, fill);
+  return onLight >= LABEL_MIN_CONTRAST || onLight >= contrastRatio(dark, fill) ? light : dark;
+}
