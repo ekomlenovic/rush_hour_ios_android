@@ -147,6 +147,14 @@ export function decodeSave(code: string): SaveFile | ImportError {
 
 // ─── Export ───────────────────────────────────────────────────────────────────
 
+/**
+ * Whether the save can be exported or replaced: not before the game's save is read back, nor after it
+ * failed to (issue 174). The state in memory is then the empty one of a first launch, and the writes are
+ * ignored until the next launch: an export would hold nothing and an import would vanish.
+ */
+export const canTransferSave = (): boolean => useGameStore.persist.hasHydrated() && !useGameStore.getState().saveLoadFailed;
+
+
 /** The code of the current progress: what the app persists, minus the device settings and the undo stacks */
 /** What the app persists of the current state */
 const persistedState = () => useGameStore.persist.getOptions().partialize!(useGameStore.getState()) as Record<string, unknown>;
