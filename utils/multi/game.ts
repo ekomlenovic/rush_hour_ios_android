@@ -37,6 +37,18 @@ export function gameFromStart(serverUrl: string, start: StartResult, saved: Mult
   };
 }
 
+/** Kept past its deadline, for a phone clock a little off: the server refuses the game anyway after it */
+export const PRUNE_MARGIN_MS = 60 * 60 * 1000;
+
+/**
+ * The games still playable (issue 177): a game left without a win nor a give-up stayed forever, while
+ * the server refuses it once its deadline is past. Deadlines are read on the server clock of each game.
+ */
+export function pruneGames(games: Record<string, MultiGame>, now: number): Record<string, MultiGame> {
+  const kept = Object.entries(games).filter(([, g]) => !(now + (g.clockOffset ?? 0) > g.deadline + PRUNE_MARGIN_MS));
+  return kept.length === Object.keys(games).length ? games : Object.fromEntries(kept);
+}
+
 /** Time since the start, on the clock of the server */
 export const elapsedMs = (game: MultiGame, now: number): number => Math.max(0, now + game.clockOffset - game.startedAt);
 
