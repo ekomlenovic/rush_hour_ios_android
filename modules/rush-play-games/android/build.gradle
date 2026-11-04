@@ -16,5 +16,5 @@ android {
 
 dependencies {
   // Play Games Services v2: sign-in and Saved Games (issue 320)
-  implementation 'com.google.android.gms:play-services-games-v2:20.1.2'
+  implementation 'com.google.android.gms:play-services-games-v2:22.1.0'
 }
