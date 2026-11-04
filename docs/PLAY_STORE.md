@@ -1,6 +1,6 @@
 # Play Store : ce qu'il faut déclarer
 
-Notes pour la fiche Google Play, liées au **mode multijoueur** (#46). Sans multijoueur, l'app ne transmet rien du jeu : seule la vérification des mises à jour, lancée par le joueur, télécharge un fichier de version depuis GitHub ; les liens (issues GitHub, signalement de plantage prérempli que le joueur relit et envoie lui-même) s'ouvrent dans le navigateur ; le build Play n'a pas de lien de don (Ko-fi seulement sur iOS, l'APK des releases et le web) (voir `Privacy_Policy.md`, sections 1 et 5).
+Notes pour la fiche Google Play, liées au **mode multijoueur** (#46) et, depuis la 2.1.0, à la **synchro Play Jeux** (#323, voir plus bas). Sans elles, l'app ne transmet rien du jeu : seule la vérification des mises à jour, lancée par le joueur, télécharge un fichier de version depuis GitHub ; les liens (issues GitHub, signalement de plantage prérempli que le joueur relit et envoie lui-même) s'ouvrent dans le navigateur ; le build Play n'a pas de lien de don (Ko-fi seulement sur iOS, l'APK des releases et le web) (voir `Privacy_Policy.md`, sections 1 et 5).
 
 ## Sécurité des données (Data safety)
 
@@ -21,6 +21,24 @@ Le multijoueur envoie des données **à un serveur choisi par le joueur** (hébe
 - « Partagée : Non » : la donnée part vers le serveur que **le joueur choisit lui-même** en le rejoignant, ce qui est un transfert à l'initiative de l'utilisateur.
 - Rien n'est utilisé pour la publicité, l'analyse ou le suivi.
 - L'adresse IP n'est pas une catégorie à déclarer à part : elle sert seulement à la connexion, le serveur ne la garde pas dans ses logs.
+
+### Synchro Play Jeux (depuis la 2.1.0)
+
+La version Google Play copie la progression dans les **Saved Games** de Play Jeux (#323, `Privacy_Policy.md` section 3). Le développeur ne reçoit rien : c'est Google qui stocke la copie, dans le compte Google du joueur. La copie est facultative (connexion à Play Jeux jamais obligatoire, interrupteur dans Options → Sauvegarde) et sert uniquement au fonctionnement de l'app.
+
+| Type de données | Collectée | Partagée | Facultative | Finalité |
+|---|---|---|---|---|
+| Activité dans l'app → **Autres actions** (progression : niveaux, étoiles, scores, défis, streak, styles) | Oui | Non | Oui | Fonctionnement de l'app |
+
+- Google Play Games Services est un SDK de Google : reprendre aussi ce que Google déclare pour ce SDK (page « Play Games Services » de l'aide Play Console sur la section Sécurité des données). Ne cocher que ce que Google y liste, sans rien ajouter.
+- Suppression : appli Play Jeux → Paramètres → Supprimer le compte et les données Play Jeux, ou la page « Gérer vos données » du compte Google.
+
+### Avant de publier la 2.1.0 (Play Console)
+
+1. **Activer Play Jeux** pour l'app (Play Jeux → Configuration), avec **Saved Games** activé, et lier l'app (certificats de signature d'**upload** et de **Play App Signing**).
+2. Récupérer l'**identifiant du projet** Play Jeux et le donner au build : `PLAY_GAMES_PROJECT_ID=<id>` dans l'environnement **pendant `npx expo prebuild`** (le build est local : c'est le prebuild qui écrit `com.google.android.gms.games.APP_ID` dans le manifeste). Vérifier avec `bundletool dump manifest --bundle <app>.aab | grep games.APP_ID`. Sans identifiant, la synchro est inactive sans erreur.
+3. Mettre à jour **Sécurité des données** avec le tableau ci-dessus.
+4. Comme l'app est dans le programme **Familles**, vérifier que Play Games Services est accepté pour une app destinée aux enfants (liste des SDK du programme Familles).
 
 ## Suppression du compte
 
