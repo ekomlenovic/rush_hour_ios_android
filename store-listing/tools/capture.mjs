@@ -22,7 +22,8 @@ const SERIES = [['en', 'light'], ['fr', 'light'], ['en', 'dark'], ['fr', 'dark']
 const LEVEL = 73; // next level of the demo save
 const LOCALES = { en: 'en-US', fr: 'fr-FR' };
 
-const solution = JSON.parse(execFileSync('npx', ['tsx', `${ROOT}store-listing/tools/solve.ts`, String(LEVEL)], { cwd: ROOT, encoding: 'utf8' }));
+const TSX = process.env.TSX_CLI ?? `${ROOT}node_modules/tsx/dist/cli.mjs`;
+const solution = JSON.parse(execFileSync(process.execPath, [TSX, `${ROOT}store-listing/tools/solve.ts`, String(LEVEL)], { cwd: ROOT, encoding: 'utf8' }));
 
 function strings(lang) {
   const j = JSON.parse(fs.readFileSync(`${ROOT}locales/${lang}.json`, 'utf8'));
@@ -31,7 +32,10 @@ function strings(lang) {
     daily: j.home.daily_challenge,
     edit: j.common.edit,
     share: j.game.share,
-    wood: j.cosmetics.board.wood,
+    christmas: j.cosmetics.board.christmas,
+    sleigh: j.cosmetics.skin.sleigh,
+    festive: j.cosmetics.palette.festive,
+    tabs: j.cosmetics.tabs,
   };
 }
 
@@ -73,7 +77,17 @@ const SCREENS = {
   win: async (p, s) => { await SCREENS.map(p, s); await visibleText(p, String(LEVEL)).click(); await p.waitForTimeout(3000); await play(p, solution.moves.length); await p.waitForTimeout(2500); },
   daily: async (p, s) => { await visibleText(p, s.daily).click(); await p.waitForTimeout(8000); },
   profile: '/profile',
-  garage: ['/garage', async (p, s) => { await visibleText(p, s.wood).click(); await p.waitForTimeout(1500); }],
+  // Christmas board, sleigh and convoy: the list shows the drawn vehicle sets
+  garage: ['/garage', async (p, s) => {
+    for (const [tab, item] of [[s.tabs.board, s.christmas], [s.tabs.skin, s.sleigh], [s.tabs.palette, s.festive]]) {
+      await visibleText(p, tab).click();
+      await p.waitForTimeout(800);
+      await visibleText(p, item).click();
+      await p.waitForTimeout(1200);
+    }
+    await p.mouse.move(0, 0);
+    await p.waitForTimeout(1500);
+  }],
   creator: ['/custom-levels', async (p, s) => { await p.locator(`[aria-label^="${s.edit}, "]`).first().click(); await p.waitForTimeout(2500); }],
   share: ['/custom-levels', async (p, s) => { await p.locator(`[aria-label^="${s.share}, "]`).first().click(); await p.waitForTimeout(2500); }],
   multi: '/multi',
@@ -92,6 +106,15 @@ for (const [device, config] of Object.entries(DEVICES)) {
     const shoot = async (name, screen) => {
       const [path, steps] = typeof screen === 'string' ? [screen, null] : Array.isArray(screen) ? screen : ['/', screen];
       const ctx = await browser.newContext({ ...config, colorScheme: scheme, locale: LOCALES[lang] });
+      // No 480 px web column: the app fills the device, as on a real phone or tablet (utils/webViewport.ts)
+      await ctx.addInitScript(() => {
+        window.__RUSH_FULL_WIDTH__ = true;
+        document.addEventListener('DOMContentLoaded', () => {
+          const style = document.createElement('style');
+          style.textContent = '#root, body > div:not(#root):has(> *) { max-width: none !important; box-shadow: none !important; }';
+          document.head.appendChild(style);
+        });
+      });
       await ctx.addInitScript(seed => {
         if (!sessionStorage.getItem('seeded')) {
           localStorage.clear();

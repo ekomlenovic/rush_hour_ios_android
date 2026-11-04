@@ -25,7 +25,7 @@ Ordre conseillé : celui des numéros. Les 3 premières sont les plus vues (dans
 | 3 | Défi du jour (mode sombre) | A new Daily Challenge every day | Un nouveau défi chaque jour |
 | 4 | Écran de victoire 3 étoiles | Find the optimal solution | Trouve la solution optimale |
 | 5 | Profil, streak, calendrier | Keep your streak alive | Ne casse pas ton streak |
-| 6 | Garage | Unlock styles by playing | Débloque des styles en jouant |
+| 6 | Garage, tenue de Noël (plateau, traîneau, convoi) | Unlock styles by playing | Débloque des styles en jouant |
 | 7 | Créateur + partage QR | Create & share your own levels | Crée et partage tes niveaux |
 | 8 | Multijoueur (mode sombre) | Play with friends, on your own server | Joue entre amis, sur votre serveur |
 

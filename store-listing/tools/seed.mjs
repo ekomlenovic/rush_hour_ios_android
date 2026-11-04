@@ -1,6 +1,7 @@
 // Demo save for the store screenshots: about two months of play, reachable by a real player
 // (level 7, 72 levels cleared, 23-day streak). Dates are relative to today so the streak stays alive.
 import fs from 'fs';
+import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
@@ -23,9 +24,16 @@ const LEVEL_NAMES = {
   fr: ['Bouchon du matin', 'Embouteillage au port'],
 };
 
+// Styles shown on the screenshots: the drawn wood backdrop (unlocked at 150 stars) and the classic red car
+// of the headline « Free the red one »; the Garage capture equips the Christmas set itself
+export const DEMO_COSMETICS = { board: 'wood', skin: 'classic', palette: 'classic', effect: 'confetti' };
+
+// The campaign is a compact pack decoded by the app: levels.ts prints it as JSON (once per run)
+let campaign;
+const loadLevels = () => (campaign ??= JSON.parse(execFileSync(process.execPath, [process.env.TSX_CLI ?? `${ROOT}node_modules/tsx/dist/cli.mjs`, `${ROOT}store-listing/tools/levels.ts`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6 })));
+
 export function buildSeed({ scheme = 'light', lang = 'en', today = new Date() } = {}) {
-  const src = fs.readFileSync(`${ROOT}data/sampleLevels.ts`, 'utf8');
-  const levels = JSON.parse(src.slice(src.indexOf('= [') + 2, src.lastIndexOf(']') + 1));
+  const levels = loadLevels();
   let rnd = 7;
   const r = () => (rnd = (rnd * 16807) % 2147483647) / 2147483647;
 
@@ -63,6 +71,9 @@ export function buildSeed({ scheme = 'light', lang = 'en', today = new Date() } 
       xp += 100;
     }
   }
+  // Last Christmas daily won: the Christmas styles of the Garage are unlocked
+  daily[`${today.getFullYear() - 1}-12-24`] = { completed: true, score: 1800, stars: 3, timeMs: 210000, moves: 18, minMoves: 18 };
+  xp += 120;
   const weekly = {
     [weekKey(daysAgo(today, 14))]: { completed: true, score: 2800, stars: 3, timeMs: 640000, moves: 28, minMoves: 28 },
     [weekKey(daysAgo(today, 7))]: { completed: true, score: 3000, stars: 2, timeMs: 900000, moves: 36, minMoves: 30 },
@@ -98,7 +109,7 @@ export function buildSeed({ scheme = 'light', lang = 'en', today = new Date() } 
     notificationsPrompted: true,
     themeMode: scheme,
     isMusicEnabled: false,
-    cosmetics: { board: 'classic', skin: 'classic', palette: 'classic', effect: 'confetti' },
+    cosmetics: DEMO_COSMETICS,
   };
   const version = +fs.readFileSync(`${ROOT}store/migrations.ts`, 'utf8').match(/STORE_VERSION = (\d+)/)[1];
   return JSON.stringify({ state, version });

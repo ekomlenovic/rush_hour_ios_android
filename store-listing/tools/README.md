@@ -5,7 +5,8 @@ Scripts qui refont toutes les images de `store-listing/` à partir de **vrais é
 | Script | Rôle |
 |---|---|
 | `web-setup.sh` | installe ce qu'il faut pour la version web (sans toucher à `package.json`) |
-| `seed.mjs` | sauvegarde de démo : ~2 mois de jeu, niveau joueur 7, 72 niveaux réussis, streak de 23 jours (dates relatives à aujourd'hui) |
+| `seed.mjs` | sauvegarde de démo : ~2 mois de jeu, niveau joueur 7, 72 niveaux réussis, streak de 23 jours (dates relatives à aujourd'hui), défi de Noël dernier réussi ; plateau Bois équipé, voiture rouge classique (le titre « Libère la rouge »), la capture du Garage équipe la tenue de Noël |
+| `levels.ts` | la campagne en JSON, pour `seed.mjs` |
 | `solve.ts` | solution optimale d'un niveau de la campagne (le solveur de l'app), pour jouer la partie de la capture « victoire » |
 | `capture.mjs` | captures brutes, pour chaque appareil (téléphone, tablette 7" et 10"), langue (EN, FR) et thème (clair, sombre) → `.raw/` (ignoré par git) |
 | `render.mjs` + `frame.html` + `specs.json` | visuels finaux : titre + capture dans un cadre d'appareil → `../<langue>/{phone,tablet-7,tablet-10}/` |
@@ -14,7 +15,9 @@ Scripts qui refont toutes les images de `store-listing/` à partir de **vrais é
 
 ## Refaire les images
 
-Il faut Node 22 et Playwright avec Chromium (`npm i -g playwright && npx playwright install chromium`, ou `PLAYWRIGHT_PATH` / `CHROMIUM_PATH` vers une installation existante).
+Il faut Node 22 et Playwright avec Chromium (`npm i -g playwright && npx playwright install chromium`, ou `PLAYWRIGHT_PATH` / `CHROMIUM_PATH` vers une installation existante), et `tsx` (`node_modules/tsx`, ou `TSX_CLI` vers son `dist/cli.mjs`) : la campagne est un pack compact que `levels.ts` décode avec le code de l'app.
+
+Sous Windows, Edge fait l'affaire : `CHROMIUM_PATH="C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"`, et `PLAYWRIGHT_PATH` en URL `file:///C:/…/playwright/index.mjs`.
 
 ```bash
 store-listing/tools/web-setup.sh
