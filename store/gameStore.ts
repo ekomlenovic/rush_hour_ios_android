@@ -884,7 +884,8 @@ export const useGameStore = create<GameState>()(
       purgeCustomLevels: (baseLevelCount) => {
         const { progress, maxUnlockedLevel, savedStates, lastPlayedLevelId } = get();
         const isGenerated = (id: number) => id > baseLevelCount && id < 900000;
-        const cleanedProgress = progress.filter(p => p.levelId <= baseLevelCount);
+        // Only the generated levels go: the campaign, the tutorial and Mes niveaux (timestamp ids) keep their stars (issue 160)
+        const cleanedProgress = progress.filter(p => !isGenerated(p.levelId));
         const clampedUnlocked = Math.min(maxUnlockedLevel, baseLevelCount + 1);
         // The games in progress go with the levels, and the map no longer opens on one of them
         const keptSaves = Object.fromEntries(Object.entries(savedStates).filter(([key]) => !isGenerated(Number(key))));
