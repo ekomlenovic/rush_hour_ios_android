@@ -4,6 +4,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { UiColors } from '@/theme';
+import { MAX_UI_FONT_SCALE } from '@/utils/boardSize';
 
 interface Props {
   colors: UiColors;
@@ -29,7 +30,7 @@ export default function GameActions({ colors, showUndoAndHint, isHintLoading, on
         <>
           <Pressable onPress={onUndo} style={[styles.actionBtn, { backgroundColor: colors.card }]} accessibilityRole="button" accessibilityLabel={t('game.undo')}>
             <Ionicons name="arrow-undo" size={ICON_SIZE} color={colors.text} />
-            <Text style={[styles.actionText, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('game.undo')}</Text>
+            <Text maxFontSizeMultiplier={MAX_UI_FONT_SCALE} style={[styles.actionText, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('game.undo')}</Text>
           </Pressable>
           <Pressable
             onPress={onHint}
@@ -47,13 +48,13 @@ export default function GameActions({ colors, showUndoAndHint, isHintLoading, on
                 <Ionicons name="bulb" size={ICON_SIZE} color={colors.warning} />
               )}
             </View>
-            <Text style={[styles.actionText, { color: colors.warningText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('game.hint')}</Text>
+            <Text maxFontSizeMultiplier={MAX_UI_FONT_SCALE} style={[styles.actionText, { color: colors.warningText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('game.hint')}</Text>
           </Pressable>
         </>
       )}
       <Pressable onPress={onReset} style={[styles.actionBtn, { backgroundColor: colors.card }]} accessibilityRole="button" accessibilityLabel={t('common.reset')}>
         <Ionicons name="refresh" size={ICON_SIZE} color={colors.text} />
-        <Text style={[styles.actionText, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('common.reset')}</Text>
+        <Text maxFontSizeMultiplier={MAX_UI_FONT_SCALE} style={[styles.actionText, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t('common.reset')}</Text>
       </Pressable>
     </Animated.View>
   );
