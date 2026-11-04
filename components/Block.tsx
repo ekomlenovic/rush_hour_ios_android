@@ -10,7 +10,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { haptics, Haptics } from '@/utils/haptics';
 import { Vehicle } from '@/store/gameStore';
-import { stepVehicle } from '@/utils/accessibility';
+import { actionStep, stepVehicle } from '@/utils/accessibility';
 import { startHintGlow, stopHintGlow } from '@/utils/hintGlow';
 import { useBoardTheme, type VehicleArt } from '@/theme';
 import { labelOn } from '@/theme/contrast';
@@ -217,8 +217,7 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
   ), [disabled, isHorizontal, a11yStrings]);
 
   const handleA11yAction = useCallback((event: AccessibilityActionEvent) => {
-    const forward = ['increment', 'right', 'down'].includes(event.nativeEvent.actionName);
-    const next = stepVehicle(vehicle, { min, max }, forward ? 1 : -1);
+    const next = stepVehicle(vehicle, { min, max }, actionStep(vehicle.orientation, event.nativeEvent.actionName));
     if (!next) {
       AccessibilityInfo.announceForAccessibility(a11yStrings.blocked);
       triggerCollisionHaptic();

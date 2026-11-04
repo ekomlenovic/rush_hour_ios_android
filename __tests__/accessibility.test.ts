@@ -1,7 +1,8 @@
 import i18next, { TFunction } from 'i18next';
 import fr from '../locales/fr.json';
 import en from '../locales/en.json';
-import { getColorKey, getVehicleLetters, describeVehicle, describePosition, describeExit, stepVehicle } from '../utils/accessibility';
+import { getColorKey, getVehicleLetters, describeVehicle, describePosition, describeExit, stepVehicle, actionStep, describeShownVehicle } from '../utils/accessibility';
+import { applyPalette, VEHICLE_PALETTES, type VehiclePaletteId } from '../theme/board';
 import { CAR_PALETTE } from '../components/creator/constants';
 import { sampleLevels } from '../data/sampleLevels';
 import type { Vehicle } from '../store/types';
@@ -99,5 +100,47 @@ describe('translations', () => {
 
   it('every screen reader text exists in French and English', () => {
     expect(keys((fr as any).a11y).sort()).toEqual(keys((en as any).a11y).sort());
+  });
+});
+
+describe('actionStep (issue 171)', () => {
+  it('moves a vertical vehicle up on a swipe up, as the "Move up" action', () => {
+    expect(actionStep('vertical', 'increment')).toBe(-1);
+    expect(actionStep('vertical', 'up')).toBe(-1);
+    expect(actionStep('vertical', 'decrement')).toBe(1);
+    expect(actionStep('vertical', 'down')).toBe(1);
+    const v = vehicle({ orientation: 'vertical', row: 2, col: 1 });
+    expect(stepVehicle(v, { min: 0, max: 4 }, actionStep('vertical', 'increment'))).toEqual({ row: 1, col: 1 });
+  });
+
+  it('keeps a swipe up moving a horizontal vehicle right', () => {
+    expect(actionStep('horizontal', 'increment')).toBe(1);
+    expect(actionStep('horizontal', 'right')).toBe(1);
+    expect(actionStep('horizontal', 'decrement')).toBe(-1);
+    expect(actionStep('horizontal', 'left')).toBe(-1);
+  });
+});
+
+describe('describeShownVehicle (issue 167)', () => {
+  const level = sampleLevels[1];
+  const letters = getVehicleLetters(level.vehicles);
+
+  it.each(Object.keys(VEHICLE_PALETTES) as VehiclePaletteId[])('names each vehicle in the color shown with the %s palette', palette => {
+    const shown = applyPalette(level.vehicles, palette);
+    for (const v of level.vehicles) {
+      expect(describeShownVehicle(t, level.vehicles, palette, v.id)).toBe(describeVehicle(t, { ...v, color: shown.get(v.id) ?? v.color }, letters[v.id]));
+    }
+  });
+
+  it('is unchanged with the classic palette', () => {
+    for (const v of level.vehicles) {
+      expect(describeShownVehicle(t, level.vehicles, 'classic', v.id)).toBe(describeVehicle(t, v, letters[v.id]));
+    }
+  });
+
+  it('names the shown color, not the level one, with another palette', () => {
+    const differs = level.vehicles.some(v => !v.isTarget
+      && describeShownVehicle(t, level.vehicles, 'ocean', v.id) !== describeVehicle(t, v, letters[v.id]));
+    expect(differs).toBe(true);
   });
 });
