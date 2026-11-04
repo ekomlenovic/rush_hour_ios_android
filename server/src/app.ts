@@ -31,6 +31,30 @@ export const FEATURES = ['duel', 'ranking_range', 'reactions'];
 const PING_INTERVAL_MS = 25_000;
 /** Open duel WebSockets from one address at most */
 export const MAX_SOCKETS_PER_IP = 10;
+/** Requests a minute of one player (their token), or of one address without a token */
+export const RATE_LIMIT_PER_PLAYER = 120;
+/**
+ * Requests a minute of one address, whatever the tokens: friends behind one network (a home, a school)
+ * each have their own quota above (issue 165), and invented tokens are still bounded here
+ */
+export const RATE_LIMIT_PER_IP = 600;
+
+/** The address a limit counts by: an IPv6 address by its /64, as a home gets a whole /64 */
+export function ipKey(ip: string): string {
+  if (!ip.includes(':') || /^::ffff:\d+\.\d+\.\d+\.\d+$/i.test(ip)) return ip.replace(/^::ffff:/i, '');
+  const [head, tail = ''] = ip.toLowerCase().split('::');
+  const left = head ? head.split(':') : [];
+  const right = tail ? tail.split(':') : [];
+  const groups = ip.includes('::') ? [...left, ...Array(Math.max(0, 8 - left.length - right.length)).fill('0'), ...right] : left;
+  return `${groups.slice(0, 4).map(g => g.replace(/^0+(?=.)/, '')).join(':')}::/64`;
+}
+
+/** The key of the per-player limit: a hash of the token sent, the address without one */
+function playerKey(request: FastifyRequest): string {
+  const header = request.headers.authorization ?? '';
+  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  return token ? `token:${sha256(token)}` : `ip:${ipKey(request.ip)}`;
+}
 
 export interface AppDeps {
   config: Config;
@@ -278,8 +302,27 @@ export function buildApp(deps: AppDeps) {
   // ── Routes ─────────────────────────────────────────────────────────────────
 
   app.register(async (api) => {
-    await api.register(rateLimit, { max: 120, timeWindow: '1 minute' });
-    const strict = { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } };
+    // Per player rather than per address (issue 165): the limit runs before the player is known,
+    // so it keys on the token sent; a ceiling per address bounds a client that invents tokens
+    const ipHits = new Map<string, { windowStart: number; count: number }>();
+    api.addHook('onRequest', async (request, reply) => {
+      const key = ipKey(request.ip);
+      const time = Date.now();
+      let hits = ipHits.get(key);
+      if (!hits || time - hits.windowStart >= 60_000) {
+        // Old windows go: the map holds the addresses of the last minute only
+        for (const [k, h] of ipHits) if (time - h.windowStart >= 60_000) ipHits.delete(k);
+        hits = { windowStart: time, count: 0 };
+        ipHits.set(key, hits);
+      }
+      if (++hits.count > RATE_LIMIT_PER_IP) {
+        reply.header('retry-after', String(Math.ceil((hits.windowStart + 60_000 - time) / 1000)));
+        throw new ApiError(429, 'rate_limited');
+      }
+    });
+    await api.register(rateLimit, { max: RATE_LIMIT_PER_PLAYER, timeWindow: '1 minute', keyGenerator: playerKey });
+    // Guessing an invite or recovery code, or claiming the admin: per address, whatever the token
+    const strict = { config: { rateLimit: { max: 10, timeWindow: '15 minutes', keyGenerator: (request: FastifyRequest) => `ip:${ipKey(request.ip)}` } } };
 
     api.get('/info', async () => ({
       name: settings().serverName,
