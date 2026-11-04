@@ -47,7 +47,6 @@
 > New in 2.1:
 > - 11 holidays of the year (Halloween, Christmas, New Year, Easter…), each with its own board, car, vehicles and win effect, unlocked in the Daily Challenge
 > - Every Garage style is now hand-drawn (ferries, safari jeeps, bulldozers…)
-> - Your progress follows you to a new phone with Google Play Games
 > - Fully playable with TalkBack, 3 stars included
 >
 > No ads, no in-app purchases, no account, works offline, and the source code is public on GitHub.
@@ -77,7 +76,6 @@
 > Nouveau dans la 2.1 :
 > - 11 fêtes de l'année (Halloween, Noël, Nouvel An, Pâques…), chacune avec son plateau, sa voiture, ses véhicules et son effet, à gagner au défi du jour
 > - Tous les styles du Garage sont dessinés (ferrys, jeeps de safari, bulldozers…)
-> - La progression te suit sur un nouveau téléphone avec Google Play Jeux
 > - Entièrement jouable avec TalkBack, 3 étoiles comprises
 >
 > Sans pub, sans achat intégré, sans compte, hors ligne, et le code source est public sur GitHub.

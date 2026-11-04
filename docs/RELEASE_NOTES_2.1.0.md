@@ -1,6 +1,6 @@
 # Rush Hours 2.1.0 (versionCode 23)
 
-Mise à jour de la **2.0.7 (versionCode 22)** : les fêtes de l'année arrivent dans le Garage, tous les styles sont dessinés, la progression se synchronise via Play Jeux, et une longue série de corrections (accessibilité, sauvegarde, streak, multijoueur).
+Mise à jour de la **2.0.7 (versionCode 22)** : les fêtes de l'année arrivent dans le Garage, tous les styles sont dessinés, la demande de note arrive sur le Play Store, et une longue série de corrections (accessibilité, sauvegarde, streak, multijoueur).
 
 ## Play Store (500 caractères max par langue)
 
@@ -12,7 +12,6 @@ Nouveautés :
 • Garage : 11 fêtes de l'année (Halloween, Noël, Nouvel An, Pâques…), chacune avec son plateau, sa voiture, ses couleurs et son effet, à gagner au défi du jour
 • Fonds d'écran et véhicules dessinés pour les styles du Garage
 • La voiture à sortir regarde toujours vers la sortie
-• Progression sauvegardée avec Play Jeux, retrouvée sur un nouveau téléphone
 • Plus simple avec TalkBack et en grande police
 • Corrections : sauvegarde, streak, multijoueur
 </fr-FR>
@@ -21,7 +20,6 @@ New:
 • Garage: 11 holidays of the year (Halloween, Christmas, New Year, Easter…), each with its own board, car, colors and effect, won in the Daily Challenge
 • Drawn backgrounds and vehicles for the Garage styles
 • The car to get out always faces the exit
-• Progress saved with Play Games, back on your new phone
 • Easier with TalkBack and large fonts
 • Fixes: save, streak, multiplayer
 </en-US>
@@ -55,7 +53,6 @@ New:
 
 ### Sauvegarde
 
-- **Synchro automatique via Play Jeux** (#323, Android installé depuis Google Play seulement) : la progression est copiée dans les Saved Games de Play Jeux et revient toute seule sur un nouveau téléphone. Les deux sauvegardes sont fusionnées en faveur du joueur (meilleurs résultats et déblocages des deux côtés, XP au plus haut), jamais remplacées. Interrupteur, état et « Synchroniser maintenant » dans Options → Sauvegarde. L'export / import manuel ne change pas.
 - **Code de sauvegarde trop gros** (#315) : si le presse-papiers refuse le code, l'app le dit et renvoie vers l'export en fichier, au lieu d'échouer en silence. Même chose pour un presse-papiers illisible au collage.
 - **Sauvegarde non chargée** (#300) : après une lecture ratée au lancement, l'écran Sauvegarde refuse d'exporter (un fichier vide) ou d'importer (rien n'était écrit) et conseille de relancer l'app.
 - **Import et streak** (#309) : le message de fin d'import dit ce que les jours manqués depuis l'export ont fait au streak (gels utilisés, streak arrêté).
@@ -91,13 +88,12 @@ New:
 
 ### Divers
 
-- **Politique de confidentialité** (#303, #323) : elle mentionne la vérification des mises à jour, les liens externes, la version web et la synchro Play Jeux.
+- **Politique de confidentialité** (#303) : elle mentionne la vérification des mises à jour, les liens externes et la version web.
 - Tests ajoutés sur les règles du défi du jour à l'écran, la reconnexion des duels et les champs sauvegardés (#314) ; actions GitHub à jour (#283).
 
 ## Données des joueurs
 
 - **`STORE_VERSION` 12 → 13** (#324) : une étape ajoutée à la fin de `migrateState` crée `reviewPrompt` (« jamais demandé », ancienneté et jours de jeu déduits de la sauvegarde). Aucune donnée existante n'est modifiée ; champ propre au téléphone, ni exporté ni remplacé par un import. Testé dans `__tests__/migrations.test.ts` à partir d'un état v12 écrit en dur.
-- **Nouveau store `rush-hours-cloud-sync`** (version 1, #323) : propre au téléphone, jamais exporté. Le nom du snapshot Play Jeux `rush-hours-progress` est un identifiant persisté.
 - **Store multijoueur** : forme inchangée (version 2) ; les parties dont la date limite est passée (que le serveur refuse déjà) sont retirées au chargement (#313), les comptes ne sont pas touchés.
 - **Cosmétiques** : seuls des identifiants ont été **ajoutés** (44 styles d'événement), aucun renommé ni réutilisé ; les déblocages sont calculés depuis `dailyChallengeProgress`.
 - **Code de sauvegarde** : champ facultatif `campaignSize` (#310). Les anciennes sauvegardes s'importent toujours (`__tests__/saveTransfer.test.ts`).
@@ -105,7 +101,6 @@ New:
 
 ## Avant de publier
 
-- **Nouveau build natif obligatoire** : `expo-store-review`, le module `rush-play-games` et la fonction `installerPackage` de `rush-device` sont nouveaux. Le dossier local `android/` (versionCode 19 / 2.0.4) doit être régénéré avec `expo prebuild` (sauvegarder d'abord le keystore et la config de signature).
-- **Play Jeux** (#323) : activer Play Jeux avec **Saved Games** dans la Play Console, définir `PLAY_GAMES_PROJECT_ID` au moment du `prebuild`, mettre à jour la section **Sécurité des données**. Sans identifiant, la synchro est inactive : retirer alors la ligne « Progression sauvegardée avec Play Jeux » des notes ci-dessus.
-- **Vérifications sur téléphone** (#180, #173) ; tester la synchro et la demande de note sur une piste de test interne (installée depuis le Play Store).
+- **Nouveau build natif obligatoire** : `expo-store-review` et la fonction `installerPackage` de `rush-device` sont nouveaux. Le dossier local `android/` (versionCode 19 / 2.0.4) doit être régénéré avec `expo prebuild` (sauvegarder d'abord le keystore et la config de signature).
+- **Vérifications sur téléphone** (#180, #173) ; tester la demande de note sur une piste de test interne (installée depuis le Play Store).
 - Vérifier dans la Play Console que le versionCode 23 n'a pas déjà été utilisé.
