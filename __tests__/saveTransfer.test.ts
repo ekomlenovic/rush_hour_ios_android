@@ -3,6 +3,7 @@ import { sampleLevels } from '../data/sampleLevels';
 import { STORE_VERSION } from '../store/migrations';
 import { archiveWinXp, getFreezeCapacity, getPlayerLevel } from '../data/progression';
 import { decodeSave, encodeSave, exportProgress, maxPlausibleXp, parseSave } from '../utils/saveTransfer';
+import { fullMoveLog } from '../utils/solutionReplay';
 import { calculateScore, getStars } from '../utils/scoring';
 import type { Level } from '../store/types';
 import { resetStore, setToday, winDaily } from './helpers';
@@ -99,6 +100,21 @@ describe('export then import', () => {
     expect(saved.history).toEqual([]);
     expect(saved.undoSteps).toEqual([]);
     expect(saved.moveLog).toEqual([]);
+  });
+
+  it.each(['daily-2026-10-12', 'weekly-2026-W42'])('keeps the move log of a challenge in progress (%s, issue 178)', key => {
+    store().loadLevel(sampleLevels[2]);
+    const v = sampleLevels[2].vehicles.find(x => !x.isTarget)!;
+    store().moveVehicle(v.id, v.row, v.col);
+    const inProgress = store().savedStates[String(sampleLevels[2].id)];
+    const moveLog = [{ vehicleId: v.id, delta: 1, t: 800 }, { vehicleId: v.id, delta: -1, t: 1600 }, { vehicleId: v.id, delta: 1, t: 2400 }];
+    useGameStore.setState({ savedStates: { [key]: { ...inProgress, moveCount: 3, moveLog } } });
+    const result = parseSave(exportProgress());
+    if (!result.ok) throw new Error(result.error);
+    const saved = (result.state.savedStates as Record<string, { moveCount: number; undoSteps: unknown[]; moveLog: unknown[] }>)[key];
+    expect(saved.moveCount).toBe(3);
+    expect(saved.moveLog).toEqual(moveLog);
+    expect(saved.undoSteps).toEqual([]);
   });
 
   it('keeps the settings of the phone it is imported on', () => {
@@ -285,6 +301,18 @@ describe('import refuses', () => {
   it('a save from a newer version of the app', () => {
     const code = encodeSave({ version: STORE_VERSION + 1, exportedAt: '2026-10-12', state: {} });
     expect(parseSave(code)).toEqual({ ok: false, error: 'too_new' });
+  });
+
+  it('a save from an app with a bigger campaign, at the same STORE_VERSION (issue 179)', () => {
+    playSomeDays();
+    const save = decodeSave(exportProgress()) as Exclude<ReturnType<typeof decodeSave>, string>;
+    expect(save.campaignSize).toBe(sampleLevels.length);
+    expect(parseSave(encodeSave({ ...save, campaignSize: sampleLevels.length + 250 }))).toEqual({ ok: false, error: 'too_new' });
+    // Same campaign, a smaller one, or a code from before the field: accepted
+    expect(parseSave(encodeSave(save)).ok).toBe(true);
+    expect(parseSave(encodeSave({ ...save, campaignSize: sampleLevels.length - 100 })).ok).toBe(true);
+    const { campaignSize: _, ...withoutSize } = save;
+    expect(parseSave(encodeSave(withoutSize)).ok).toBe(true);
   });
 
   it('accepts a save made a day ahead, on a phone in a time zone further east', () => {
@@ -529,5 +557,21 @@ describe('a level in progress broken on the phone', () => {
     expect(() => store().loadLevel(level)).not.toThrow();
     expect(store().moveCount).toBe(0);
     expect(store().savedStates).not.toHaveProperty(String(level.id));
+  });
+});
+
+describe('"Voir ma solution" only with a whole move log (issue 178)', () => {
+  const record = { vehicleId: 'A', delta: 1, t: 100 };
+  it('is offered when the log has one record per move', () => {
+    const moveLog = Array.from({ length: 14 }, () => record);
+    expect(fullMoveLog({ completed: true, score: 1400, stars: 3, moves: 14, moveLog })).toBe(moveLog);
+  });
+
+  it('is not offered for a log cut short, a missing log or a result without its moves', () => {
+    const half = Array.from({ length: 7 }, () => record);
+    expect(fullMoveLog({ completed: true, score: 1400, stars: 3, moves: 14, moveLog: half })).toBeUndefined();
+    expect(fullMoveLog({ completed: true, score: 1400, stars: 3, moves: 14 })).toBeUndefined();
+    expect(fullMoveLog({ completed: true, score: 1400, stars: 3, moveLog: half })).toBeUndefined();
+    expect(fullMoveLog(undefined)).toBeUndefined();
   });
 });
