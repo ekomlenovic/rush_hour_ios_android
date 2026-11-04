@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
 import { canTransferSave, exportProgress, parseSave } from '@/utils/saveTransfer';
 import { readPickedFile, shareSaveFile } from '@/utils/shareSave';
+import { copySaveCode } from '@/utils/copySaveCode';
 import { haptics, Haptics } from '@/utils/haptics';
 import type { UiColors } from '@/theme';
 import { settingsStyles as styles } from './styles';
@@ -24,8 +25,12 @@ export default function SaveSection({ colors, onClose }: Props) {
   const importProgress = useGameStore(s => s.importProgress);
 
   const copyCode = async (code: string) => {
-    await Clipboard.setStringAsync(code);
-    Alert.alert(t('save.copied_title'), t('save.copied_body'));
+    if (await copySaveCode(code)) {
+      Alert.alert(t('save.copied_title'), t('save.copied_body'));
+    } else {
+      haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(t('save.copy_failed_title'), t('save.copy_failed_body'));
+    }
   };
 
   /** Nothing to export nor to replace while the game's save is not loaded: it says so instead (issue 174) */
@@ -110,7 +115,14 @@ export default function SaveSection({ colors, onClose }: Props) {
   const handlePasteCode = async () => {
     haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!saveReady()) return;
-    confirmImport(await Clipboard.getStringAsync());
+    // A clipboard that cannot be read (a code too long for it, issue 180): the file is offered instead
+    const code = await Clipboard.getStringAsync().catch(() => null);
+    if (code === null) {
+      haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(t('save.error_title'), t('save.paste_failed_body'));
+      return;
+    }
+    confirmImport(code);
   };
 
   const linkButton = (label: string, onPress: () => void, hint?: string) => (
