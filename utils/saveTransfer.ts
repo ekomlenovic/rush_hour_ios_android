@@ -165,13 +165,6 @@ export const canTransferSave = (): boolean => useGameStore.persist.hasHydrated()
 /** What the app persists of the current state */
 const persistedState = () => useGameStore.persist.getOptions().partialize!(useGameStore.getState()) as Record<string, unknown>;
 
-/** What the app persists of the current progress, minus the device settings (the state a save carries, undo stacks included) */
-export function transferableState(): Record<string, unknown> {
-  const state = { ...persistedState() };
-  for (const field of DEVICE_FIELDS) delete state[field];
-  return state;
-}
-
 /** Saved games whose move log is exported: the challenges, whose log is the player's solution once won */
 const keepsMoveLog = (key: string): boolean => key.startsWith('daily-') || key.startsWith('weekly-');
 
