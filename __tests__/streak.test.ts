@@ -22,6 +22,33 @@ afterEach(() => {
 });
 
 describe('streak (rules in docs/GAME_DESIGN.md)', () => {
+  it('a win dated before the last streak day does not break it, and gives the freeze of that day back (issue 184)', () => {
+    winDays('2026-10-10', 4);
+    useGameStore.setState({ streakFreezes: 1 });
+    winDaily('2026-10-15'); // 10-14 frozen
+    expect(state().currentStreak).toBe(5);
+    expect(state().frozenDates).toEqual(['2026-10-14']);
+    expect(state().streakFreezes).toBe(0);
+    // The local date goes back one day (a flight east across the date line)
+    winDaily('2026-10-14');
+    expect(state().currentStreak).toBe(5);
+    expect(state().lastStreakDate).toBe('2026-10-15');
+    expect(state().frozenDates).toEqual([]);
+    expect(state().streakFreezes).toBe(1);
+    winDaily('2026-10-16');
+    expect(state().currentStreak).toBe(6);
+  });
+
+  it('a win dated before the last streak day leaves a full stock of freezes as it is', () => {
+    winDays('2026-10-10', 4);
+    useGameStore.setState({ streakFreezes: 1 });
+    winDaily('2026-10-15');
+    useGameStore.setState({ streakFreezes: MAX_STREAK_FREEZES });
+    winDaily('2026-10-14');
+    expect(state().streakFreezes).toBe(MAX_STREAK_FREEZES);
+    expect(state().currentStreak).toBe(5);
+  });
+
   it('grows on consecutive days, in every time zone (#20)', () => {
     winDays('2026-10-12', 3);
     expect(state().currentStreak).toBe(3);

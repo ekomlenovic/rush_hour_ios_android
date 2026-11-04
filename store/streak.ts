@@ -53,6 +53,15 @@ export function settleStreak(state: Omit<StreakState, 'bestStreak'>, today: stri
 /** The streak after winning the daily of `dateKey` (missed days settled first) */
 export function advanceStreak(state: StreakState, dateKey: string, maxFreezes = MAX_STREAK_FREEZES): Partial<StreakState> {
   if (state.lastStreakDate === dateKey) return {}; // Already counted today
+  // A day already behind the streak (the local date went back: a flight east across the date line,
+  // a time zone changed by hand): the streak stays. Won after all, a frozen day gives its freeze back (issue 184)
+  if (state.lastStreakDate && daysBetween(state.lastStreakDate, dateKey) < 0) {
+    if (!state.frozenDates.includes(dateKey)) return {};
+    return {
+      frozenDates: state.frozenDates.filter(d => d !== dateKey),
+      ...(state.streakFreezes < maxFreezes && { streakFreezes: state.streakFreezes + 1 }),
+    };
+  }
 
   // Missed days may not have been settled yet (e.g. app opened on a deep link)
   const settled = settleStreak(state, dateKey).patch;
