@@ -82,6 +82,7 @@
       "@bacons/apple-targets",
       "./plugins/withoutPushEntitlement",
       "./plugins/withOptionalCamera",
+      "./plugins/withPlayGames",
       [
         "expo-notifications",
         {

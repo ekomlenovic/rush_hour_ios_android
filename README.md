@@ -154,7 +154,7 @@ Le jeu **n'est pas sur l'App Store**. Le fichier `.ipa` est publié dans les **[
 
 > Une app lancée dans LiveContainer n'a pas de widget d'écran d'accueil : installe Rush Hours avec SideStore pour l'avoir.
 
-> Ta progression reste sur ton téléphone. Pour changer d'appareil ou de méthode d'installation, utilise **Options → Sauvegarde → Exporter ma progression**, puis importe-la sur la nouvelle installation.
+> Ta progression reste sur ton téléphone (sur Android installé depuis Google Play, elle est aussi synchronisée avec Play Jeux si tu y es connecté). Pour changer d'appareil ou de méthode d'installation, utilise **Options → Sauvegarde → Exporter ma progression**, puis importe-la sur la nouvelle installation.
 
 ## Faire un retour
 
