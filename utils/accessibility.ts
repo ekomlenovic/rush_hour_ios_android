@@ -43,7 +43,8 @@ export function getColorKey(hex: string): ColorKey {
  * read by the screen reader and shown on the board in the color-blind option.
  */
 export function getVehicleLetters(vehicles: Vehicle[]): Record<string, string> {
-  const letters: Record<string, string> = {};
+  // No prototype: a vehicle id is a key, and `__proto__` would not be one (issue 181)
+  const letters: Record<string, string> = Object.create(null);
   let index = 0;
   for (const v of vehicles) {
     if (v.isTarget) continue;
