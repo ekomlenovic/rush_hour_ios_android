@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import type { UiColors } from '@/theme';
+import { MAX_UI_FONT_SCALE } from '@/utils/boardSize';
 
 interface Props {
   colors: UiColors;
@@ -19,12 +20,12 @@ export default function GameStatsBar({ colors, moveCount, minMoves, score, hintR
     <Animated.View entering={FadeInUp.delay(200).springify()} style={[styles.statsBar, { backgroundColor: colors.card }]}>
       <View style={styles.statsPanel}>
         <View style={styles.statBox} accessible>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('game.moves')}</Text>
-          <Text style={[styles.statValue, { color: colors.text }]}>{moveCount}</Text>
+          <Text maxFontSizeMultiplier={MAX_UI_FONT_SCALE} style={[styles.statLabel, { color: colors.textMuted }]}>{t('game.moves')}</Text>
+          <Text maxFontSizeMultiplier={MAX_UI_FONT_SCALE} style={[styles.statValue, { color: colors.text }]}>{moveCount}</Text>
         </View>
         <View style={styles.statBox} accessible>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('game.best')}</Text>
-          <Text style={[styles.statValue, { color: colors.text }]}>
+          <Text maxFontSizeMultiplier={MAX_UI_FONT_SCALE} style={[styles.statLabel, { color: colors.textMuted }]}>{t('game.best')}</Text>
+          <Text maxFontSizeMultiplier={MAX_UI_FONT_SCALE} style={[styles.statValue, { color: colors.text }]}>
             {minMoves}
             {hintRemainingMoves ? <Text style={{ color: colors.warningText, fontSize: 13 }}> ({t('game.hint_left', { count: hintRemainingMoves })})</Text> : null}
           </Text>
@@ -32,8 +33,8 @@ export default function GameStatsBar({ colors, moveCount, minMoves, score, hintR
       </View>
       <View style={[styles.divider, { backgroundColor: colors.textMuted }]} />
       <View style={styles.stat} accessible>
-        <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('game.score')}</Text>
-        <Text style={[styles.statValue, { color: score > 0 ? colors.success : colors.textMuted }]}>{score}</Text>
+        <Text maxFontSizeMultiplier={MAX_UI_FONT_SCALE} style={[styles.statLabel, { color: colors.textMuted }]}>{t('game.score')}</Text>
+        <Text maxFontSizeMultiplier={MAX_UI_FONT_SCALE} style={[styles.statValue, { color: score > 0 ? colors.success : colors.textMuted }]}>{score}</Text>
       </View>
     </Animated.View>
   );
