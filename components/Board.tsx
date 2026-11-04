@@ -7,7 +7,7 @@ import { vehicleFacing } from '@/utils/facing';
 import Block, { BlockA11yStrings } from './Block';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { getVehicleLetters, describeVehicle, describePosition, describeExit } from '@/utils/accessibility';
+import { getVehicleLetters, describeShownVehicle, describePosition, describeExit } from '@/utils/accessibility';
 import { useTheme, useBoardTheme, BoardLookProvider, applyPalette, PALETTE_ART, type BoardLook } from '@/theme';
 
 
@@ -156,7 +156,7 @@ const Board = React.memo(({ gridSize, vehicles, exitRow, exitCol, onMoveEnd, hin
               min={b.min}
               max={b.max}
               disabled={disabled || readOnly}
-              a11yLabel={describeVehicle(t, { ...v, color }, letters[v.id])}
+              a11yLabel={describeShownVehicle(t, vehicles, palette, v.id)}
               a11yValue={describePosition(t, v)}
               a11yStrings={a11yStrings}
               letter={showVehicleLetters ? (v.isTarget ? '★' : letters[v.id]) : undefined}

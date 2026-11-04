@@ -97,6 +97,7 @@ export function deserializeLevel(data: string, id: number = 999998): Level | nul
         id: p[6] || `v${Math.random().toString(36).substr(2, 5)}`
       };
     });
+    safeVehicleIds(vehicles);
 
     const name = sections[5] ? cleanLevelName(decodeURIComponent(sections[5])) : undefined;
 
@@ -124,6 +125,25 @@ export function getShareUrl(level: Level): string {
   const data = serializeLevel(level);
   const base = Platform.OS === 'web' ? `${WEB_APP_URL}/` : 'rush-hours://';
   return `${base}game?data=${encodeURIComponent(data)}`;
+}
+
+/** A vehicle id that can key an object: what the app writes (v3, target, blocker_2…), never __proto__ */
+const SAFE_VEHICLE_ID = /^[A-Za-z0-9_-]{1,32}$/;
+
+/**
+ * Renames, in place, the vehicles of a received level whose id the app would not write (issue 181):
+ * ids key objects (letters, colors), and `__proto__` as a key crashed the board. Links made by the app
+ * keep their ids.
+ */
+function safeVehicleIds(vehicles: Vehicle[]): void {
+  const taken = new Set(vehicles.map(v => v.id));
+  let next = 0;
+  for (const v of vehicles) {
+    if (SAFE_VEHICLE_ID.test(v.id) && v.id !== '__proto__') continue;
+    while (taken.has(`v${next}`)) next++;
+    v.id = `v${next}`;
+    taken.add(v.id);
+  }
 }
 
 export const LEVEL_NAME_MAX_LENGTH = 40;

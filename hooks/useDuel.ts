@@ -57,7 +57,16 @@ export function useDuel(account: ServerAccount | null): DuelControls {
       const socket = new WebSocket(duelSocketUrl(account.url));
       socketRef.current = socket;
 
+      // A socket closed while it was still connecting is not always closed: on Android, close() does
+      // nothing before the native open, which then fires onopen (issue 186). An abandoned socket is
+      // closed then, without sending its token: authenticated, it would replace the screen's own socket.
+      const abandoned = () => stopped || socketRef.current !== socket;
+
       socket.onopen = () => {
+        if (abandoned()) {
+          socket.close(1000, 'bye');
+          return;
+        }
         everOpened = true;
         attempt = 0;
         setUnreachable(null);
@@ -68,6 +77,7 @@ export function useDuel(account: ServerAccount | null): DuelControls {
         } satisfies DuelClientMessage));
       };
       socket.onmessage = (event) => {
+        if (abandoned()) return;
         let message: DuelServerMessage;
         try {
           message = JSON.parse(String(event.data));
