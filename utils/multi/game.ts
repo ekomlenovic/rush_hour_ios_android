@@ -41,7 +41,11 @@ export function gameFromStart(serverUrl: string, start: StartResult, saved: Mult
 export const elapsedMs = (game: MultiGame, now: number): number => Math.max(0, now + game.clockOffset - game.startedAt);
 
 /** The game after a move on the board, and whether the red car is out; null if the vehicle did not move */
-export function playMove(game: MultiGame, vehicleId: string, row: number, col: number, now: number): { game: MultiGame; won: boolean } | null {
+/**
+ * `mergeWithLast`: a screen reader step that follows a step of the same vehicle, nothing else played since:
+ * merged into the last move, as a drag of that length (issue 158); back where it started, the move is taken back
+ */
+export function playMove(game: MultiGame, vehicleId: string, row: number, col: number, now: number, mergeWithLast = false): { game: MultiGame; won: boolean } | null {
   const vehicle = game.vehicles.find(v => v.id === vehicleId);
   const last = game.moveLog[game.moveLog.length - 1];
   // Never back in time, even if the phone clock is changed
@@ -50,8 +54,13 @@ export function playMove(game: MultiGame, vehicleId: string, row: number, col: n
   // A move through a vehicle (two dragged at once) would make it refuse the win too
   if (!record || isWon(game) || !isLegalMove(game.vehicles, vehicleId, row, col, game.level.gridSize)) return null;
   const vehicles = game.vehicles.map(v => (v.id === vehicleId ? { ...v, row, col } : v));
+  let moveLog = [...game.moveLog, record];
+  if (mergeWithLast && last?.vehicleId === vehicleId) {
+    const delta = last.delta + record.delta;
+    moveLog = delta === 0 ? game.moveLog.slice(0, -1) : [...game.moveLog.slice(0, -1), { ...last, delta, t: record.t }];
+  }
   return {
-    game: { ...game, vehicles, moveLog: [...game.moveLog, record] },
+    game: { ...game, vehicles, moveLog },
     won: checkWin(vehicles, game.level.exitRow, game.level.exitCol, game.level.gridSize),
   };
 }

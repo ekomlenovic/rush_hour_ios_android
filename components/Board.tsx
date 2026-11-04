@@ -16,7 +16,8 @@ interface BoardProps {
   exitRow: number;
   exitCol: number;
   /** false when the move is refused (another vehicle got there first): the vehicle goes back */
-  onMoveEnd: (vehicleId: string, newRow: number, newCol: number) => boolean | void;
+  /** `step`: a one-cell move of the screen reader (merged with the steps just before it, issue 158) */
+  onMoveEnd: (vehicleId: string, newRow: number, newCol: number, step?: boolean) => boolean | void;
   hintVehicleId?: string | null;
   disabled?: boolean;
   /** No dragging, without the lock overlay (solution replay) */

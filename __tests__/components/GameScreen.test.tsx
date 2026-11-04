@@ -21,12 +21,13 @@ describe('game screen', () => {
   });
 
   it('a won map level: the win card opens and the progress is saved', async () => {
+    // The steps of a vehicle make one move (issue 158): the optimal solution, 3 stars
     const level = sampleLevels[0];
     // Under the real root layout, as in the app (gesture root, audio, toasts)
     await renderRouter({ _layout: require('@/app/_layout'), game: GameScreen }, { initialUrl: '/game?levelId=1' });
     await waitFor(() => expect(screen.getByLabelText(i18n.t('a11y.target_car'))).toBeTruthy());
 
-    expect(screen.queryByRole('header', { name: i18n.t('game.level_complete') })).toBeNull();
+    expect(screen.queryByRole('header', { name: i18n.t('game.perfect') })).toBeNull();
     // Each vehicle is found by what the screen reader says of it, and moved with its accessibility actions
     const letters = getVehicleLetters(level.vehicles);
     for (const [id, action, cells] of SOLUTION) {
@@ -38,12 +39,14 @@ describe('game screen', () => {
     }
 
     const { moveCount } = useGameStore.getState();
+    expect(moveCount).toBe(level.minMoves);
     const stars = getStars(moveCount, level.minMoves);
-    await waitFor(() => expect(screen.getByRole('header', { name: i18n.t('game.level_complete') })).toBeTruthy());
-    expect(screen.getByText(i18n.t('game.win_moves', { count: moveCount, best: level.minMoves }))).toBeTruthy();
+    expect(stars).toBe(3);
+    await waitFor(() => expect(screen.getByRole('header', { name: i18n.t('game.perfect') })).toBeTruthy());
+    expect(screen.getByText(i18n.t('game.win_moves_optimal', { count: moveCount }))).toBeTruthy();
     expect(screen.getByLabelText(i18n.t('a11y.level_stars', { count: stars }))).toBeTruthy();
-    // Not in the minimum: the level can be replayed for 3 stars, and level 2 comes next
-    expect(screen.getByRole('button', { name: i18n.t('solution.retry') })).toBeTruthy();
+    // In the minimum: nothing to replay for, and level 2 comes next
+    expect(screen.queryByRole('button', { name: i18n.t('solution.retry') })).toBeNull();
     expect(screen.getByRole('button', { name: i18n.t('game.next_level') })).toBeTruthy();
 
     const progress = useGameStore.getState().progress.find(p => p.levelId === level.id);

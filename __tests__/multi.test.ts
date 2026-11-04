@@ -261,6 +261,38 @@ describe('a multiplayer game on the phone', () => {
     expect(submission(game, now)).toEqual({ moves: game.moveLog, clientMs: now - game.localStartedAt, backgroundMs: 0 });
   });
 
+  it('screen reader steps of the same vehicle are merged into one move (issue 158)', () => {
+    let game = gameFromStart(URL, start, undefined, 1_000_500);
+    let now = 1_000_500;
+    let won = false;
+    for (const move of solvePuzzle(level.vehicles, level.gridSize, level.exitRow, level.exitCol).moves) {
+      let first = true;
+      for (;;) {
+        const v = game.vehicles.find(x => x.id === move.vehicleId)!;
+        if (v.row === move.toRow && v.col === move.toCol) break;
+        const [row, col] = v.orientation === 'horizontal' ? [v.row, v.col + Math.sign(move.toCol - v.col)] : [v.row + Math.sign(move.toRow - v.row), v.col];
+        now += 500;
+        const played = playMove(game, v.id, row, col, now, !first)!;
+        game = played.game;
+        won = played.won;
+        first = false;
+      }
+    }
+    expect(won).toBe(true);
+    expect(game.moveLog).toHaveLength(sampleLevels[0].minMoves);
+    expect(applyMoves(level, game.moveLog)).toMatchObject({ ok: true, won: true, moveCount: sampleLevels[0].minMoves });
+  });
+
+  it('a step back where the steps started takes the move back (issue 158)', () => {
+    let game = gameFromStart(URL, start, undefined, 1_000_500);
+    const [move] = solvePuzzle(level.vehicles, level.gridSize, level.exitRow, level.exitCol).moves;
+    const v = game.vehicles.find(x => x.id === move.vehicleId)!;
+    const [row, col] = v.orientation === 'horizontal' ? [v.row, v.col + Math.sign(move.toCol - v.col)] : [v.row + Math.sign(move.toRow - v.row), v.col];
+    game = playMove(game, v.id, row, col, 1_001_000)!.game;
+    game = playMove(game, v.id, v.row, v.col, 1_002_000, true)!.game;
+    expect(game.moveLog).toEqual([]);
+  });
+
   it('a vehicle dropped where it was is not a move', () => {
     const game = gameFromStart(URL, start, undefined, 1_000_500);
     const v = level.vehicles[1];
