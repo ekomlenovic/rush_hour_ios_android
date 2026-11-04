@@ -1,0 +1,20 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.rushplaygames'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.rushplaygames"
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+}
+
+dependencies {
+  // Play Games Services v2: sign-in and Saved Games (issue 320)
+  implementation 'com.google.android.gms:play-services-games-v2:22.1.0'
+}

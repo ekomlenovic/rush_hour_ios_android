@@ -245,7 +245,7 @@ Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dan
 
 ## Sauvegarde (export / import)
 
-Pour changer de téléphone sans perdre sa progression, **sans serveur ni compte** (marche aussi pour les builds SideStore et APK).
+Pour changer de téléphone sans perdre sa progression, **sans serveur ni compte** (marche aussi pour les builds SideStore et APK). Sur Android installé depuis Google Play, la progression est en plus **synchronisée toute seule** avec Play Jeux (voir « Synchro automatique (Play Jeux) ») : l'export / import reste le seul moyen sur iOS, le web et l'APK GitHub, et pour passer d'une plateforme à l'autre.
 
 | Règle | Implémentation |
 |---|---|
@@ -268,6 +268,24 @@ Pour changer de téléphone sans perdre sa progression, **sans serveur ni compte
 - **recalcul plutôt que confiance** : XP plafonnée à ce que les victoires ont pu rapporter (`maxPlausibleXp` : une victoire absente de la progression compte comme la première victoire d'un niveau aussi dur que possible, car la suppression des niveaux générés retire leur progression mais pas leur XP), gels plafonnés au stock du niveau joueur, succès inconnus retirés, cosmétiques non débloqués remis par défaut.
 
 > ⚠️ Un nouveau champ sauvegardé est exporté automatiquement. S'il est propre au téléphone, l'ajouter à `DEVICE_FIELDS`.
+
+### Synchro automatique (Play Jeux)
+
+Ne plus perdre sa progression en changeant de téléphone, sans rien faire (#320). Revient sur le choix de #18 (« pas de compte ni de serveur ») **pour Google Play seulement** : le jeu n'a toujours ni serveur ni compte à lui, la copie est dans les Saved Games du compte Google du joueur, et rien n'est imposé.
+
+| Règle | Implémentation |
+|---|---|
+| **Android installé depuis Google Play seulement** (pistes de test comprises), et seulement si le build a l'identifiant du projet Play Jeux. Ailleurs (iOS, web, APK GitHub, build sans identifiant), rien n'est initialisé, l'écran Sauvegarde ne montre rien de plus | `installedFromPlayStore`, `hasProjectId` (`modules/rush-play-games`), `PLAY_GAMES_PROJECT_ID` (`plugins/withPlayGames.js`), `isCloudSyncAvailable` (`utils/cloudSync.ts`) |
+| **Optionnel, sans compte imposé** : Play Jeux connecte le joueur tout seul s'il l'utilise ; sinon rien n'est envoyé, le jeu marche hors ligne comme avant, et Options → Sauvegarde propose « Se connecter à Play Jeux ». Activée par défaut, désactivable dans Options → Sauvegarde (réglage du téléphone, hors de la sauvegarde) | `isSignedIn`, `signInAndSync`, `useCloudSyncStore` (`store/cloudSyncStore.ts`, clé `rush-hours-cloud-sync`), `CloudSyncRow` (`components/settings/CloudSyncRow.tsx`) |
+| **Même contenu que le `.rushsave`** (le code d'`exportProgress`, compressé en gzip), dans un seul fichier `rush-hours-progress` des Saved Games. À la lecture, chaque version passe par **les vérifications de l'import** (`parseSave` : migrations, cohérence, recalculs). Le nom du fichier ne change jamais | `SNAPSHOT_NAME`, `syncProgress` (`utils/cloudSync.ts`) |
+| **Quand** : au lancement (un téléphone neuf retrouve sa progression, et le joueur en est prévenu une fois), quand l'app passe en **arrière-plan**, et ~3 s **après une victoire**. Jamais pendant une partie, jamais avant que la sauvegarde du téléphone soit relue (ni après une lecture ratée). Une synchro demandée pendant une autre est refaite après elle | `useCloudSync` (`hooks/useCloudSync.ts`, `WIN_SYNC_DELAY_MS`), `canTransferSave` |
+| **Fusion favorable au joueur**, jamais un remplacement : niveaux réussis, meilleur score, étoiles, meilleur temps, sans indice / sans aide, succès, niveaux débloqués, niveaux créés et importés, archives, styles vus : tout ce que l'un ou l'autre a gagné est gardé. XP, compteurs à vie et du récap : **le plus haut** des deux, jamais la somme (un téléphone parti de la sauvegarde de l'autre compte déjà ses victoires) | `mergeSaves` (`utils/cloudMerge.ts`) |
+| **Défis à un seul essai** : un défi du jour ou hebdo réussi l'emporte sur une partie non réussie ; réussi des deux côtés, le résultat **du téléphone** reste (un second téléphone ne donne pas un second essai). Les archives sont un entraînement : le meilleur résultat est gardé | `mergeOneTry`, `mergeBest` |
+| **Streak** : celui de la sauvegarde qui a réussi un défi du jour en dernier, le meilleur streak des deux, les jours gelés des deux, les gels (le plus haut, dans la limite du niveau joueur). Les jours manqués sont ensuite appliqués **comme à l'import** (`recordAppOpen`) | `mergeStreak`, `applyMergedProgress` (`store/gameStore.ts`) |
+| **Rien ne change sous le joueur** : ses parties en cours restent telles quelles (une partie seulement dans le cloud est ajoutée). La carte infinie est tirée au hasard sur chaque téléphone : un niveau généré qui diffère garde le plateau **et le résultat du téléphone** ; les niveaux après la fin de sa carte sont ajoutés. Réglages, styles choisis et position sur la carte restent ceux du téléphone, sauf sur un téléphone **qui n'a pas encore joué** (il prend ceux du cloud) | `mergeGenerated`, `mergeSavedStates`, `hasNotPlayed` |
+| **Conflits** (deux téléphones, l'un hors ligne) : toutes les versions trouvées sont lues et fusionnées, la fusion est écrite par-dessus | `open` (`RESOLUTION_POLICY_MANUAL`, `modules/rush-play-games`) |
+| **Jamais écrit par-dessus** une sauvegarde du cloud que cette version ne sait pas lire : une version plus récente du jeu (« mets le jeu à jour », elle reste intacte) ou un téléphone en avance de date. Une sauvegarde illisible (abîmée) n'est utile à personne : elle est remplacée. Un téléphone qui n'a pas joué et ne trouve rien n'écrit rien. Trop grosse pour les Saved Games : le jeu le dit et renvoie au fichier | `parseSave`, `CloudSyncStatus` |
+| Un niveau personnalisé supprimé sur un seul téléphone revient avec la fusion : en cas de doute, on garde | `mergeCustom` |
 
 ## Progression des joueurs — règle absolue
 

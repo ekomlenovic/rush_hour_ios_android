@@ -11,6 +11,8 @@ import { streakLines } from '@/hooks/useAppOpenAlert';
 import { haptics, Haptics } from '@/utils/haptics';
 import type { UiColors } from '@/theme';
 import { settingsStyles as styles } from './styles';
+import CloudSyncRow from './CloudSyncRow';
+import { isCloudSyncAvailable } from '@/utils/cloudSync';
 
 interface Props {
   colors: UiColors;
@@ -137,7 +139,8 @@ export default function SaveSection({ colors, onClose }: Props) {
   return (
     <View>
       <Text style={[styles.sectionTitle, { color: colors.primaryText }]} accessibilityRole="header">{t('save.title')}</Text>
-      <Text style={[styles.settingSub, { color: colors.textMuted, marginBottom: 16 }]}>{t('save.desc')}</Text>
+      <CloudSyncRow colors={colors} />
+      <Text style={[styles.settingSub, { color: colors.textMuted, marginBottom: 16 }]}>{isCloudSyncAvailable() ? t('save.desc_cloud') : t('save.desc')}</Text>
       <View style={{ gap: 12 }}>
         <Pressable style={[styles.mainBtn, { backgroundColor: colors.primary }]} onPress={handleExportFile} accessibilityRole="button">
           <Text style={styles.mainBtnText}>{t('save.export_btn')}</Text>

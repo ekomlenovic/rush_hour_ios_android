@@ -217,6 +217,11 @@ interface GameState {
   /** Replaces the progress with an imported save (utils/saveTransfer.ts), keeping the device settings */
   /** Replaces the progress; what the days missed since the export did, to tell the player (issue 175) */
   importProgress: (imported: Record<string, unknown>) => AppOpenInfo;
+  /**
+   * Applies this phone's progress merged with the cloud's (utils/cloudMerge.ts, issue 320): nothing is
+   * reset, the device settings stay, then the days missed are applied as at an import
+   */
+  applyMergedProgress: (merged: Record<string, unknown>) => AppOpenInfo;
   updateStreak: (dateKey: string) => void;
   recordAppOpen: () => AppOpenInfo;
   /** The game screen opens (a day) or closes (null) a daily not won yet */
@@ -1045,6 +1050,17 @@ export const useGameStore = create<GameState>()(
           cosmetics: sanitizeSelection(state.cosmetics, buildCosmeticContext(state)),
         });
         // Achievements the progress already earns (no toast flood), then the days missed since the export
+        get().checkAchievements({ silent: true });
+        return get().recordAppOpen();
+      },
+
+      applyMergedProgress: (merged) => {
+        const state = { ...get(), ...(merged as Partial<GameState>) };
+        set({
+          ...(merged as Partial<GameState>),
+          stats: { ...initialStats(), ...state.stats },
+          cosmetics: sanitizeSelection(state.cosmetics, buildCosmeticContext(state)),
+        });
         get().checkAchievements({ silent: true });
         return get().recordAppOpen();
       },
