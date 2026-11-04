@@ -11,9 +11,14 @@ const migrate = (state: Record<string, unknown>, version: number) =>
   options.migrate!(structuredClone(state), version) as unknown as Record<string, unknown>;
 /** Id a level of the pack had before the 5 levels inserted after level 5 in v5 */
 const idBeforeV5 = (id: number) => (id > 10 ? id - 5 : id);
-/** The state without the recap fields that v12 adds to every save, to check the steps before it */
+/** The state without the review prompt that v13 adds to every save, to check the steps before it */
+const withoutReview = (state: Record<string, unknown>) => {
+  const { reviewPrompt: _review, ...rest } = state;
+  return rest;
+};
+/** The state without the recap fields that v12 and the review prompt that v13 add to every save, to check the steps before them */
 const withoutRecap = (state: Record<string, unknown>) => {
-  const { monthlyStats: _m, yearlyStats: _y, achievementMonths: _a, recapSince: _r, ...rest } = state;
+  const { monthlyStats: _m, yearlyStats: _y, achievementMonths: _a, recapSince: _r, ...rest } = withoutReview(state);
   return rest;
 };
 const merge = (persisted: Record<string, unknown>) =>
@@ -25,8 +30,8 @@ const withBoards = (save: any) => {
 };
 
 describe('persisted state', () => {
-  it('is at version 12', () => {
-    expect(options.version).toBe(12);
+  it('is at version 13', () => {
+    expect(options.version).toBe(13);
     expect(STORE_VERSION).toBe(options.version);
   });
 
@@ -55,6 +60,14 @@ const PERSISTED_KEYS: Record<number, string[]> = {
     'isHapticsEnabled', 'isMusicEnabled', 'lastOpenDate', 'lastPlayedLevelId', 'lastStreakDate',
     'maxUnlockedLevel', 'monthlyStats', 'notificationsEnabled', 'notificationsPrompted', 'progress',
     'recapSince', 'recapsSeen', 'reminderHour', 'savedStates', 'seenAchievements', 'seenCosmetics',
+    'showVehicleLetters', 'stats', 'streakFreezes', 'themeMode', 'totalHintsUsed',
+    'weeklyChallengeProgress', 'weeklyLevelKey', 'xp', 'yearlyStats'],
+  13: ['achievementMonths', 'achievements', 'archiveLevels', 'archiveProgress', 'bestStreak', 'cosmetics',
+    'createdLevels', 'currentDailyLevel', 'currentStreak', 'currentWeeklyLevel', 'dailyChallengeProgress',
+    'dailyLevelDate', 'dailyMissions', 'frozenDates', 'generatedLevels', 'generationState', 'importedLevels',
+    'isHapticsEnabled', 'isMusicEnabled', 'lastOpenDate', 'lastPlayedLevelId', 'lastStreakDate',
+    'maxUnlockedLevel', 'monthlyStats', 'notificationsEnabled', 'notificationsPrompted', 'progress',
+    'recapSince', 'recapsSeen', 'reminderHour', 'reviewPrompt', 'savedStates', 'seenAchievements', 'seenCosmetics',
     'showVehicleLetters', 'stats', 'streakFreezes', 'themeMode', 'totalHintsUsed',
     'weeklyChallengeProgress', 'weeklyLevelKey', 'xp', 'yearlyStats'],
 };
@@ -397,7 +410,7 @@ describe('migrate v11 → v12', () => {
 
   it('a player without anything starts with empty counters', () => {
     const state = migrate({ progress: [] }, 11);
-    expect(state).toEqual({ progress: [], monthlyStats: {}, yearlyStats: {}, achievementMonths: {}, recapSince: '2026-10-20' });
+    expect(withoutReview(state)).toEqual({ progress: [], monthlyStats: {}, yearlyStats: {}, achievementMonths: {}, recapSince: '2026-10-20' });
   });
 
   it('a save of the previous version still loads in the store', () => {
@@ -409,6 +422,66 @@ describe('migrate v11 → v12', () => {
 
   it('a new player counts from the start', () => {
     expect(useGameStore.getInitialState().recapSince).toBeNull();
+  });
+});
+
+describe('migrate v12 → v13: review prompt (issue 318)', () => {
+  const at = (dateKey: string, hour = 15) => {
+    const [y, m, d] = dateKey.split('-').map(Number);
+    return new Date(y, m - 1, d, hour).getTime();
+  };
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    setToday('2026-11-04');
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('never asked, played since the oldest day of the save, on the days seen played', () => {
+    // Saved by v12: dailies on 3 days, a weekly of the week before them, a game in progress on another day
+    const v12 = {
+      dailyChallengeProgress: {
+        '2026-09-10': { completed: true, score: 1000, stars: 3 },
+        '2026-09-12': { completed: false, score: 0, stars: 0 },
+        '2026-10-01': { completed: true, score: 900, stars: 2 },
+      },
+      // Monday August 31st
+      weeklyChallengeProgress: { '2026-W36': { completed: true, score: 2000, stars: 3 } },
+      savedStates: { 12: { vehicles: [], moveCount: 3, history: [], startedAt: at('2026-10-15'), savedAt: at('2026-10-16') } },
+      recapSince: '2026-10-20',
+      lastOpenDate: '2026-11-02',
+      progress: [{ levelId: 1, completed: true, bestScore: 600, stars: 3 }],
+    };
+    const state = migrate(v12, 12);
+    expect(state.reviewPrompt).toEqual({ firstOpenDate: '2026-08-31', playDays: 6, askCount: 0, lastAskDate: null });
+    // Nothing else changes
+    expect(withoutReview(state)).toEqual(v12);
+  });
+
+  it('a save without any date: the first open is today', () => {
+    const state = migrate({ progress: [] }, 12);
+    expect(state.reviewPrompt).toEqual({ firstOpenDate: null, playDays: 0, askCount: 0, lastAskDate: null });
+    const merged = merge(state);
+    useGameStore.setState(merged, true);
+    useGameStore.getState().recordAppOpen();
+    expect(useGameStore.getState().reviewPrompt).toEqual({ firstOpenDate: '2026-11-04', playDays: 1, askCount: 0, lastAskDate: null });
+  });
+
+  it('ignores the days to come (a clock set in the future)', () => {
+    const state = migrate({ dailyChallengeProgress: { '2027-01-01': { completed: true, score: 1, stars: 1 } }, lastOpenDate: '2026-11-01' }, 12);
+    expect(state.reviewPrompt).toEqual({ firstOpenDate: '2026-11-01', playDays: 1, askCount: 0, lastAskDate: null });
+  });
+
+  it('a save of the previous version still loads in the store, and counts the new days played', () => {
+    const merged = merge(migrate({ lastOpenDate: '2026-11-03', recapSince: '2026-10-20' }, 12));
+    expect(merged.reviewPrompt).toEqual({ firstOpenDate: '2026-10-20', playDays: 1, askCount: 0, lastAskDate: null });
+    useGameStore.setState(merged, true);
+    useGameStore.getState().recordAppOpen();
+    useGameStore.getState().recordAppOpen();
+    expect(useGameStore.getState().reviewPrompt).toMatchObject({ firstOpenDate: '2026-10-20', playDays: 2 });
   });
 });
 

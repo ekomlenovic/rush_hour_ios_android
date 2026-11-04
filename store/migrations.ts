@@ -1,4 +1,4 @@
-import type { ChallengeResult, Level, LevelProgress, LevelSaveState, PeriodStats } from './types';
+import type { ChallengeResult, Level, LevelProgress, LevelSaveState, PeriodStats, ReviewPromptState } from './types';
 import { sampleLevels } from '../data/sampleLevels';
 import { recomputeStreak } from './streak';
 import { BOSS_WIN_XP, computeRetroactiveXp } from '../data/progression';
@@ -10,7 +10,7 @@ import { addToPeriod, keptMonths, monthKeyOf } from './periodStats';
 import { getLocalDateString, getWeekStart } from '../utils/date';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 12;
+export const STORE_VERSION = 13;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
@@ -85,7 +85,38 @@ export function migrateState(persistedState: unknown, version: number): Record<s
     // was unlocked is unknown: it is set to the month of the update
     Object.assign(state, seedRecap(state));
   }
+  if (version < 13) {
+    // v13: review prompt of the Play Store (issue 318). Never asked yet; how long the app has been played
+    // is deduced from the dated data of the save: the oldest day for the first open, the days seen played
+    state.reviewPrompt = seedReviewPrompt(state);
+  }
   return state;
+}
+
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Review prompt of a save from before v13: never asked, played since the oldest day found in the save */
+function seedReviewPrompt(state: Record<string, unknown>): ReviewPromptState {
+  // Days the app was surely opened: the dailies (played on their day), the last open, the saved games
+  const played = new Set<string>();
+  const keys = (value: unknown) => (value && typeof value === 'object' ? Object.keys(value) : []);
+  for (const key of keys(state.dailyChallengeProgress)) if (DATE_KEY.test(key)) played.add(key);
+  if (typeof state.lastOpenDate === 'string' && DATE_KEY.test(state.lastOpenDate)) played.add(state.lastOpenDate);
+  if (state.savedStates && typeof state.savedStates === 'object') {
+    for (const saved of Object.values(state.savedStates as Record<string, LevelSaveState>)) {
+      for (const time of [saved?.startedAt, saved?.savedAt]) {
+        if (typeof time === 'number' && time > 0) played.add(getLocalDateString(new Date(time)));
+      }
+    }
+  }
+  // Older than the days played: the start of the oldest weekly, and the update that added the recap (v12)
+  const dates = [...played];
+  for (const key of keys(state.weeklyChallengeProgress)) if (/^\d{4}-W\d{2}$/.test(key)) dates.push(getWeekStart(key));
+  if (typeof state.recapSince === 'string' && DATE_KEY.test(state.recapSince)) dates.push(state.recapSince);
+  // Never later than today (a clock set in the future)
+  const today = getLocalDateString(new Date());
+  const past = dates.filter(date => date <= today).sort();
+  return { firstOpenDate: past[0] ?? null, playDays: [...played].filter(date => date <= today).length, askCount: 0, lastAskDate: null };
 }
 
 /** Recap counters rebuilt from the dated challenges, from today on for everything else */

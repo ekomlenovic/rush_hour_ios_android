@@ -10,6 +10,7 @@ import { useGameStore } from '@/store/gameStore';
 import { useAudio } from '@/context/AudioProvider';
 import { haptics, Haptics } from '@/utils/haptics';
 import { checkForUpdate } from '@/utils/updateChecker';
+import { isPlayStoreBuild, openStorePage } from '@/utils/reviewPrompt';
 import i18n, { changeLanguage } from '@/utils/i18n';
 import { RFValue } from '@/utils/responsive';
 import { requestReminderPermission, sendTestReminder, TEST_REMINDER_DELAY_SECONDS } from '@/utils/notifications';
@@ -26,6 +27,8 @@ const DONATION_URL = 'https://ko-fi.com/ekomlenovic';
  * (SideStore) and the APK of the GitHub releases (EXPO_PUBLIC_DONATION_LINK set by build.yml)
  */
 const SHOW_SUPPORT = Platform.OS === 'ios' || process.env.EXPO_PUBLIC_DONATION_LINK === '1';
+/** "Rate the game", always there for whoever wants to: the Google Play build only (issue 318) */
+const SHOW_RATE = isPlayStoreBuild();
 // The web version has no local notifications, and is always up to date (see docs/GAME_DESIGN.md, Version web)
 const IS_WEB = Platform.OS === 'web';
 
@@ -211,6 +214,24 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
                 >
                   <Ionicons name="heart" size={RFValue(14)} color={colors.onPrimary} />
                   <Text style={[styles.updateButtonText, { color: colors.onPrimary }]}>{t('home.support_button')}</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {SHOW_RATE && (
+              <View style={settingsStyles.settingRow}>
+                <View style={settingsStyles.settingText}>
+                  <Text style={[settingsStyles.settingLabel, { color: colors.text }]}>{t('home.rate')}</Text>
+                  <Text style={[settingsStyles.settingSub, { color: colors.textMuted }]}>{t('home.rate_desc')}</Text>
+                </View>
+                <Pressable
+                  onPress={openStorePage}
+                  accessibilityRole="link"
+                  accessibilityLabel={t('home.rate')}
+                  style={[styles.updateButton, styles.supportButton, { backgroundColor: colors.card }]}
+                >
+                  <Ionicons name="star" size={RFValue(14)} color={colors.primaryText} />
+                  <Text style={[styles.updateButtonText, { color: colors.primaryText }]}>{t('home.rate_button')}</Text>
                 </Pressable>
               </View>
             )}
