@@ -8,7 +8,7 @@ import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
 import { DailyMissionsState, FAST_WIN_MS, MissionCounter, MissionReward, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
 import { getLocalDateString, daysBetween } from '../utils/date';
 import { diffMove, toMoveRecord } from '../utils/moveLog';
-import { isLegalMove } from '../utils/collision';
+import { checkWin, isLegalMove } from '../utils/collision';
 import { cleanLevelName, isSameBoard } from '../utils/sharing';
 import type {
   AppOpenInfo, AttemptStats, ChallengeDetails, ChallengeResult, Level, LevelProgress, LevelSaveState, MoveRecord, PeriodStats, PlayerStats, RecapsSeen,
@@ -450,6 +450,9 @@ export const useGameStore = create<GameState>()(
       moveVehicle: (vehicleId, newRow, newCol) => {
         const { vehicles, history, moveLog, attemptStartedAt, moveCount, currentLevel, stats } = get();
         if (!currentLevel || !isLegalMove(vehicles, vehicleId, newRow, newCol, currentLevel.gridSize)) return false;
+        // Once the target car is out the game is over: a second finger released late is refused (issue 168),
+        // as the server refuses a move after the win in a move log
+        if (checkWin(vehicles, currentLevel.exitRow, currentLevel.exitCol, currentLevel.gridSize)) return false;
 
         const snapshot = vehicles.map((v) => ({ ...v }));
         const updated = vehicles.map((v) =>
