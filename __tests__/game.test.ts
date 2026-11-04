@@ -216,6 +216,33 @@ describe('hardReset', () => {
   });
 });
 
+describe('a move after the win (issue 168)', () => {
+  it('is refused: the win is recorded once (two fingers)', () => {
+    resetStore();
+    const level = sampleLevels[0];
+    const { moves } = solvePuzzle(level.vehicles, level.gridSize, level.exitRow, level.exitCol);
+    state().loadLevel(level);
+    for (const m of moves) expect(state().moveVehicle(m.vehicleId, m.toRow, m.toCol)).toBe(true);
+    expect(checkWin(state().vehicles, level.exitRow, level.exitCol, level.gridSize)).toBe(true);
+    state().completeLevel(level.id, 600, 3, 5000);
+    const { vehicles, moveCount, moveLog } = state();
+    // Any legal one-cell move of another vehicle, as a second finger released late
+    const bounds = (x: typeof vehicles[number]) => getMoveBounds(x, state().vehicles, level.gridSize);
+    const v = vehicles.find(x => !x.isTarget && bounds(x).max > bounds(x).min)!;
+    const b = bounds(v);
+    const cur = v.orientation === 'horizontal' ? v.col : v.row;
+    const to = cur < b.max ? cur + 1 : cur - 1;
+    const [row, col] = v.orientation === 'horizontal' ? [v.row, to] : [to, v.col];
+    expect(isLegalMove(vehicles, v.id, row, col, level.gridSize)).toBe(true);
+    expect(state().moveVehicle(v.id, row, col)).toBe(false);
+    expect(state().vehicles).toBe(vehicles);
+    expect(state().moveCount).toBe(moveCount);
+    expect(state().moveLog).toBe(moveLog);
+    expect(state().savedStates[level.id]).toBeUndefined();
+    expect(state().stats.totalWins).toBe(1);
+  });
+});
+
 describe('resetting the generated levels', () => {
   it('takes their progress, games in progress and map focus with them, nothing else', () => {
     resetStore();
