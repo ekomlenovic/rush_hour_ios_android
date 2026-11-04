@@ -1,6 +1,6 @@
 # Play Store : ce qu'il faut déclarer
 
-Notes pour la fiche Google Play, liées au **mode multijoueur** (#46). Sans multijoueur, l'app ne transmet rien.
+Notes pour la fiche Google Play, liées au **mode multijoueur** (#46). Sans multijoueur, l'app ne transmet rien du jeu : seule la vérification des mises à jour, lancée par le joueur, télécharge un fichier de version depuis GitHub ; les liens (don Ko-fi, issues GitHub, signalement de plantage prérempli que le joueur relit et envoie lui-même) s'ouvrent dans le navigateur (voir `Privacy_Policy.md`, sections 1 et 5).
 
 ## Sécurité des données (Data safety)
 
@@ -52,7 +52,7 @@ L'app vise **tous les âges, enfants compris** : dans « Public cible et contenu
 |---|---|
 | Politique de confidentialité qui parle des enfants | [`Privacy_Policy.md`](../Privacy_Policy.md), sections 7 « Children's Privacy » et 10 « Contact » |
 | Pas de publicité, ou seulement des SDK certifiés Familles | aucune publicité, aucun SDK de pub ni d'analytics (`package.json`) |
-| Pas d'identifiant de l'appareil ni de localisation envoyés | rien n'est envoyé hors multijoueur ; en multijoueur, pseudo et parties vers un serveur choisi par le joueur (adresse IP vue comme par tout site web) |
+| Pas d'identifiant de l'appareil ni de localisation envoyés | rien du jeu n'est envoyé hors multijoueur (la vérification des mises à jour, lancée par le joueur, ne fait que télécharger un fichier de version depuis GitHub) ; en multijoueur, pseudo et parties vers un serveur choisi par le joueur (adresse IP vue comme par tout site web) |
 | Données des enfants : le moins possible, et supprimables | pseudo seulement (pas de vrai nom conseillé) ; suppression dans l'app ou sur `https://<serveur>/delete-account` |
 | Interactions entre joueurs encadrées | multijoueur désactivé par défaut, sur invitation, sans chat ; signaler, bloquer, modération par l'admin du serveur |
 
