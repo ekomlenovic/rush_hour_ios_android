@@ -36,6 +36,12 @@ export interface SaveFile {
   version: number;
   /** Local date of the export (YYYY-MM-DD) */
   exportedAt: string;
+  /**
+   * Number of campaign levels of the app that made the save (missing before issue 179). The campaign can
+   * grow without a new STORE_VERSION: a save from a bigger campaign holds generated levels numbered after
+   * it, that a smaller one cannot place on its map. Such a save is refused as too new.
+   */
+  campaignSize?: number;
   state: Record<string, unknown>;
 }
 
@@ -159,16 +165,23 @@ export const canTransferSave = (): boolean => useGameStore.persist.hasHydrated()
 /** What the app persists of the current state */
 const persistedState = () => useGameStore.persist.getOptions().partialize!(useGameStore.getState()) as Record<string, unknown>;
 
+/** Saved games whose move log is exported: the challenges, whose log is the player's solution once won */
+const keepsMoveLog = (key: string): boolean => key.startsWith('daily-') || key.startsWith('weekly-');
+
 export function exportProgress(now: Date = new Date()): string {
   const persisted = persistedState();
   const state: Record<string, unknown> = { ...persisted };
   for (const field of DEVICE_FIELDS) delete state[field];
 
-  // Undo stacks are the bulk of a save: the level in progress is kept, its undo history and move log are not
+  // Undo stacks are the bulk of a save: the level in progress is kept, its undo history and move log are not.
+  // A daily or weekly challenge keeps its move log: it becomes the player's solution once won (issue 178)
   const savedStates = (state.savedStates ?? {}) as Record<string, { history?: unknown[]; undoSteps?: unknown[]; moveLog?: unknown[] }>;
-  state.savedStates = Object.fromEntries(Object.entries(savedStates).map(([key, saved]) => [key, { ...saved, history: [], undoSteps: [], moveLog: [] }]));
+  state.savedStates = Object.fromEntries(Object.entries(savedStates).map(([key, saved]) => [
+    key,
+    { ...saved, history: [], undoSteps: [], moveLog: keepsMoveLog(key) ? saved.moveLog ?? [] : [] },
+  ]));
 
-  return encodeSave({ version: STORE_VERSION, exportedAt: getLocalDateString(now), state });
+  return encodeSave({ version: STORE_VERSION, exportedAt: getLocalDateString(now), campaignSize: sampleLevels.length, state });
 }
 
 /** Name of an exported save file, dated so that several saves can be told apart */
@@ -399,6 +412,8 @@ export function parseSave(code: string, now: Date = new Date()): ImportResult {
   const save = decodeSave(code);
   if (typeof save === 'string') return { ok: false, error: save };
   if (save.version > STORE_VERSION) return { ok: false, error: 'too_new' };
+  // A bigger campaign than this app's, at the same STORE_VERSION (issue 179); a code without it is accepted
+  if (typeof save.campaignSize === 'number' && save.campaignSize > sampleLevels.length) return { ok: false, error: 'too_new' };
 
   let state: Record<string, any>;
   try {

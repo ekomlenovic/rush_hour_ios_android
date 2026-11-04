@@ -24,6 +24,7 @@ import { isArchiveDateAvailable } from '@/utils/archives';
 import { isDailyOpen, isWeeklyOpen, thisWeeklyHref, todayDailyHref } from '@/utils/challengeDates';
 import { nextMapLevel } from '@/utils/mapFocus';
 import { sampleLevels } from '@/data/sampleLevels';
+import { fullMoveLog } from '@/utils/solutionReplay';
 import { useActivePlayTime } from '@/hooks/useActivePlayTime';
 import { useOpenDaily } from '@/hooks/useOpenDaily';
 import { describeVehicle, getVehicleLetters, getMoveDirection } from '@/utils/accessibility';
@@ -375,7 +376,7 @@ export default function GameScreen() {
   // A challenge already won shows its result, not the untouched board's 0 moves
   const shownMoves = isChallengeCompleted ? challengeResult?.moves ?? moveCount : moveCount;
   const shownScore = isChallengeCompleted ? challengeResult?.score ?? score : score;
-  const playerMoves = challengeKind ? challengeResult?.moveLog : undefined;
+  const playerMoves = challengeKind ? fullMoveLog(challengeResult) : undefined;
 
   const showSolution = (source: SolutionSource) => {
     setSolutionStart(source);

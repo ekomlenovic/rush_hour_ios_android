@@ -1,4 +1,4 @@
-import type { MoveRecord, Vehicle } from '@/store/types';
+import type { ChallengeResult, MoveRecord, Vehicle } from '@/store/types';
 import type { Move } from './solver';
 
 /** Positions of the vehicles after the first `step` moves of a solution (0 is the start) */
@@ -25,4 +25,14 @@ export function movesFromLog(initial: Vehicle[], log: readonly MoveRecord[]): Mo
     moves.push({ vehicleId: vehicle.id, toRow: next.row, toCol: next.col });
   }
   return moves;
+}
+
+/**
+ * The move log of a challenge result, if it holds the whole game: one record per move. A log cut short
+ * (a game moved to another phone by a save code before issue 178) would replay a wrong game.
+ */
+export function fullMoveLog(result: ChallengeResult | undefined): MoveRecord[] | undefined {
+  const log = result?.moveLog;
+  if (!log?.length || log.length !== result?.moves) return undefined;
+  return log;
 }
