@@ -2,7 +2,7 @@
 
 Tout ce qu'il faut pour remplir **Play Console → Présence sur le Store → Fiche principale**, en anglais (langue par défaut) et en français (traduction ajoutée à la main, pas la traduction automatique).
 
-Tous les chiffres viennent du code (version 2.1.0) : 734 niveaux (`data/sampleLevels.ts`), 6 à 63 coups minimum, grilles 6×6 à 8×8, 16 thèmes de zones (`components/map/zones.ts`), 86 succès (`data/achievements.ts`), 82 styles dont 44 pour 11 fêtes de l'année (`data/cosmetics.ts`). **À mettre à jour si la campagne, les succès ou les styles changent.**
+Tous les chiffres viennent du code (version 2.0.0) : 309 niveaux (`data/sampleLevels.ts`), 6 à 63 coups minimum, grilles 6×6 à 8×8, 77 succès (`data/achievements.ts`), 24 cosmétiques (`data/cosmetics.ts`). **À mettre à jour si la campagne ou les succès changent.**
 
 ## Fichiers
 
@@ -21,11 +21,11 @@ Ordre conseillé : celui des numéros. Les 3 premières sont les plus vues (dans
 | # | Écran | Message EN | Message FR |
 |---|---|---|---|
 | 1 | Partie en cours (niveau 73) | Slide the cars. Free the red one. | Glisse les voitures. Libère la rouge. |
-| 2 | Carte du monde | 734 levels on a world map | 734 niveaux sur une carte du monde |
+| 2 | Carte du monde | 309 levels on a world map | 309 niveaux sur une carte du monde |
 | 3 | Défi du jour (mode sombre) | A new Daily Challenge every day | Un nouveau défi chaque jour |
 | 4 | Écran de victoire 3 étoiles | Find the optimal solution | Trouve la solution optimale |
 | 5 | Profil, streak, calendrier | Keep your streak alive | Ne casse pas ton streak |
-| 6 | Garage, tenue de Noël (plateau, traîneau, convoi) | Unlock styles by playing | Débloque des styles en jouant |
+| 6 | Garage | Unlock styles by playing | Débloque des styles en jouant |
 | 7 | Créateur + partage QR | Create & share your own levels | Crée et partage tes niveaux |
 | 8 | Multijoueur (mode sombre) | Play with friends, on your own server | Joue entre amis, sur votre serveur |
 
@@ -46,21 +46,21 @@ Rush Hours
 ### Short description (80 max)
 
 ```
-Traffic jam puzzle: slide the cars, free the red one. 734 levels, no ads.
+Slide the cars, free the red one. 309 levels, daily challenges, no ads.
 ```
-(73 characters)
+(71 characters)
 
 ### Full description (4000 max)
 
 ```
 Slide the cars. Free the red one.
 
-Rush Hours is a traffic jam puzzle game: a sliding-block brain teaser where cars and trucks only move forward and backward in their lane. Find the right order to clear a path and drive the red car out of the rush hour gridlock. Simple to learn, hard to master.
+Rush Hours is a sliding-block traffic puzzle. Cars and trucks only move forward and backward in their lane: find the right order to clear a path and drive the red car out of the gridlock. Simple to learn, hard to master.
 
-734 LEVELS ON A WORLD MAP
+309 LEVELS ON A WORLD MAP
 • From 6-move warm-ups to 63-move brain-burners
 • 6×6, 7×7 and 8×8 grids
-• Travel through 16 themed zones: downtown, harbor, forest road, desert highway, snowy peaks, city by night…
+• Travel through themed zones: downtown, harbor, forest road, desert highway, snowy peaks, city by night…
 • Done with the campaign? Generate new levels on your phone, from Easy to Master
 
 A NEW CHALLENGE EVERY DAY
@@ -79,14 +79,10 @@ PLAY EVERY DAY
 • Streak freezes protect your streak when you miss a day
 • 3 daily missions
 • XP and player levels, from Apprentice to Legend
-• 86 achievements
-• Home screen widget: your streak and today's challenge at a glance
+• 77 achievements
 
 UNLOCK STYLES BY PLAYING
-82 styles: hand-drawn board backgrounds, target car skins (taxi, golden car, schooner…), vehicle sets (speedboats and ferries, safari jeeps, bulldozers…) and win effects. All are unlocked with stars, levels, challenges and achievements. None of them are for sale.
-
-HOLIDAYS OF THE YEAR
-Halloween, Christmas, New Year, Valentine's Day, St. Patrick's Day, April Fools', Easter, Music Day, Bastille Day, summer holidays and back to school: win the Daily Challenge during a holiday to unlock its board, car, vehicles and win effect. Its board dresses the whole screen.
+Board themes, target car skins, vehicle colors and win effects. All 24 are unlocked with stars, levels, challenges and achievements. None of them are for sale.
 
 CREATE AND SHARE
 Build your own puzzles in the level creator. The game checks that your level has a solution and counts its minimum moves. Share it with a QR code or a link: your friends open it straight in the app.
@@ -98,10 +94,10 @@ FAIR AND RESPECTFUL
 • No ads, no in-app purchases, no currency
 • Works offline, no account needed
 • No data collected by the developer
-• Your progress follows you to a new Android phone with Google Play Games, or export your save to move it anywhere
+• Export your save to move to a new phone
 • Light and dark mode
-• Playable with TalkBack: every car is announced, moved without dragging, and every level can be won with 3 stars
-• English, French and Serbian
+• Playable with TalkBack: every car is announced and can be moved without dragging
+• English and French
 ```
 
 ### Release notes
@@ -121,21 +117,21 @@ Rush Hours
 ### Description courte (80 max)
 
 ```
-Casse-tête d'embouteillage : libère la voiture rouge. 734 niveaux, sans pub
+Fais glisser les voitures, libère la rouge. 309 niveaux, défis du jour, sans pub
 ```
-(75 caractères)
+(80 caractères)
 
 ### Description complète (4000 max)
 
 ```
 Fais glisser les voitures. Libère la rouge.
 
-Rush Hours est un jeu de casse-tête d'embouteillage : un puzzle de blocs coulissants où voitures et camions n'avancent et ne reculent que dans leur voie. Trouve le bon ordre pour dégager le passage et faire sortir la voiture rouge du bouchon de l'heure de pointe. Facile à comprendre, difficile à maîtriser.
+Rush Hours est un casse-tête de blocs coulissants. Voitures et camions n'avancent et ne reculent que dans leur voie : trouve le bon ordre pour dégager le passage et faire sortir la voiture rouge des embouteillages. Facile à comprendre, difficile à maîtriser.
 
-734 NIVEAUX SUR UNE CARTE DU MONDE
+309 NIVEAUX SUR UNE CARTE DU MONDE
 • De l'échauffement en 6 coups au casse-tête de 63 coups
 • Grilles 6×6, 7×7 et 8×8
-• Traverse 16 zones à thème : centre-ville, port, route forestière, route du désert, sommets enneigés, ville de nuit…
+• Traverse des zones à thème : centre-ville, port, route forestière, route du désert, sommets enneigés, ville de nuit…
 • Campagne terminée ? Génère de nouveaux niveaux sur ton téléphone, de Facile à Maître
 
 UN NOUVEAU DÉFI CHAQUE JOUR
@@ -154,14 +150,10 @@ JOUE CHAQUE JOUR
 • Les gels protègent ton streak quand tu manques un jour
 • 3 missions par jour
 • XP et niveaux joueur, d'Apprenti à Légende
-• 86 succès
-• Widget d'écran d'accueil : ton streak et le défi du jour d'un coup d'œil
+• 77 succès
 
 DÉBLOQUE DES STYLES EN JOUANT
-82 styles : fonds de plateau dessinés, voitures à sortir (taxi, voiture dorée, goélette…), séries de véhicules (hors-bord et ferrys, jeeps de safari, bulldozers…) et effets de victoire. Tous se débloquent avec les étoiles, les niveaux, les défis et les succès. Aucun n'est à vendre.
-
-LES FÊTES DE L'ANNÉE
-Halloween, Noël, Nouvel An, Saint-Valentin, Saint-Patrick, Poisson d'avril, Pâques, Fête de la musique, 14 juillet, grands départs et rentrée : réussis le défi du jour pendant une fête pour débloquer son plateau, sa voiture, ses véhicules et son effet de victoire. Son plateau habille tout l'écran.
+Thèmes de plateau, voitures, couleurs des véhicules et effets de victoire. Les 24 se débloquent avec les étoiles, les niveaux, les défis et les succès. Aucun n'est à vendre.
 
 CRÉE ET PARTAGE
 Construis tes propres puzzles dans le créateur de niveaux. Le jeu vérifie que ton niveau a une solution et calcule son minimum de coups. Partage-le par QR code ou par lien : tes amis l'ouvrent directement dans l'app.
@@ -173,10 +165,10 @@ UN JEU HONNÊTE
 • Sans pub, sans achat intégré, sans monnaie
 • Fonctionne hors ligne, sans compte
 • Aucune donnée collectée par le développeur
-• Ta progression te suit sur un nouveau téléphone Android avec Google Play Jeux, ou exporte ta sauvegarde pour l'emmener partout
+• Exporte ta sauvegarde pour changer de téléphone
 • Mode clair et sombre
-• Jouable avec TalkBack : chaque voiture est annoncée, se déplace sans glisser, et chaque niveau se gagne à 3 étoiles
-• Français, anglais et serbe
+• Jouable avec TalkBack : chaque voiture est annoncée et se déplace sans glisser
+• Français et anglais
 ```
 
 ### Notes de version
@@ -204,11 +196,7 @@ Voir [`docs/RELEASE_NOTES_2.0.0.md`](../docs/RELEASE_NOTES_2.0.0.md).
 ## Pourquoi ces textes
 
 - **Nom** : « Rush Hours » seul, comme dans l'app. Les mots-clés (« traffic puzzle », « casse-tête ») sont dans les descriptions.
-- **Mots-clés** : Google indexe le titre, la description courte et la description longue.
-  - EN : « traffic jam puzzle », « sliding-block », « brain teaser », « rush hour », « gridlock », « daily challenge », « levels », « offline ».
-  - FR : « casse-tête », « embouteillage », « puzzle », « blocs coulissants », « bouchon », « heure de pointe », « défi du jour », « hors ligne ».
-  - Chacun une ou deux fois, sans bourrage (Google pénalise la répétition). La description courte commence par le genre (« Traffic jam puzzle », « Casse-tête d'embouteillage »), ce que les joueurs cherchent.
-- **« Rush Hour » est une marque (ThinkFun)** : on ne l'emploie qu'au sens courant (« rush hour gridlock », l'heure de pointe), jamais comme le nom d'un autre jeu ni avec « officiel », « version de » ou « inspiré de ». Le nom de l'app reste « Rush Hours » seul.
+- **Mots-clés** : Google indexe le titre, la description courte et la description longue. « Traffic puzzle », « sliding block », « puzzle », « daily challenge », « levels », « offline » y sont, sans bourrage (Google pénalise la répétition).
 - **Arguments vérifiables** : « no ads / no in-app purchases » (aucun SDK de pub ni de paiement dans `package.json`), « works offline » et « no data collected » (politique de confidentialité), cosmétiques jamais vendus (`docs/GAME_DESIGN.md`).
 - **Multijoueur présenté tel qu'il est** : optionnel, il faut qu'un des joueurs héberge un serveur. Il n'est pas mis en avant comme un mode en ligne « ouvert », pour éviter les avis déçus.
 - **Rien d'interdit par Google** : pas de « #1 », « best », « free » dans le titre, pas d'emoji dans le titre, pas de prix ni de promo sur les visuels.

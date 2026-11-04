@@ -13,11 +13,7 @@ type Size = ReturnType<typeof Dimensions.get>;
 type Change = { window: Size; screen: Size };
 type Handler = (change: Change) => void;
 
-/** Set by the store screenshots (store-listing/tools/capture.mjs) before the app loads: a tablet
- * capture shows the whole screen, as the Android app does on a tablet */
-const fullWidth = Platform.OS === 'web' && (globalThis as { __RUSH_FULL_WIDTH__?: boolean }).__RUSH_FULL_WIDTH__ === true;
-
-const column = (window: Size): Size => (!fullWidth && window.width > WEB_MAX_WIDTH ? { ...window, width: WEB_MAX_WIDTH } : window);
+const column = (window: Size): Size => (window.width > WEB_MAX_WIDTH ? { ...window, width: WEB_MAX_WIDTH } : window);
 
 if (Platform.OS === 'web') {
   const get = Dimensions.get.bind(Dimensions);
