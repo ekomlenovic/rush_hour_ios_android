@@ -88,6 +88,8 @@ Dans l'app : Multijoueur → Mon compte → **Devenir admin**, avec `ADMIN_TOKEN
 - renommer le serveur, régler l'**heure de sortie**, le **délai de grâce** et la **pré-génération** ;
 - régler la **difficulté** par jour et, si tu veux, le **nombre exact de coups minimum** du défi de chaque jour, la **conservation des replays** et les **seuils de soupçon**.
 
+**Limites de débit** : 120 requêtes par minute et par joueur (son jeton), et 600 par minute et par adresse IP, tous jetons confondus. Des amis sur un même Wi-Fi ont donc chacun leur quota. Rejoindre le serveur, récupérer un compte et réclamer l'administration restent limités à 10 tentatives par quart d'heure et par adresse. Derrière un proxy hors de `TRUST_PROXY` (VPS relié par Tailscale en `100.64.0.0/10`, Cloudflare devant nginx…), tous les joueurs arrivent avec l'adresse du proxy : ajoute-le à `TRUST_PROXY`, sinon le plafond par adresse et les tentatives de connexion sont partagés par tout le monde.
+
 Un réglage changé dans l'app l'emporte ensuite sur sa variable d'environnement. Les secrets (`SERVER_SECRET`, `ADMIN_TOKEN`), le fuseau `TZ` et `PORT`, `HOST`, `DATA_DIR`, `TRUST_PROXY` ne se règlent que dans le `docker-compose.yml`. Le bouton **Réinitialiser** remet tous les réglages aux valeurs du `docker-compose.yml` (l'heure de sortie à partir du prochain défi, le code d'invitation ne change pas).
 
 ### Soupçons automatiques (⚠️)
