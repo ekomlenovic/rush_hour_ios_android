@@ -342,6 +342,40 @@ describe('import recomputes rather than trusts', () => {
   });
 });
 
+describe('import after "Supprimer les niveaux générés" (issue 163)', () => {
+  /** `count` generated levels of `minMoves` moves, won with 3 stars */
+  function winGenerated(count: number, minMoves: number) {
+    const base = sampleLevels.length;
+    for (let i = 0; i < count; i++) {
+      const level: Level = { ...sampleLevels[0], id: base + 1 + store().generatedLevels.length, minMoves };
+      store().addGeneratedLevel(level);
+      winLevel(level, 0);
+    }
+  }
+
+  it.each([12, 20, 40])('keeps all the XP earned on generated levels of %i moves', minMoves => {
+    for (const level of sampleLevels.slice(0, 10)) winLevel(level, 0);
+    winGenerated(30, minMoves);
+    const xp = store().xp;
+    const playerLevel = getPlayerLevel(xp);
+    store().purgeCustomLevels(sampleLevels.length);
+    expect(store().xp).toBe(xp);
+    const result = parseSave(exportProgress());
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state.xp).toBe(xp);
+    expect(result.summary.playerLevel).toBe(playerLevel);
+  });
+
+  it('still caps the XP of a forged save', () => {
+    winGenerated(5, 40);
+    store().purgeCustomLevels(sampleLevels.length);
+    const result = parseSave(forge(s => { s.xp = 10_000_000; }));
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state.xp).toBe(maxPlausibleXp(result.state));
+    expect(result.state.xp).toBeLessThan(10_000);
+  });
+});
+
 describe('recap counters (issue 125)', () => {
   beforeEach(playSomeDays);
 

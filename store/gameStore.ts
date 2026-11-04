@@ -8,7 +8,7 @@ import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
 import { DailyMissionsState, FAST_WIN_MS, MissionCounter, MissionReward, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
 import { getLocalDateString, daysBetween } from '../utils/date';
 import { diffMove, toMoveRecord } from '../utils/moveLog';
-import { isLegalMove } from '../utils/collision';
+import { checkWin, isLegalMove } from '../utils/collision';
 import { cleanLevelName, isSameBoard } from '../utils/sharing';
 import type {
   AppOpenInfo, AttemptStats, ChallengeDetails, ChallengeResult, Level, LevelProgress, LevelSaveState, MoveRecord, PeriodStats, PlayerStats, RecapsSeen,
@@ -460,6 +460,9 @@ export const useGameStore = create<GameState>()(
       moveVehicle: (vehicleId, newRow, newCol, step = false) => {
         const { vehicles, history, moveLog, attemptStartedAt, moveCount, currentLevel, stats } = get();
         if (!currentLevel || !isLegalMove(vehicles, vehicleId, newRow, newCol, currentLevel.gridSize)) return false;
+        // Once the target car is out the game is over: a second finger released late is refused (issue 168),
+        // as the server refuses a move after the win in a move log
+        if (checkWin(vehicles, currentLevel.exitRow, currentLevel.exitCol, currentLevel.gridSize)) return false;
 
         // Screen reader steps of the same vehicle, nothing else played since: one move, as a drag (issue 158)
         const chain = stepChain;
@@ -918,7 +921,8 @@ export const useGameStore = create<GameState>()(
       purgeCustomLevels: (baseLevelCount) => {
         const { progress, maxUnlockedLevel, savedStates, lastPlayedLevelId } = get();
         const isGenerated = (id: number) => id > baseLevelCount && id < 900000;
-        const cleanedProgress = progress.filter(p => p.levelId <= baseLevelCount);
+        // Only the generated levels go: the campaign, the tutorial and Mes niveaux (timestamp ids) keep their stars (issue 160)
+        const cleanedProgress = progress.filter(p => !isGenerated(p.levelId));
         const clampedUnlocked = Math.min(maxUnlockedLevel, baseLevelCount + 1);
         // The games in progress go with the levels, and the map no longer opens on one of them
         const keptSaves = Object.fromEntries(Object.entries(savedStates).filter(([key]) => !isGenerated(Number(key))));
