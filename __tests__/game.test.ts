@@ -1,3 +1,4 @@
+import { buildCosmeticContext } from '../data/cosmetics';
 import { useGameStore, DAILY_LEVEL_ID, isSaveForLevel } from '../store/gameStore';
 import { sampleLevels } from '../data/sampleLevels';
 import { GENERATOR_MAX_STATES, solvePuzzle, getHint } from '../utils/solver';
@@ -216,6 +217,33 @@ describe('hardReset', () => {
   });
 });
 
+describe('a move after the win (issue 168)', () => {
+  it('is refused: the win is recorded once (two fingers)', () => {
+    resetStore();
+    const level = sampleLevels[0];
+    const { moves } = solvePuzzle(level.vehicles, level.gridSize, level.exitRow, level.exitCol);
+    state().loadLevel(level);
+    for (const m of moves) expect(state().moveVehicle(m.vehicleId, m.toRow, m.toCol)).toBe(true);
+    expect(checkWin(state().vehicles, level.exitRow, level.exitCol, level.gridSize)).toBe(true);
+    state().completeLevel(level.id, 600, 3, 5000);
+    const { vehicles, moveCount, moveLog } = state();
+    // Any legal one-cell move of another vehicle, as a second finger released late
+    const bounds = (x: typeof vehicles[number]) => getMoveBounds(x, state().vehicles, level.gridSize);
+    const v = vehicles.find(x => !x.isTarget && bounds(x).max > bounds(x).min)!;
+    const b = bounds(v);
+    const cur = v.orientation === 'horizontal' ? v.col : v.row;
+    const to = cur < b.max ? cur + 1 : cur - 1;
+    const [row, col] = v.orientation === 'horizontal' ? [v.row, to] : [to, v.col];
+    expect(isLegalMove(vehicles, v.id, row, col, level.gridSize)).toBe(true);
+    expect(state().moveVehicle(v.id, row, col)).toBe(false);
+    expect(state().vehicles).toBe(vehicles);
+    expect(state().moveCount).toBe(moveCount);
+    expect(state().moveLog).toBe(moveLog);
+    expect(state().savedStates[level.id]).toBeUndefined();
+    expect(state().stats.totalWins).toBe(1);
+  });
+});
+
 describe('resetting the generated levels', () => {
   it('takes their progress, games in progress and map focus with them, nothing else', () => {
     resetStore();
@@ -238,5 +266,27 @@ describe('resetting the generated levels', () => {
     expect(state().maxUnlockedLevel).toBe(base + 1);
     expect(Object.keys(state().savedStates).sort()).toEqual(['2', 'daily-2026-10-14']);
     expect(state().lastPlayedLevelId).toBeNull();
+  });
+
+  it('keeps the progress of created and imported levels (issue 160)', () => {
+    resetStore();
+    const base = sampleLevels.length;
+    const created = { ...level, id: 1760000000000, name: 'Créé' };
+    const imported = { ...level, id: 1760000000001, name: 'Importé' };
+    useGameStore.setState({
+      generatedLevels: [{ ...level, id: base + 1 }],
+      createdLevels: [created],
+      importedLevels: [imported],
+      progress: [
+        { levelId: 0, completed: true, bestScore: 300, stars: 3 },
+        { levelId: 1, completed: true, bestScore: 300, stars: 3 },
+        { levelId: base + 1, completed: true, bestScore: 300, stars: 3 },
+        { levelId: created.id, completed: true, bestScore: 300, stars: 3 },
+        { levelId: imported.id, completed: true, bestScore: 300, stars: 3 },
+      ],
+    });
+    state().purgeCustomLevels(base);
+    expect(state().progress.map(p => p.levelId)).toEqual([0, 1, created.id, imported.id]);
+    expect(buildCosmeticContext(state()).totalStars).toBe(12);
   });
 });

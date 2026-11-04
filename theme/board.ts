@@ -29,6 +29,9 @@ export interface BoardColors {
   /** Letter on a vehicle (accessibility) */
   vehicleLabel: string;
   vehicleLabelShadow: string;
+  /** Label on a light vehicle, where `vehicleLabel` falls under 3:1 (labelOn) */
+  vehicleLabelDark: string;
+  vehicleLabelDarkShadow: string;
   /** Grip dots of the creator vehicles */
   vehicleGrip: string;
   /** Border of a dragged vehicle */
@@ -111,6 +114,8 @@ const classicShared = {
   vehicleShineStrong: 'rgba(255,255,255,0.28)',
   vehicleLabel: '#FFFFFF',
   vehicleLabelShadow: 'rgba(0,0,0,0.6)',
+  vehicleLabelDark: '#0F0F1A',
+  vehicleLabelDarkShadow: 'rgba(255,255,255,0.45)',
   vehicleGrip: 'rgba(255,255,255,0.9)',
   dragBorder: 'rgba(255,255,255,0.4)',
   hint: '#F59E0B',
