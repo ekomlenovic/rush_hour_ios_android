@@ -4,6 +4,7 @@ import { resetStore, setToday } from './helpers';
 import { calculateScore } from '../utils/scoring';
 import { MAX_SAVED_UNDOS, MAX_UNDO_STEPS, RECENT_SAVES_WITH_UNDOS, undoStackOf } from '../store/savedStates';
 import { ACHIEVEMENT_XP, BOSS_WIN_XP, MISSIONS_XP, dailyWinXp, levelWinXp, weeklyWinXp } from '../data/progression';
+import { STORE_VERSION } from '../store/migrations';
 
 const options = useGameStore.persist.getOptions();
 const migrate = (state: Record<string, unknown>, version: number) =>
@@ -26,6 +27,7 @@ const withBoards = (save: any) => {
 describe('persisted state', () => {
   it('is at version 12', () => {
     expect(options.version).toBe(12);
+    expect(STORE_VERSION).toBe(options.version);
   });
 
   it('keeps the player data and leaves the in-game state out', () => {
@@ -38,6 +40,44 @@ describe('persisted state', () => {
     for (const key of ['unlockQueue', 'pendingMissionReward', 'currentLevel', 'vehicles', 'history', 'levelUpQueue', 'lastXpGain']) {
       expect(saved).not.toHaveProperty(key);
     }
+  });
+});
+
+/**
+ * The exact fields each save version holds (issue 202). Adding, removing or renaming one is a change of
+ * the save: bump STORE_VERSION, add a step at the end of migrateState and a test (CLAUDE.md), then add
+ * the new version here. Never edit the list of a version already shipped.
+ */
+const PERSISTED_KEYS: Record<number, string[]> = {
+  12: ['achievementMonths', 'achievements', 'archiveLevels', 'archiveProgress', 'bestStreak', 'cosmetics',
+    'createdLevels', 'currentDailyLevel', 'currentStreak', 'currentWeeklyLevel', 'dailyChallengeProgress',
+    'dailyLevelDate', 'dailyMissions', 'frozenDates', 'generatedLevels', 'generationState', 'importedLevels',
+    'isHapticsEnabled', 'isMusicEnabled', 'lastOpenDate', 'lastPlayedLevelId', 'lastStreakDate',
+    'maxUnlockedLevel', 'monthlyStats', 'notificationsEnabled', 'notificationsPrompted', 'progress',
+    'recapSince', 'recapsSeen', 'reminderHour', 'savedStates', 'seenAchievements', 'seenCosmetics',
+    'showVehicleLetters', 'stats', 'streakFreezes', 'themeMode', 'totalHintsUsed',
+    'weeklyChallengeProgress', 'weeklyLevelKey', 'xp', 'yearlyStats'],
+};
+
+/** Same for the multiplayer store (store/multiStore.ts): a change needs its `version` and `migrate` */
+const MULTI_PERSISTED_KEYS: Record<number, string[]> = {
+  2: ['accounts', 'activeUrl', 'blocked', 'games', 'introSeen'],
+};
+
+describe('persisted fields, tied to the save version (issue 202)', () => {
+  it('the game store saves exactly the fields of STORE_VERSION', () => {
+    resetStore();
+    const saved = options.partialize!(useGameStore.getState()) as Record<string, unknown>;
+    expect(PERSISTED_KEYS[STORE_VERSION]).toBeDefined();
+    expect(Object.keys(saved).sort()).toEqual(PERSISTED_KEYS[STORE_VERSION]);
+  });
+
+  it('the multiplayer store saves exactly the fields of its version', () => {
+    const { useMultiStore } = require('../store/multiStore') as typeof import('../store/multiStore');
+    const multiOptions = useMultiStore.persist.getOptions();
+    const saved = multiOptions.partialize!(useMultiStore.getState()) as Record<string, unknown>;
+    expect(MULTI_PERSISTED_KEYS[multiOptions.version!]).toBeDefined();
+    expect(Object.keys(saved).sort()).toEqual(MULTI_PERSISTED_KEYS[multiOptions.version!]);
   });
 });
 

@@ -662,3 +662,20 @@ describe('weekly rankings period', () => {
     expect(rankingParams({ period: 'range', from: '2026-10-01', to: '2026-10-05' })).toBe('period=range&from=2026-10-01&to=2026-10-05');
   });
 });
+
+describe('a failed send of a multiplayer win (issue 117, tested since issue 203)', () => {
+  const { submitFailure, RETRYABLE_SUBMIT_ERRORS } = require('../utils/multi/game') as typeof import('../utils/multi/game');
+
+  it('keeps the win to send again after trouble on the way', () => {
+    for (const code of ['network', 'timeout', 'internal', 'rate_limited', 'bad_response']) expect(submitFailure(code)).toBe('send_failed');
+    expect([...RETRYABLE_SUBMIT_ERRORS].sort()).toEqual(['bad_response', 'internal', 'network', 'rate_limited', 'timeout']);
+  });
+
+  it('reads the result back when the server already has the game', () => {
+    expect(submitFailure('already_finished')).toBe('recover');
+  });
+
+  it('gives up when the server refused the win', () => {
+    for (const code of ['too_late', 'invalid_moves', 'not_won', 'no_game', 'banned', 'unauthorized', 'unknown']) expect(submitFailure(code)).toBe('error');
+  });
+});

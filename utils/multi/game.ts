@@ -103,3 +103,16 @@ export function submission(game: MultiGame, now: number) {
     backgroundMs: game.backgroundMs,
   };
 }
+
+/** Errors of a win sent to the server that come from the way, not from the win: it is kept to send again */
+export const RETRYABLE_SUBMIT_ERRORS = ['network', 'timeout', 'internal', 'rate_limited', 'bad_response'] as const;
+
+/**
+ * What a failed send of a win leads to (issue 117, tested since issue 203): `recover` when the server
+ * already has the game (its answer was lost: the result is read back), `send_failed` for trouble on the
+ * way (the win is kept, it can be sent again), `error` when the server refused it.
+ */
+export function submitFailure(code: string): 'recover' | 'send_failed' | 'error' {
+  if (code === 'already_finished') return 'recover';
+  return (RETRYABLE_SUBMIT_ERRORS as readonly string[]).includes(code) ? 'send_failed' : 'error';
+}
