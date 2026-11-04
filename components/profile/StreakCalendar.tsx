@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from '@/hooks/useRouter';
+import { useNow } from '@/hooks/useNow';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/store/gameStore';
 import { RFValue } from '@/utils/responsive';
@@ -27,9 +28,14 @@ export default function StreakCalendar({ colors }: Props) {
   const frozenDates = useGameStore((state) => state.frozenDates);
   const frozenSet = useMemo(() => new Set(frozenDates), [frozenDates]);
 
-  const today = useMemo(() => getLocalDateString(), []);
+  // Follows the clock (issue 185): a profile left open past midnight moves "today" to the new day
+  const today = getLocalDateString(useNow());
   const months = useMemo(() => getCalendarMonths(today), [today]);
-  const [monthIndex, setMonthIndex] = useState(months.length - 1);
+  // The month the player went back to, or null for the latest one: a new month then shows up by itself
+  const [chosenMonth, setChosenMonth] = useState<string | null>(null);
+  const chosenIndex = chosenMonth === null ? -1 : months.indexOf(chosenMonth);
+  const monthIndex = chosenIndex >= 0 ? chosenIndex : months.length - 1;
+  const showMonth = (index: number) => setChosenMonth(index >= months.length - 1 ? null : months[index]);
   const month = months[monthIndex];
   const cells = useMemo(() => getMonthGrid(month), [month]);
   const monthTitle = parseLocalDateString(`${month}-01`).toLocaleDateString(dateLocale(i18n.language), { month: 'long', year: 'numeric' });
@@ -45,7 +51,7 @@ export default function StreakCalendar({ colors }: Props) {
           label="‹"
           a11yLabel={t('archives.prev_month')}
           disabled={monthIndex === 0}
-          onPress={() => setMonthIndex(i => i - 1)}
+          onPress={() => showMonth(monthIndex - 1)}
         />
         <Text style={[styles.monthTitle, { color: colors.text }]} accessibilityRole="header">{monthTitle}</Text>
         <MonthButton
@@ -53,7 +59,7 @@ export default function StreakCalendar({ colors }: Props) {
           label="›"
           a11yLabel={t('archives.next_month')}
           disabled={monthIndex === months.length - 1}
-          onPress={() => setMonthIndex(i => i + 1)}
+          onPress={() => showMonth(monthIndex + 1)}
         />
       </View>
 

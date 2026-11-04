@@ -7,6 +7,7 @@ import { useGameStore } from '@/store/gameStore';
 import { canTransferSave, exportProgress, parseSave } from '@/utils/saveTransfer';
 import { readPickedFile, shareSaveFile } from '@/utils/shareSave';
 import { copySaveCode } from '@/utils/copySaveCode';
+import { streakLines } from '@/hooks/useAppOpenAlert';
 import { haptics, Haptics } from '@/utils/haptics';
 import type { UiColors } from '@/theme';
 import { settingsStyles as styles } from './styles';
@@ -86,10 +87,12 @@ export default function SaveSection({ colors, onClose }: Props) {
           style: 'destructive',
           onPress: () => {
             if (!saveReady()) return;
-            importProgress(result.state);
+            const info = importProgress(result.state);
             haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             onClose();
-            Alert.alert(t('save.success_title'), t('save.success_body'));
+            // The days missed since the export are applied: said, or the streak announced above seems lost by the import
+            const lines = streakLines(info, t, useGameStore.getState().currentStreak);
+            Alert.alert(t('save.success_title'), [t('save.success_body'), ...lines].join('\n\n'));
           },
         },
       ]
