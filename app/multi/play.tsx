@@ -16,7 +16,7 @@ import { errorCode, multiErrorMessage } from '@/components/multi/errors';
 import { gameKey, selectActiveAccount, useMultiStore, type MultiGame } from '@/store/multiStore';
 import { useGameStore } from '@/store/gameStore';
 import { useMultiApi } from '@/hooks/useMultiApi';
-import { elapsedMs, gameFromStart, isWon, playMove, submission, wonResult } from '@/utils/multi/game';
+import { elapsedMs, gameFromStart, isWon, playMove, submission, submitFailure, wonResult } from '@/utils/multi/game';
 import { MultiApiError, type SubmitResult } from '@/utils/multi/api';
 import IconText from '@/components/IconText';
 import LoadingIndicator from '@/components/LoadingIndicator';
@@ -122,13 +122,14 @@ export default function MultiPlayScreen() {
       won(await api.submit(finished.date, moves, clientMs, backgroundMs, { board, skin, palette }));
     } catch (e) {
       setError(e);
+      const outcome = submitFailure(errorCode(e));
       // Taken by the server, but its answer was lost: the win it has
-      const taken = errorCode(e) === 'already_finished' && account
+      const taken = outcome === 'recover' && account
         ? await api.today().then(today => wonResult(today, finished.date, account.playerId)).catch(() => null)
         : null;
       if (taken) return won(taken);
       // Network trouble: the win is kept, it can be sent again; otherwise it was refused
-      setPhase(['network', 'timeout', 'internal', 'rate_limited', 'bad_response'].includes(errorCode(e)) ? 'send_failed' : 'error');
+      setPhase(outcome === 'send_failed' ? 'send_failed' : 'error');
     }
   }, [api, account, removeGame, t]);
   sendRef.current = send;

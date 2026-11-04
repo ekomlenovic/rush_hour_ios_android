@@ -521,6 +521,15 @@ Les évolutions prévues sont suivies dans l'epic #19 sur GitHub (multijoueur : 
 
 Les règles ci-dessus sont vérifiées par les tests de `__tests__/` (Jest). Toute évolution d'une règle doit mettre à jour son test.
 
+Les règles décidées par un écran ou un hook sont testées en le rendant (`__tests__/components/`), pas en recopiant leur condition :
+
+| Règles | Test |
+|---|---|
+| Défi du jour à l'écran : pas d'indice, d'annuler ni de recommencer ; jour gardé « ouvert » pendant la partie ; victoire enregistrée comme défi du jour (pas comme niveau de la carte) ; plateau verrouillé une fois réussi ; jour passé ouvert comme archive | `GameChallenge.test.tsx` |
+| Connexion des duels : `auth` à l'ouverture, nouvel essai après 1 s puis 2 s, arrêt sur un refus (codes 4000 à 4999), `/info` pour dire « serveur trop ancien » ou « WebSocket bloqué », `watch` redemandé après une reconnexion, réouverture au retour au premier plan | `useDuelReconnect.test.tsx` |
+| Envoi d'une victoire multijoueur qui échoue : gardée pour un nouvel envoi (réseau), résultat relu (`already_finished`), ou refusée | `submitFailure` (`utils/multi/game.ts`), `multi.test.ts` |
+| Champs sauvegardés : la liste exacte des champs de `partialize` est figée **par version** (`PERSISTED_KEYS`, `MULTI_PERSISTED_KEYS`) ; ajouter, retirer ou renommer un champ fait échouer le test tant que `STORE_VERSION` (ou la `version` du store multijoueur) et sa migration ne suivent pas | `migrations.test.ts` |
+
 | Commande | Usage |
 |---|---|
 | `npm test` | tous les tests |
