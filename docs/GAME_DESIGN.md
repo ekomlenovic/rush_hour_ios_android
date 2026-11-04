@@ -251,7 +251,7 @@ Pour changer de téléphone sans perdre sa progression, **sans serveur ni compte
 |---|---|
 | Options → Sauvegarde : **exporter** donne un fichier `rush-hours-AAAA-MM-JJ.rushsave` (feuille de partage du système), **importer** en choisit un. En second choix, la même sauvegarde en **code texte** (copier / coller). Le code grossit avec l'historique des défis (~750 000 caractères pour un an de jeu, simulé) : si le presse-papiers refuse de le copier ou de le lire (Android passe par Binder, ~1 Mo), un message renvoie au **fichier**, jamais d'échec silencieux. Le seuil réel sur appareil reste à mesurer (issue 180) | `components/settings/SaveSection.tsx`, `copySaveCode` (`utils/copySaveCode.ts`) |
 | Le fichier ne contient que le code : les deux passent par les mêmes vérifications. S'il n'y a pas de partage de fichier sur l'appareil, le code est copié à la place | `saveFileName`, `parseSave` |
-| Le code contient tout ce que l'app sauvegarde (`partialize`), **sauf les réglages du téléphone** (rappels, heure de rappel, génération en cours) et l'**historique d'annulation** et le **journal de coups** des niveaux en cours (le niveau en cours est gardé). Un **défi du jour ou hebdo en cours** garde son journal de coups : il devient la solution du joueur une fois gagné (issue 178) | `exportProgress`, `DEVICE_FIELDS`, `keepsMoveLog` (`utils/saveTransfer.ts`) |
+| Le code contient tout ce que l'app sauvegarde (`partialize`), **sauf les réglages du téléphone** (rappels, heure de rappel, génération en cours, demande de note) et l'**historique d'annulation** et le **journal de coups** des niveaux en cours (le niveau en cours est gardé). Un **défi du jour ou hebdo en cours** garde son journal de coups : il devient la solution du joueur une fois gagné (issue 178) | `exportProgress`, `DEVICE_FIELDS`, `keepsMoveLog` (`utils/saveTransfer.ts`) |
 | Importer **remplace** la progression, après une confirmation qui résume la sauvegarde (date, niveau joueur, niveaux réussis, étoiles, streak) | `parseSave`, `importProgress` |
 | Une sauvegarde d'une ancienne version passe par les **migrations** ; une sauvegarde d'une version **plus récente** que l'app est refusée : un `STORE_VERSION` plus grand, ou une **campagne plus grande** (`campaignSize`, écrit depuis l'issue 179 : la campagne peut grandir sans changer `STORE_VERSION`, et ses niveaux générés numérotés après elle ne trouveraient pas leur place sur la carte). Un code sans `campaignSize` est accepté | `migrateState`, `relocateGeneratedLevels`, `parseSave` |
 | Les jours manqués depuis l'export sont appliqués à l'import (gels, streak perdu), et le message de fin d'import le dit avec les mots de l'ouverture de l'app | `recordAppOpen`, `streakLines` (`hooks/useAppOpenAlert.ts`) |
@@ -517,6 +517,21 @@ Le même jeu dans le navigateur, sur **GitHub Pages** : <https://ekomlenovic.git
 
 - Les liens de don sont dans le README et dans `.github/FUNDING.yml` (Ko-fi et GitHub Sponsors). Dans l'app, le bouton ouvre **Ko-fi**, où l'on donne sans créer de compte (GitHub Sponsors en demande un). Il est dans les options de l'app (2e ligne, sous « Comment jouer ? »), **seulement hors Google Play** : build iOS (SideStore) et APK des releases GitHub, construit par `build.yml` avec `EXPO_PUBLIC_DONATION_LINK=1`. Google Play refuse un lien vers un paiement externe pour soutenir le développeur : ne jamais définir cette variable pour le build Play (`SHOW_SUPPORT`, `components/settings/OptionsSheet.tsx`).
 
+## Demande de note
+
+L'app demande une note sur le Play Store, **rarement et sans déranger** (issue 318). Les seuils sont dans `store/reviewPrompt.ts`.
+
+| Règle | Implémentation |
+|---|---|
+| **Build Google Play installé par le Play Store seulement** : rien sur iOS (SideStore), le web, l'APK des releases GitHub (`EXPO_PUBLIC_DONATION_LINK`) ni un APK installé à la main (l'installeur doit être `com.android.vending`) | `isPlayStoreBuild`, `isPlayStoreInstall` (`utils/reviewPrompt.ts`), `installerPackage` (`modules/rush-device`) |
+| **La fenêtre native de Google** (API In-App Review, `expo-store-review`), **jamais une fenêtre de l'app avant** (« Tu aimes le jeu ? ») : Google interdit de filtrer les joueurs contents. Google décide aussi s'il l'affiche (son propre quota) : l'app ne le sait jamais | `requestStoreReview` |
+| **Seulement en fermant la victoire** (« Continuer » ou retour) **d'un niveau de la carte gagné avec 3 étoiles**, une fois revenu sur la carte. **Jamais** après un défi du jour / hebdo, une archive, un niveau personnalisé, un duel ou un défi multi (autres écrans), ni en passant au niveau suivant | `askReviewIfDue` (`app/game.tsx`) |
+| **Jamais par-dessus une autre fenêtre** : pas si la victoire montrait un succès, un style du garage, les missions du jour ou un niveau joueur, ni si un succès ou un niveau attend son affichage. L'alerte de retour du joueur ne s'affiche qu'à l'ouverture de l'app | idem |
+| **Seulement pour un joueur installé** : au moins **7 jours** depuis la première ouverture sur le téléphone, au moins **5 jours d'ouverture différents** et au moins **30 niveaux gagnés** | `isReviewDue` (`store/reviewPrompt.ts`), `recordAppOpen` |
+| **Au plus 2 fois au total**, la deuxième au moins **120 jours** après la première ; ensuite plus jamais | `reviewPrompt.askCount`, `lastAskDate`, `markReviewAsked` |
+| Propre au **téléphone** : jamais exporté ni remplacé par un import (`DEVICE_FIELDS`), ni effacé par « Réinitialiser la progression ». Les joueurs d'avant la v13 partent de « jamais demandé », leur ancienneté déduite de la sauvegarde (le plus ancien défi du jour ou hebdo, la mise à jour du récap, les parties en cours ; jours de jeu = jours des défis du jour, de la dernière ouverture et des parties en cours) | migration v13 (`store/migrations.ts`) |
+| Une ligne **« Noter le jeu »** dans les options (2e ligne, à la place du don), **build Play seulement**, toujours là : elle ouvre la fiche du jeu dans le Play Store, sans compter comme une demande | `SHOW_RATE`, `openStorePage` |
+
 ## Roadmap
 
 Les évolutions prévues sont suivies dans l'epic #19 sur GitHub (multijoueur : #46). Chacune doit respecter les règles ci-dessus.
@@ -529,6 +544,7 @@ Les règles décidées par un écran ou un hook sont testées en le rendant (`__
 
 | Règles | Test |
 |---|---|
+| Demande de note : seulement sur le build Play installé par le Play Store, en fermant la victoire 3 étoiles d'un niveau de la carte, sans autre fenêtre, joueur installé, au plus 2 fois à 120 jours d'écart | `GameReview.test.tsx` |
 | Défi du jour à l'écran : pas d'indice, d'annuler ni de recommencer ; jour gardé « ouvert » pendant la partie ; victoire enregistrée comme défi du jour (pas comme niveau de la carte) ; plateau verrouillé une fois réussi ; jour passé ouvert comme archive | `GameChallenge.test.tsx` |
 | Connexion des duels : `auth` à l'ouverture, nouvel essai après 1 s puis 2 s, arrêt sur un refus (codes 4000 à 4999), `/info` pour dire « serveur trop ancien » ou « WebSocket bloqué », `watch` redemandé après une reconnexion, réouverture au retour au premier plan | `useDuelReconnect.test.tsx` |
 | Envoi d'une victoire multijoueur qui échoue : gardée pour un nouvel envoi (réseau), résultat relu (`already_finished`), ou refusée | `submitFailure` (`utils/multi/game.ts`), `multi.test.ts` |

@@ -11,7 +11,7 @@ import { resetStore, setToday, winDaily } from './helpers';
 const store = () => useGameStore.getState();
 const persisted = () => {
   const saved = useGameStore.persist.getOptions().partialize!(store()) as Record<string, unknown>;
-  for (const key of ['notificationsEnabled', 'reminderHour', 'notificationsPrompted', 'generationState', 'savedStates', 'lastOpenDate', 'stats']) {
+  for (const key of ['notificationsEnabled', 'reminderHour', 'notificationsPrompted', 'generationState', 'reviewPrompt', 'savedStates', 'lastOpenDate', 'stats']) {
     delete saved[key];
   }
   return saved;
@@ -123,12 +123,16 @@ describe('export then import', () => {
     const code = exportProgress();
 
     resetStore();
-    useGameStore.setState({ notificationsEnabled: true, reminderHour: 8, notificationsPrompted: true });
+    // The review prompt of this phone (issue 318): asked once here, never replaced by the save
+    const review = { firstOpenDate: '2026-01-05', playDays: 40, askCount: 1, lastAskDate: '2026-06-01' };
+    useGameStore.setState({ notificationsEnabled: true, reminderHour: 8, notificationsPrompted: true, reviewPrompt: review });
+    expect(JSON.stringify(parseSave(code))).not.toContain('reviewPrompt');
     const result = parseSave(code);
     if (!result.ok) throw new Error(result.error);
     store().importProgress(result.state);
 
     expect(store()).toMatchObject({ notificationsEnabled: true, reminderHour: 8, notificationsPrompted: true });
+    expect(store().reviewPrompt).toMatchObject({ firstOpenDate: '2026-01-05', askCount: 1, lastAskDate: '2026-06-01' });
   });
 
   it('applies the days missed since the export (streak lost without freezes)', () => {

@@ -205,3 +205,18 @@ export interface RecapsSeen {
   /** YYYY */
   year?: string;
 }
+
+/**
+ * Review prompt of the Play Store (issue 318, see docs/GAME_DESIGN.md, Demande de note): how long the
+ * app has been played on this phone, and the times the review was asked. A device field, never exported
+ */
+export interface ReviewPromptState {
+  /** First open of the app on this phone (YYYY-MM-DD), deduced from the oldest dated data for a save from before v13 */
+  firstOpenDate: string | null;
+  /** Different days the app was opened */
+  playDays: number;
+  /** Times the review was asked (Google decides whether its window shows: the app never knows) */
+  askCount: number;
+  /** Day of the last time it was asked (YYYY-MM-DD) */
+  lastAskDate: string | null;
+}
