@@ -29,7 +29,7 @@ const PREFIX = 'RHSAVE1';
 const CHECKSUM_SALT = 'rush-hours/save/v1';
 
 /** Persisted fields that belong to the device, not to the player: never exported nor replaced */
-export const DEVICE_FIELDS = ['notificationsEnabled', 'reminderHour', 'notificationsPrompted', 'generationState'] as const;
+export const DEVICE_FIELDS = ['notificationsEnabled', 'reminderHour', 'notificationsPrompted', 'generationState', 'reviewPrompt'] as const;
 
 export interface SaveFile {
   /** STORE_VERSION of the app that made the save: the import migrates it */

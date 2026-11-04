@@ -12,7 +12,7 @@ import { checkWin, isLegalMove } from '../utils/collision';
 import { cleanLevelName, isSameBoard } from '../utils/sharing';
 import type {
   AppOpenInfo, AttemptStats, ChallengeDetails, ChallengeResult, Level, LevelProgress, LevelSaveState, MoveRecord, PeriodStats, PlayerStats, RecapsSeen,
-  ThemeMode, Vehicle,
+  ReviewPromptState, ThemeMode, Vehicle,
 } from './types';
 import { MAX_STREAK_FREEZES, settleStreak, advanceStreak } from './streak';
 import {
@@ -28,6 +28,7 @@ import { addToPeriods, monthKeyOf, winIncrements } from './periodStats';
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from './migrations';
 import { compactSavedStates, dropOldUndoStacks, isWellFormedSave, savedUndoSteps, undoStackOf } from './savedStates';
 import { createGuardedStorage } from './guardedStorage';
+import { initialReviewPrompt } from './reviewPrompt';
 import { DAILY_LEVEL_ID, WEEKLY_LEVEL_ID, ARCHIVE_LEVEL_ID } from './levelIds';
 
 export type * from './types';
@@ -130,6 +131,8 @@ interface GameState {
   reminderHour: number;
   /** The player was already asked about reminders */
   notificationsPrompted: boolean;
+  /** Days played on this phone and times the Play Store review was asked (issue 318) */
+  reviewPrompt: ReviewPromptState;
 
   /** Streak tracking */
   currentStreak: number;
@@ -205,6 +208,8 @@ interface GameState {
   setNotificationsEnabled: (enabled: boolean) => void;
   setReminderHour: (hour: number) => void;
   markNotificationsPrompted: () => void;
+  /** The Play Store review was asked today (issue 318) */
+  markReviewAsked: () => void;
   unlockAllLevels: () => void;
   setGenerationState: (state: Partial<GenerationState>) => void;
   cancelGeneration: () => void;
@@ -422,6 +427,7 @@ export const useGameStore = create<GameState>()(
       notificationsEnabled: false,
       reminderHour: DEFAULT_REMINDER_HOUR,
       notificationsPrompted: false,
+      reviewPrompt: initialReviewPrompt(),
       currentStreak: 0,
       bestStreak: 0,
       lastStreakDate: null,
@@ -826,7 +832,7 @@ export const useGameStore = create<GameState>()(
       },
 
       recordAppOpen: () => {
-        const { lastOpenDate, stats, openDailyDate, dailyChallengeProgress } = get();
+        const { lastOpenDate, stats, openDailyDate, dailyChallengeProgress, reviewPrompt } = get();
         const today = getLocalDateString(new Date());
         // The daily of a day before still open on the game screen (left open past midnight) can still be won:
         // its day is not missed yet, and its game stays a daily instead of going to the archives
@@ -845,6 +851,12 @@ export const useGameStore = create<GameState>()(
         set({
           lastOpenDate: today,
           stats: { ...stats, longestAbsenceDays: Math.max(stats.longestAbsenceDays, missedDays) },
+          // Days the app was played on this phone, for the review prompt (issue 318)
+          reviewPrompt: {
+            ...reviewPrompt,
+            firstOpenDate: reviewPrompt.firstOpenDate ?? today,
+            playDays: reviewPrompt.playDays + (lastOpenDate === today ? 0 : 1),
+          },
           // Keeps the save small: past challenges cleared, no undo stack for the levels played long ago
           savedStates: dropOldUndoStacks(compactSavedStates(get().savedStates, new Date(), openDaily)),
         });
@@ -955,6 +967,11 @@ export const useGameStore = create<GameState>()(
       setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled, notificationsPrompted: true }),
       setReminderHour: (hour) => set({ reminderHour: ((Math.round(hour) % 24) + 24) % 24 }),
       markNotificationsPrompted: () => set({ notificationsPrompted: true }),
+
+      markReviewAsked: () => {
+        const { reviewPrompt } = get();
+        set({ reviewPrompt: { ...reviewPrompt, askCount: reviewPrompt.askCount + 1, lastAskDate: getLocalDateString(new Date()) } });
+      },
 
       unlockAllLevels: () => {
         const { generatedLevels } = get();
@@ -1109,6 +1126,7 @@ export const useGameStore = create<GameState>()(
         notificationsEnabled: state.notificationsEnabled,
         reminderHour: state.reminderHour,
         notificationsPrompted: state.notificationsPrompted,
+        reviewPrompt: state.reviewPrompt,
         generationState: state.generationState,
         currentStreak: state.currentStreak,
         bestStreak: state.bestStreak,

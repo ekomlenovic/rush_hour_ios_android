@@ -15,7 +15,9 @@ import { solvePuzzleAsync } from '@/utils/solver.background';
 import { customLevelKind } from '@/utils/customLevels';
 import { gameTitle } from '@/utils/gameTitle';
 import { useTranslation } from 'react-i18next';
-import { parseLocalDateString } from '@/utils/date';
+import { getLocalDateString, parseLocalDateString } from '@/utils/date';
+import { REVIEW_DELAY_MS, isReviewDue } from '@/store/reviewPrompt';
+import { isPlayStoreInstall, requestStoreReview } from '@/utils/reviewPrompt';
 import { buildChallengeShareText } from '@/utils/shareResult';
 import { requestReminderPermission } from '@/utils/notifications';
 import { calculateScore, getStars } from '@/utils/scoring';
@@ -131,12 +133,42 @@ export default function GameScreen() {
     }
   };
 
+  /**
+   * The Play Store review, rarely (see docs/GAME_DESIGN.md, Demande de note): on closing the win card of a
+   * map level won with 3 stars, that showed nothing else (achievement, garage style, missions, player level)
+   */
+  const askReviewIfDue = () => {
+    if (challengeKind || isArchive || customKind || stars !== 3) return;
+    if (winUnlocks.length > 0 || winCosmetics.length > 0 || winMissionReward || winLevelUps.length > 0) return;
+    if (!isPlayStoreInstall()) return;
+    const levelsWon = (state: ReturnType<typeof useGameStore.getState>) => state.progress.filter(p => p.completed).length;
+    const isDue = () => {
+      const state = useGameStore.getState();
+      return isReviewDue(state.reviewPrompt, levelsWon(state), getLocalDateString(new Date()));
+    };
+    if (!isDue()) return;
+    // On the map, once the win card is gone; never over a toast that came meanwhile
+    setTimeout(() => {
+      const state = useGameStore.getState();
+      if (!isDue() || state.unlockQueue.length > 0 || state.levelUpQueue.length > 0) return;
+      state.markReviewAsked();
+      requestStoreReview();
+    }, REVIEW_DELAY_MS);
+  };
+
+  /** The win card closed by the back button: back to the map */
+  const handleWinClose = () => {
+    goBack();
+    askReviewIfDue();
+  };
+
   // After the first daily won, offer the reminders once (see docs/GAME_DESIGN.md)
   const handleWinContinue = () => {
     // A challenge stays open on its result: going back under the closing modal
     // only happened once it was gone, seconds later (see docs/GAME_DESIGN.md)
     if (challengeKind) setWon(false);
     else goBack();
+    askReviewIfDue();
     const state = useGameStore.getState();
     // No reminders in the web version (no local notifications there)
     if (Platform.OS === 'web') return;
@@ -468,7 +500,7 @@ export default function GameScreen() {
         onRetry={challengeKind ? undefined : handleRetry}
         onNextLevel={nextLevelId !== null ? () => handleNextLevel(nextLevelId) : undefined}
         onContinue={handleWinContinue}
-        onRequestClose={goBack}
+        onRequestClose={handleWinClose}
       />
 
       {isHintLoading && <HintLoadingPill colors={colors} />}

@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, type AppStateStatus } from 'react-native';
 import type { useGameStore as UseGameStore } from '../store/gameStore';
+import { STORE_VERSION } from '../store/migrations';
 import { MAX_SAVED_UNDOS, MAX_UNDO_STEPS, RECENT_SAVES_WITH_UNDOS, undoStackOf } from '../store/savedStates';
 import { createGuardedStorage } from '../store/guardedStorage';
 
@@ -126,7 +127,7 @@ describe('the save on the device', () => {
     await flush();
     await settle();
     const { state, version } = await stored();
-    expect(version).toBe(12);
+    expect(version).toBe(STORE_VERSION);
     expect(state.savedStates[12].history).toEqual([]);
     expect(state.savedStates[12].undoSteps).toHaveLength(MAX_SAVED_UNDOS);
   });
