@@ -26,7 +26,7 @@ import { nextMapLevel } from '@/utils/mapFocus';
 import { sampleLevels } from '@/data/sampleLevels';
 import { useActivePlayTime } from '@/hooks/useActivePlayTime';
 import { useOpenDaily } from '@/hooks/useOpenDaily';
-import { describeVehicle, getVehicleLetters, getMoveDirection } from '@/utils/accessibility';
+import { describeShownVehicle, getMoveDirection } from '@/utils/accessibility';
 import { useTheme } from '@/theme';
 import GameLoading from '@/components/game/GameLoading';
 import GameStatsBar from '@/components/game/GameStatsBar';
@@ -43,7 +43,7 @@ import { MAX_UI_FONT_SCALE } from '@/utils/boardSize';
 
 export default function GameScreen() {
   const { t, i18n } = useTranslation();
-  const { colors, isDark, board } = useTheme();
+  const { colors, isDark, board, palette } = useTheme();
   const winEffect = useGameStore(s => s.cosmetics.effect);
   const winEffectColors = useMemo(() => [board.targetCar, ...board.vehicles.slice(0, 6)], [board]);
   const router = useRouter();
@@ -345,7 +345,8 @@ export default function GameScreen() {
         if (hinted) {
           const direction = getMoveDirection(hinted, hintMove);
           AccessibilityInfo.announceForAccessibility(t('a11y.hint_found', {
-            vehicle: describeVehicle(t, hinted, getVehicleLetters(vehicles)[hinted.id]),
+            // Named as the board shows it: in the color of the selected palette (issue 167)
+            vehicle: describeShownVehicle(t, vehicles, palette, hinted.id),
             direction: t(`a11y.dir_${direction}`),
           }));
         }

@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { Vehicle } from '@/store/types';
+import { applyPalette, type VehiclePaletteId } from '@/theme/board';
 
 /** Screen reader descriptions of the board (VoiceOver / TalkBack), see #26 */
 
@@ -61,6 +62,17 @@ export function describeVehicle(t: TFunction, vehicle: Vehicle, letter: string |
   });
 }
 
+/**
+ * A vehicle as the board shows it: in the color of the selected palette (issue 167). The board and the
+ * hint both name it this way, so they never disagree.
+ */
+export function describeShownVehicle(t: TFunction, vehicles: Vehicle[], palette: VehiclePaletteId, vehicleId: string): string {
+  const vehicle = vehicles.find(v => v.id === vehicleId);
+  if (!vehicle) return '';
+  const color = applyPalette(vehicles, palette).get(vehicleId) ?? vehicle.color;
+  return describeVehicle(t, { ...vehicle, color }, getVehicleLetters(vehicles)[vehicleId]);
+}
+
 /** Where the vehicle is, 1-based: "horizontal, row 3, columns 2 to 3" */
 export function describePosition(t: TFunction, vehicle: Pick<Vehicle, 'row' | 'col' | 'length' | 'orientation'>): string {
   return vehicle.orientation === 'horizontal'
@@ -89,6 +101,16 @@ export function stepVehicle(
   const next = (isHorizontal ? vehicle.col : vehicle.row) + step;
   if (next < bounds.min || next > bounds.max) return null;
   return isHorizontal ? { row: vehicle.row, col: next } : { row: next, col: vehicle.col };
+}
+
+/**
+ * Step of a screen reader action on a vehicle, for stepVehicle (issue 171). A swipe up on an adjustable
+ * element sends "increment": it moves a vertical vehicle up, as the "Move up" action does, and a
+ * horizontal one right.
+ */
+export function actionStep(orientation: Vehicle['orientation'], actionName: string): 1 | -1 {
+  if (orientation === 'vertical') return actionName === 'increment' || actionName === 'up' ? -1 : 1;
+  return actionName === 'increment' || actionName === 'right' ? 1 : -1;
 }
 
 export type MoveDirection = 'left' | 'right' | 'up' | 'down';
