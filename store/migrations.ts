@@ -10,7 +10,7 @@ import { addToPeriod, keptMonths, monthKeyOf } from './periodStats';
 import { getLocalDateString, getWeekStart } from '../utils/date';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 12;
+export const STORE_VERSION = 13;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
@@ -84,6 +84,11 @@ export function migrateState(persistedState: unknown, version: number): Record<s
     // back in their month and year, the rest starts to count now (recapSince). The month an achievement
     // was unlocked is unknown: it is set to the month of the update
     Object.assign(state, seedRecap(state));
+  }
+  if (version < 13) {
+    // v13: sound effects (issue 319), a setting apart from the music. They follow the music the player
+    // chose: on if it plays, off if it was turned off (a player who silenced the game keeps it silent)
+    state.isSoundEnabled = state.isMusicEnabled !== false;
   }
   return state;
 }

@@ -243,6 +243,16 @@ Les étoiles, les défis et le niveau joueur débloquent des styles, choisis dan
 | La musique du jeu (activée par défaut, coupable dans les options) **se mélange** à l'audio du joueur : elle n'interrompt **jamais** sa musique ni son podcast, ni à l'ouverture ni au retour dans l'app (#189). La session audio est réglée **avant** la première lecture : catégorie `ambient` sur iOS, aucune demande de focus audio sur Android | `MUSIC_AUDIO_MODE` (`interruptionMode: 'mixWithOthers'`), `setAudioModeAsync` (`context/AudioProvider.tsx`) |
 | Elle se tait comme le téléphone : **muette en mode silencieux** (bouton silencieux sur iOS, mode silencieux ou vibreur sur Android), en pause en arrière-plan, et reprend au retour au premier plan | `playsInSilentMode: false`, `shouldPlayInBackground: false` |
 
+## Effets sonores
+
+| Règle | Implémentation |
+|---|---|
+| Des sons courts **en plus** du visuel, du lecteur d'écran et du retour haptique, **jamais à leur place** : véhicule posé dans sa nouvelle case, coup bloqué (comme la vibration d'avertissement), voiture qui sort, puis sur l'écran de victoire la petite mélodie, un tintement par étoile (chacun plus aigu) et un carillon si la victoire débloque quelque chose (succès, style, niveau joueur) ; carillon aussi pour le toast global (succès, missions, niveau) ; en duel, un tic à 3, 2, 1 et une note plus haute au départ, la mélodie à la victoire ; victoire d'un défi en ligne. Le même son rejoué dans les 60 ms est ignoré (rafale de coups) | `playSound`, `winSoundPlan`, `playSoundPlan` (`utils/sounds.ts`), `components/Block.tsx`, `WinModal`, `AchievementToast`, `app/multi/duel.tsx`, `app/multi/play.tsx` |
+| **Réglage séparé de la musique** dans les options, activé par défaut. À la mise à jour (v13), il suit la musique choisie : coupé pour un joueur qui avait coupé la musique, activé sinon | `isSoundEnabled`, `toggleSoundEnabled`, étape v13 de `migrateState` |
+| Même session audio que la musique : **se mélange** à l'audio du joueur, **muet en mode silencieux**, rien en arrière-plan. Aucun son avant que la session soit réglée (il couperait la musique du joueur) ; les sons sont chargés à ce moment-là pour que le premier soit à l'heure. Coupés, ils ne sont même pas chargés | `setSoundSessionReady` (appelé par `AudioProvider`), `preloadSounds` |
+| Web : rien avant le premier toucher ou la première touche du clavier, un son refusé n'est jamais relancé | `touched` (`utils/sounds.ts`) |
+| Fichiers **synthétisés par le dépôt** (aucun enregistrement ni licence) : mono, 22 050 Hz, 16 bits, quelques Ko chacun, en `.wav` donc **précachés** par le service worker (seul le `.mp3` de la musique ne l'est pas). Pour en changer un : modifier le script et le relancer | `scripts/sounds/generate.mjs` → `assets/sounds/*.wav` |
+
 ## Sauvegarde (export / import)
 
 Pour changer de téléphone sans perdre sa progression, **sans serveur ni compte** (marche aussi pour les builds SideStore et APK).

@@ -102,6 +102,8 @@
     "music_desc": "Mélodie douce pendant le jeu",
     "haptic_feedback": "Retour haptique",
     "haptic_desc": "Vibrer lors des interactions",
+    "sound_effects": "Effets sonores",
+    "sound_desc": "Sons des coups, de la victoire et des déblocages",
     "version": "Version",
     "unlock_all": "Débloquer tous les niveaux",
     "unlock_all_confirm": "Veux-tu débloquer immédiatement l'accès à tous les niveaux de la carte ?",

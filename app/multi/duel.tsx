@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { haptics, Haptics } from '@/utils/haptics';
+import { playSound } from '@/utils/sounds';
 import { RFValue } from '@/utils/responsive';
 import { formatDuration } from '@/utils/date';
 import { fixedColors, toBoardLook, useTheme, type UiColors } from '@/theme';
@@ -172,6 +173,7 @@ export default function DuelScreen() {
       return;
     }
     haptics.notificationAsync(result === 'win' ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Warning);
+    if (result === 'win') playSound('win');
     AccessibilityInfo.announceForAccessibility(t(`multi.duel.result_${result}`, { pseudo: opponentPseudo }));
   }, [result, opponentPseudo, spectating, winnerPseudo, t]);
 
@@ -387,6 +389,16 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
   const level = duel.level!;
   const countdown = countdownMs(duel, now);
   const won = iHaveWon(duel);
+  // The countdown heard: a tick on 3, 2, 1, a higher note on the start (shown big on the board too)
+  const second = Math.ceil(countdown / 1000);
+  const lastSecond = useRef<number | null>(null);
+  useEffect(() => {
+    const previous = lastSecond.current;
+    lastSecond.current = second;
+    if (previous === second) return;
+    if (second > 0) playSound('tick');
+    else if (previous !== null && previous > 0) playSound('go');
+  }, [second]);
   const showTray = duel.spectating && duel.reactions.length > 0 && duel.status === 'playing';
   const space = Math.max(0, height - BARS_HEIGHT - (showTray ? REACTION_TRAY_HEIGHT : 0) - Math.max(insets.bottom, MIN_BOTTOM_ROOM));
   const mySize = Math.min(width - RFValue(32), space * (duel.spectating ? 0.5 : 0.62));

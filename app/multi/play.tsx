@@ -6,6 +6,7 @@ import { useRouter } from '@/hooks/useRouter';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { haptics, Haptics } from '@/utils/haptics';
+import { playSound } from '@/utils/sounds';
 import { RFValue } from '@/utils/responsive';
 import { formatDuration } from '@/utils/date';
 import { fixedColors, useTheme } from '@/theme';
@@ -114,6 +115,7 @@ export default function MultiPlayScreen() {
       setResult(res);
       setPhase('won');
       haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      playSound('win');
       AccessibilityInfo.announceForAccessibility(t('multi.win_a11y', { moves: res.moves, time: formatDuration(res.timeMs), rank: res.rank }));
     };
     try {

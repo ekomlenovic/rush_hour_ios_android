@@ -9,6 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { haptics, Haptics } from '@/utils/haptics';
+import { playSound } from '@/utils/sounds';
 import { Vehicle } from '@/store/gameStore';
 import { actionStep, stepVehicle } from '@/utils/accessibility';
 import { startHintGlow, stopHintGlow } from '@/utils/hintGlow';
@@ -118,7 +119,14 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
 
   const triggerCollisionHaptic = useCallback(() => {
     haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    playSound('bump');
   }, []);
+
+  // The vehicle set in its new cell (not when it is picked up: that one is only felt)
+  const triggerMovedFeedback = useCallback(() => {
+    triggerMoveHaptic();
+    playSound('slide');
+  }, [triggerMoveHaptic]);
 
   const handleMoveEndSync = useCallback(
     (newRow: number, newCol: number) => {
@@ -199,16 +207,16 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
         translateX.value = withSpring(finalCell * cellSize, finalCell !== snappedValue ? BOUNCE_SPRING : SPRING_CONFIG);
         if (finalCell !== vehicle.col) {
           scheduleOnRN(handleMoveEndSync, vehicle.row, finalCell);
-          scheduleOnRN(triggerMoveHaptic);
+          scheduleOnRN(triggerMovedFeedback);
         }
       } else {
         translateY.value = withSpring(finalCell * cellSize, finalCell !== snappedValue ? BOUNCE_SPRING : SPRING_CONFIG);
         if (finalCell !== vehicle.row) {
           scheduleOnRN(handleMoveEndSync, finalCell, vehicle.col);
-          scheduleOnRN(triggerMoveHaptic);
+          scheduleOnRN(triggerMovedFeedback);
         }
       }
-    }), [isHorizontal, vehicle.id, vehicle.row, vehicle.col, vehicle.length, cellSize, triggerMoveHaptic, triggerCollisionHaptic, handleMoveEndSync]);
+    }), [isHorizontal, vehicle.id, vehicle.row, vehicle.col, vehicle.length, cellSize, triggerMoveHaptic, triggerMovedFeedback, triggerCollisionHaptic, handleMoveEndSync]);
 
   // Moves of one cell without dragging: VoiceOver / TalkBack swipe (adjustable) or named actions
   const a11yActions = useMemo(() => disabled ? [] : (isHorizontal
@@ -228,8 +236,8 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
       triggerCollisionHaptic();
       return;
     }
-    triggerMoveHaptic();
-  }, [vehicle, min, max, onMoveEnd, a11yStrings, triggerCollisionHaptic, triggerMoveHaptic]);
+    triggerMovedFeedback();
+  }, [vehicle, min, max, onMoveEnd, a11yStrings, triggerCollisionHaptic, triggerMovedFeedback]);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {

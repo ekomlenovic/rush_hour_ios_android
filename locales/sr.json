@@ -117,6 +117,8 @@
     "music_desc": "Blaga melodija tokom igre",
     "haptic_feedback": "Vibracija",
     "haptic_desc": "Vibriraj pri dodiru",
+    "sound_effects": "Zvučni efekti",
+    "sound_desc": "Zvuci poteza, pobede i otključavanja",
     "version": "Verzija",
     "unlock_all": "Otključaj sve nivoe",
     "unlock_all_confirm": "Želiš li da otključaš sve nivoe na mapi?",

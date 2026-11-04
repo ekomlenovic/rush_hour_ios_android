@@ -10,6 +10,7 @@ import type { MissionReward } from '@/data/missions';
 import { missionRewardText } from '@/components/progression/rewards';
 import { fixedColors, useTheme } from '@/theme';
 import type { IoniconName } from '@/utils/icons';
+import { playSound } from '@/utils/sounds';
 
 const DISPLAY_MS = 3000;
 
@@ -113,6 +114,7 @@ export default function AchievementToast() {
         ? t('progression.level_up', { level: current.level })
         : `${t('missions.completed')} ${missionRewardText(t, current)}`;
     AccessibilityInfo.announceForAccessibility(announced);
+    playSound('unlock');
     const timer = setTimeout(() => setCurrent(null), DISPLAY_MS);
     return () => clearTimeout(timer);
   }, [current]);

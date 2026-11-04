@@ -23,7 +23,8 @@ const walk = dir => {
 };
 walk(dist);
 
-// Downloaded at the install: everything but the music (cached once played) and what the worker is not for
+// Downloaded at the install: everything but the music (cached once played) and what the worker is not for.
+// The sound effects (assets/sounds/*.wav, a few KB each) are in: they play offline from the first time
 const skipped = /(^|\/)(404\.html|sw\.js|metadata\.json|\.nojekyll)$|\.mp3$/;
 const precache = files.filter(f => !skipped.test(f)).sort();
 const hash = createHash('sha256');

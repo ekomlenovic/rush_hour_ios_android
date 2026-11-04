@@ -11,9 +11,9 @@ const migrate = (state: Record<string, unknown>, version: number) =>
   options.migrate!(structuredClone(state), version) as unknown as Record<string, unknown>;
 /** Id a level of the pack had before the 5 levels inserted after level 5 in v5 */
 const idBeforeV5 = (id: number) => (id > 10 ? id - 5 : id);
-/** The state without the recap fields that v12 adds to every save, to check the steps before it */
+/** The state without the fields that v12 (recap) and v13 (sound effects) add to every save, to check the steps before them */
 const withoutRecap = (state: Record<string, unknown>) => {
-  const { monthlyStats: _m, yearlyStats: _y, achievementMonths: _a, recapSince: _r, ...rest } = state;
+  const { monthlyStats: _m, yearlyStats: _y, achievementMonths: _a, recapSince: _r, isSoundEnabled: _s, ...rest } = state;
   return rest;
 };
 const merge = (persisted: Record<string, unknown>) =>
@@ -25,8 +25,8 @@ const withBoards = (save: any) => {
 };
 
 describe('persisted state', () => {
-  it('is at version 12', () => {
-    expect(options.version).toBe(12);
+  it('is at version 13', () => {
+    expect(options.version).toBe(13);
     expect(STORE_VERSION).toBe(options.version);
   });
 
@@ -53,6 +53,14 @@ const PERSISTED_KEYS: Record<number, string[]> = {
     'createdLevels', 'currentDailyLevel', 'currentStreak', 'currentWeeklyLevel', 'dailyChallengeProgress',
     'dailyLevelDate', 'dailyMissions', 'frozenDates', 'generatedLevels', 'generationState', 'importedLevels',
     'isHapticsEnabled', 'isMusicEnabled', 'lastOpenDate', 'lastPlayedLevelId', 'lastStreakDate',
+    'maxUnlockedLevel', 'monthlyStats', 'notificationsEnabled', 'notificationsPrompted', 'progress',
+    'recapSince', 'recapsSeen', 'reminderHour', 'savedStates', 'seenAchievements', 'seenCosmetics',
+    'showVehicleLetters', 'stats', 'streakFreezes', 'themeMode', 'totalHintsUsed',
+    'weeklyChallengeProgress', 'weeklyLevelKey', 'xp', 'yearlyStats'],
+  13: ['achievementMonths', 'achievements', 'archiveLevels', 'archiveProgress', 'bestStreak', 'cosmetics',
+    'createdLevels', 'currentDailyLevel', 'currentStreak', 'currentWeeklyLevel', 'dailyChallengeProgress',
+    'dailyLevelDate', 'dailyMissions', 'frozenDates', 'generatedLevels', 'generationState', 'importedLevels',
+    'isHapticsEnabled', 'isMusicEnabled', 'isSoundEnabled', 'lastOpenDate', 'lastPlayedLevelId', 'lastStreakDate',
     'maxUnlockedLevel', 'monthlyStats', 'notificationsEnabled', 'notificationsPrompted', 'progress',
     'recapSince', 'recapsSeen', 'reminderHour', 'savedStates', 'seenAchievements', 'seenCosmetics',
     'showVehicleLetters', 'stats', 'streakFreezes', 'themeMode', 'totalHintsUsed',
@@ -397,7 +405,7 @@ describe('migrate v11 → v12', () => {
 
   it('a player without anything starts with empty counters', () => {
     const state = migrate({ progress: [] }, 11);
-    expect(state).toEqual({ progress: [], monthlyStats: {}, yearlyStats: {}, achievementMonths: {}, recapSince: '2026-10-20' });
+    expect(state).toEqual({ progress: [], monthlyStats: {}, yearlyStats: {}, achievementMonths: {}, recapSince: '2026-10-20', isSoundEnabled: true });
   });
 
   it('a save of the previous version still loads in the store', () => {
@@ -409,6 +417,43 @@ describe('migrate v11 → v12', () => {
 
   it('a new player counts from the start', () => {
     expect(useGameStore.getInitialState().recapSince).toBeNull();
+  });
+});
+
+describe('migrate v12 → v13: sound effects (issue 319)', () => {
+  // A v12 save as written by 2.0.x: no sound setting yet
+  const v12 = (isMusicEnabled?: boolean) => ({
+    progress: [{ levelId: 1, completed: true, bestScore: 300, stars: 3 }],
+    xp: 1200,
+    isHapticsEnabled: true,
+    ...(isMusicEnabled === undefined ? {} : { isMusicEnabled }),
+    monthlyStats: {}, yearlyStats: {}, achievementMonths: {}, recapSince: '2026-10-20',
+  });
+
+  it('turns the sounds on for a player who listens to the music', () => {
+    const state = migrate(v12(true), 12);
+    expect(state.isSoundEnabled).toBe(true);
+    const { isSoundEnabled: _s, ...rest } = state;
+    expect(rest).toEqual(v12(true));
+  });
+
+  it('keeps the game silent for a player who turned the music off', () => {
+    expect(migrate(v12(false), 12).isSoundEnabled).toBe(false);
+  });
+
+  it('a save without the music setting gets the default, on', () => {
+    expect(migrate(v12(), 12).isSoundEnabled).toBe(true);
+  });
+
+  it('a save of the previous version still loads in the store', () => {
+    const merged = merge(migrate(v12(false), 12));
+    expect(merged.isSoundEnabled).toBe(false);
+    expect(merged.isMusicEnabled).toBe(false);
+    expect(merged.xp).toBe(1200);
+  });
+
+  it('a new player has the sounds on', () => {
+    expect(useGameStore.getInitialState().isSoundEnabled).toBe(true);
   });
 });
 

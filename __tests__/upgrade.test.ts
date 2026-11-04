@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { useGameStore as UseGameStore } from '../store/gameStore';
+import { STORE_VERSION } from '../store/migrations';
 import { MAX_SAVED_UNDOS, undoStackOf } from '../store/savedStates';
 import { sampleLevels } from '../data/sampleLevels';
 import { setToday } from './helpers';
@@ -64,7 +65,7 @@ describe('updating from 2.0.0', () => {
     // And it is written back as the current version, nothing lost on the device either
     await settle();
     const { state: written, version } = await onDevice();
-    expect(version).toBe(12);
+    expect(version).toBe(STORE_VERSION);
     expect(written.progress).toEqual(old.progress);
     expect(written.xp).toBe(old.xp);
   });

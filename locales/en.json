@@ -102,6 +102,8 @@
     "music_desc": "Smooth melody during gameplay",
     "haptic_feedback": "Haptic Feedback",
     "haptic_desc": "Vibrate on interactions",
+    "sound_effects": "Sound Effects",
+    "sound_desc": "Sounds when you move, win and unlock",
     "version": "Version",
     "unlock_all": "Unlock All Levels",
     "unlock_all_confirm": "Do you want to unlock access to all levels on the map?",

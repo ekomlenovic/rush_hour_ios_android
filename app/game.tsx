@@ -5,6 +5,7 @@ import { useRouter } from '@/hooks/useRouter';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { haptics, Haptics } from '@/utils/haptics';
+import { playSound } from '@/utils/sounds';
 import Board from '@/components/Board';
 import BoardBackdrop from '@/components/BoardBackdrop';
 import { useGameStore } from '@/store/gameStore';
@@ -278,6 +279,8 @@ export default function GameScreen() {
       setWinTimeMs(timeMs);
       setWon(true);
       haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // The target car leaves the board
+      playSound('exit');
     }
     return true;
   }, [won, isChallengeCompleted, moveVehicle, currentLevel, computedMinMoves, completeLevel, challengeKind, isArchive, params.date, params.week, playTime.stop]);

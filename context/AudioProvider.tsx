@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { AppState, AppStateStatus, Platform } from 'react-native';
 import { setAudioModeAsync, useAudioPlayer, type AudioMode, type AudioStatus } from 'expo-audio';
 import { useGameStore } from '@/store/gameStore';
+import { preloadSounds, setSoundSessionReady } from '@/utils/sounds';
 
 interface AudioContextType {
   toggleMusic: () => void;
@@ -71,9 +72,20 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     if (audioSession) audioSession.type = 'ambient';
     setAudioModeAsync(MUSIC_AUDIO_MODE)
       .catch(() => { })
-      .finally(() => { if (!cancelled) setAudioModeReady(true); });
+      .finally(() => {
+        if (cancelled) return;
+        setAudioModeReady(true);
+        // The sound effects share this session: none before it is set up
+        setSoundSessionReady(true);
+      });
     return () => { cancelled = true; };
   }, []);
+
+  // Sound effects turned on: loaded now, so the next one is on time
+  const isSoundEnabled = useGameStore(s => s.isSoundEnabled);
+  useEffect(() => {
+    if (audioModeReady && isSoundEnabled) preloadSounds();
+  }, [audioModeReady, isSoundEnabled]);
 
   // OPTIMIZATION: Track AppState in React state so effects can react to backgrounding
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState as AppStateStatus);

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { WinAchievementToasts } from '@/components/AchievementToast';
 import { formatDuration } from '@/utils/date';
+import { playSoundPlan, winSoundPlan } from '@/utils/sounds';
 import { fixedColors, useTheme, type UiColors } from '@/theme';
 import { useGameStore } from '@/store/gameStore';
 import CosmeticThumb from '@/components/garage/CosmeticThumb';
@@ -82,6 +83,12 @@ export default function WinModal({
       stats: movesLine,
     }));
     for (const level of levelUps) AccessibilityInfo.announceForAccessibility(t('progression.level_up', { level }));
+  }, [visible]);
+
+  // Heard on top of what is shown and announced, never in its place
+  useEffect(() => {
+    if (!visible) return;
+    return playSoundPlan(winSoundPlan(stars, unlocks.length + cosmeticUnlocks.length + levelUps.length > 0));
   }, [visible]);
 
   return (

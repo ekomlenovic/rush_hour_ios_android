@@ -41,7 +41,7 @@ interface Props {
 
 /**
  * Options of the home screen and the world map (one sheet for both): language, appearance,
- * music, haptics, vehicle letters, reminders, save export / import, version and update, hard reset.
+ * music, sound effects, haptics, vehicle letters, reminders, save export / import, version and update, hard reset.
  */
 export default function OptionsSheet({ visible, colors, showMapLevels = false, onClose }: Props) {
   const { t } = useTranslation();
@@ -49,6 +49,8 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
   const router = useRouter();
   const isHapticsEnabled = useGameStore(s => s.isHapticsEnabled);
   const toggleHapticsEnabled = useGameStore(s => s.toggleHapticsEnabled);
+  const isSoundEnabled = useGameStore(s => s.isSoundEnabled);
+  const toggleSoundEnabled = useGameStore(s => s.toggleSoundEnabled);
   const showVehicleLetters = useGameStore(s => s.showVehicleLetters);
   const toggleVehicleLetters = useGameStore(s => s.toggleVehicleLetters);
   const notificationsEnabled = useGameStore(s => s.notificationsEnabled);
@@ -231,6 +233,10 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
 
             {toggleRow(t('home.background_music'), t('home.music_desc'), isMusicEnabled, () => {
               toggleMusic();
+              haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            })}
+            {toggleRow(t('home.sound_effects'), t('home.sound_desc'), isSoundEnabled, () => {
+              toggleSoundEnabled();
               haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             })}
             {toggleRow(t('home.haptic_feedback'), t('home.haptic_desc'), isHapticsEnabled, () => {

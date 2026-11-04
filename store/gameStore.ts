@@ -120,6 +120,8 @@ interface GameState {
   isMusicEnabled: boolean;
   /** Haptics Enabled state */
   isHapticsEnabled: boolean;
+  /** Sound effects (moves, victory, unlocks), set apart from the music (issue 319) */
+  isSoundEnabled: boolean;
   /** Letters on the vehicles, to tell them apart without colors (accessibility) */
   showVehicleLetters: boolean;
   /** Light / dark choice of the interface */
@@ -200,6 +202,7 @@ interface GameState {
   purgeCustomLevels: (baseLevelCount: number) => void;
   toggleMusicEnabled: () => void;
   toggleHapticsEnabled: () => void;
+  toggleSoundEnabled: () => void;
   toggleVehicleLetters: () => void;
   setThemeMode: (mode: ThemeMode) => void;
   setNotificationsEnabled: (enabled: boolean) => void;
@@ -412,6 +415,7 @@ export const useGameStore = create<GameState>()(
       savedStates: {},
       isMusicEnabled: true,
       isHapticsEnabled: true,
+      isSoundEnabled: true,
       showVehicleLetters: false,
       themeMode: 'system',
       notificationsEnabled: false,
@@ -945,6 +949,7 @@ export const useGameStore = create<GameState>()(
         const { isHapticsEnabled } = get();
         set({ isHapticsEnabled: !isHapticsEnabled });
       },
+      toggleSoundEnabled: () => set({ isSoundEnabled: !get().isSoundEnabled }),
       toggleVehicleLetters: () => set({ showVehicleLetters: !get().showVehicleLetters }),
       setThemeMode: (mode) => set({ themeMode: mode }),
       setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled, notificationsPrompted: true }),
@@ -1088,6 +1093,7 @@ export const useGameStore = create<GameState>()(
         savedStates: state.savedStates,
         isMusicEnabled: state.isMusicEnabled,
         isHapticsEnabled: state.isHapticsEnabled,
+        isSoundEnabled: state.isSoundEnabled,
         showVehicleLetters: state.showVehicleLetters,
         themeMode: state.themeMode,
         notificationsEnabled: state.notificationsEnabled,
