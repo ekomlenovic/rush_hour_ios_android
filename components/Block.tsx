@@ -15,6 +15,7 @@ import { startHintGlow, stopHintGlow } from '@/utils/hintGlow';
 import { useBoardTheme, type VehicleArt } from '@/theme';
 import { labelOn } from '@/theme/contrast';
 import DrawnVehicle from '@/components/vehicles/DrawnVehicle';
+import { settleDrag } from '@/utils/dragSettle';
 import type { Facing } from '@/theme/art/art';
 
 interface BlockProps {
@@ -120,17 +121,25 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
     haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
   }, []);
 
-  const handleMoveEndSync = useCallback(
-    (newRow: number, newCol: number) => {
-      // Refused (another vehicle dragged at the same time took the room): back to its cell
-      if (onMoveEnd(vehicle.id, newRow, newCol) === false) {
-        translateX.value = withSpring(vehicle.col * cellSize, BOUNCE_SPRING);
-        translateY.value = withSpring(vehicle.row * cellSize, BOUNCE_SPRING);
-        triggerCollisionHaptic();
-      }
-    },
-    [onMoveEnd, vehicle.id, vehicle.row, vehicle.col, cellSize, triggerCollisionHaptic]
-  );
+  // The vehicle as the game has it now: read when a drag ends, whatever render its gesture comes from
+  const latest = useRef({ vehicle, cellSize, onMoveEnd, triggerMoveHaptic, triggerCollisionHaptic });
+  latest.current = { vehicle, cellSize, onMoveEnd, triggerMoveHaptic, triggerCollisionHaptic };
+
+  // Stable: the gesture keeps the same callback, which always reads the latest props
+  const handleRelease = useCallback((cell: number) => {
+    const { vehicle: v, cellSize: size, onMoveEnd: move, triggerMoveHaptic: moved, triggerCollisionHaptic: blocked } = latest.current;
+    const outcome = settleDrag(v, cell, move);
+    if (outcome === 'moved') {
+      moved();
+      return;
+    }
+    if (outcome === 'refused') blocked();
+    // Not played: drawn back on the cell the game has (also when it changed during the drag, undo…)
+    if (outcome === 'refused' || (v.orientation === 'horizontal' ? v.col : v.row) !== cell) {
+      translateX.value = withSpring(v.col * size, BOUNCE_SPRING);
+      translateY.value = withSpring(v.row * size, BOUNCE_SPRING);
+    }
+  }, []);
 
   const hasHitMin = useSharedValue(false);
   const hasHitMax = useSharedValue(false);
@@ -182,8 +191,11 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
         translateY.value = clamped;
       }
     })
-    .onEnd(() => {
+    // onFinalize and not onEnd: also called when Safari cancels the touch (call, notification,
+    // swipe out of the web app), else the vehicle stayed "dragged" and no longer followed the game
+    .onFinalize(() => {
       'use worklet';
+      if (!isDragging.value) return;
       isDragging.value = false;
       scale.value = withSpring(1, SPRING_CONFIG);
       hasHitMin.value = false;
@@ -194,21 +206,16 @@ function Block({ vehicle, gridSize, cellSize, onMoveEnd, isHinted, min, max, dis
       const minCell = boundsMinPx.value / cellSize;
       const maxCell = boundsMaxPx.value / cellSize;
       const finalCell = Math.max(minCell, Math.min(maxCell, snappedValue));
+      const spring = finalCell !== snappedValue ? BOUNCE_SPRING : SPRING_CONFIG;
       
       if (isHorizontal) {
-        translateX.value = withSpring(finalCell * cellSize, finalCell !== snappedValue ? BOUNCE_SPRING : SPRING_CONFIG);
-        if (finalCell !== vehicle.col) {
-          scheduleOnRN(handleMoveEndSync, vehicle.row, finalCell);
-          scheduleOnRN(triggerMoveHaptic);
-        }
+        translateX.value = withSpring(finalCell * cellSize, spring);
       } else {
-        translateY.value = withSpring(finalCell * cellSize, finalCell !== snappedValue ? BOUNCE_SPRING : SPRING_CONFIG);
-        if (finalCell !== vehicle.row) {
-          scheduleOnRN(handleMoveEndSync, finalCell, vehicle.col);
-          scheduleOnRN(triggerMoveHaptic);
-        }
+        translateY.value = withSpring(finalCell * cellSize, spring);
       }
-    }), [isHorizontal, vehicle.id, vehicle.row, vehicle.col, vehicle.length, cellSize, triggerMoveHaptic, triggerCollisionHaptic, handleMoveEndSync]);
+      // The JS side compares with the game's position, never with one captured in this worklet
+      scheduleOnRN(handleRelease, finalCell);
+    }), [isHorizontal, cellSize, triggerMoveHaptic, triggerCollisionHaptic, handleRelease]);
 
   // Moves of one cell without dragging: VoiceOver / TalkBack swipe (adjustable) or named actions
   const a11yActions = useMemo(() => disabled ? [] : (isHorizontal
