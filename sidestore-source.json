@@ -127,6 +127,16 @@
       },
       "versions": [
         {
+          "version": "2.1.0",
+          "buildVersion": "66",
+          "date": "2026-11-05",
+          "localizedDescription": "New:\n• Garage: 11 holidays of the year (Halloween, Christmas, New Year, Easter…), each with its own board, car, colors and effect, won in the Daily Challenge\n• Drawn backgrounds and vehicles for the Garage styles\n• The car to get out always faces the exit\n• Easier with TalkBack and large fonts\n• Fixes: save, streak, multiplayer",
+          "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.1.0-b66/rush-hours-unsigned.ipa",
+          "size": 19030133,
+          "sha256": "fc96beddcfc24672ae96233d540228bf93a8fe2be8b6da659f88d486480b9af7",
+          "minOSVersion": "16.4"
+        },
+        {
           "version": "2.0.7",
           "buildVersion": "65",
           "date": "2026-10-28",
@@ -167,12 +177,12 @@
           "minOSVersion": "16.4"
         }
       ],
-      "version": "2.0.7",
-      "buildVersion": "65",
-      "versionDate": "2026-10-28",
-      "versionDescription": "Fixes:\n• Duel: your board no longer reaches the bottom of the screen\n• Level creator: the toolbox vehicles show in full again, with their names",
-      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.0.7-b65/rush-hours-unsigned.ipa",
-      "size": 18865769
+      "version": "2.1.0",
+      "buildVersion": "66",
+      "versionDate": "2026-11-05",
+      "versionDescription": "New:\n• Garage: 11 holidays of the year (Halloween, Christmas, New Year, Easter…), each with its own board, car, colors and effect, won in the Daily Challenge\n• Drawn backgrounds and vehicles for the Garage styles\n• The car to get out always faces the exit\n• Easier with TalkBack and large fonts\n• Fixes: save, streak, multiplayer",
+      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.1.0-b66/rush-hours-unsigned.ipa",
+      "size": 19030133
     }
   ],
   "news": []
