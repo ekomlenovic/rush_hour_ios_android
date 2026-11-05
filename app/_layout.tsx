@@ -16,7 +16,6 @@ import WebDialogHost from '@/components/web/WebDialogHost';
 import SidePanels from '@/components/web/SidePanels';
 import { listenToReminderTaps, useReminderSync } from '@/utils/notifications';
 import { useWidgetSync } from '@/hooks/useWidgetSync';
-import { useCloudSync } from '@/hooks/useCloudSync';
 import { useAppOpenAlert } from '@/hooks/useAppOpenAlert';
 import { useNow } from '@/hooks/useNow';
 import { getLocalDateString } from '@/utils/date';
@@ -48,7 +47,6 @@ export default function RootLayout() {
   useAppearanceSync();
   useReminderSync();
   useWidgetSync();
-  useCloudSync();
   // Shared level links (rush-hours://game?data=…) are opened by Expo Router on the game screen (issue 118)
   // A touched reminder opens what it announces, above the screen left open (issue 191)
   useEffect(() => listenToReminderTaps(url => router.push(url)), [router]);
