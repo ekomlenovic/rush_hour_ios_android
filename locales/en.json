@@ -203,7 +203,12 @@
     "filter_none": "No level",
     "filter_show_one": "Show {{count}} level",
     "filter_show_other": "Show {{count}} levels",
-    "filter_clear": "Clear the search"
+    "filter_clear": "Clear the search",
+    "min_moves_label": "Minimum moves",
+    "min_moves_auto": "Auto",
+    "min_moves_hint": "Every level will take at least this many moves at best (up to {{max}}). Empty: the moves of the difficulty. Above the moves of a difficulty, the levels are those of a harder one: the generation takes longer, and a level that cannot be found is given up.",
+    "min_moves_short_one": "{{count}} move or more",
+    "min_moves_short_other": "{{count}} moves or more"
   },
   "game": {
     "best": "Best",

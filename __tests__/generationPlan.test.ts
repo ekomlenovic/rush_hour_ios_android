@@ -1,8 +1,9 @@
 import {
-  buildGenerationPlan, clampAmount, planTotal, shareOut,
+  batchConfig, buildGenerationPlan, clampAmount, clampMinMoves, planTotal, shareOut, MAX_MIN_MOVES,
   DEFAULT_DIFFICULTY_PARTS, DEFAULT_GRID_SIZE_PARTS, MAX_GENERATION_AMOUNT,
   GENERATION_DIFFICULTIES, GENERATION_GRID_SIZES, type DifficultyParts, type GenerationBatch,
 } from '../utils/generationPlan';
+import { DIFFICULTY_LEVELS } from '../utils/generator.core';
 
 const NONE: DifficultyParts = { EASY: 0, NORMAL: 0, HARD: 0, EXPERT: 0, MASTER: 0 };
 const perDifficulty = (plan: GenerationBatch[], d: string) => plan.filter(b => b.difficulty === d).reduce((s, b) => s + b.count, 0);
@@ -74,5 +75,62 @@ describe('buildGenerationPlan', () => {
   it('is empty when a proportion has no part at all', () => {
     expect(buildGenerationPlan(10, NONE, DEFAULT_GRID_SIZE_PARTS)).toEqual([]);
     expect(buildGenerationPlan(10, DEFAULT_DIFFICULTY_PARTS, { 6: 0, 7: 0, 8: 0 })).toEqual([]);
+  });
+});
+
+describe('minimum of moves asked by the player', () => {
+  it('is nothing when the field is empty, and never over the maximum', () => {
+    expect(clampMinMoves(NaN)).toBeNull();
+    expect(clampMinMoves(0)).toBeNull();
+    expect(clampMinMoves(18)).toBe(18);
+    expect(clampMinMoves(99)).toBe(MAX_MIN_MOVES);
+  });
+
+  it('is carried by every batch of the plan, or by none', () => {
+    const parts = { ...NONE, EASY: 1, HARD: 1 };
+    expect(buildGenerationPlan(4, parts, DEFAULT_GRID_SIZE_PARTS, 20).map(b => b.minMoves)).toEqual([20, 20]);
+    expect(buildGenerationPlan(4, parts, DEFAULT_GRID_SIZE_PARTS).every(b => !('minMoves' in b))).toBe(true);
+  });
+
+  it('changes nothing when the difficulty already guarantees it', () => {
+    expect(batchConfig({ difficulty: 'HARD', gridSize: 7, count: 1 })).toEqual({ difficulty: 'HARD', config: { ...DIFFICULTY_LEVELS.HARD, gridSize: 7 }, raised: false });
+    expect(batchConfig({ difficulty: 'HARD', gridSize: 7, count: 1, minMoves: 15 }).raised).toBe(false);
+    expect(batchConfig({ difficulty: 'HARD', gridSize: 7, count: 1, minMoves: 8 }).config.minMovesRequired).toBe(15);
+  });
+
+  it('raises the minimum of the difficulty', () => {
+    const { difficulty, config, raised } = batchConfig({ difficulty: 'HARD', gridSize: 6, count: 1, minMoves: 20 });
+    expect(raised).toBe(true);
+    expect(difficulty).toBe('HARD');
+    expect(config).toEqual({ ...DIFFICULTY_LEVELS.HARD, gridSize: 6, minMovesRequired: 20 });
+  });
+
+  it('goes to the next difficulty at the top of the range: Hard levels of 25 moves are too rare to wait for', () => {
+    expect(batchConfig({ difficulty: 'HARD', gridSize: 7, count: 1, minMoves: 25 })).toEqual({
+      difficulty: 'EXPERT', config: { ...DIFFICULTY_LEVELS.EXPERT, gridSize: 7 }, raised: true,
+    });
+    expect(batchConfig({ difficulty: 'NORMAL', gridSize: 6, count: 1, minMoves: 12 })).toEqual({
+      difficulty: 'HARD', config: { ...DIFFICULTY_LEVELS.HARD, gridSize: 6 }, raised: true,
+    });
+  });
+
+  it('takes the vehicles of the first difficulty that reaches that many moves, and keeps the grid size', () => {
+    const { difficulty, config } = batchConfig({ difficulty: 'EASY', gridSize: 6, count: 1, minMoves: 30 });
+    expect(difficulty).toBe('EXPERT');
+    expect(config).toEqual({ ...DIFFICULTY_LEVELS.EXPERT, gridSize: 6, minMovesRequired: 30 });
+    // Never an easier difficulty than the one chosen
+    expect(batchConfig({ difficulty: 'MASTER', gridSize: 8, count: 1, minMoves: MAX_MIN_MOVES })).toMatchObject({
+      difficulty: 'MASTER', config: { gridSize: 8, minMovesRequired: MAX_MIN_MOVES, maxMovesRequired: 80 },
+    });
+  });
+
+  it('always asks for a range the generator can search', () => {
+    for (const difficulty of GENERATION_DIFFICULTIES) {
+      for (let minMoves = 1; minMoves <= MAX_MIN_MOVES; minMoves++) {
+        const { config } = batchConfig({ difficulty, gridSize: 6, count: 1, minMoves });
+        expect(config.minMovesRequired).toBeGreaterThanOrEqual(Math.max(minMoves, DIFFICULTY_LEVELS[difficulty].minMovesRequired));
+        expect(config.maxMovesRequired).toBeGreaterThanOrEqual(config.minMovesRequired + 5);
+      }
+    }
   });
 });

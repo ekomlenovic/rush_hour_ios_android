@@ -223,7 +223,13 @@
     "filter_show_one": "Prikaži {{count}} nivo",
     "filter_show_few": "Prikaži {{count}} nivoa",
     "filter_show_other": "Prikaži {{count}} nivoa",
-    "filter_clear": "Obriši pretragu"
+    "filter_clear": "Obriši pretragu",
+    "min_moves_label": "Najmanje poteza",
+    "min_moves_auto": "Auto",
+    "min_moves_hint": "Svaki nivo će u najboljem slučaju tražiti bar ovoliko poteza (najviše {{max}}). Prazno: potezi prema težini. Iznad poteza neke težine nivoi su kao kod teže: generisanje traje duže, a od nivoa koji ne može da se nađe se odustaje.",
+    "min_moves_short_one": "{{count}} potez ili više",
+    "min_moves_short_few": "{{count}} poteza ili više",
+    "min_moves_short_other": "{{count}} poteza ili više"
   },
   "game": {
     "best": "Najbolje",

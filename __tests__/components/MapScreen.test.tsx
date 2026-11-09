@@ -105,6 +105,14 @@ describe('world map', () => {
       expect(new Set(plan.map(b => b.difficulty))).toEqual(new Set(['EASY', 'NORMAL']));
     });
 
+    it('generates levels of at least the number of moves typed', async () => {
+      await openMap();
+      await press(t('map.level_generator'));
+      await fireEvent.changeText(screen.getByLabelText(t('map.min_moves_label')), '12');
+      await press(screen.getByText(/^(Generate|Générer|Generiši) 3 /).props.children);
+      expect(jest.mocked(startLevelGeneration).mock.calls[0][0]).toEqual([{ difficulty: 'NORMAL', gridSize: 6, count: 3, minMoves: 12 }]);
+    });
+
     it('opens from the padlock at the end of the map, and keeps one difficulty at least', async () => {
       useGameStore.setState({ maxUnlockedLevel: sampleLevels.length + 1, lastPlayedLevelId: null });
       await openMap();

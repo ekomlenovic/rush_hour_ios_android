@@ -203,7 +203,12 @@
     "filter_none": "Aucun niveau",
     "filter_show_one": "Voir {{count}} niveau",
     "filter_show_other": "Voir {{count}} niveaux",
-    "filter_clear": "Effacer la recherche"
+    "filter_clear": "Effacer la recherche",
+    "min_moves_label": "Coups minimum",
+    "min_moves_auto": "Auto",
+    "min_moves_hint": "Chaque niveau demandera au moins ce nombre de coups au mieux (jusqu'à {{max}}). Vide : les coups de la difficulté. Au-dessus des coups d'une difficulté, les niveaux sont ceux d'une difficulté plus dure : la génération est plus longue, et un niveau introuvable est abandonné.",
+    "min_moves_short_one": "{{count}} coup ou plus",
+    "min_moves_short_other": "{{count}} coups ou plus"
   },
   "game": {
     "best": "Meilleur",

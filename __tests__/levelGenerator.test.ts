@@ -9,10 +9,12 @@ import { estimateLevelMs, sampleKey } from '../utils/generationEstimate';
 
 // A generation that fails one level out of three, instantly
 let mockCalls = 0;
+const mockConfigs: { minMovesRequired: number; maxMovesRequired: number; minVehicles: number; gridSize: number }[] = [];
 jest.mock('../utils/generator', () => ({
   ...jest.requireActual('../utils/generator'),
-  generateLevel: (id: number) => {
+  generateLevel: (id: number, config: typeof mockConfigs[number]) => {
     mockCalls++;
+    mockConfigs.push(config);
     return mockCalls % 3 === 2 ? null : { ...jest.requireActual('../data/sampleLevels').sampleLevels[0], id };
   },
 }));
@@ -25,6 +27,7 @@ beforeEach(() => {
   resetStore();
   useGenerationTimes.setState({ samples: {} });
   mockCalls = 0;
+  mockConfigs.length = 0;
 });
 
 afterEach(async () => {
@@ -106,6 +109,16 @@ describe('a mix of difficulties and grid sizes', () => {
       { difficulty: 'HARD', gridSize: 7, count: 1 },
     ]);
     expect(seconds).toBeCloseTo((2 * (estimateLevelMs('EASY', 6, samples) + 150) + estimateLevelMs('HARD', 7, samples) + 150) / 1000);
+  });
+
+  it('asks the generator for the minimum of moves typed by the player, without learning its times', async () => {
+    startLevelGeneration(buildGenerationPlan(2, { EASY: 1, NORMAL: 0, HARD: 0, EXPERT: 0, MASTER: 0 }, { 6: 0, 7: 1, 8: 0 }, 20));
+    // Estimated as Hard, the first difficulty that reaches 20 moves
+    expect(state().generationState.estimatedRemainingSeconds).toBe(Math.ceil((2 * (estimateLevelMs('HARD', 7, {}) + 150)) / 1000));
+    await jest.runAllTimersAsync();
+    expect(state().generatedLevels).toHaveLength(2);
+    for (const config of mockConfigs) expect(config).toMatchObject({ gridSize: 7, minMovesRequired: 20, maxMovesRequired: 25, minVehicles: 10 });
+    expect(useGenerationTimes.getState().samples).toEqual({});
   });
 
   it('starts nothing for an empty plan', () => {

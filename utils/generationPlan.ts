@@ -3,6 +3,7 @@
  * The player gives a number of levels and a proportion per difficulty and per grid size
  * ("2 parts Normal, 1 part Hard"); the plan shares the levels out. Pure functions.
  */
+import { DIFFICULTY_LEVELS, type DifficultyConfig } from './generator.core';
 
 export const GENERATION_DIFFICULTIES = ['EASY', 'NORMAL', 'HARD', 'EXPERT', 'MASTER'] as const;
 export type DifficultyKey = typeof GENERATION_DIFFICULTIES[number];
@@ -14,11 +15,51 @@ export const MAX_GENERATION_AMOUNT = 100;
 /** Parts of one difficulty or grid size, at most */
 export const MAX_PARTS = 9;
 
+/** Highest minimum number of moves the player can ask for: past it the generator finds nothing */
+export const MAX_MIN_MOVES = 60;
+/**
+ * Room a difficulty must leave over a minimum asked by the player. Levels at the very top of the
+ * range of a difficulty are rare: Hard 7x7 with 25 moves or more (the top of Hard) found nothing in
+ * 5 minutes, where Expert, which starts there, is made for it
+ */
+const MIN_MOVES_MARGIN = 5;
+
 /** Levels of one difficulty and grid size to generate */
 export interface GenerationBatch {
   difficulty: DifficultyKey;
   gridSize: number;
   count: number;
+  /** Optimal moves every level needs at least, asked by the player; not set: those of the difficulty */
+  minMoves?: number;
+}
+
+/** A typed minimum of moves: null when nothing (or zero) is typed, never over MAX_MIN_MOVES */
+export function clampMinMoves(value: number): number | null {
+  if (!Number.isFinite(value) || value < 1) return null;
+  return Math.min(MAX_MIN_MOVES, Math.floor(value));
+}
+
+/**
+ * What the generator is asked for a batch. A minimum of moves over the one of the difficulty raises
+ * it: the levels are then those of the first difficulty that goes MIN_MOVES_MARGIN moves past it
+ * (its vehicles and its maximum of moves: Easy boards of 5 to 8 vehicles never take 30 moves), never
+ * an easier one than the batch's. `difficulty` is that one, the one the time of a level is estimated
+ * with. A minimum the difficulty already guarantees changes nothing.
+ */
+export function batchConfig(batch: GenerationBatch): { difficulty: DifficultyKey; config: DifficultyConfig; raised: boolean } {
+  const base = DIFFICULTY_LEVELS[batch.difficulty];
+  const minMoves = batch.minMoves ?? 0;
+  if (minMoves <= base.minMovesRequired) return { difficulty: batch.difficulty, config: { ...base, gridSize: batch.gridSize }, raised: false };
+
+  const reaching = GENERATION_DIFFICULTIES.find(d => DIFFICULTY_LEVELS[d].maxMovesRequired >= minMoves + MIN_MOVES_MARGIN) ?? 'MASTER';
+  const difficulty = GENERATION_DIFFICULTIES[Math.max(GENERATION_DIFFICULTIES.indexOf(reaching), GENERATION_DIFFICULTIES.indexOf(batch.difficulty))];
+  const tier = DIFFICULTY_LEVELS[difficulty];
+  return {
+    difficulty,
+    // A difficulty whose own minimum is over the one asked keeps its own
+    config: { ...tier, gridSize: batch.gridSize, minMovesRequired: Math.max(minMoves, tier.minMovesRequired) },
+    raised: true,
+  };
 }
 
 export type DifficultyParts = Record<DifficultyKey, number>;
@@ -63,7 +104,13 @@ const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
  * has made the fast levels). Each difficulty and each grid size gets exactly its share of the levels;
  * the sizes are spread over the difficulties rather than "every Hard level in 8x8".
  */
-export function buildGenerationPlan(amount: number, difficultyParts: DifficultyParts, gridSizeParts: GridSizeParts): GenerationBatch[] {
+export function buildGenerationPlan(
+  amount: number,
+  difficultyParts: DifficultyParts,
+  gridSizeParts: GridSizeParts,
+  /** Optimal moves every level needs at least; null: those of each difficulty */
+  minMoves: number | null = null,
+): GenerationBatch[] {
   const n = clampAmount(amount);
   const perDifficulty = shareOut(n, GENERATION_DIFFICULTIES.map(d => difficultyParts[d] ?? 0));
   const perSize = shareOut(n, GENERATION_GRID_SIZES.map(s => gridSizeParts[s] ?? 0));
@@ -80,7 +127,7 @@ export function buildGenerationPlan(amount: number, difficultyParts: DifficultyP
   difficulties.forEach((difficulty, i) => {
     const gridSize = sizes[(i * step) % n];
     const key = `${difficulty}:${gridSize}`;
-    const batch = counts.get(key) ?? { difficulty, gridSize, count: 0 };
+    const batch = counts.get(key) ?? { difficulty, gridSize, count: 0, ...(minMoves ? { minMoves } : null) };
     batch.count++;
     counts.set(key, batch);
   });

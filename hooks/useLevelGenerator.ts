@@ -1,11 +1,11 @@
 import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
-import { DIFFICULTY_LEVELS, generateLevel } from '@/utils/generator';
+import { generateLevel } from '@/utils/generator';
 import { haptics, Haptics } from '@/utils/haptics';
 import { formatTimeLeft } from '@/utils/date';
 import { estimateLevelMs } from '@/utils/generationEstimate';
 import { useGenerationTimes } from '@/store/generationTimes';
-import { planTotal, type DifficultyKey, type GenerationBatch } from '@/utils/generationPlan';
+import { batchConfig, planTotal, type DifficultyKey, type GenerationBatch } from '@/utils/generationPlan';
 
 export type { DifficultyKey, GenerationBatch };
 
@@ -15,7 +15,8 @@ const YIELD_MS = 150;
 /** Estimated time of a whole generation, in seconds, learnt from the times measured on this phone */
 export function estimateGenerationSeconds(plan: GenerationBatch[]): number {
   const samples = useGenerationTimes.getState().samples;
-  return plan.reduce((sum, b) => sum + (b.count * (estimateLevelMs(b.difficulty, b.gridSize, samples) + YIELD_MS)) / 1000, 0);
+  // A batch with a minimum of moves raised by the player is estimated as the difficulty that reaches it
+  return plan.reduce((sum, b) => sum + (b.count * (estimateLevelMs(batchConfig(b).difficulty, b.gridSize, samples) + YIELD_MS)) / 1000, 0);
 }
 
 /** A generation time for the player: '45 s', then minutes and hours (an Expert batch takes hours, not '24000s') */
@@ -67,7 +68,11 @@ export function startLevelGeneration(plan: GenerationBatch[]): void {
 
     try {
       for (let batchIndex = 0; batchIndex < batches.length && !cancelled(); batchIndex++) {
-        const { difficulty, gridSize, count } = batches[batchIndex];
+        const { gridSize, count } = batches[batchIndex];
+        const { difficulty, config, raised } = batchConfig(batches[batchIndex]);
+        // A minimum of moves raised by the player costs more than the difficulty: its times are not
+        // learnt, they would slow down the estimate of that difficulty without a minimum
+        const learn = (ms: number) => { if (!raised) recordLevelTime(difficulty, gridSize, ms); };
         // Time spent since the last level made, failed tries included: what a level really costs
         let sinceLastLevel = 0;
         let madeInBatch = 0;
@@ -80,7 +85,6 @@ export function startLevelGeneration(plan: GenerationBatch[]): void {
             if (cancelled()) break;
 
             const startTime = Date.now();
-            const config = { ...DIFFICULTY_LEVELS[difficulty], gridSize };
             // The id is taken when the level is ready: a failed one leaves no hole
             const newLevel = generateLevel(nextLevelId(), { ...config });
             sinceLastLevel += Date.now() - startTime;
@@ -90,7 +94,7 @@ export function startLevelGeneration(plan: GenerationBatch[]): void {
               made++;
               madeInBatch++;
               // The estimate learns from this phone: the next generations, and the rest of this one
-              recordLevelTime(difficulty, gridSize, sinceLastLevel);
+              learn(sinceLastLevel);
               sinceLastLevel = 0;
             }
 
@@ -105,7 +109,7 @@ export function startLevelGeneration(plan: GenerationBatch[]): void {
         } finally {
           // Tries that made no level (given up, cancelled): a level costs at least that, never counted as faster
           const samples = useGenerationTimes.getState().samples;
-          if (sinceLastLevel > estimateLevelMs(difficulty, gridSize, samples)) recordLevelTime(difficulty, gridSize, sinceLastLevel);
+          if (sinceLastLevel > estimateLevelMs(difficulty, gridSize, samples)) learn(sinceLastLevel);
         }
       }
     } finally {
