@@ -601,9 +601,11 @@ export const useGameStore = create<GameState>()(
           const newSavedStates = { ...savedStates };
           delete newSavedStates[levelId];
 
-          // Only advance map progression for map-based levels (Campaign + Generated)
-          // Daily/Weekly Challenges and Custom Levels (timestamps) are excluded
-          const isMapLevel = levelId < 900000;
+          // Only the map advances the map: daily / weekly challenges and custom levels (timestamps) are excluded.
+          // A generated level (after the campaign, always playable) does not unlock the campaign before it:
+          // it advances the map only once the campaign is done, or unlocked from the options
+          const campaignSize = sampleLevels.length;
+          const isMapLevel = levelId < 900000 && (levelId <= campaignSize || maxUnlockedLevel > campaignSize);
 
           set({
             progress: updatedProgress,

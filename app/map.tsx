@@ -105,7 +105,10 @@ export default function MapScreen() {
   const countMatches = useCallback((f: MapFilter) => filterMapLevels(levels, f, filterContext).length, [levels, filterContext]);
 
   // Level the map opens on, chosen once: a win or a level replayed further down does not move the map under the player
-  const [focusLevel] = useState(() => getMapFocusLevel(lastPlayedLevelId, maxUnlockedLevel, id => progress.some(p => p.levelId === id && p.completed)));
+  const [focusLevel] = useState(() => getMapFocusLevel(
+    lastPlayedLevelId, maxUnlockedLevel, id => progress.some(p => p.levelId === id && p.completed),
+    { campaignSize: sampleLevels.length, mapLevelCount: levels.length },
+  ));
 
   // Synchronously calculate initial scroll position to avoid "teleportation"
   const initialY = useMemo(() => {
