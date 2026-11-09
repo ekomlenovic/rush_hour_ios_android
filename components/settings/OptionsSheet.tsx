@@ -37,7 +37,7 @@ const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 interface Props {
   visible: boolean;
   colors: UiColors;
-  /** World map: adds the level generator, community levels and unlock all */
+  /** World map: adds community levels and unlock all */
   showMapLevels?: boolean;
   onClose: () => void;
 }
@@ -296,7 +296,7 @@ export default function OptionsSheet({ visible, colors, showMapLevels = false, o
 
             <View style={[settingsStyles.divider, { backgroundColor: colors.textMuted }]} />
 
-            {showMapLevels && <MapLevelsSection colors={colors} onClose={onClose} />}
+            {showMapLevels && <MapLevelsSection colors={colors} />}
 
             <SaveSection colors={colors} onClose={onClose} />
 

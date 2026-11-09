@@ -18,6 +18,11 @@ import ZoneLayer from '@/components/map/ZoneLayer';
 import MapHeader from '@/components/map/MapHeader';
 import JumpButton from '@/components/map/JumpButton';
 import GenerationPill from '@/components/map/GenerationPill';
+import MapTools from '@/components/map/MapTools';
+import FilterBar from '@/components/map/FilterBar';
+import FilterSheet from '@/components/map/FilterSheet';
+import GeneratorSheet from '@/components/map/GeneratorSheet';
+import { filterMapLevels, nearestMatch, stepMatch, type MapFilter, type MapFilterContext } from '@/utils/mapFilter';
 import { isGenerationActive } from '@/hooks/useLevelGenerator';
 import OptionsSheet from '@/components/settings/OptionsSheet';
 import LoadingIndicator from '@/components/LoadingIndicator';
@@ -45,6 +50,11 @@ export default function MapScreen() {
   const scrollViewRef = useRef<ScrollViewInstance>(null);
 
   const [isSettingsVisible, setSettingsVisible] = useState(false);
+  const [isGeneratorVisible, setGeneratorVisible] = useState(false);
+  const [isFilterVisible, setFilterVisible] = useState(false);
+  // Search going on (null: the whole map) and the match it is on. Kept while the map stays open, never saved
+  const [filter, setFilter] = useState<MapFilter | null>(null);
+  const [searchLevel, setSearchLevel] = useState<number | null>(null);
   const [scrollY, setScrollY] = useState(0); // Rounded to SCROLL_STEP
   // 'sliding': the screen slides in from the home screen; 'drawing': the map is being drawn; 'ready': it is drawn
   const [phase, setPhase] = useState<'sliding' | 'drawing' | 'ready'>('sliding');
@@ -84,6 +94,15 @@ export default function MapScreen() {
     }
     return { starsById: byId, zoneStars: perZone, totalStars: total };
   }, [progress, zones]);
+
+  // Levels matching the search, in the order of the map: they follow the progress (a level won with 3 stars leaves "under 3 stars")
+  const filterContext = useMemo<MapFilterContext>(
+    () => ({ starsById, maxUnlockedLevel, campaignSize: sampleLevels.length, isBoss: isBossLevel }),
+    [starsById, maxUnlockedLevel],
+  );
+  const matchIds = useMemo(() => (filter ? filterMapLevels(levels, filter, filterContext) : []), [filter, levels, filterContext]);
+  const matchSet = useMemo(() => new Set(matchIds), [matchIds]);
+  const countMatches = useCallback((f: MapFilter) => filterMapLevels(levels, f, filterContext).length, [levels, filterContext]);
 
   // Level the map opens on, chosen once: a win or a level replayed further down does not move the map under the player
   const [focusLevel] = useState(() => getMapFocusLevel(lastPlayedLevelId, maxUnlockedLevel, id => progress.some(p => p.levelId === id && p.completed)));
@@ -165,16 +184,44 @@ export default function MapScreen() {
     scrollViewRef.current?.scrollTo({ y: Math.max(0, nextNode.y - screenHeight / 2 + 50), animated: true });
   };
 
+  /** Brings a level to the middle of the screen: sliding when it is close, at once when it is far (hundreds of levels to draw on the way) */
+  const scrollToLevel = (levelId: number) => {
+    const node = pathPoints.find(p => p.id === levelId);
+    if (!node) return;
+    const y = Math.max(0, node.y - screenHeight / 2 + 50);
+    scrollViewRef.current?.scrollTo({ y, animated: Math.abs(y - scrollY) < screenHeight * 3 });
+  };
+
+  const goToMatch = (levelId: number | null) => {
+    setSearchLevel(levelId);
+    if (levelId === null) return;
+    haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    scrollToLevel(levelId);
+  };
+
+  // A search starts on the match closest to what the player is looking at
+  const applyFilter = (next: MapFilter) => {
+    setFilter(next);
+    setFilterVisible(false);
+    goToMatch(nearestMatch(filterMapLevels(levels, next, filterContext), middleId));
+  };
+
+  const clearFilter = () => {
+    setFilter(null);
+    setSearchLevel(null);
+    setFilterVisible(false);
+  };
+
   const handleLevelPress = useCallback((levelId: number, isUnlocked: boolean, isCustom: boolean) => {
     if (levelId === 0) {
       haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       router.push('/tutorial');
       return;
     }
-    // The padlock after the last level: no level there (it opened a game that could not load), the generator is in the options
+    // The padlock after the last level: no level there (it opened a game that could not load), it opens the generator
     if (levelId > levels.length) {
       haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setSettingsVisible(true);
+      setGeneratorVisible(true);
       return;
     }
     // Custom generated levels are ALWAYS accessible regardless of progression lock
@@ -253,6 +300,8 @@ export default function MapScreen() {
                   isPadlockNode={isPadlockNode}
                   isTutorial={isTutorial}
                   stars={starsById.get(point.id) ?? 0}
+                  dimmed={filter !== null && !matchSet.has(point.id)}
+                  highlighted={filter !== null && point.id === searchLevel}
                   onPress={handleLevelPress}
                   colors={colors}
                   board={board}
@@ -265,9 +314,40 @@ export default function MapScreen() {
 
       {phase === 'drawing' && <LoadingIndicator size="large" fill style={StyleSheet.absoluteFill} />}
 
-      {isReady && (nextAbove || nextBelow) && !isGenerating && (
+      {/* A search has its own bar, in place of the jump button and the tools */}
+      {isReady && !filter && (nextAbove || nextBelow) && !isGenerating && (
         <JumpButton levelId={nextNode.id} isEnd={nextNode.id > levels.length} below={nextBelow} colors={colors} onPress={jumpToNext} />
       )}
+
+      {isReady && !filter && (
+        <MapTools colors={colors} onSearch={() => setFilterVisible(true)} onGenerate={() => setGeneratorVisible(true)} />
+      )}
+
+      {isReady && filter && (
+        <FilterBar
+          colors={colors}
+          levelId={matchIds.length === 0 ? null : searchLevel ?? matchIds[0]}
+          position={searchLevel === null ? 0 : matchIds.indexOf(searchLevel) + 1}
+          total={matchIds.length}
+          onPrevious={() => goToMatch(stepMatch(matchIds, searchLevel ?? 0, -1))}
+          onNext={() => goToMatch(stepMatch(matchIds, searchLevel ?? 0, 1))}
+          onEdit={() => setFilterVisible(true)}
+          onClose={clearFilter}
+        />
+      )}
+
+      <FilterSheet
+        visible={isFilterVisible}
+        colors={colors}
+        isDark={isDark}
+        filter={filter}
+        countMatches={countMatches}
+        onApply={applyFilter}
+        onClear={clearFilter}
+        onClose={() => setFilterVisible(false)}
+      />
+
+      <GeneratorSheet visible={isGeneratorVisible} colors={colors} isDark={isDark} onClose={() => setGeneratorVisible(false)} />
 
       <OptionsSheet
         visible={isSettingsVisible}
