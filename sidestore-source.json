@@ -127,6 +127,16 @@
       },
       "versions": [
         {
+          "version": "2.2.0",
+          "buildVersion": "67",
+          "date": "2026-11-09",
+          "localizedDescription": "New on the map:\n• Level search: find the levels you do not have 3 stars on, by grid size, number of moves, bosses… and go from one to the next\n• Go straight to a level by typing its number\n• Generator: choose how many levels (up to 100), mix difficulties and grid sizes, set a minimum of moves\n• A generated level no longer unlocks the whole campaign",
+          "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.2.0-b67/rush-hours-unsigned.ipa",
+          "size": 19054716,
+          "sha256": "030fc97819f03898d2a3a39a9a4bc84c43eb18f3e13da7e578bf73439158f78a",
+          "minOSVersion": "16.4"
+        },
+        {
           "version": "2.1.0",
           "buildVersion": "66",
           "date": "2026-11-05",
@@ -177,12 +187,12 @@
           "minOSVersion": "16.4"
         }
       ],
-      "version": "2.1.0",
-      "buildVersion": "66",
-      "versionDate": "2026-11-05",
-      "versionDescription": "New:\n• Garage: 11 holidays of the year (Halloween, Christmas, New Year, Easter…), each with its own board, car, colors and effect, won in the Daily Challenge\n• Drawn backgrounds and vehicles for the Garage styles\n• The car to get out always faces the exit\n• Easier with TalkBack and large fonts\n• Fixes: save, streak, multiplayer",
-      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.1.0-b66/rush-hours-unsigned.ipa",
-      "size": 19030133
+      "version": "2.2.0",
+      "buildVersion": "67",
+      "versionDate": "2026-11-09",
+      "versionDescription": "New on the map:\n• Level search: find the levels you do not have 3 stars on, by grid size, number of moves, bosses… and go from one to the next\n• Go straight to a level by typing its number\n• Generator: choose how many levels (up to 100), mix difficulties and grid sizes, set a minimum of moves\n• A generated level no longer unlocks the whole campaign",
+      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.2.0-b67/rush-hours-unsigned.ipa",
+      "size": 19054716
     }
   ],
   "news": []
