@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Switch, useWindowDimensions } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Switch, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
   DEFAULT_MAP_FILTER, MOVE_RANGES, STARS_UNDER_THREE, toggled,
@@ -25,21 +25,34 @@ interface Props {
   /** Levels of the map a search would find */
   countMatches: (filter: MapFilter) => number;
   onApply: (filter: MapFilter) => void;
+  /** Levels of the map: the numbers a level can be reached by */
+  levelCount: number;
+  /** Goes straight to a level by its number */
+  onGoToLevel: (levelId: number) => void;
   /** Back to the whole map */
   onClear: () => void;
   onClose: () => void;
 }
 
 /** Search of the world map: the criteria of the levels to find, with the number of levels they match */
-export default function FilterSheet({ visible, colors, isDark, filter, countMatches, onApply, onClear, onClose }: Props) {
+export default function FilterSheet({ visible, colors, isDark, filter, countMatches, onApply, levelCount, onGoToLevel, onClear, onClose }: Props) {
   const { t } = useTranslation();
   const { height } = useWindowDimensions();
   const [draft, setDraft] = useState<MapFilter>(filter ?? DEFAULT_MAP_FILTER);
 
+  const [levelText, setLevelText] = useState('');
+
   // Opens on the search going on
   useEffect(() => {
-    if (visible) setDraft(filter ?? DEFAULT_MAP_FILTER);
+    if (!visible) return;
+    setDraft(filter ?? DEFAULT_MAP_FILTER);
+    setLevelText('');
   }, [visible, filter]);
+
+  // A number of the map, locked levels included: going to a level only shows it
+  const typedLevel = parseInt(levelText, 10);
+  const canGo = typedLevel >= 1 && typedLevel <= levelCount;
+  const goToLevel = () => { if (canGo) onGoToLevel(typedLevel); };
 
   const count = visible ? countMatches(draft) : 0;
   const underThree = sameValues(draft.stars, STARS_UNDER_THREE);
@@ -63,7 +76,34 @@ export default function FilterSheet({ visible, colors, isDark, filter, countMatc
 
   return (
     <BottomSheet visible={visible} title={t('map.filter_title')} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose}>
-      <ScrollView style={{ maxHeight: height * 0.6, flexGrow: 0 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ maxHeight: height * 0.6, flexGrow: 0 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <View style={styles.section}>
+          <Text style={[settingsStyles.settingLabel, { color: colors.text }]} accessibilityRole="header">{t('map.go_to_level')}</Text>
+          <View style={styles.goRow}>
+            <TextInput
+              value={levelText}
+              onChangeText={text => setLevelText(text.replace(/[^0-9]/g, '').slice(0, 5))}
+              onSubmitEditing={goToLevel}
+              placeholder={`1 – ${levelCount}`}
+              placeholderTextColor={colors.textMuted}
+              keyboardType="number-pad"
+              returnKeyType="go"
+              maxLength={5}
+              accessibilityLabel={t('a11y.go_to_level', { max: levelCount })}
+              style={[styles.goInput, { color: colors.text, backgroundColor: colors.neutralSoft, borderColor: colors.border }]}
+            />
+            <Pressable
+              onPress={goToLevel}
+              disabled={!canGo}
+              style={[styles.goButton, { backgroundColor: colors.primary, opacity: canGo ? 1 : 0.5 }]}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !canGo }}
+            >
+              <Text style={settingsStyles.mainBtnText}>{t('map.go_to_level_btn')}</Text>
+            </Pressable>
+          </View>
+        </View>
+
         {section(t('map.filter_stars'), (
           <>
             <Chip
@@ -144,6 +184,30 @@ export default function FilterSheet({ visible, colors, isDark, filter, countMatc
 const styles = StyleSheet.create({
   section: {
     marginBottom: 18,
+  },
+  goRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
+  goInput: {
+    flex: 1,
+    // A web text field has a width of its own
+    minWidth: 0,
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    fontSize: 18,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  goButton: {
+    height: 48,
+    paddingHorizontal: 22,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chips: {
     flexDirection: 'row',

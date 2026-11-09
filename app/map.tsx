@@ -52,7 +52,7 @@ export default function MapScreen() {
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const [isGeneratorVisible, setGeneratorVisible] = useState(false);
   const [isFilterVisible, setFilterVisible] = useState(false);
-  // Search going on (null: the whole map) and the match it is on. Kept while the map stays open, never saved
+  // Search going on (null: the whole map) and the level it is on: a match, or a level reached by its number. Kept while the map stays open, never saved
   const [filter, setFilter] = useState<MapFilter | null>(null);
   const [searchLevel, setSearchLevel] = useState<number | null>(null);
   const [scrollY, setScrollY] = useState(0); // Rounded to SCROLL_STEP
@@ -189,7 +189,10 @@ export default function MapScreen() {
     const node = pathPoints.find(p => p.id === levelId);
     if (!node) return;
     const y = Math.max(0, node.y - screenHeight / 2 + 50);
-    scrollViewRef.current?.scrollTo({ y, animated: Math.abs(y - scrollY) < screenHeight * 3 });
+    const animated = Math.abs(y - scrollY) < screenHeight * 3;
+    scrollViewRef.current?.scrollTo({ y, animated });
+    // A jump draws that part of the map at once, without waiting for the scroll to be reported
+    if (!animated) setScrollY(Math.round(y / SCROLL_STEP) * SCROLL_STEP);
   };
 
   const goToMatch = (levelId: number | null) => {
@@ -204,6 +207,12 @@ export default function MapScreen() {
     setFilter(next);
     setFilterVisible(false);
     goToMatch(nearestMatch(filterMapLevels(levels, next, filterContext), middleId));
+  };
+
+  // A level typed in the search: shown and lit, whether a search is going on or not (it then goes on from it)
+  const goToLevel = (levelId: number) => {
+    setFilterVisible(false);
+    goToMatch(levelId);
   };
 
   const clearFilter = () => {
@@ -301,7 +310,7 @@ export default function MapScreen() {
                   isTutorial={isTutorial}
                   stars={starsById.get(point.id) ?? 0}
                   dimmed={filter !== null && !matchSet.has(point.id)}
-                  highlighted={filter !== null && point.id === searchLevel}
+                  highlighted={point.id === searchLevel}
                   onPress={handleLevelPress}
                   colors={colors}
                   board={board}
@@ -326,7 +335,7 @@ export default function MapScreen() {
       {isReady && filter && (
         <FilterBar
           colors={colors}
-          levelId={matchIds.length === 0 ? null : searchLevel ?? matchIds[0]}
+          levelId={searchLevel ?? matchIds[0] ?? null}
           position={searchLevel === null ? 0 : matchIds.indexOf(searchLevel) + 1}
           total={matchIds.length}
           onPrevious={() => goToMatch(stepMatch(matchIds, searchLevel ?? 0, -1))}
@@ -343,6 +352,8 @@ export default function MapScreen() {
         filter={filter}
         countMatches={countMatches}
         onApply={applyFilter}
+        levelCount={levels.length}
+        onGoToLevel={goToLevel}
         onClear={clearFilter}
         onClose={() => setFilterVisible(false)}
       />

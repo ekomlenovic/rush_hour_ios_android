@@ -208,7 +208,9 @@
     "min_moves_auto": "Auto",
     "min_moves_hint": "Chaque niveau demandera au moins ce nombre de coups au mieux (jusqu'à {{max}}). Vide : les coups de la difficulté. Au-dessus des coups d'une difficulté, les niveaux sont ceux d'une difficulté plus dure : la génération est plus longue, et un niveau introuvable est abandonné.",
     "min_moves_short_one": "{{count}} coup ou plus",
-    "min_moves_short_other": "{{count}} coups ou plus"
+    "min_moves_short_other": "{{count}} coups ou plus",
+    "go_to_level": "Aller à un niveau",
+    "go_to_level_btn": "Y aller"
   },
   "game": {
     "best": "Meilleur",
@@ -757,7 +759,8 @@
     "filter_previous": "Niveau trouvé précédent",
     "filter_next": "Niveau trouvé suivant",
     "filter_close": "Quitter la recherche",
-    "filter_position": "Niveau {{id}}, {{position}} sur {{total}}"
+    "filter_position": "Niveau {{id}}, {{position}} sur {{total}}",
+    "go_to_level": "Numéro du niveau, de 1 à {{max}}"
   },
   "solution": {
     "title": "Solution optimale",

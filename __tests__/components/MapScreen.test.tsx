@@ -79,6 +79,36 @@ describe('world map', () => {
       expect(screen.getByLabelText(t('a11y.filter_position', { id: 2, position: 1, total: 1 }))).toBeTruthy();
     });
 
+    it('goes straight to a level typed by its number, a locked one included', async () => {
+      await openMap();
+      await press(t('map.filter_title'));
+      const field = () => screen.getByLabelText(t('a11y.go_to_level', { max: sampleLevels.length }));
+      // Not a level of the map
+      await fireEvent.changeText(field(), String(sampleLevels.length + 1));
+      expect(button(t('map.go_to_level_btn')).props.accessibilityState).toMatchObject({ disabled: true });
+
+      await fireEvent.changeText(field(), '250');
+      await press(t('map.go_to_level_btn'));
+      // The sheet is closed, the map shows the level (locked: it is not opened) and the tools are back
+      expect(screen.queryByText(t('map.go_to_level'))).toBeNull();
+      expect(screen.getByLabelText(new RegExp(`^${t('a11y.level', { id: 250 })},`))).toBeTruthy();
+      expect(button(t('map.filter_title'))).toBeTruthy();
+    });
+
+    it('goes on from a level typed during a search', async () => {
+      await openMap();
+      await press(t('map.filter_title'));
+      await press(t('a11y.level_stars', { count: 2 }));
+      await press(t('map.filter_show', { count: 2 }));
+      await press(t('a11y.filter_edit'));
+      await fireEvent.changeText(screen.getByLabelText(t('a11y.go_to_level', { max: sampleLevels.length })), '4');
+      await press(t('map.go_to_level_btn'));
+      // Level 4 has 3 stars: shown, out of the matches (levels 2 and 5)
+      expect(screen.getByLabelText(t('a11y.filter_position', { id: 4, position: 0, total: 2 }))).toBeTruthy();
+      await press(t('a11y.filter_next'));
+      expect(screen.getByLabelText(t('a11y.filter_position', { id: 5, position: 2, total: 2 }))).toBeTruthy();
+    });
+
     it('does not start a search that finds nothing', async () => {
       await openMap();
       await press(t('map.filter_title'));
