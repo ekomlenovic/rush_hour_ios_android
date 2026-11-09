@@ -2,6 +2,7 @@
  * Checks and updates sidestore-source.json (run by .github/workflows/build.yml, Node 22).
  *   node scripts/sidestore/cli.ts check
  *   node scripts/sidestore/cli.ts add <ipa> <buildNumber> <downloadURL>
+ *   node scripts/sidestore/cli.ts notes   (prints the English Play Store notes of the version)
  */
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -33,6 +34,11 @@ if (command === 'check') {
   for (const error of errors) console.error(`- ${error}`);
   if (errors.length) process.exit(1);
   console.log(`${SOURCE_FILE} is valid, the app (${packageVersion}) can be published`);
+} else if (command === 'notes') {
+  // Body of the GitHub release: nothing printed when the version has no notes file
+  const notesFile = `docs/RELEASE_NOTES_${packageVersion}.md`;
+  const notes = existsSync(notesFile) ? englishReleaseNotes(readFileSync(notesFile, 'utf8')) : undefined;
+  if (notes) console.log(notes);
 } else if (command === 'add' && ipa && /^\d+$/.test(buildNumber ?? '') && downloadURL) {
   const file = readFileSync(ipa);
   const notesFile = `docs/RELEASE_NOTES_${packageVersion}.md`;
@@ -50,6 +56,6 @@ if (command === 'check') {
   writeFileSync(SOURCE_FILE, `${JSON.stringify(updated, null, 2)}\n`);
   console.log(`${SOURCE_FILE}: ${packageVersion} (${buildNumber}) added`);
 } else {
-  console.error('Usage: node scripts/sidestore/cli.ts check | add <ipa> <buildNumber> <downloadURL>');
+  console.error('Usage: node scripts/sidestore/cli.ts check | notes | add <ipa> <buildNumber> <downloadURL>');
   process.exit(1);
 }

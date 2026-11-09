@@ -223,6 +223,15 @@ jobs:
             echo 'EOF'
           } >> "$GITHUB_ENV"
 
+      # Body of the release: the English Play Store notes of docs/RELEASE_NOTES_<version>.md
+      - name: Release notes
+        run: |
+          {
+            echo 'RELEASE_NOTES<<EOF'
+            node --no-warnings scripts/sidestore/cli.ts notes
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
@@ -233,17 +242,19 @@ jobs:
           body: |
             ## Release v${{ needs.prepare.outputs.version }}
             
+            ${{ env.RELEASE_NOTES }}
+
             Multi-platform build from `${{ github.sha }}`.
 
-            ### iOS (IPA Non-Signé)
-            À installer via SideStore / AltStore.
-            
+            ### iOS (unsigned IPA)
+            Install with SideStore / AltStore.
+
             ### Android (APK)
-            Installation directe.
+            Direct install.
 
             ### Checksums
 
-            | Fichier | MD5 | SHA-256 |
+            | File | MD5 | SHA-256 |
             |---|---|---|
             ${{ env.CHECKSUMS }}
           files: |
