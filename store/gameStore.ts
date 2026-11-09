@@ -28,6 +28,7 @@ import { addToPeriods, monthKeyOf, winIncrements } from './periodStats';
 import { STORE_VERSION, migrateState, relocateGeneratedLevels } from './migrations';
 import { compactSavedStates, dropOldUndoStacks, isWellFormedSave, savedUndoSteps, undoStackOf } from './savedStates';
 import { createGuardedStorage } from './guardedStorage';
+import { packLevel, unpackLevel } from '../data/packedLevels';
 import { initialReviewPrompt } from './reviewPrompt';
 import { DAILY_LEVEL_ID, WEEKLY_LEVEL_ID, ARCHIVE_LEVEL_ID } from './levelIds';
 
@@ -261,9 +262,15 @@ const SAVE_WRITE_DELAY_MS = 1000;
 export const SEPARATE_SAVE_FIELDS: readonly (keyof GameState)[] = [
   'generatedLevels', 'archiveLevels', 'dailyChallengeProgress', 'weeklyChallengeProgress', 'archiveProgress',
 ];
+/**
+ * The infinite map can outgrow the 2 MB an entry holds on Android (about 1,200 levels in JSON):
+ * its levels are written in their packed form (~70 bytes), 500 per entry (see guardedStorage)
+ */
+export const MAP_LEVELS_PER_CHUNK = 500;
 const saveStorage = createGuardedStorage<Partial<GameState>>({
   delayMs: SAVE_WRITE_DELAY_MS,
   separateFields: SEPARATE_SAVE_FIELDS,
+  chunkedFields: { generatedLevels: { encode: packLevel, decode: unpackLevel, chunkSize: MAP_LEVELS_PER_CHUNK } },
   onWriteFailed: (failed) => useGameStore.setState({ saveWriteFailed: failed }),
 });
 
