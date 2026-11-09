@@ -206,11 +206,12 @@
     "filter_clear": "Clear the search",
     "min_moves_label": "Minimum moves",
     "min_moves_auto": "Auto",
-    "min_moves_hint": "Every level will take at least this many moves at best (up to {{max}}). Empty: the moves of the difficulty. Above the moves of a difficulty, the levels are those of a harder one: the generation takes longer, and a level that cannot be found is given up.",
+    "min_moves_hint": "Minimum moves: empty (Auto), the usual moves of the difficulty. With a number, every level of that difficulty takes at least that many moves at best, and a level found longer than usual is kept. Close to the most of the difficulty, levels are rare: the generation is much longer and a level that cannot be found is given up.",
     "min_moves_short_one": "{{count}} move or more",
     "min_moves_short_other": "{{count}} moves or more",
     "go_to_level": "Go to a level",
-    "go_to_level_btn": "Go"
+    "go_to_level_btn": "Go",
+    "min_moves_usual": "Usually {{min}} to {{max}}"
   },
   "game": {
     "best": "Best",
@@ -760,7 +761,8 @@
     "filter_next": "Next level found",
     "filter_close": "Quit the search",
     "filter_position": "Level {{id}}, {{position}} of {{total}}",
-    "go_to_level": "Level number, from 1 to {{max}}"
+    "go_to_level": "Level number, from 1 to {{max}}",
+    "min_moves": "{{name}}, minimum moves, usually {{min}} to {{max}}"
   },
   "solution": {
     "title": "Optimal solution",

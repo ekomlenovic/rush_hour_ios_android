@@ -15,15 +15,6 @@ export const MAX_GENERATION_AMOUNT = 100;
 /** Parts of one difficulty or grid size, at most */
 export const MAX_PARTS = 9;
 
-/** Highest minimum number of moves the player can ask for: past it the generator finds nothing */
-export const MAX_MIN_MOVES = 60;
-/**
- * Room a difficulty must leave over a minimum asked by the player. Levels at the very top of the
- * range of a difficulty are rare: Hard 7x7 with 25 moves or more (the top of Hard) found nothing in
- * 5 minutes, where Expert, which starts there, is made for it
- */
-const MIN_MOVES_MARGIN = 5;
-
 /** Levels of one difficulty and grid size to generate */
 export interface GenerationBatch {
   difficulty: DifficultyKey;
@@ -33,32 +24,41 @@ export interface GenerationBatch {
   minMoves?: number;
 }
 
-/** A typed minimum of moves: null when nothing (or zero) is typed, never over MAX_MIN_MOVES */
-export function clampMinMoves(value: number): number | null {
+/** Minimum of moves chosen by the player for a difficulty; a difficulty left out keeps its own */
+export type MinMovesByDifficulty = Partial<Record<DifficultyKey, number>>;
+
+/** The usual optimal moves of a difficulty: what its levels take without a minimum chosen */
+export const movesRange = (difficulty: DifficultyKey): { min: number; max: number } => ({
+  min: DIFFICULTY_LEVELS[difficulty].minMovesRequired,
+  max: DIFFICULTY_LEVELS[difficulty].maxMovesRequired,
+});
+
+/**
+ * A minimum of moves typed for a difficulty: null when nothing (or zero) is typed, never over the
+ * most moves of the difficulty (its boards do not go further: a harder difficulty does)
+ */
+export function clampMinMoves(value: number, difficulty: DifficultyKey): number | null {
   if (!Number.isFinite(value) || value < 1) return null;
-  return Math.min(MAX_MIN_MOVES, Math.floor(value));
+  return Math.min(movesRange(difficulty).max, Math.floor(value));
 }
 
 /**
- * What the generator is asked for a batch. A minimum of moves over the one of the difficulty raises
- * it: the levels are then those of the first difficulty that goes MIN_MOVES_MARGIN moves past it
- * (its vehicles and its maximum of moves: Easy boards of 5 to 8 vehicles never take 30 moves), never
- * an easier one than the batch's. `difficulty` is that one, the one the time of a level is estimated
- * with. A minimum the difficulty already guarantees changes nothing.
+ * What the generator is asked for a batch: the boards of its difficulty, in its grid size. With a
+ * minimum of moves chosen by the player, every level takes at least that many (under or over the
+ * usual minimum of the difficulty), and a level found longer than the difficulty usually goes is kept.
+ * `slowdown`: how many times longer a level takes to find. A minimum over the usual one throws away
+ * the levels under it: at the top of the range there are few left (Hard 7x7 from 25 moves found
+ * nothing in 5 minutes). Counted as if the levels were spread evenly over the range: a low estimate.
  */
-export function batchConfig(batch: GenerationBatch): { difficulty: DifficultyKey; config: DifficultyConfig; raised: boolean } {
-  const base = DIFFICULTY_LEVELS[batch.difficulty];
-  const minMoves = batch.minMoves ?? 0;
-  if (minMoves <= base.minMovesRequired) return { difficulty: batch.difficulty, config: { ...base, gridSize: batch.gridSize }, raised: false };
-
-  const reaching = GENERATION_DIFFICULTIES.find(d => DIFFICULTY_LEVELS[d].maxMovesRequired >= minMoves + MIN_MOVES_MARGIN) ?? 'MASTER';
-  const difficulty = GENERATION_DIFFICULTIES[Math.max(GENERATION_DIFFICULTIES.indexOf(reaching), GENERATION_DIFFICULTIES.indexOf(batch.difficulty))];
-  const tier = DIFFICULTY_LEVELS[difficulty];
+export function batchConfig(batch: GenerationBatch): { config: DifficultyConfig; custom: boolean; slowdown: number } {
+  const base = { ...DIFFICULTY_LEVELS[batch.difficulty], gridSize: batch.gridSize };
+  const { min, max } = movesRange(batch.difficulty);
+  const minMoves = batch.minMoves === undefined ? null : clampMinMoves(batch.minMoves, batch.difficulty);
+  if (minMoves === null) return { config: base, custom: false, slowdown: 1 };
   return {
-    difficulty,
-    // A difficulty whose own minimum is over the one asked keeps its own
-    config: { ...tier, gridSize: batch.gridSize, minMovesRequired: Math.max(minMoves, tier.minMovesRequired) },
-    raised: true,
+    config: { ...base, minMovesRequired: minMoves, keepLonger: true },
+    custom: true,
+    slowdown: minMoves > min ? (max - min + 1) / (max - minMoves + 1) : 1,
   };
 }
 
@@ -108,8 +108,8 @@ export function buildGenerationPlan(
   amount: number,
   difficultyParts: DifficultyParts,
   gridSizeParts: GridSizeParts,
-  /** Optimal moves every level needs at least; null: those of each difficulty */
-  minMoves: number | null = null,
+  /** Optimal moves the levels of a difficulty need at least; left out: the usual ones */
+  minMoves: MinMovesByDifficulty = {},
 ): GenerationBatch[] {
   const n = clampAmount(amount);
   const perDifficulty = shareOut(n, GENERATION_DIFFICULTIES.map(d => difficultyParts[d] ?? 0));
@@ -127,7 +127,7 @@ export function buildGenerationPlan(
   difficulties.forEach((difficulty, i) => {
     const gridSize = sizes[(i * step) % n];
     const key = `${difficulty}:${gridSize}`;
-    const batch = counts.get(key) ?? { difficulty, gridSize, count: 0, ...(minMoves ? { minMoves } : null) };
+    const batch = counts.get(key) ?? { difficulty, gridSize, count: 0, ...(minMoves[difficulty] ? { minMoves: minMoves[difficulty] } : null) };
     batch.count++;
     counts.set(key, batch);
   });

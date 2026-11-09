@@ -135,12 +135,34 @@ describe('world map', () => {
       expect(new Set(plan.map(b => b.difficulty))).toEqual(new Set(['EASY', 'NORMAL']));
     });
 
-    it('generates levels of at least the number of moves typed', async () => {
+    it('takes a minimum of moves per difficulty, for the difficulties being generated', async () => {
       await openMap();
       await press(t('map.level_generator'));
-      await fireEvent.changeText(screen.getByLabelText(t('map.min_moves_label')), '12');
+      const field = (difficulty: 'NORMAL' | 'HARD', min: number, max: number) =>
+        t('a11y.min_moves', { name: t(`difficulty.${difficulty}`), min, max });
+      // Only Normal is generated at first: no minimum to give for Hard
+      expect(screen.queryByLabelText(field('HARD', 15, 25))).toBeNull();
+      await press(t('a11y.increase', { name: t('difficulty.HARD') }));
+      await fireEvent.changeText(screen.getByLabelText(field('HARD', 15, 25)), '20');
+      await fireEvent.changeText(screen.getByLabelText(field('NORMAL', 10, 15)), '12');
+      await fireEvent.changeText(screen.getByLabelText(t('map.amount_label')), '4');
+      await press(screen.getByText(/^(Generate|Générer|Generiši) 4 /).props.children);
+      expect(jest.mocked(startLevelGeneration).mock.calls[0][0]).toEqual([
+        { difficulty: 'NORMAL', gridSize: 6, count: 2, minMoves: 12 },
+        { difficulty: 'HARD', gridSize: 6, count: 2, minMoves: 20 },
+      ]);
+    });
+
+    it('asks before a minimum of moves that makes the levels long to find', async () => {
+      await openMap();
+      await press(t('map.level_generator'));
+      await press(t('a11y.increase', { name: t('difficulty.HARD') }));
+      await press(t('a11y.decrease', { name: t('difficulty.NORMAL') }));
+      // The most of Hard: never over it, and such levels are rare
+      await fireEvent.changeText(screen.getByLabelText(t('a11y.min_moves', { name: t('difficulty.HARD'), min: 15, max: 25 })), '40');
       await press(screen.getByText(/^(Generate|Générer|Generiši) 3 /).props.children);
-      expect(jest.mocked(startLevelGeneration).mock.calls[0][0]).toEqual([{ difficulty: 'NORMAL', gridSize: 6, count: 3, minMoves: 12 }]);
+      expect(startLevelGeneration).not.toHaveBeenCalled();
+      expect(jest.mocked(Alert.alert).mock.calls.at(-1)?.[1]).toContain(`${t('difficulty.HARD')} 6x6 (${t('map.min_moves_short', { count: 25 })})`);
     });
 
     it('opens from the padlock at the end of the map, and keeps one difficulty at least', async () => {

@@ -1,9 +1,9 @@
 import {
-  batchConfig, buildGenerationPlan, clampAmount, clampMinMoves, planTotal, shareOut, MAX_MIN_MOVES,
+  batchConfig, buildGenerationPlan, clampAmount, clampMinMoves, movesRange, planTotal, shareOut,
   DEFAULT_DIFFICULTY_PARTS, DEFAULT_GRID_SIZE_PARTS, MAX_GENERATION_AMOUNT,
   GENERATION_DIFFICULTIES, GENERATION_GRID_SIZES, type DifficultyParts, type GenerationBatch,
 } from '../utils/generationPlan';
-import { DIFFICULTY_LEVELS } from '../utils/generator.core';
+import { DIFFICULTY_LEVELS, generateLevel } from '../utils/generator.core';
 
 const NONE: DifficultyParts = { EASY: 0, NORMAL: 0, HARD: 0, EXPERT: 0, MASTER: 0 };
 const perDifficulty = (plan: GenerationBatch[], d: string) => plan.filter(b => b.difficulty === d).reduce((s, b) => s + b.count, 0);
@@ -78,59 +78,65 @@ describe('buildGenerationPlan', () => {
   });
 });
 
-describe('minimum of moves asked by the player', () => {
-  it('is nothing when the field is empty, and never over the maximum', () => {
-    expect(clampMinMoves(NaN)).toBeNull();
-    expect(clampMinMoves(0)).toBeNull();
-    expect(clampMinMoves(18)).toBe(18);
-    expect(clampMinMoves(99)).toBe(MAX_MIN_MOVES);
+describe('minimum of moves chosen by the player, per difficulty', () => {
+  it('is nothing when the field is empty, and never over the most moves of the difficulty', () => {
+    expect(clampMinMoves(NaN, 'HARD')).toBeNull();
+    expect(clampMinMoves(0, 'HARD')).toBeNull();
+    expect(clampMinMoves(18, 'HARD')).toBe(18);
+    expect(clampMinMoves(8, 'HARD')).toBe(8);
+    expect(clampMinMoves(99, 'HARD')).toBe(25);
+    expect(clampMinMoves(99, 'MASTER')).toBe(80);
+    expect(movesRange('HARD')).toEqual({ min: 15, max: 25 });
   });
 
-  it('is carried by every batch of the plan, or by none', () => {
-    const parts = { ...NONE, EASY: 1, HARD: 1 };
-    expect(buildGenerationPlan(4, parts, DEFAULT_GRID_SIZE_PARTS, 20).map(b => b.minMoves)).toEqual([20, 20]);
-    expect(buildGenerationPlan(4, parts, DEFAULT_GRID_SIZE_PARTS).every(b => !('minMoves' in b))).toBe(true);
+  it('is carried by the batches of its difficulty only', () => {
+    const plan = buildGenerationPlan(4, { ...NONE, EASY: 1, HARD: 1 }, DEFAULT_GRID_SIZE_PARTS, { HARD: 20, EXPERT: 30 });
+    expect(plan).toEqual([
+      { difficulty: 'EASY', gridSize: 6, count: 2 },
+      { difficulty: 'HARD', gridSize: 6, count: 2, minMoves: 20 },
+    ]);
   });
 
-  it('changes nothing when the difficulty already guarantees it', () => {
-    expect(batchConfig({ difficulty: 'HARD', gridSize: 7, count: 1 })).toEqual({ difficulty: 'HARD', config: { ...DIFFICULTY_LEVELS.HARD, gridSize: 7 }, raised: false });
-    expect(batchConfig({ difficulty: 'HARD', gridSize: 7, count: 1, minMoves: 15 }).raised).toBe(false);
-    expect(batchConfig({ difficulty: 'HARD', gridSize: 7, count: 1, minMoves: 8 }).config.minMovesRequired).toBe(15);
+  it('without a minimum, a batch is its difficulty as it is', () => {
+    expect(batchConfig({ difficulty: 'HARD', gridSize: 7, count: 1 })).toEqual({ config: { ...DIFFICULTY_LEVELS.HARD, gridSize: 7 }, custom: false, slowdown: 1 });
   });
 
-  it('raises the minimum of the difficulty', () => {
-    const { difficulty, config, raised } = batchConfig({ difficulty: 'HARD', gridSize: 6, count: 1, minMoves: 20 });
-    expect(raised).toBe(true);
-    expect(difficulty).toBe('HARD');
-    expect(config).toEqual({ ...DIFFICULTY_LEVELS.HARD, gridSize: 6, minMovesRequired: 20 });
-  });
-
-  it('goes to the next difficulty at the top of the range: Hard levels of 25 moves are too rare to wait for', () => {
-    expect(batchConfig({ difficulty: 'HARD', gridSize: 7, count: 1, minMoves: 25 })).toEqual({
-      difficulty: 'EXPERT', config: { ...DIFFICULTY_LEVELS.EXPERT, gridSize: 7 }, raised: true,
-    });
-    expect(batchConfig({ difficulty: 'NORMAL', gridSize: 6, count: 1, minMoves: 12 })).toEqual({
-      difficulty: 'HARD', config: { ...DIFFICULTY_LEVELS.HARD, gridSize: 6 }, raised: true,
+  it('keeps the boards of the difficulty, from the minimum chosen, longer levels kept', () => {
+    expect(batchConfig({ difficulty: 'HARD', gridSize: 7, count: 1, minMoves: 20 }).config)
+      .toEqual({ ...DIFFICULTY_LEVELS.HARD, gridSize: 7, minMovesRequired: 20, keepLonger: true });
+    // Under the usual minimum too: the player chooses
+    expect(batchConfig({ difficulty: 'HARD', gridSize: 6, count: 1, minMoves: 8 })).toMatchObject({
+      config: { minMovesRequired: 8, maxMovesRequired: 25, minVehicles: 10 }, custom: true, slowdown: 1,
     });
   });
 
-  it('takes the vehicles of the first difficulty that reaches that many moves, and keeps the grid size', () => {
-    const { difficulty, config } = batchConfig({ difficulty: 'EASY', gridSize: 6, count: 1, minMoves: 30 });
-    expect(difficulty).toBe('EXPERT');
-    expect(config).toEqual({ ...DIFFICULTY_LEVELS.EXPERT, gridSize: 6, minMovesRequired: 30 });
-    // Never an easier difficulty than the one chosen
-    expect(batchConfig({ difficulty: 'MASTER', gridSize: 8, count: 1, minMoves: MAX_MIN_MOVES })).toMatchObject({
-      difficulty: 'MASTER', config: { gridSize: 8, minMovesRequired: MAX_MIN_MOVES, maxMovesRequired: 80 },
-    });
+  it('counts a level as longer to find the closer the minimum is to the most of the difficulty', () => {
+    const slowdown = (minMoves: number) => batchConfig({ difficulty: 'HARD', gridSize: 6, count: 1, minMoves }).slowdown;
+    expect(slowdown(15)).toBe(1);
+    expect(slowdown(20)).toBeCloseTo(11 / 6);
+    expect(slowdown(25)).toBe(11);
+    expect(slowdown(20)).toBeGreaterThan(slowdown(18));
+  });
+});
+
+describe('the generator, with a minimum of moves chosen', () => {
+  it('makes levels of at least that many moves, and keeps one longer than the difficulty usually goes', () => {
+    // Easy from 12 moves, the most of Easy: without "longer levels kept", only levels of exactly 12 moves
+    const { config } = batchConfig({ difficulty: 'EASY', gridSize: 6, count: 1, minMoves: 12 });
+    const found: number[] = [];
+    for (let i = 0; i < 12; i++) {
+      const level = generateLevel(i + 1, config);
+      if (level) found.push(level.minMoves);
+    }
+    expect(found.length).toBeGreaterThan(0);
+    for (const moves of found) expect(moves).toBeGreaterThanOrEqual(12);
+    expect(Math.max(...found)).toBeGreaterThan(DIFFICULTY_LEVELS.EASY.maxMovesRequired);
   });
 
-  it('always asks for a range the generator can search', () => {
-    for (const difficulty of GENERATION_DIFFICULTIES) {
-      for (let minMoves = 1; minMoves <= MAX_MIN_MOVES; minMoves++) {
-        const { config } = batchConfig({ difficulty, gridSize: 6, count: 1, minMoves });
-        expect(config.minMovesRequired).toBeGreaterThanOrEqual(Math.max(minMoves, DIFFICULTY_LEVELS[difficulty].minMovesRequired));
-        expect(config.maxMovesRequired).toBeGreaterThanOrEqual(config.minMovesRequired + 5);
-      }
+  it('without it, never goes over the most moves of the difficulty', () => {
+    for (let i = 0; i < 20; i++) {
+      const level = generateLevel(i + 1, DIFFICULTY_LEVELS.EASY);
+      if (level) expect(level.minMoves).toBeLessThanOrEqual(DIFFICULTY_LEVELS.EASY.maxMovesRequired);
     }
   });
 });

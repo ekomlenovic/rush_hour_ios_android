@@ -9,9 +9,9 @@ import { useLevelGenerator, formatGenerationTime, estimateGenerationSeconds } fr
 import { useGenerationTimes } from '@/store/generationTimes';
 import { needsConfirmation } from '@/utils/generationEstimate';
 import {
-  batchConfig, buildGenerationPlan, clampAmount, clampMinMoves, planTotal,
+  batchConfig, buildGenerationPlan, clampAmount, clampMinMoves, movesRange, planTotal,
   DEFAULT_DIFFICULTY_PARTS, DEFAULT_GRID_SIZE_PARTS, GENERATION_DIFFICULTIES, GENERATION_GRID_SIZES,
-  MAX_GENERATION_AMOUNT, MAX_MIN_MOVES, MAX_PARTS,
+  MAX_GENERATION_AMOUNT, MAX_PARTS, type DifficultyKey, type MinMovesByDifficulty,
 } from '@/utils/generationPlan';
 import { RFValue } from '@/utils/responsive';
 import { fixedColors, type UiColors } from '@/theme';
@@ -51,9 +51,16 @@ export default function GeneratorSheet({ visible, colors, isDark, onClose }: Pro
   const [difficultyParts, setDifficultyParts] = useState(DEFAULT_DIFFICULTY_PARTS);
   const [sizeParts, setSizeParts] = useState(DEFAULT_GRID_SIZE_PARTS);
 
-  // Empty: the minimum of each difficulty
-  const [minMovesText, setMinMovesText] = useState('');
-  const minMoves = clampMinMoves(parseInt(minMovesText, 10));
+  // Minimum of moves typed for each difficulty, as typed; empty: the usual moves of the difficulty
+  const [minMovesText, setMinMovesText] = useState<Partial<Record<DifficultyKey, string>>>({});
+  const minMoves = useMemo(() => {
+    const byDifficulty: MinMovesByDifficulty = {};
+    for (const d of GENERATION_DIFFICULTIES) {
+      const value = clampMinMoves(parseInt(minMovesText[d] ?? '', 10), d);
+      if (value !== null) byDifficulty[d] = value;
+    }
+    return byDifficulty;
+  }, [minMovesText]);
 
   const amount = clampAmount(parseInt(amountText, 10));
   const setAmount = (value: number) => setAmountText(String(clampAmount(value)));
@@ -69,15 +76,14 @@ export default function GeneratorSheet({ visible, colors, isDark, onClose }: Pro
       onClose();
     };
     // A level that blocks the app a minute or more (Expert, Master, big grids): never started without saying so
-    const slow = plan.filter(b => needsConfirmation(batchConfig(b).difficulty, b.gridSize, samples));
+    const slow = plan.filter(b => needsConfirmation(b.difficulty, b.gridSize, samples, batchConfig(b).slowdown));
     if (slow.length === 0) return start();
     haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(
       t('map.long_generation_title'),
       t('map.long_generation_body', {
         time: formatGenerationTime(estimatedSeconds),
-        // A minimum of moves that makes a batch as long as a harder difficulty is said with it
-        slow: slow.map(b => `${t(`difficulty.${b.difficulty}`)} ${b.gridSize}x${b.gridSize}${batchConfig(b).raised ? ` (${t('map.min_moves_short', { count: b.minMoves })})` : ''}`).join(', '),
+        slow: slow.map(b => `${t(`difficulty.${b.difficulty}`)} ${b.gridSize}x${b.gridSize}${b.minMoves ? ` (${t('map.min_moves_short', { count: b.minMoves })})` : ''}`).join(', '),
       }),
       [
         { text: t('common.cancel'), style: 'cancel' },
@@ -139,6 +145,33 @@ export default function GeneratorSheet({ visible, colors, isDark, onClose }: Pro
     );
   }
 
+  /** Minimum of moves of a difficulty being generated: typed, or left to the usual moves of the difficulty */
+  const minMovesRow = (difficulty: DifficultyKey) => {
+    const { min, max } = movesRange(difficulty);
+    const setText = (text: string) => setMinMovesText({ ...minMovesText, [difficulty]: text });
+    return (
+      <View style={styles.minMovesRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.minMovesLabel, { color: colors.textMuted }]}>{t('map.min_moves_label')}</Text>
+          <Text style={[styles.minMovesRange, { color: colors.textMuted }]}>{t('map.min_moves_usual', { min, max })}</Text>
+        </View>
+        <TextInput
+          value={minMovesText[difficulty] ?? ''}
+          onChangeText={text => setText(text.replace(/[^0-9]/g, '').slice(0, 2))}
+          onBlur={() => setText(minMoves[difficulty] === undefined ? '' : String(minMoves[difficulty]))}
+          placeholder={t('map.min_moves_auto')}
+          placeholderTextColor={colors.textMuted}
+          keyboardType="number-pad"
+          returnKeyType="done"
+          selectTextOnFocus
+          maxLength={2}
+          accessibilityLabel={t('a11y.min_moves', { name: t(`difficulty.${difficulty}`), min, max })}
+          style={[styles.minMovesInput, { color: colors.text, backgroundColor: colors.neutralSoft, borderColor: colors.border }]}
+        />
+      </View>
+    );
+  };
+
   const countOf = (match: (b: typeof plan[number]) => boolean) => plan.filter(match).reduce((sum, b) => sum + b.count, 0);
 
   return (
@@ -166,30 +199,18 @@ export default function GeneratorSheet({ visible, colors, isDark, onClose }: Pro
         <Text style={[settingsStyles.settingSub, styles.hint, { color: colors.textMuted }]}>{t('map.amount_hint', { max: MAX_GENERATION_AMOUNT })}</Text>
 
         <Text style={[settingsStyles.settingLabel, styles.section, { color: colors.text }]}>{t('map.mix_difficulty')}</Text>
-        {GENERATION_DIFFICULTIES.map(d => partsRow(d, t(`difficulty.${d}`), difficultyParts, setDifficultyParts, countOf(b => b.difficulty === d)))}
+        {GENERATION_DIFFICULTIES.map(d => (
+          <React.Fragment key={d}>
+            {partsRow(d, t(`difficulty.${d}`), difficultyParts, setDifficultyParts, countOf(b => b.difficulty === d))}
+            {difficultyParts[d] > 0 && minMovesRow(d)}
+          </React.Fragment>
+        ))}
+        <Text style={[settingsStyles.settingSub, styles.hint, { color: colors.textMuted }]}>{t('map.min_moves_hint')}</Text>
 
         <Text style={[settingsStyles.settingLabel, styles.section, { color: colors.text }]}>{t('map.mix_grid_size')}</Text>
         {GENERATION_GRID_SIZES.map((s: number) => partsRow(s, `${s}x${s}`, sizeParts, setSizeParts, countOf(b => b.gridSize === s)))}
 
         <Text style={[settingsStyles.settingSub, styles.hint, { color: colors.textMuted }]}>{t('map.mix_hint')}</Text>
-
-        <View style={[styles.minMovesRow, styles.section]}>
-          <Text style={[settingsStyles.settingLabel, { flex: 1, color: colors.text }]}>{t('map.min_moves_label')}</Text>
-          <TextInput
-            value={minMovesText}
-            onChangeText={text => setMinMovesText(text.replace(/[^0-9]/g, '').slice(0, 2))}
-            onBlur={() => setMinMovesText(minMoves === null ? '' : String(minMoves))}
-            placeholder={t('map.min_moves_auto')}
-            placeholderTextColor={colors.textMuted}
-            keyboardType="number-pad"
-            returnKeyType="done"
-            selectTextOnFocus
-            maxLength={2}
-            accessibilityLabel={t('map.min_moves_label')}
-            style={[styles.minMovesInput, { color: colors.text, backgroundColor: colors.neutralSoft, borderColor: colors.border }]}
-          />
-        </View>
-        <Text style={[settingsStyles.settingSub, { color: colors.textMuted }]}>{t('map.min_moves_hint', { max: MAX_MIN_MOVES })}</Text>
 
         <IconText icon="warning" color={colors.warning} style={{ marginTop: 16 }} textStyle={[settingsStyles.settingSub, { fontWeight: '600' }]}>
           {t('map.generator_warning')}
@@ -246,13 +267,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    marginLeft: 12,
+    paddingLeft: 12,
+    paddingVertical: 4,
+    marginBottom: 6,
+    borderLeftWidth: 2,
+    borderLeftColor: fixedColors.neutralSoft,
+  },
+  minMovesLabel: {
+    fontSize: RFValue(13),
+    fontWeight: '700',
+  },
+  minMovesRange: {
+    fontSize: RFValue(12),
   },
   minMovesInput: {
-    width: 96,
-    height: 44,
+    width: 84,
+    height: 40,
     borderWidth: 1,
-    borderRadius: 14,
-    fontSize: 18,
+    borderRadius: 12,
+    fontSize: 16,
     fontWeight: '800',
     textAlign: 'center',
     fontVariant: ['tabular-nums'],

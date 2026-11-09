@@ -12,11 +12,14 @@ export type { DifficultyKey, GenerationBatch };
 /** Pause between two levels, for the Cancel button to be processed */
 const YIELD_MS = 150;
 
+/** Estimated time of one level of a batch on this phone, a minimum of moves chosen by the player included */
+export function estimateBatchLevelMs(batch: GenerationBatch): number {
+  return estimateLevelMs(batch.difficulty, batch.gridSize, useGenerationTimes.getState().samples) * batchConfig(batch).slowdown;
+}
+
 /** Estimated time of a whole generation, in seconds, learnt from the times measured on this phone */
 export function estimateGenerationSeconds(plan: GenerationBatch[]): number {
-  const samples = useGenerationTimes.getState().samples;
-  // A batch with a minimum of moves raised by the player is estimated as the difficulty that reaches it
-  return plan.reduce((sum, b) => sum + (b.count * (estimateLevelMs(batchConfig(b).difficulty, b.gridSize, samples) + YIELD_MS)) / 1000, 0);
+  return plan.reduce((sum, b) => sum + (b.count * (estimateBatchLevelMs(b) + YIELD_MS)) / 1000, 0);
 }
 
 /** A generation time for the player: '45 s', then minutes and hours (an Expert batch takes hours, not '24000s') */
@@ -68,11 +71,11 @@ export function startLevelGeneration(plan: GenerationBatch[]): void {
 
     try {
       for (let batchIndex = 0; batchIndex < batches.length && !cancelled(); batchIndex++) {
-        const { gridSize, count } = batches[batchIndex];
-        const { difficulty, config, raised } = batchConfig(batches[batchIndex]);
-        // A minimum of moves raised by the player costs more than the difficulty: its times are not
-        // learnt, they would slow down the estimate of that difficulty without a minimum
-        const learn = (ms: number) => { if (!raised) recordLevelTime(difficulty, gridSize, ms); };
+        const { difficulty, gridSize, count } = batches[batchIndex];
+        const { config, custom } = batchConfig(batches[batchIndex]);
+        // A minimum of moves chosen by the player does not cost what the difficulty does: its times
+        // are not learnt, they would skew the estimate of that difficulty without a minimum
+        const learn = (ms: number) => { if (!custom) recordLevelTime(difficulty, gridSize, ms); };
         // Time spent since the last level made, failed tries included: what a level really costs
         let sinceLastLevel = 0;
         let madeInBatch = 0;

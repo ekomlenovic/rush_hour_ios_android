@@ -9,7 +9,7 @@ import { estimateLevelMs, sampleKey } from '../utils/generationEstimate';
 
 // A generation that fails one level out of three, instantly
 let mockCalls = 0;
-const mockConfigs: { minMovesRequired: number; maxMovesRequired: number; minVehicles: number; gridSize: number }[] = [];
+const mockConfigs: { minMovesRequired: number; maxMovesRequired: number; minVehicles: number; gridSize: number; keepLonger?: boolean }[] = [];
 jest.mock('../utils/generator', () => ({
   ...jest.requireActual('../utils/generator'),
   generateLevel: (id: number, config: typeof mockConfigs[number]) => {
@@ -111,14 +111,19 @@ describe('a mix of difficulties and grid sizes', () => {
     expect(seconds).toBeCloseTo((2 * (estimateLevelMs('EASY', 6, samples) + 150) + estimateLevelMs('HARD', 7, samples) + 150) / 1000);
   });
 
-  it('asks the generator for the minimum of moves typed by the player, without learning its times', async () => {
-    startLevelGeneration(buildGenerationPlan(2, { EASY: 1, NORMAL: 0, HARD: 0, EXPERT: 0, MASTER: 0 }, { 6: 0, 7: 1, 8: 0 }, 20));
-    // Estimated as Hard, the first difficulty that reaches 20 moves
-    expect(state().generationState.estimatedRemainingSeconds).toBe(Math.ceil((2 * (estimateLevelMs('HARD', 7, {}) + 150)) / 1000));
+  it('asks the generator for the minimum of moves chosen for a difficulty, without learning its times', async () => {
+    startLevelGeneration(buildGenerationPlan(4, { EASY: 1, NORMAL: 0, HARD: 1, EXPERT: 0, MASTER: 0 }, { 6: 0, 7: 1, 8: 0 }, { HARD: 20 }));
+    // Hard from 20 moves: 6 of the 11 usual numbers of moves left, a level counted that much longer to find
+    const expected = 2 * (estimateLevelMs('EASY', 7, {}) + 150) + 2 * (estimateLevelMs('HARD', 7, {}) * (11 / 6) + 150);
+    expect(state().generationState.estimatedRemainingSeconds).toBe(Math.ceil(expected / 1000));
     await jest.runAllTimersAsync();
-    expect(state().generatedLevels).toHaveLength(2);
-    for (const config of mockConfigs) expect(config).toMatchObject({ gridSize: 7, minMovesRequired: 20, maxMovesRequired: 25, minVehicles: 10 });
-    expect(useGenerationTimes.getState().samples).toEqual({});
+    expect(state().generatedLevels).toHaveLength(4);
+    // Easy as usual; Hard with its own boards, from 20 moves, longer levels kept
+    expect(mockConfigs.filter(c => c.minVehicles === 5).every(c => c.minMovesRequired === 6 && !c.keepLonger)).toBe(true);
+    const hard = mockConfigs.filter(c => c.minVehicles === 10);
+    expect(hard.length).toBeGreaterThan(0);
+    for (const config of hard) expect(config).toMatchObject({ gridSize: 7, minMovesRequired: 20, maxMovesRequired: 25, keepLonger: true });
+    expect(Object.keys(useGenerationTimes.getState().samples)).toEqual([sampleKey('EASY', 7)]);
   });
 
   it('starts nothing for an empty plan', () => {

@@ -226,12 +226,13 @@
     "filter_clear": "Obriši pretragu",
     "min_moves_label": "Najmanje poteza",
     "min_moves_auto": "Auto",
-    "min_moves_hint": "Svaki nivo će u najboljem slučaju tražiti bar ovoliko poteza (najviše {{max}}). Prazno: potezi prema težini. Iznad poteza neke težine nivoi su kao kod teže: generisanje traje duže, a od nivoa koji ne može da se nađe se odustaje.",
+    "min_moves_hint": "Najmanje poteza: prazno (Auto), uobičajeni potezi te težine. Sa brojem, svaki nivo te težine u najboljem slučaju traži bar toliko poteza, a nivo koji ispadne duži od uobičajenog se zadržava. Blizu najvećeg broja za tu težinu nivoi su retki: generisanje traje mnogo duže, a od nivoa koji ne može da se nađe se odustaje.",
     "min_moves_short_one": "{{count}} potez ili više",
     "min_moves_short_few": "{{count}} poteza ili više",
     "min_moves_short_other": "{{count}} poteza ili više",
     "go_to_level": "Idi na nivo",
-    "go_to_level_btn": "Idi"
+    "go_to_level_btn": "Idi",
+    "min_moves_usual": "Obično {{min}} do {{max}}"
   },
   "game": {
     "best": "Najbolje",
@@ -798,7 +799,8 @@
     "filter_next": "Sledeći pronađeni nivo",
     "filter_close": "Izađi iz pretrage",
     "filter_position": "Nivo {{id}}, {{position}} od {{total}}",
-    "go_to_level": "Broj nivoa, od 1 do {{max}}"
+    "go_to_level": "Broj nivoa, od 1 do {{max}}",
+    "min_moves": "{{name}}, najmanje poteza, obično {{min}} do {{max}}"
   },
   "solution": {
     "title": "Optimalno rešenje",
