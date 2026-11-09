@@ -7,6 +7,34 @@ export const WRITE_FAILURES_BEFORE_ALERT = 3;
 
 /** Device key of a field kept in its own entry (see `separateFields`) */
 const fieldKey = (name: string, field: string) => `${name}:${field}`;
+/** Device keys of a list kept in chunks (see `chunkedFields`): the manifest, and each chunk */
+const manifestKey = (name: string, field: string) => `${name}:${field}:packed`;
+const chunkKey = (name: string, field: string, index: number) => `${name}:${field}:packed:${index}`;
+
+/** How a list kept in chunks is written: each item as a short text, `chunkSize` items per entry */
+export interface ChunkedField {
+  encode: (item: never) => string;
+  decode: (text: string) => unknown;
+  chunkSize: number;
+}
+
+/**
+ * The manifest of a list kept in chunks, written after its chunks in the same call: the
+ * chunks to read (a chunk past them is a leftover), and the length of the list in its
+ * former single entry when the chunks took over (null: there was none), which is never
+ * written again but read by an older version installed back.
+ */
+interface Manifest {
+  chunks: number;
+  legacyLength: number | null;
+}
+
+/** What is on the device of a list kept in chunks */
+interface ChunkedOnDevice {
+  /** The items of each chunk written (compared by identity: the store updates immutably) */
+  chunks: unknown[][];
+  legacyLength: number | null;
+}
 
 /**
  * Device storage for a persisted store whose writes are held until its save has been
@@ -34,10 +62,19 @@ const fieldKey = (name: string, field: string) => `${name}:${field}`;
  * `WRITE_FAILURES_BEFORE_ALERT` failures in a row (the phone storage is full, issue 176),
  * `onWriteFailed(true)` tells the store, and `onWriteFailed(false)` once a write succeeds.
  * The last state not written is written again when the app comes back to the foreground.
+ *
+ * `chunkedFields` are separate fields (lists) that can outgrow the 2 MB an entry can hold
+ * on Android: each item is written in a short form (`encode`), `chunkSize` items per
+ * entry, and only the chunks that changed are written, with the manifest that says how
+ * many to read (see `Manifest`). The list in its former single entry (`name:field`, up to
+ * 2.1.0) is read when there are no chunks yet, and moves to them at the next write; it
+ * is left as it was, for an older version installed back. If that version changed it
+ * since (its length is not the one of the manifest), the richer of the two is kept.
  */
 export function createGuardedStorage<S>(options: {
   delayMs?: number;
   separateFields?: readonly string[];
+  chunkedFields?: Readonly<Record<string, ChunkedField>>;
   onWriteFailed?: (failed: boolean) => void;
 } = {}): {
   storage: PersistStorage<S>;
@@ -45,7 +82,9 @@ export function createGuardedStorage<S>(options: {
   deferNextWrite: () => void;
 } {
   const delayMs = options.delayMs ?? 0;
-  const separateFields = options.separateFields ?? [];
+  const chunkedFields = options.chunkedFields ?? {};
+  const chunkedNames = Object.keys(chunkedFields);
+  const separateFields = (options.separateFields ?? []).filter(field => !(field in chunkedFields));
   let loaded = false;
   let deferNext = false;
   let foreground = AppState.currentState !== 'background' && AppState.currentState !== 'inactive';
@@ -58,11 +97,48 @@ export function createGuardedStorage<S>(options: {
   const latest = new Map<string, number>();
   const notWritten = new Map<string, StorageValue<S>>();
   let writes = 0;
+  /** The chunks on the device of each list kept in chunks, by its manifest key */
+  const chunksOnDevice = new Map<string, ChunkedOnDevice>();
+  /** The short form of each item already encoded */
+  const encoded = new WeakMap<object, string>();
+
+  const encodeItem = (codec: ChunkedField, item: unknown) => {
+    if (!item || typeof item !== 'object') return codec.encode(item as never);
+    let text = encoded.get(item);
+    if (text === undefined) {
+      text = codec.encode(item as never);
+      encoded.set(item, text);
+    }
+    return text;
+  };
 
   const write = (name: string, value: StorageValue<S>) => {
     const state: Record<string, unknown> = { ...(value.state as Record<string, unknown>) };
     const entries: [string, string][] = [];
     const written: [string, unknown][] = [];
+    /** Lists kept in chunks written by this call: what will be on the device, and the leftover chunks */
+    const chunked: [string, ChunkedOnDevice, string[]][] = [];
+    for (const field of chunkedNames) {
+      const fieldValue = state[field];
+      delete state[field];
+      const key = manifestKey(name, field);
+      if (fieldValue === undefined || onDevice.get(key) === fieldValue) continue;
+      const list = Array.isArray(fieldValue) ? fieldValue : [];
+      const { chunkSize } = chunkedFields[field];
+      const before = chunksOnDevice.get(key) ?? { chunks: [], legacyLength: null };
+      const chunks: unknown[][] = [];
+      for (let start = 0; start < list.length; start += chunkSize) chunks.push(list.slice(start, start + chunkSize));
+      chunks.forEach((items, i) => {
+        const was = before.chunks[i];
+        if (was && was.length === items.length && was.every((item, j) => item === items[j])) return;
+        entries.push([chunkKey(name, field, i), JSON.stringify(items.map(item => encodeItem(chunkedFields[field], item)))]);
+      });
+      const manifest: Manifest = { chunks: chunks.length, legacyLength: before.legacyLength };
+      entries.push([key, JSON.stringify(manifest)]);
+      written.push([key, fieldValue]);
+      const leftovers = before.chunks.slice(chunks.length).map((_, i) => chunkKey(name, field, chunks.length + i));
+      chunked.push([key, { chunks, legacyLength: before.legacyLength }, leftovers]);
+    }
     for (const field of separateFields) {
       const fieldValue = state[field];
       delete state[field];
@@ -79,6 +155,12 @@ export function createGuardedStorage<S>(options: {
     return saved
       .then(() => {
         for (const [key, fieldValue] of written) onDevice.set(key, fieldValue);
+        for (const [key, device] of chunked) chunksOnDevice.set(key, device);
+        // The chunks past the manifest are never read: removed to free the space, if this is still the latest write
+        const leftovers = chunked.flatMap(([, , keys]) => keys);
+        if (leftovers.length > 0 && latest.get(name) === attempt) {
+          AsyncStorage.multiRemove(leftovers).catch((error) => console.warn(`[storage] ${name} leftovers not removed`, error));
+        }
         if (latest.get(name) === attempt) notWritten.delete(name);
         if (failures >= WRITE_FAILURES_BEFORE_ALERT) options.onWriteFailed?.(false);
         failures = 0;
@@ -116,6 +198,41 @@ export function createGuardedStorage<S>(options: {
     });
   }
 
+  /** Reads a list kept in chunks into the state (see `chunkedFields`) */
+  const readChunked = async (name: string, field: string, state: Record<string, unknown>) => {
+    const key = manifestKey(name, field);
+    const [manifestText, legacyText] = await Promise.all([AsyncStorage.getItem(key), AsyncStorage.getItem(fieldKey(name, field))]);
+    const manifest = manifestText === null ? null : (JSON.parse(manifestText) as Manifest);
+    const legacy: unknown = legacyText === null ? null : JSON.parse(legacyText);
+    const legacyLength = Array.isArray(legacy) ? legacy.length : null;
+
+    let fromChunks: unknown[] | null = null;
+    const chunks: unknown[][] = [];
+    if (manifest) {
+      const texts = await Promise.all(
+        Array.from({ length: manifest.chunks }, (_, i) => AsyncStorage.getItem(chunkKey(name, field, i))),
+      );
+      for (const text of texts) {
+        if (text === null) throw new Error(`[storage] ${name}: a chunk of ${field} is missing`);
+        chunks.push((JSON.parse(text) as string[]).map(item => chunkedFields[field].decode(item)));
+      }
+      fromChunks = chunks.flat();
+    }
+
+    // In order of preference, the longer one kept: the chunks, the former entry (if an older version changed it), the main entry
+    const candidates: unknown[] = [];
+    if (fromChunks) candidates.push(fromChunks);
+    if (legacy !== null && (!manifest || manifest.legacyLength !== legacyLength)) candidates.push(legacy);
+    if (field in state) candidates.push(state[field]);
+    if (candidates.length === 0) return;
+    const chosen = candidates.reduce((kept, other) => richer(kept, other));
+    state[field] = chosen;
+
+    // The legacy length the manifest keeps: the former entry as it is now (an older version changed it), or as it was
+    chunksOnDevice.set(key, { chunks: manifest ? chunks : [], legacyLength: legacyText !== null ? legacyLength : manifest?.legacyLength ?? null });
+    if (chosen === fromChunks) onDevice.set(key, chosen);
+  };
+
   return {
     storage: {
       getItem: async (name) => {
@@ -135,6 +252,7 @@ export function createGuardedStorage<S>(options: {
           value.state[field] = own;
           onDevice.set(fieldKey(name, field), own);
         });
+        for (const field of chunkedNames) await readChunked(name, field, value.state);
         return value;
       },
       setItem: (name, value) => {
@@ -154,7 +272,14 @@ export function createGuardedStorage<S>(options: {
         notWritten.delete(name);
         const keys = separateFields.map(field => fieldKey(name, field));
         keys.forEach(key => onDevice.delete(key));
-        return AsyncStorage.multiRemove([name, ...keys]);
+        const chunkedKeys = chunkedNames.flatMap((field) => {
+          const key = manifestKey(name, field);
+          const device = chunksOnDevice.get(key);
+          onDevice.delete(key);
+          chunksOnDevice.delete(key);
+          return [fieldKey(name, field), key, ...(device?.chunks ?? []).map((_, i) => chunkKey(name, field, i))];
+        });
+        return AsyncStorage.multiRemove([name, ...keys, ...chunkedKeys]);
       },
     },
     allowWrites: () => { loaded = true; },
