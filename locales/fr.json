@@ -754,6 +754,8 @@
     "recap_page": "Carte {{page}} sur {{total}}",
     "recap_hint": "Balaie vers le haut ou le bas pour changer de carte",
     "generation_details": "Afficher ou masquer le détail de la génération",
+    "generation_undock": "Sortir la bulle du bord",
+    "generation_dock": "Réduire sur le bord",
     "cancel_generation": "Annuler la génération",
     "generation_share": "{{name}} : {{percent}} % des niveaux, {{count}}",
     "help": "Aide : {{name}}",

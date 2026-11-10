@@ -754,6 +754,8 @@
     "recap_page": "Card {{page}} of {{total}}",
     "recap_hint": "Swipe up or down to change card",
     "generation_details": "Show or hide the details of the generation",
+    "generation_undock": "Bring the bubble off the edge",
+    "generation_dock": "Minimize to the edge",
     "cancel_generation": "Cancel the generation",
     "generation_share": "{{name}}: {{percent}} % of the levels, {{count}}",
     "help": "Help: {{name}}",

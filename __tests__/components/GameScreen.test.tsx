@@ -1,6 +1,6 @@
 import './setup';
 import { AccessibilityInfo } from 'react-native';
-import { renderRouter, screen, fireEvent, waitFor } from 'expo-router/testing-library';
+import { renderRouter, screen, fireEvent, waitFor, act } from 'expo-router/testing-library';
 import i18n from '@/utils/i18n';
 import GameScreen from '@/app/game';
 import { sampleLevels } from '@/data/sampleLevels';
@@ -67,9 +67,53 @@ describe('game screen', () => {
       expect(screen.getByText('3/10')).toBeTruthy();
       await fireEvent.press(screen.getByRole('button', { name: label }));
       expect(screen.getByText(i18n.t('common.cancel'))).toBeTruthy();
+      await fireEvent.press(screen.getByRole('button', { name: label }));
+
+      // Minimized on an edge: a tab with the progress, its arrow brings the bubble back
+      await fireEvent(screen.getByRole('button', { name: label }), 'accessibilityAction', { nativeEvent: { actionName: 'dock' } });
+      expect(screen.getByText('30 %')).toBeTruthy();
+      expect(screen.queryByText('3/10')).toBeNull();
+      await fireEvent.press(screen.getByRole('button', { name: label }));
+      expect(screen.getByText('3/10')).toBeTruthy();
+
+      // Cancel: the bubble goes at once, the generation stops after the call going on
       await fireEvent.press(screen.getByRole('button', { name: i18n.t('a11y.cancel_generation') }));
       expect(useGameStore.getState().generationState.shouldCancel).toBe(true);
-      expect(screen.getByText(i18n.t('map.canceling'))).toBeTruthy();
+      expect(screen.queryByText('3/10')).toBeNull();
+      expect(screen.queryByRole('button', { name: i18n.t('a11y.cancel_generation') })).toBeNull();
+      // The generation stops: nothing comes back, no end shown (a second touch on ✕ was needed)
+      active.mockReturnValue(false);
+      await act(async () => { useGameStore.getState().setGenerationState({ isRunning: false, shouldCancel: false }); });
+      expect(screen.queryByText('3/10')).toBeNull();
+      expect(screen.queryByText(i18n.t('map.generation_progress', { current: 3, total: 10 }))).toBeNull();
+    } finally {
+      active.mockRestore();
+    }
+  }, 20_000);
+
+  it('a generation that ends shows its levels ready, then goes', async () => {
+    const active = jest.spyOn(require('@/hooks/useLevelGenerator'), 'isGenerationActive').mockReturnValue(true);
+    try {
+      useGameStore.getState().setGenerationState({ isRunning: true, current: 9, total: 10, shouldCancel: false });
+      await renderRouter({ _layout: require('@/app/_layout'), game: GameScreen }, { initialUrl: '/game?levelId=1' });
+      await waitFor(() => expect(screen.getByText('9/10')).toBeTruthy());
+      active.mockReturnValue(false);
+      await act(async () => { useGameStore.getState().setGenerationState({ isRunning: false, current: 10 }); });
+      expect(screen.getByText(i18n.t('map.generation_progress', { current: 10, total: 10 }))).toBeTruthy();
+      await waitFor(() => expect(screen.queryByText(i18n.t('map.generation_progress', { current: 10, total: 10 }))).toBeNull(), { timeout: 5000 });
+    } finally {
+      active.mockRestore();
+    }
+  }, 20_000);
+
+  it('the app closed, the generation going on stops', async () => {
+    const active = jest.spyOn(require('@/hooks/useLevelGenerator'), 'isGenerationActive').mockReturnValue(true);
+    try {
+      useGameStore.getState().setGenerationState({ isRunning: true, current: 3, total: 10, shouldCancel: false });
+      const app = await renderRouter({ _layout: require('@/app/_layout'), game: GameScreen }, { initialUrl: '/game?levelId=1' });
+      await waitFor(() => expect(screen.getByText('3/10')).toBeTruthy());
+      await act(async () => { app.unmount(); });
+      expect(useGameStore.getState().generationState.shouldCancel).toBe(true);
     } finally {
       active.mockRestore();
     }

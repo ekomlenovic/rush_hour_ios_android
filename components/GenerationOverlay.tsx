@@ -12,21 +12,32 @@ import { fixedColors, useTheme } from '@/theme';
 
 /** Space between the bubble and the edges of the screen */
 const EDGE = 12;
+/** A bubble let go this close to the left or right edge (or past it) is docked there, minimized */
+const DOCK_DISTANCE = 24;
+/** A docked tab pulled this far from its edge comes off it */
+const UNDOCK_PULL = 40;
+/** Width of the docked tab */
+const TAB_WIDTH = 34;
 /** How long the end of a generation stays on screen */
 const DONE_MS = 3000;
 const SNAP = { damping: 18, stiffness: 180 };
 
-/**
- * Where the bubble was left, for the rest of the session: the side of the screen and the height,
- * as a share of the screen. Not saved: the next launch starts from the default place
- */
-const place = { right: false, top: 0.8 };
+type Side = 'left' | 'right';
 
 /**
- * The map generation, on every screen (issue: play while levels are generated): a small bubble
- * with the progress and Cancel, above the game but never in the way. It is dragged anywhere
- * along the left or right edge, and touched to show the details (time left, Cancel with its name).
- * The end of a generation shows for a moment, then the bubble goes.
+ * Where the bubble was left, for the rest of the session: free (its left edge, as a share of the
+ * screen) or docked to a side, and its height, as a share of the screen. Not saved: the next
+ * launch starts from the default place
+ */
+const place: { docked: Side | null; left: number; top: number } = { docked: null, left: 0, top: 0.8 };
+
+/**
+ * The map generation, on every screen: a small bubble with the progress and Cancel, above the
+ * game but never in the way. It is dragged anywhere and stays where it is let go; let go against
+ * the left or right edge, it is docked there as a small tab, whose arrow (or a pull) brings the
+ * bubble back. Touched, the bubble shows the details (time left, Cancel with its name).
+ * Cancel hides it at once (the generation stops after the call going on); the end of a
+ * generation shows for a moment, then the bubble goes. The app closed, the generation stops.
  */
 export default function GenerationOverlay() {
   const { t } = useTranslation();
@@ -37,102 +48,138 @@ export default function GenerationOverlay() {
   const cancelGeneration = useGameStore(s => s.cancelGeneration);
   const { isRunning, current, total, shouldCancel, estimatedRemainingSeconds } = generationState;
 
-  // A generation left over by a closed app (the state is saved) is not running any more
   useEffect(() => {
+    // A generation left over by a closed app (the state is saved) is not running any more
     if (!isGenerationActive()) useGameStore.getState().setGenerationState({ isRunning: false, shouldCancel: false, estimatedRemainingSeconds: 0 });
   }, []);
+  // The app closed (on Android, its process can outlive it): the generation stops, never picked up at the next launch.
+  // A layout effect: its cleanup runs as the app goes, not some time after
+  useLayoutEffect(() => () => { if (isGenerationActive()) useGameStore.getState().cancelGeneration(); }, []);
 
   const [expanded, setExpanded] = useState(false);
-  // The end of a generation that made levels: shown DONE_MS, a cancelled one just goes
+  // A generation really going on: a state left over by a closed app shows nothing, even before it is reset
+  const running = isRunning && isGenerationActive();
+  // The end of a generation that made levels: shown DONE_MS; a cancelled one just goes.
+  // Worked out as the generation ends, in the same render: no frame without the bubble in between,
+  // and none with it after a cancel (it stayed on screen, a second touch on ✕ was needed)
   const [done, setDone] = useState<{ current: number; total: number } | null>(null);
-  const wasRunning = useRef(false);
   const cancelled = useRef(false);
   if (shouldCancel) cancelled.current = true;
-  useEffect(() => {
-    if (isRunning) {
-      if (!wasRunning.current) { cancelled.current = shouldCancel; setDone(null); }
-      wasRunning.current = true;
-      return;
+  const [wasRunning, setWasRunning] = useState(running);
+  if (running !== wasRunning) {
+    setWasRunning(running);
+    if (running) {
+      cancelled.current = shouldCancel;
+      setDone(null);
+    } else {
+      setExpanded(false);
+      if (!cancelled.current && current > 0) setDone({ current, total });
     }
-    if (!wasRunning.current) return;
-    wasRunning.current = false;
-    setExpanded(false);
-    if (cancelled.current || current === 0) return;
-    setDone({ current, total });
+  }
+  useEffect(() => {
+    if (!done) return;
     const timer = setTimeout(() => setDone(null), DONE_MS);
     return () => clearTimeout(timer);
-  }, [isRunning]);
+  }, [done]);
 
-  // Position: the edge the bubble keeps to (a style, so a new width never moves it off screen),
-  // a sideways offset while it is dragged, and its top in the window
+  // Position: the top left corner of the bubble in the window, or the side it is docked to
   const minTop = insets.top + EDGE;
-  const maxTop = Math.max(minTop, height - insets.bottom - EDGE - 48);
-  const [onRight, setOnRight] = useState(place.right);
+  const bottomOf = (h: number) => Math.max(minTop, height - insets.bottom - EDGE - h);
+  const [docked, setDocked] = useState<Side | null>(place.docked);
   const size = useSharedValue({ w: 0, h: 0 });
-  const dx = useSharedValue(0);
-  const y = useSharedValue(minTop + place.top * (maxTop - minTop));
+  const x = useSharedValue(EDGE + place.left * width);
+  const y = useSharedValue(minTop + place.top * (bottomOf(48) - minTop));
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
   // A drag ends with a release that would also touch the bubble: that touch does not open it
   const dragging = useRef(false);
-  // Offset that keeps the bubble where it was released once it holds to its new edge, then slides to it
-  const switched = useRef<number | null>(null);
-  useLayoutEffect(() => {
-    if (switched.current === null) return;
-    dx.value = switched.current;
-    dx.value = withSpring(0, SNAP);
-    switched.current = null;
-  }, [onRight]);
 
-  // A new size (details shown or hidden, another number): the bubble stays on screen
+  const remember = (side: Side | null, left: number, top: number) => {
+    place.docked = side;
+    place.left = Math.max(0, (left - EDGE) / Math.max(1, width));
+    place.top = (top - minTop) / Math.max(1, bottomOf(48) - minTop);
+  };
+
+  // A new size (details shown or hidden, another number, docked or not): the bubble stays on screen
   const onLayout = (e: LayoutChangeEvent) => {
     const { width: w, height: h } = e.nativeEvent.layout;
     size.value = { w, h };
-    y.value = Math.min(Math.max(y.value, minTop), height - insets.bottom - EDGE - h);
+    // Free: kept inside the screen; the end of a generation shown from the tab: next to its edge
+    if (docked && done) x.value = docked === 'left' ? EDGE : width - EDGE - w;
+    else if (!docked) x.value = Math.min(Math.max(x.value, EDGE), Math.max(EDGE, width - EDGE - w));
+    y.value = Math.min(Math.max(y.value, minTop), bottomOf(h));
+  };
+
+  /** The bubble comes off its edge, next to it */
+  const undock = (side: Side) => {
+    // Its width is not known yet: onLayout keeps it on screen
+    x.value = side === 'left' ? EDGE : width;
+    setDocked(null);
+    remember(null, x.value, y.value);
+  };
+
+  const dock = (side: Side) => {
+    setExpanded(false);
+    setDocked(side);
+    remember(side, x.value, y.value);
   };
 
   const drag = Gesture.Pan()
     .minDistance(8)
     .onStart(() => {
       dragging.current = true;
-      startX.value = dx.value;
+      startX.value = x.value;
       startY.value = y.value;
     })
     .onUpdate((e) => {
-      dx.value = startX.value + e.translationX;
       y.value = startY.value + e.translationY;
+      if (docked) {
+        // A docked tab slides along its edge, and comes off it when pulled away
+        const pull = docked === 'left' ? e.translationX : -e.translationX;
+        if (pull > UNDOCK_PULL) {
+          setDocked(null);
+          x.value = docked === 'left' ? EDGE + pull - UNDOCK_PULL : width - EDGE - (pull - UNDOCK_PULL);
+          startX.value = x.value - e.translationX;
+        }
+        return;
+      }
+      x.value = startX.value + e.translationX;
     })
     .onEnd(() => {
-      // To the nearest edge, inside the safe area
       const { w, h } = size.value;
-      const left = (onRight ? width - EDGE - w : EDGE) + dx.value;
-      const toRight = left + w / 2 > width / 2;
-      const top = Math.min(Math.max(y.value, minTop), height - insets.bottom - EDGE - h);
+      const top = Math.min(Math.max(y.value, minTop), bottomOf(h));
       y.value = withSpring(top, SNAP);
-      if (toRight === onRight) dx.value = withSpring(0, SNAP);
-      else {
-        switched.current = left - (toRight ? width - EDGE - w : EDGE);
-        setOnRight(toRight);
+      if (docked) {
+        remember(docked, x.value, top);
+        return;
       }
-      place.right = toRight;
-      place.top = maxTop > minTop ? (top - minTop) / (maxTop - minTop) : 0;
+      // Against an edge (or past it): docked there; anywhere else: where it is let go, on screen
+      if (x.value < DOCK_DISTANCE) return dock('left');
+      if (x.value + w > width - DOCK_DISTANCE) return dock('right');
+      const left = Math.min(Math.max(x.value, EDGE), width - EDGE - w);
+      x.value = withSpring(left, SNAP);
+      remember(null, left, top);
     })
     .onFinalize(() => {
       setTimeout(() => { dragging.current = false; }, 0);
     })
-    // On the JS thread: it remembers the place for the session (a plain object, out of reach of a worklet)
+    // On the JS thread: it docks the bubble (React state) and remembers its place for the session
     .runOnJS(true);
 
-  const position = useAnimatedStyle(() => ({ transform: [{ translateX: dx.value }, { translateY: y.value }] }));
+  const position = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }, { translateY: y.value }] }));
+  const tabPosition = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
 
-  // wasRunning: the render where a generation just ended, before its end is shown (no blink in between)
-  if (!isRunning && !done && !wasRunning.current) return null;
+  // Cancel hides the bubble at once
+  if (shouldCancel || (!running && !done)) return null;
 
   const progress = done ?? { current, total };
   const ratio = progress.current / Math.max(progress.total, 1);
-  const title = shouldCancel ? t('map.canceling') : t('map.generating_levels');
+  const title = t('map.generating_levels');
   const count = t('map.generation_progress', { current: progress.current, total: progress.total });
-  const showTime = !done && estimatedRemainingSeconds > 0 && !shouldCancel;
+  const showTime = !done && estimatedRemainingSeconds > 0;
+
+  const tab = docked !== null && !done;
+  const percent = `${Math.round(ratio * 100)} %`;
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
@@ -141,65 +188,93 @@ export default function GenerationOverlay() {
           entering={FadeIn.duration(200)}
           exiting={FadeOut.duration(250)}
           onLayout={onLayout}
-          style={[
+          // One view, docked or not: a drag that pulls the tab off its edge goes on with the bubble
+          style={tab ? [
+            styles.tab,
+            docked === 'left' ? [styles.tabLeft, { left: 0 }] : [styles.tabRight, { right: 0 }],
+            { backgroundColor: colors.floating, borderColor: colors.primaryBorder },
+            tabPosition,
+          ] : [
             styles.bubble,
             { backgroundColor: colors.floating, borderColor: done ? colors.successBorder : colors.primaryBorder },
             expanded && [styles.expanded, { width: Math.min(300, width - 2 * EDGE) }],
-            onRight ? { right: EDGE } : { left: EDGE },
             position,
           ]}
         >
-          <View style={styles.row}>
+          {tab ? (
             <Pressable
-              onPress={() => { if (!dragging.current) setExpanded(e => !e); }}
-              disabled={!!done}
+              onPress={() => { if (!dragging.current) undock(docked!); }}
               accessibilityRole="button"
-              accessibilityLabel={done ? count : `${title}, ${count}`}
-              accessibilityHint={done ? undefined : t('a11y.generation_details')}
-              accessibilityState={{ expanded }}
-              style={styles.summary}
-              hitSlop={6}
+              accessibilityLabel={`${title}, ${count}`}
+              accessibilityHint={t('a11y.generation_undock')}
+              accessibilityActions={[{ name: 'cancel', label: t('a11y.cancel_generation') }]}
+              onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'cancel') cancelGeneration(); }}
+              style={styles.tabInner}
+              hitSlop={8}
             >
-              {done
-                ? <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-                : <ActivityIndicator color={shouldCancel ? colors.danger : colors.primary} size="small" />}
-              {expanded && !done ? (
-                <Text style={[styles.title, { color: shouldCancel ? colors.danger : colors.text }]} numberOfLines={2}>{title}</Text>
-              ) : (
-                <Text style={[styles.count, { color: done ? colors.success : colors.text }]}>
-                  {done ? count : `${progress.current}/${progress.total}`}
-                </Text>
-              )}
+              <Ionicons name={docked === 'left' ? 'chevron-forward' : 'chevron-back'} size={18} color={colors.primaryText} />
+              <Text style={[styles.tabPercent, { color: colors.text }]} numberOfLines={1}>{percent}</Text>
+              <View style={styles.tabTrack}>
+                <View style={[styles.fill, { backgroundColor: colors.primary, height: `${Math.round(ratio * 100)}%` }]} />
+              </View>
             </Pressable>
-            {!done && !shouldCancel && (
-              <Pressable
-                onPress={() => cancelGeneration()}
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel={t('a11y.cancel_generation')}
-                style={[styles.cancel, { backgroundColor: colors.dangerSoft }, expanded && styles.cancelWide]}
-              >
-                <Ionicons name="close" size={16} color={colors.danger} />
-                {expanded && <Text style={[styles.cancelText, { color: colors.danger }]}>{t('common.cancel')}</Text>}
-              </Pressable>
-            )}
-          </View>
+          ) : (
+            <>
+              <View style={styles.row}>
+                <Pressable
+                  onPress={() => { if (!dragging.current) setExpanded(e => !e); }}
+                  disabled={!!done}
+                  accessibilityRole="button"
+                  accessibilityLabel={done ? count : `${title}, ${count}`}
+                  accessibilityHint={done ? undefined : t('a11y.generation_details')}
+                  accessibilityState={{ expanded }}
+                  accessibilityActions={done ? undefined : [{ name: 'dock', label: t('a11y.generation_dock') }]}
+                  onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'dock') dock(x.value + size.value.w / 2 > width / 2 ? 'right' : 'left'); }}
+                  style={styles.summary}
+                  hitSlop={6}
+                >
+                  {done
+                    ? <Ionicons name="checkmark-circle" size={20} color={colors.success} />
+                    : <ActivityIndicator color={colors.primary} size="small" />}
+                  {expanded && !done ? (
+                    <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{title}</Text>
+                  ) : (
+                    <Text style={[styles.count, { color: done ? colors.success : colors.text }]}>
+                      {done ? count : `${progress.current}/${progress.total}`}
+                    </Text>
+                  )}
+                </Pressable>
+                {!done && (
+                  <Pressable
+                    onPress={() => cancelGeneration()}
+                    hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('a11y.cancel_generation')}
+                    style={[styles.cancel, { backgroundColor: colors.dangerSoft }, expanded && styles.cancelWide]}
+                  >
+                    <Ionicons name="close" size={16} color={colors.danger} />
+                    {expanded && <Text style={[styles.cancelText, { color: colors.danger }]}>{t('common.cancel')}</Text>}
+                  </Pressable>
+                )}
+              </View>
 
-          {!done && (
-            <View style={[styles.track, expanded ? styles.trackWide : null]}>
-              <View style={[styles.fill, { backgroundColor: colors.primary, width: `${Math.round(ratio * 100)}%` }]} />
-            </View>
-          )}
-
-          {expanded && !done && (
-            <View style={styles.details} accessibilityLiveRegion="polite">
-              <Text style={[styles.sub, { color: colors.textMuted }]}>{count}</Text>
-              {showTime && (
-                <Text style={[styles.sub, { color: colors.primaryText, fontWeight: '600' }]}>
-                  {t('map.time_left', { time: formatGenerationTime(estimatedRemainingSeconds) })}
-                </Text>
+              {!done && (
+                <View style={[styles.track, expanded ? styles.trackWide : null]}>
+                  <View style={[styles.fill, { backgroundColor: colors.primary, width: `${Math.round(ratio * 100)}%` }]} />
+                </View>
               )}
-            </View>
+
+              {expanded && !done && (
+                <View style={styles.details} accessibilityLiveRegion="polite">
+                  <Text style={[styles.sub, { color: colors.textMuted }]}>{count}</Text>
+                  {showTime && (
+                    <Text style={[styles.sub, { color: colors.primaryText, fontWeight: '600' }]}>
+                      {t('map.time_left', { time: formatGenerationTime(estimatedRemainingSeconds) })}
+                    </Text>
+                  )}
+                </View>
+              )}
+            </>
           )}
         </Animated.View>
       </GestureDetector>
@@ -207,19 +282,24 @@ export default function GenerationOverlay() {
   );
 }
 
+const shadow = {
+  shadowColor: fixedColors.shadow,
+  shadowOpacity: 0.2,
+  shadowRadius: 12,
+  shadowOffset: { width: 0, height: 4 },
+  elevation: 12,
+};
+
 const styles = StyleSheet.create({
   bubble: {
     position: 'absolute',
+    left: 0,
     top: 0,
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderRadius: 18,
     borderWidth: 1,
-    shadowColor: fixedColors.shadow,
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 12,
+    ...shadow,
   },
   expanded: {
     paddingVertical: 12,
@@ -274,6 +354,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   fill: {
+    width: '100%',
     height: '100%',
     borderRadius: 3,
   },
@@ -284,5 +365,40 @@ const styles = StyleSheet.create({
   },
   sub: {
     fontSize: RFValue(12),
+  },
+  tab: {
+    position: 'absolute',
+    top: 0,
+    width: TAB_WIDTH,
+    borderWidth: 1,
+    ...shadow,
+  },
+  tabLeft: {
+    borderTopRightRadius: 14,
+    borderBottomRightRadius: 14,
+    borderLeftWidth: 0,
+  },
+  tabRight: {
+    borderTopLeftRadius: 14,
+    borderBottomLeftRadius: 14,
+    borderRightWidth: 0,
+  },
+  tabInner: {
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 8,
+  },
+  tabPercent: {
+    fontSize: RFValue(9),
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  tabTrack: {
+    width: 4,
+    height: 22,
+    borderRadius: 2,
+    backgroundColor: fixedColors.neutralSoft,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
   },
 });
