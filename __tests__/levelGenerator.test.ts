@@ -6,16 +6,30 @@ import { resolveLevel } from '../utils/levelResolver';
 import { resetStore } from './helpers';
 import { useGenerationTimes } from '../store/generationTimes';
 import { estimateLevelMs, sampleKey } from '../utils/generationEstimate';
+import { transformLevel } from '../utils/generator';
 
-// A generation that fails one level out of three, instantly
+// A generation of which one call out of three gives no level, instantly
 let mockCalls = 0;
-const mockConfigs: { minMovesRequired: number; maxMovesRequired: number; minVehicles: number; gridSize: number; keepLonger?: boolean }[] = [];
-jest.mock('../utils/generator', () => ({
-  ...jest.requireActual('../utils/generator'),
-  generateLevel: (id: number, config: typeof mockConfigs[number]) => {
+/** What the generator was asked, call after call */
+const mockAsked: { difficulty: string; gridSize: number; minMoves: number }[] = [];
+/** Levels the generator gives next, before its own */
+let mockNext: unknown[] = [];
+jest.mock('../utils/mapGenerator', () => ({
+  ...jest.requireActual('../utils/mapGenerator'),
+  generateMapLevelChunk: (id: number, difficulty: string, gridSize: number, minMoves: number) => {
     mockCalls++;
-    mockConfigs.push(config);
-    return mockCalls % 3 === 2 ? null : { ...jest.requireActual('../data/sampleLevels').sampleLevels[0], id };
+    mockAsked.push({ difficulty, gridSize, minMoves });
+    if (mockNext.length) return mockNext.shift();
+    if (mockCalls % 3 === 2) return null;
+    // A different board each time: two cars whose places count the calls
+    return {
+      id, gridSize: 6, exitRow: 2, exitCol: 6, minMoves: 1, updatedAt: 0,
+      vehicles: [
+        { id: 'target', row: 2, col: 0, length: 2, orientation: 'horizontal', isTarget: true, color: '#f00' },
+        { id: 'a', row: 0, col: mockCalls % 5, length: 2, orientation: 'horizontal', isTarget: false, color: '#0f0' },
+        { id: 'b', row: 5, col: Math.floor(mockCalls / 5) % 4, length: 3, orientation: 'horizontal', isTarget: false, color: '#00f' },
+      ],
+    };
   },
 }));
 
@@ -27,7 +41,8 @@ beforeEach(() => {
   resetStore();
   useGenerationTimes.setState({ samples: {} });
   mockCalls = 0;
-  mockConfigs.length = 0;
+  mockAsked.length = 0;
+  mockNext = [];
 });
 
 afterEach(async () => {
@@ -37,7 +52,7 @@ afterEach(async () => {
 });
 
 describe('map levels generation (issue 120)', () => {
-  it('numbers the levels after the pack without holes, a failed level taking no id', async () => {
+  it('numbers the levels after the pack without holes, a call without a level taking no id', async () => {
     startLevelGeneration([{ difficulty: 'NORMAL', gridSize: 6, count: 4 }]);
     expect(isGenerationActive()).toBe(true);
     await jest.runAllTimersAsync();
@@ -58,6 +73,22 @@ describe('map levels generation (issue 120)', () => {
     startLevelGeneration([{ difficulty: 'NORMAL', gridSize: 6, count: 2 }]);
     await jest.runAllTimersAsync();
     expect(state().generatedLevels.map(l => l.id)).toEqual([base + 1, base + 2]);
+  });
+
+  it('never adds a level the map already has, even rotated or mirrored', async () => {
+    startLevelGeneration([{ difficulty: 'NORMAL', gridSize: 6, count: 2 }]);
+    await jest.runAllTimersAsync();
+    const [first, second] = state().generatedLevels;
+    // The generator comes back to the first board, mirrored, then to a new one
+    const mirrored = transformLevel(first, 2);
+    const fresh = { ...second, vehicles: second.vehicles.map(v => (v.id === 'a' ? { ...v, row: 1 } : v)) };
+    mockNext = [mirrored, first, fresh];
+    const before = mockCalls;
+    startLevelGeneration([{ difficulty: 'NORMAL', gridSize: 6, count: 1 }]);
+    await jest.runAllTimersAsync();
+    expect(mockCalls - before).toBe(3);
+    expect(state().generatedLevels.map(l => l.id)).toEqual([base + 1, base + 2, base + 3]);
+    expect(state().generatedLevels[2].vehicles).toEqual(fresh.vehicles);
   });
 
   it('a link to a map level not generated yet opens nothing: never generated on the fly, with a hole before it', async () => {
@@ -83,7 +114,7 @@ describe('generation times learnt on the phone (issue 162)', () => {
   it('starts the progress pill from the learnt estimate', () => {
     useGenerationTimes.setState({ samples: { [sampleKey('NORMAL', 8)]: { avgMs: 2000, count: 20, maxMs: 2500 } } });
     startLevelGeneration([{ difficulty: 'NORMAL', gridSize: 8, count: 3 }]);
-    const expected = Math.ceil((3 * (estimateLevelMs('NORMAL', 8, useGenerationTimes.getState().samples) + 150)) / 1000);
+    const expected = Math.ceil((3 * (estimateLevelMs('NORMAL', 8, useGenerationTimes.getState().samples))) / 1000);
     expect(state().generationState.estimatedRemainingSeconds).toBe(expected);
     expect(expected).toBeLessThan(60);
   });
@@ -108,21 +139,21 @@ describe('a mix of difficulties and grid sizes', () => {
       { difficulty: 'EASY', gridSize: 6, count: 2 },
       { difficulty: 'HARD', gridSize: 7, count: 1 },
     ]);
-    expect(seconds).toBeCloseTo((2 * (estimateLevelMs('EASY', 6, samples) + 150) + estimateLevelMs('HARD', 7, samples) + 150) / 1000);
+    expect(seconds).toBeCloseTo((2 * estimateLevelMs('EASY', 6, samples) + estimateLevelMs('HARD', 7, samples)) / 1000);
   });
 
   it('asks the generator for the minimum of moves chosen for a difficulty, without learning its times', async () => {
     startLevelGeneration(buildGenerationPlan(4, { EASY: 1, NORMAL: 0, HARD: 1, EXPERT: 0, MASTER: 0 }, { 6: 0, 7: 1, 8: 0 }, { HARD: 20 }));
     // Hard from 20 moves: 6 of the 11 usual numbers of moves left, a level counted that much longer to find
-    const expected = 2 * (estimateLevelMs('EASY', 7, {}) + 150) + 2 * (estimateLevelMs('HARD', 7, {}) * (11 / 6) + 150);
+    const expected = 2 * estimateLevelMs('EASY', 7, {}) + 2 * estimateLevelMs('HARD', 7, {}) * (11 / 6);
     expect(state().generationState.estimatedRemainingSeconds).toBe(Math.ceil(expected / 1000));
     await jest.runAllTimersAsync();
     expect(state().generatedLevels).toHaveLength(4);
     // Easy as usual; Hard with its own boards, from 20 moves, longer levels kept
-    expect(mockConfigs.filter(c => c.minVehicles === 5).every(c => c.minMovesRequired === 6 && !c.keepLonger)).toBe(true);
-    const hard = mockConfigs.filter(c => c.minVehicles === 10);
+    expect(mockAsked.filter(a => a.difficulty === 'EASY').every(a => a.minMoves === 0)).toBe(true);
+    const hard = mockAsked.filter(a => a.difficulty === 'HARD');
     expect(hard.length).toBeGreaterThan(0);
-    for (const config of hard) expect(config).toMatchObject({ gridSize: 7, minMovesRequired: 20, maxMovesRequired: 25, keepLonger: true });
+    for (const asked of hard) expect(asked).toEqual({ difficulty: 'HARD', gridSize: 7, minMoves: 20 });
     expect(Object.keys(useGenerationTimes.getState().samples)).toEqual([sampleKey('EASY', 7)]);
   });
 
@@ -130,6 +161,15 @@ describe('a mix of difficulties and grid sizes', () => {
     startLevelGeneration([]);
     expect(isGenerationActive()).toBe(false);
     expect(state().generationState.isRunning).toBe(false);
+  });
+});
+
+describe('generation times of the former generator', () => {
+  it('are dropped: the new generator is far faster, they would announce minutes and ask to confirm', () => {
+    const migrate = useGenerationTimes.persist.getOptions().migrate!;
+    const former = { samples: { [sampleKey('NORMAL', 8)]: { avgMs: 300_000, count: 5, maxMs: 400_000 } } };
+    expect(migrate(former, 1)).toEqual({ samples: {} });
+    expect(migrate(former, 2)).toEqual(former);
   });
 });
 

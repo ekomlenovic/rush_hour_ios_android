@@ -9,6 +9,8 @@ import { addSample, type GenerationSamples } from '@/utils/generationEstimate';
  * Kept apart from the game store on purpose: they describe the phone, not the player's
  * progress. An exported save (.rushsave) never carries them, and losing them only brings
  * the estimate back to the table.
+ * Version 2: the generator changed (utils/mapGenerator.ts, far faster on hard levels and big grids),
+ * the times measured with the former one are dropped rather than kept as today's.
  */
 interface GenerationTimesState {
   samples: GenerationSamples;
@@ -25,7 +27,8 @@ export const useGenerationTimes = create<GenerationTimesState>()(
     }),
     {
       name: 'rush-hours-generation-times',
-      version: 1,
+      version: 2,
+      migrate: (persisted, version) => (version < 2 ? { samples: {} } : persisted as { samples: GenerationSamples }),
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ samples: state.samples }),
     },

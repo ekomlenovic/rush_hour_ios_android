@@ -156,13 +156,13 @@ describe('world map', () => {
     it('asks before a minimum of moves that makes the levels long to find', async () => {
       await openMap();
       await press(t('map.level_generator'));
-      await press(t('a11y.increase', { name: t('difficulty.HARD') }));
+      await press(t('a11y.increase', { name: t('difficulty.EXPERT') }));
       await press(t('a11y.decrease', { name: t('difficulty.NORMAL') }));
-      // The most of Hard: never over it, and such levels are rare
-      await fireEvent.changeText(screen.getByLabelText(t('a11y.min_moves', { name: t('difficulty.HARD'), min: 15, max: 25 })), '40');
+      // The most of Expert: never over it, and such levels are rare (Expert 6x6 alone asks nothing)
+      await fireEvent.changeText(screen.getByLabelText(t('a11y.min_moves', { name: t('difficulty.EXPERT'), min: 25, max: 50 })), '90');
       await press(screen.getByText(/^(Generate|Générer|Generiši) 3 /).props.children);
       expect(startLevelGeneration).not.toHaveBeenCalled();
-      expect(jest.mocked(Alert.alert).mock.calls.at(-1)?.[1]).toContain(`${t('difficulty.HARD')} 6x6 (${t('map.min_moves_short', { count: 25 })})`);
+      expect(jest.mocked(Alert.alert).mock.calls.at(-1)?.[1]).toContain(`${t('difficulty.EXPERT')} 6x6 (${t('map.min_moves_short', { count: 50 })})`);
     });
 
     it('opens from the padlock at the end of the map, and keeps one difficulty at least', async () => {
@@ -173,14 +173,14 @@ describe('world map', () => {
       expect(button(t('a11y.decrease', { name: t('difficulty.NORMAL') })).props.accessibilityState).toMatchObject({ disabled: true });
     });
 
-    it('asks before a generation that can freeze the app', async () => {
+    it('asks before a generation whose levels can take a minute or more', async () => {
       await openMap();
       await press(t('map.level_generator'));
-      await press(t('a11y.increase', { name: t('difficulty.EXPERT') }));
+      await press(t('a11y.increase', { name: t('difficulty.MASTER') }));
       await press(screen.getByText(/^(Generate|Générer|Generiši) 3 /).props.children);
       expect(startLevelGeneration).not.toHaveBeenCalled();
       expect(jest.mocked(Alert.alert).mock.calls.at(-1)?.[0]).toBe(t('map.long_generation_title'));
-      expect(jest.mocked(Alert.alert).mock.calls.at(-1)?.[1]).toContain(`${t('difficulty.EXPERT')} 6x6`);
+      expect(jest.mocked(Alert.alert).mock.calls.at(-1)?.[1]).toContain(`${t('difficulty.MASTER')} 6x6`);
     });
   });
 });

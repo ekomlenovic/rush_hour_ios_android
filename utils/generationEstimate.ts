@@ -1,8 +1,8 @@
 /**
  * Time to generate one map level, learnt on the phone (issue 162).
  *
- * A level costs very differently with the difficulty and the grid size (Normal 6x6: a few
- * seconds; Normal 8x8: a minute or more), and with the phone. The estimate starts from a
+ * A level costs very differently with the difficulty and the grid size (Normal 6x6: well under
+ * a second; Master 8x8: minutes), and with the phone. The estimate starts from a
  * table of measures (DEFAULT_LEVEL_MS) and adapts to what this phone actually takes:
  * - a combination already generated here: the average of its measures, with the table as
  *   one more sample so that a single lucky level does not erase it;
@@ -11,7 +11,7 @@
  * Pure functions: the measures are kept by store/generationTimes.ts.
  */
 
-/** A level this long to generate freezes the app for a minute or more: confirmed first */
+/** A level this long to generate (a minute or more) makes a generation worth confirming first */
 export const LONG_LEVEL_MS = 60_000;
 
 /** The measures of one combination (difficulty and grid size) on this phone */
@@ -30,8 +30,8 @@ export type GenerationSamples = Record<string, GenerationSample>;
 export const MAX_SAMPLES = 20;
 
 /**
- * One level of a combination can take this many times the average: Hard 7x7 measured 1.2 s, 7.1 s
- * and 22.1 s, Normal 7x7 from 1 s to 12 s
+ * One level of a combination can take this many times the average: the slowest level of a
+ * benchmark is 2 to 4 times its average (Hard 7x7: 0.9 s on average, 3.7 s at worst)
  */
 const SLOW_LEVEL_FACTOR = 2;
 
@@ -44,17 +44,17 @@ const MAX_SPEED_FACTOR = 10;
 
 /**
  * Time of one level on a phone (Hermes, no JIT), failed tries included, per difficulty and grid size.
- * Node times from scripts/benchGenerator.ts (issue 162; Hard 8x8 made no level in 7 minutes), times
- * PHONE_FACTOR; Expert 6x6 and Master 7x7 keep the times used before. Only the starting point: the
- * measures of the phone take over.
+ * Node times from scripts/benchGenerator.ts with the recipes of utils/mapGenerator.ts, times
+ * PHONE_FACTOR (a guess, not measured on a phone). Only the starting point: the measures of the
+ * phone take over.
  */
 const PHONE_FACTOR = 5;
 const NODE_LEVEL_MS: Record<string, Record<number, number>> = {
-  EASY: { 6: 100, 7: 100, 8: 200 },
-  NORMAL: { 6: 300, 7: 5_000, 8: 50_000 },
-  HARD: { 6: 1_000, 7: 12_000, 8: 600_000 },
-  EXPERT: { 6: 100_000, 7: 500_000, 8: 2_500_000 },
-  MASTER: { 6: 240_000, 7: 240_000, 8: 1_200_000 },
+  EASY: { 6: 20, 7: 40, 8: 80 },
+  NORMAL: { 6: 80, 7: 700, 8: 1_800 },
+  HARD: { 6: 150, 7: 900, 8: 5_000 },
+  EXPERT: { 6: 600, 7: 1_200, 8: 12_000 },
+  MASTER: { 6: 17_000, 7: 9_000, 8: 80_000 },
 };
 
 export const DEFAULT_LEVEL_MS: Record<string, Record<number, number>> = Object.fromEntries(
@@ -99,7 +99,7 @@ export function estimateLevelMs(difficulty: string, gridSize: number, samples: G
 }
 
 /**
- * A level of this combination can freeze the app a minute or more: never started without saying so.
+ * A level of this combination can take a minute or more: never started without saying so.
  * Levels vary a lot: an average of half a minute, or one level measured over a minute, is enough.
  */
 export function needsConfirmation(

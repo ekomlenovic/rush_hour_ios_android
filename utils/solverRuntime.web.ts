@@ -1,5 +1,6 @@
 import { solvePuzzle, validateLevel } from './solver';
 import { generateSeededLevelSync } from './generator.core';
+import { generateMapLevelChunk } from './mapGenerator';
 
 /**
  * The thread of the solver on the web: a Web Worker (utils/solver.worker.ts), the web has no
@@ -10,6 +11,7 @@ const TASKS = new Map<Function, string>([
   [solvePuzzle, 'solvePuzzle'],
   [validateLevel, 'validateLevel'],
   [generateSeededLevelSync, 'generateSeededLevelSync'],
+  [generateMapLevelChunk, 'generateMapLevelChunk'],
 ]);
 
 type Pending = { resolve: (value: any) => void; reject: (error: Error) => void };

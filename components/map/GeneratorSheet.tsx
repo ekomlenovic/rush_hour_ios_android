@@ -223,8 +223,8 @@ export default function GeneratorSheet({ visible, colors, isDark, onClose }: Pro
   };
 
   const countOf = (match: (b: typeof plan[number]) => boolean) => plan.filter(match).reduce((sum, b) => sum + b.count, 0);
-  // The warning only when it applies: a slow difficulty or a big grid is in the mix
-  const slowMix = difficultyParts.EXPERT > 0 || difficultyParts.MASTER > 0 || sizeParts[7] > 0 || sizeParts[8] > 0;
+  // The warning only when it applies: Master, or a hard difficulty on the biggest grid, is in the mix
+  const slowMix = difficultyParts.MASTER > 0 || (sizeParts[8] > 0 && (difficultyParts.HARD > 0 || difficultyParts.EXPERT > 0));
 
   return (
     <BottomSheet visible={visible} title={t('map.level_generator')} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose}>

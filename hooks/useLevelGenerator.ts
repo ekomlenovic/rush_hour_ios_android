@@ -1,6 +1,8 @@
 import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
-import { generateLevel } from '@/utils/generator';
+import { generateMapLevelChunk } from '@/utils/mapGenerator';
+import { runOnSolverRuntime } from '@/utils/solver.background';
+import { canonicalKey } from '@/utils/levelShape';
 import { haptics, Haptics } from '@/utils/haptics';
 import { formatTimeLeft } from '@/utils/date';
 import { estimateLevelMs } from '@/utils/generationEstimate';
@@ -9,8 +11,11 @@ import { batchConfig, planTotal, type DifficultyKey, type GenerationBatch } from
 
 export type { DifficultyKey, GenerationBatch };
 
-/** Pause between two levels, for the Cancel button to be processed */
-const YIELD_MS = 150;
+/**
+ * Calls of the generator in a row without a level before giving up a batch: each one is about a
+ * second of work on a phone (generateMapLevelChunk), a Master 8x8 level takes hundreds of them
+ */
+const MAX_EMPTY_CALLS = 1000;
 
 /** Estimated time of one level of a batch on this phone, a minimum of moves chosen by the player included */
 export function estimateBatchLevelMs(batch: GenerationBatch): number {
@@ -19,7 +24,7 @@ export function estimateBatchLevelMs(batch: GenerationBatch): number {
 
 /** Estimated time of a whole generation, in seconds, learnt from the times measured on this phone */
 export function estimateGenerationSeconds(plan: GenerationBatch[]): number {
-  return plan.reduce((sum, b) => sum + (b.count * (estimateBatchLevelMs(b) + YIELD_MS)) / 1000, 0);
+  return plan.reduce((sum, b) => sum + (b.count * estimateBatchLevelMs(b)) / 1000, 0);
 }
 
 /** A generation time for the player: '45 s', then minutes and hours (an Expert batch takes hours, not '24000s') */
@@ -40,10 +45,11 @@ function nextLevelId(): number {
 }
 
 /**
- * Generates map levels one by one in the background, after the existing ones: the batches of the
- * plan one after the other (see utils/generationPlan.ts).
+ * Generates map levels one by one, after the existing ones: the batches of the plan one after the
+ * other (see utils/generationPlan.ts), on the solver runtime, so the app stays usable meanwhile.
+ * The generator works in short calls (generateMapLevelChunk), Cancel is read between two of them.
  * Progress and cancellation go through the store's generationState.
- * A level that could not be generated takes no id: it is tried again, a few times at most.
+ * A call that made no level takes no id: it is tried again, MAX_EMPTY_CALLS times in a row at most.
  */
 export function startLevelGeneration(plan: GenerationBatch[]): void {
   const batches = plan.filter(b => b.count > 0);
@@ -68,6 +74,9 @@ export function startLevelGeneration(plan: GenerationBatch[]): void {
   setTimeout(async () => {
     let made = 0;
     const cancelled = () => useGameStore.getState().generationState.shouldCancel;
+    // The levels of the map so far, up to a rotation or a mirror: the same one is never added twice
+    // (Master 6x6 is so tight that the generator can come back to a board)
+    const known = new Set([...sampleLevels, ...useGameStore.getState().generatedLevels].map(canonicalKey));
 
     try {
       for (let batchIndex = 0; batchIndex < batches.length && !cancelled(); batchIndex++) {
@@ -79,35 +88,39 @@ export function startLevelGeneration(plan: GenerationBatch[]): void {
         // Time spent since the last level made, failed tries included: what a level really costs
         let sinceLastLevel = 0;
         let madeInBatch = 0;
-        // Failures are tried again, but a difficulty that keeps failing does not loop forever
-        const maxTries = count * 2;
+        // A batch that keeps giving nothing does not loop forever
+        let emptyCalls = 0;
+        // The minimum of moves chosen by the player, 0 when the difficulty keeps its own
+        const minMoves = custom ? config.minMovesRequired : 0;
 
         try {
-          for (let tries = 0; madeInBatch < count && tries < maxTries; tries++) {
-            // Check cancel flag before each level
+          while (madeInBatch < count && emptyCalls < MAX_EMPTY_CALLS) {
+            // Cancel is read before each call
             if (cancelled()) break;
 
             const startTime = Date.now();
-            // The id is taken when the level is ready: a failed one leaves no hole
-            const newLevel = generateLevel(nextLevelId(), { ...config });
+            const newLevel = await runOnSolverRuntime(generateMapLevelChunk, nextLevelId(), difficulty, gridSize, minMoves);
             sinceLastLevel += Date.now() - startTime;
 
-            if (newLevel) {
-              useGameStore.getState().addGeneratedLevel({ ...newLevel, id: nextLevelId() });
-              made++;
-              madeInBatch++;
-              // The estimate learns from this phone: the next generations, and the rest of this one
-              learn(sinceLastLevel);
-              sinceLastLevel = 0;
+            const key = newLevel && canonicalKey(newLevel);
+            if (!newLevel || !key || known.has(key)) {
+              emptyCalls++;
+              continue;
             }
+            known.add(key);
+            emptyCalls = 0;
+            // The id is taken when the level is ready: a call without a level leaves no hole
+            useGameStore.getState().addGeneratedLevel({ ...newLevel, id: nextLevelId() });
+            made++;
+            madeInBatch++;
+            // The estimate learns from this phone: the next generations, and the rest of this one
+            learn(sinceLastLevel);
+            sinceLastLevel = 0;
 
             setGenerationState({
               current: made,
               estimatedRemainingSeconds: estimate(batchIndex, madeInBatch),
             });
-
-            // Yield to the JS event loop — lets the Cancel button press be processed.
-            await new Promise(resolve => setTimeout(resolve, YIELD_MS));
           }
         } finally {
           // Tries that made no level (given up, cancelled): a level costs at least that, never counted as faster

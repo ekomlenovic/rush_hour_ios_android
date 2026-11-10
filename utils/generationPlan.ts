@@ -47,8 +47,8 @@ export function clampMinMoves(value: number, difficulty: DifficultyKey): number 
  * minimum of moves chosen by the player, every level takes at least that many (under or over the
  * usual minimum of the difficulty), and a level found longer than the difficulty usually goes is kept.
  * `slowdown`: how many times longer a level takes to find. A minimum over the usual one throws away
- * the levels under it: at the top of the range there are few left (Hard 7x7 from 25 moves found
- * nothing in 5 minutes). Counted as if the levels were spread evenly over the range: a low estimate.
+ * the levels under it: at the top of the range there are fewer left (Hard 7x7 from 25 moves: 5 s
+ * a level on Node instead of 0.9 s). Counted as if the levels were spread evenly over the range: a low estimate.
  */
 export function batchConfig(batch: GenerationBatch): { config: DifficultyConfig; custom: boolean; slowdown: number } {
   const base = { ...DIFFICULTY_LEVELS[batch.difficulty], gridSize: batch.gridSize };
