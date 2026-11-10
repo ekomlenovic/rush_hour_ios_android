@@ -9,7 +9,7 @@ import { sampleLevels } from '../data/sampleLevels';
 import { isBossLevel } from '../data/bosses';
 import { ACHIEVEMENTS } from '../data/achievements';
 import {
-  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, MAX_MISSIONS_XP, STREAK_MAX_MULTIPLIER, weeklyWinXp,
+  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, MAX_XP_MULTIPLIER, missionsXp, weeklyWinXp,
 } from '../data/progression';
 import { getLocalDateString } from './date';
 import { starsFromScore } from './scoring';
@@ -401,8 +401,7 @@ export function maxPlausibleXp(state: Record<string, any>): number {
   const otherWins = Math.max(0, (state.stats?.totalWins ?? 0) - completed.length);
   xp += otherWins * levelWinXp(60, 3, true);
   for (const r of Object.values((state.dailyChallengeProgress ?? {}) as Record<string, ChallengeResult>)) {
-    // Each daily as if won at the top of the streak bonus
-    if (r.completed) xp += dailyWinXp(r.stars || 1) * STREAK_MAX_MULTIPLIER;
+    if (r.completed) xp += dailyWinXp(r.stars || 1);
   }
   for (const r of Object.values((state.weeklyChallengeProgress ?? {}) as Record<string, ChallengeResult>)) {
     if (r.completed) xp += weeklyWinXp(r.stars || 1);
@@ -410,10 +409,10 @@ export function maxPlausibleXp(state: Record<string, any>): number {
   for (const r of Object.values((state.archiveProgress ?? {}) as Record<string, ChallengeResult>)) {
     if (r.completed) xp += archiveWinXp(r.minMoves ?? 60, r.stars || 1);
   }
-  // Each day of missions at the top of the mission streak, its freeze not given
-  xp += (state.stats?.missionDaysCompleted ?? 0) * MAX_MISSIONS_XP;
+  xp += (state.stats?.missionDaysCompleted ?? 0) * missionsXp(false);
   xp += (state.achievements?.length ?? 0) * ACHIEVEMENT_XP;
-  return Math.ceil(xp);
+  // All of it as if earned with both XP bonuses at their top
+  return Math.ceil(xp * MAX_XP_MULTIPLIER);
 }
 
 /**

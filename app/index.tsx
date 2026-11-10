@@ -7,7 +7,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useGameStore } from '@/store/gameStore';
 import { useTranslation } from 'react-i18next';
 import { getLocalDateString, getWeekKey, getDaysLeftInWeek, formatTimeLeft } from '@/utils/date';
-import { getMissionsForDay, countMissionsDone } from '@/data/missions';
+import { getMissionsForDay, countMissionsDone, currentXpBonus } from '@/data/missions';
+import { formatBonus } from '@/components/progression/rewards';
 import { getFreezeCapacity, getPlayerLevel, dailyWinXp, weeklyWinXp } from '@/data/progression';
 import { lockedEventCosmetics, seasonalEventsOf } from '@/data/cosmetics';
 import { sampleLevels } from '@/data/sampleLevels';
@@ -85,6 +86,9 @@ export default function HomeScreen() {
 
   const todayMissions = getMissionsForDay(dailyMissions, dateStr);
   const missionsDone = countMissionsDone(todayMissions);
+  // Both XP bonuses added up: shown under the player level when there is one, and in the XP of the challenges
+  const xpBonus = currentXpBonus({ missionStreak, currentStreak }, dateStr).total;
+  const xpBonusFactor = 1 + xpBonus / 100;
   const freezeCapacity = getFreezeCapacity(getPlayerLevel(xp));
 
   // The recap of the month (from the 1st) or of the year (from December 26th), until opened
@@ -149,6 +153,19 @@ export default function HomeScreen() {
 
           <Animated.View entering={FadeInUp.delay(250).springify()}>
             <PlayerLevelBadge colors={colors} onPress={() => router.push('/profile')} />
+            {xpBonus > 0 && (
+              <Pressable
+                onPress={() => router.push('/profile?focus=bonus')}
+                style={[styles.bonusPill, { backgroundColor: colors.card }]}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t('bonus.a11y_pill', { bonus: formatBonus(t, xpBonus) })}
+              >
+                <Ionicons name="flame" size={16} color={colors.warning} />
+                <Text style={[styles.bonusPillText, { color: colors.text }]}>{t('bonus.pill', { bonus: formatBonus(t, xpBonus) })}</Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+              </Pressable>
+            )}
           </Animated.View>
 
           {/* 1. Main action */}
@@ -190,7 +207,7 @@ export default function HomeScreen() {
                 : seasonalEvent && eventCosmetics > 0
                   ? t(`home.daily_event.${seasonalEvent}`, { count: eventCosmetics })
                   : t('home.daily_desc')}
-              reward={t('home.reward_xp', { xp: dailyWinXp(MAX_STARS, dailyStatus?.completed ? currentStreak : currentStreak + 1) })}
+              reward={t('home.reward_xp', { xp: Math.round(dailyWinXp(MAX_STARS) * xpBonusFactor) })}
               enteringDelay={450}
               onPress={() => router.push(`/game?levelId=daily&date=${dateStr}`)}
             />
@@ -202,7 +219,7 @@ export default function HomeScreen() {
               subtitle={weeklyStatus?.completed
                 ? `${t('home.won_stars', { count: weeklyStatus.stars })} · ${t('home.weekly_next', { count: daysLeftInWeek })}`
                 : t('home.weekly_days_left', { count: daysLeftInWeek })}
-              reward={t('home.reward_xp', { xp: weeklyWinXp(MAX_STARS) })}
+              reward={t('home.reward_xp', { xp: Math.round(weeklyWinXp(MAX_STARS) * xpBonusFactor) })}
               enteringDelay={500}
               onPress={() => router.push(`/game?levelId=weekly&week=${weekKey}`)}
             />
@@ -242,6 +259,7 @@ export default function HomeScreen() {
         isDark={isDark}
         missions={todayMissions}
         missionStreak={missionStreak}
+        dailyStreak={currentStreak}
         freezeStockFull={streakFreezes >= freezeCapacity}
         onClose={() => setMissionsVisible(false)}
       />
@@ -256,6 +274,20 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  bonusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  bonusPillText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
   screen: {
     flex: 1,
   },

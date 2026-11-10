@@ -410,7 +410,7 @@ describe('import recomputes rather than trusts', () => {
 });
 
 describe('mission streak and streak bonus (store v14)', () => {
-  /** A long streak of dailies and of missions, the XP of each multiplied */
+  /** A long streak of dailies and of missions, all the XP raised by both bonuses */
   function playWithMultipliers() {
     for (let day = 1; day <= 20; day++) {
       const date = `2026-10-${String(day).padStart(2, '0')}`;
@@ -425,7 +425,7 @@ describe('mission streak and streak bonus (store v14)', () => {
     expect(store().missionStreak).toEqual({ count: 20, lastDate: '2026-10-20' });
     const xp = store().xp;
     // More than the same days without any multiplier
-    expect(xp).toBeGreaterThan(20 * (120 + 250));
+    expect(xp).toBeGreaterThan(20 * (120 + 200) * 1.3);
     const result = parseSave(exportProgress());
     if (!result.ok) throw new Error(result.error);
     expect(result.state.xp).toBe(xp);

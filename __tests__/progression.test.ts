@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import {
-  ACHIEVEMENT_XP, BASE_FREEZE_SLOTS, BOSS_WIN_XP, MAX_MISSIONS_XP, MISSIONS_FULL_STOCK_XP, MISSIONS_XP, REPLAY_XP_FACTOR, STREAK_MAX_MULTIPLIER,
-  DAILY_STREAK_TIERS, MISSION_STREAK_TIERS, dailyWinXp, missionsMultiplier, missionsXp, nextBonusTier, streakMultiplier, getFreezeCapacity, getLevelInfo,
+  ACHIEVEMENT_XP, BASE_FREEZE_SLOTS, BOSS_WIN_XP, MAX_XP_MULTIPLIER, MISSIONS_FULL_STOCK_XP, MISSIONS_XP, REPLAY_XP_FACTOR, XP_BONUS_TIERS,
+  bonusPercent, dailyWinXp, missionsXp, nextBonusTier, xpMultiplier, getFreezeCapacity, getLevelInfo,
   getPlayerLevel, getPlayerTitle, levelWinXp, totalXpForLevel, weeklyWinXp, xpToNextLevel,
 } from '../data/progression';
 import {
@@ -40,8 +40,9 @@ describe('level curve (rules in docs/GAME_DESIGN.md)', () => {
     let day = 0;
     while (xp < totalXpForLevel(level)) {
       day++;
-      xp += 5 * levelWinXp(15, 3, true);
-      if (everyDay) xp += dailyWinXp(3, day) + missionsXp(true, day);
+      const levels = 5 * levelWinXp(15, 3, true);
+      // Both streaks are as long as the days played: they multiply all the XP of the day
+      xp += everyDay ? Math.round((levels + dailyWinXp(3) + missionsXp(true)) * xpMultiplier(day, day)) : levels;
     }
     return day;
   };
@@ -51,44 +52,39 @@ describe('level curve (rules in docs/GAME_DESIGN.md)', () => {
     expect(daysToLevel(5, false)).toBeLessThan(20);
   });
 
-  it('rewards coming back every day: about three weeks for level 10, three months for level 20', () => {
+  it('rewards coming back every day: about three weeks for level 10, three to four months for level 20', () => {
     expect(daysToLevel(10, true)).toBeGreaterThan(15);
-    expect(daysToLevel(10, true)).toBeLessThan(30);
+    expect(daysToLevel(10, true)).toBeLessThan(35);
     expect(daysToLevel(20, true)).toBeGreaterThan(80);
-    expect(daysToLevel(20, true)).toBeLessThan(120);
+    expect(daysToLevel(20, true)).toBeLessThan(130);
     // The last tiers stay a long way: over a year of days in a row for level 40
     expect(daysToLevel(40, true)).toBeGreaterThan(365);
   });
 
-  it('multiplies the missions XP by the mission streak: +25 % a day the first week, ×4 at 30 days, ×5 at 60', () => {
-    expect([1, 2, 3, 5, 7, 8, 29, 30, 59, 60, 400].map(missionsMultiplier)).toEqual([1, 1.25, 1.5, 2, 2.5, 2.5, 2.5, 4, 4, 5, 5]);
-    expect(missionsMultiplier(0)).toBe(1);
-    expect(missionsXp(true)).toBe(MISSIONS_XP);
-    expect(missionsXp(true, 2)).toBe(250);
-    expect(missionsXp(true, 30)).toBe(800);
-    // The bonus of a full freeze stock is not multiplied
-    expect(missionsXp(false, 60)).toBe(1000 + MISSIONS_FULL_STOCK_XP);
-    expect(MAX_MISSIONS_XP).toBe(missionsXp(false, 1000));
+  it('each bonus adds 5 % a day in a row the first week, then +60 % at 30 days and +100 % at 60', () => {
+    expect([0, 1, 2, 3, 6, 7, 8, 29, 30, 59, 60, 400].map(bonusPercent)).toEqual([0, 0, 5, 10, 25, 30, 30, 30, 60, 60, 100, 100]);
+    for (let i = 1; i < XP_BONUS_TIERS.length; i++) expect(XP_BONUS_TIERS[i].percent).toBeGreaterThan(XP_BONUS_TIERS[i - 1].percent);
   });
 
-  it('multiplies the daily challenge XP by the streak: +10 % a day the first week, ×2 at 30 days, ×3 at 60', () => {
-    expect([0, 1, 2, 4, 7, 8, 29, 30, 59, 60, 500].map(streakMultiplier)).toEqual([1, 1, 1.1, 1.3, 1.6, 1.6, 1.6, 2, 2, 3, 3]);
-    expect(dailyWinXp(3)).toBe(120);
-    expect(dailyWinXp(3, 7)).toBe(192);
-    expect(dailyWinXp(1, 30)).toBe(160);
-    expect(dailyWinXp(3, 500)).toBe(120 * STREAK_MAX_MULTIPLIER);
+  it('the two bonuses add up into what all the XP is multiplied by', () => {
+    expect(xpMultiplier(0, 0)).toBe(1);
+    expect(xpMultiplier(7, 0)).toBe(1.3);
+    expect(xpMultiplier(7, 30)).toBe(1.9);
+    expect(xpMultiplier(60, 60)).toBe(3);
+    expect(MAX_XP_MULTIPLIER).toBe(xpMultiplier(5000, 5000));
   });
 
   it('tells the next tier of a bonus, none once at the top', () => {
-    expect(nextBonusTier(MISSION_STREAK_TIERS, 0)).toEqual({ days: 1, multiplier: 1 });
-    expect(nextBonusTier(MISSION_STREAK_TIERS, 3)).toEqual({ days: 4, multiplier: 1.75 });
-    expect(nextBonusTier(MISSION_STREAK_TIERS, 7)).toEqual({ days: 30, multiplier: 4 });
-    expect(nextBonusTier(DAILY_STREAK_TIERS, 45)).toEqual({ days: 60, multiplier: 3 });
-    expect(nextBonusTier(DAILY_STREAK_TIERS, 60)).toBeNull();
-    // A multiplier never goes down with more days
-    for (const tiers of [MISSION_STREAK_TIERS, DAILY_STREAK_TIERS]) {
-      for (let i = 1; i < tiers.length; i++) expect(tiers[i].multiplier).toBeGreaterThan(tiers[i - 1].multiplier);
-    }
+    expect(nextBonusTier(0)).toEqual({ days: 2, percent: 5 });
+    expect(nextBonusTier(3)).toEqual({ days: 4, percent: 15 });
+    expect(nextBonusTier(7)).toEqual({ days: 30, percent: 60 });
+    expect(nextBonusTier(45)).toEqual({ days: 60, percent: 100 });
+    expect(nextBonusTier(60)).toBeNull();
+  });
+
+  it('the 3 missions give 200 XP, 50 more when their freeze cannot be given', () => {
+    expect(missionsXp(true)).toBe(MISSIONS_XP);
+    expect(missionsXp(false)).toBe(MISSIONS_XP + MISSIONS_FULL_STOCK_XP);
   });
 
   it('gives a title by tier', () => {

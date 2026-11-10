@@ -6,6 +6,7 @@
 
 import type { IoniconName } from '../utils/icons';
 import { addDays } from '../utils/date';
+import { bonusPercent } from './progression';
 
 export type MissionCounter =
   | 'levelWins'
@@ -40,14 +41,11 @@ export interface DailyMissionsState {
 export interface MissionReward {
   /** False when the freeze stock was full */
   freezeGranted: boolean;
+  /** XP gained, the XP bonuses included */
   xp: number;
-  /** Days in a row with the 3 missions done, this one included */
-  streak: number;
-  /** What the mission streak multiplied the XP by */
-  multiplier: number;
 }
 
-/** Days in a row with the 3 missions done: each one raises the XP of the next (see docs/GAME_DESIGN.md) */
+/** Days in a row with the 3 missions done: one of the two bonuses on all the XP earned (see docs/GAME_DESIGN.md) */
 export interface MissionStreakState {
   count: number;
   /** YYYY-MM-DD of the last day the 3 missions were done */
@@ -149,4 +147,15 @@ export function isMissionDone(mission: MissionDef, counters: DailyMissionsState[
 
 export function countMissionsDone(state: DailyMissionsState): number {
   return state.ids.filter(id => MISSIONS_BY_ID[id] && isMissionDone(MISSIONS_BY_ID[id], state.counters)).length;
+}
+
+/** The XP bonuses in effect, in percent: the mission streak, the daily streak and both added up */
+export function currentXpBonus(
+  state: { missionStreak?: MissionStreakState | null; currentStreak?: number },
+  today: string,
+): { missionDays: number; missions: number; streak: number; total: number } {
+  const missionDays = activeMissionStreak(state.missionStreak, today);
+  const missions = bonusPercent(missionDays);
+  const streak = bonusPercent(state.currentStreak || 0);
+  return { missionDays, missions, streak, total: missions + streak };
 }

@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { RFValue } from '@/utils/responsive';
 import { DailyMissionsState, MISSIONS_BY_ID, MissionDef, MissionStreakState, activeMissionStreak, getMissionProgress } from '@/data/missions';
-import { MISSION_STREAK_TIERS, missionsMultiplier, missionsXp, nextBonusTier } from '@/data/progression';
-import { formatMultiplier } from '@/components/progression/rewards';
+import { bonusPercent, missionsXp, nextBonusTier, xpMultiplier } from '@/data/progression';
+import { formatBonus } from '@/components/progression/rewards';
 import BottomSheet from './BottomSheet';
 import type { UiColors } from '@/theme';
 
@@ -23,37 +23,39 @@ interface Props {
   missions: DailyMissionsState;
   /** Days in a row with the 3 missions done: multiplies their XP */
   missionStreak: MissionStreakState;
+  /** Streak of the daily challenge: the other XP bonus, for the XP announced */
+  dailyStreak: number;
   /** The freeze stock is full: the missions give more XP instead of a freeze */
   freezeStockFull: boolean;
   onClose: () => void;
 }
 
 /** Today's 3 missions with their progress */
-export default function MissionsSheet({ visible, colors, isDark, missions, missionStreak, freezeStockFull, onClose }: Props) {
+export default function MissionsSheet({ visible, colors, isDark, missions, missionStreak, dailyStreak, freezeStockFull, onClose }: Props) {
   const { t } = useTranslation();
-  // Days in a row so far (today included once its missions are done), and the day the next reward will be
+  // Days in a row so far (today included once its missions are done)
   const streak = activeMissionStreak(missionStreak, missions.date);
-  const todayStreak = missions.rewarded ? Math.max(streak, 1) : streak + 1;
-  const nextMultiplier = formatMultiplier(t, missionsMultiplier(missions.rewarded ? todayStreak + 1 : todayStreak));
-  const nextTier = nextBonusTier(MISSION_STREAK_TIERS, Math.max(streak, 1));
+  // Finishing today's missions makes the streak a day longer, which already counts for their XP
+  const rewardXp = Math.round(missionsXp(!freezeStockFull) * xpMultiplier(streak + 1, dailyStreak));
+  const nextTier = nextBonusTier(streak);
   return (
     <BottomSheet visible={visible} title={t('missions.title')} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose}>
       <Text style={[styles.settingSub, { color: missions.rewarded ? colors.success : colors.textMuted, marginBottom: 12 }]}>
         {missions.rewarded
           ? t('missions.all_done')
-          : t(freezeStockFull ? 'missions.reward_hint_full' : 'missions.reward_hint', { xp: missionsXp(!freezeStockFull, todayStreak) })}
+          : t(freezeStockFull ? 'missions.reward_hint_full' : 'missions.reward_hint', { xp: rewardXp })}
       </Text>
       <View style={[styles.streakBox, { backgroundColor: colors.card }]} accessible>
         <Ionicons name="flame" size={22} color={streak > 0 ? colors.warning : colors.textMuted} style={styles.missionIcon} />
         <View style={styles.missionBody}>
           <Text style={[styles.streakTitle, { color: colors.text }]}>
             {streak > 0
-              ? t(missions.rewarded ? 'missions.streak_tomorrow' : 'missions.streak_today', { count: streak, multiplier: nextMultiplier })
+              ? `${t('missions.streak', { count: streak })} · ${t('bonus.xp', { bonus: formatBonus(t, bonusPercent(streak)) })}`
               : t('missions.streak_none')}
           </Text>
           <Text style={[styles.streakRule, { color: colors.textMuted }]}>
             {t('missions.streak_rule')}{' '}
-            {nextTier ? t('bonus.next', { count: nextTier.days, multiplier: formatMultiplier(t, nextTier.multiplier) }) : t('bonus.max')}
+            {nextTier ? t('bonus.next', { count: nextTier.days, bonus: formatBonus(t, nextTier.percent) }) : t('bonus.max')}
           </Text>
         </View>
       </View>

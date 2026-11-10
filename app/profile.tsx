@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
-import type { HostInstance, ScrollViewInstance } from 'react-native';
+import type { HostInstance, LayoutChangeEvent, ScrollViewInstance } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from '@/hooks/useRouter';
+import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameStore } from '@/store/gameStore';
 import PlayerLevelCard from '@/components/progression/PlayerLevelCard';
@@ -39,6 +40,16 @@ export default function ProfileScreen() {
   const [sheetHeight, setSheetHeight] = useState(0);
   const closeSheet = useCallback(() => setSelectedAchievement(null), []);
   const scrollRef = useRef<ScrollViewInstance>(null);
+  // Opened from the XP bonus of the home screen: the profile scrolls to its bonus card, once
+  const { focus } = useLocalSearchParams<{ focus?: string }>();
+  const bonusShown = useRef(false);
+  const showBonusCard = useCallback((event: LayoutChangeEvent) => {
+    if (bonusShown.current) return;
+    bonusShown.current = true;
+    const y = Math.max(0, event.nativeEvent.layout.y - RFValue(12));
+    // After the layout of the cards above it
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ y, animated: false }));
+  }, []);
   const scrollY = useRef(0);
   const selectedBadge = useRef<HostInstance | null>(null);
   const { height: windowHeight } = useWindowDimensions();
@@ -133,7 +144,7 @@ export default function ProfileScreen() {
             <StreakCard colors={colors} />
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(110).duration(400)}>
+          <Animated.View entering={FadeInDown.delay(110).duration(400)} onLayout={focus === 'bonus' ? showBonusCard : undefined}>
             <XpBonusCard colors={colors} />
           </Animated.View>
 

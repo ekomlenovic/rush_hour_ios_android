@@ -42,7 +42,7 @@ describe('persisted state', () => {
 
   it('keeps the player data and leaves the in-game state out', () => {
     resetStore();
-    useGameStore.setState({ unlockQueue: ['first_win'], pendingMissionReward: { freezeGranted: true, xp: 200, streak: 1, multiplier: 1 } });
+    useGameStore.setState({ unlockQueue: ['first_win'], pendingMissionReward: { freezeGranted: true, xp: 200 } });
     const saved = options.partialize!(useGameStore.getState()) as Record<string, unknown>;
     for (const key of ['progress', 'dailyChallengeProgress', 'stats', 'currentStreak', 'streakFreezes', 'frozenDates', 'dailyMissions', 'achievements', 'savedStates', 'xp', 'cosmetics', 'seenCosmetics']) {
       expect(saved).toHaveProperty(key);
@@ -546,7 +546,8 @@ describe('migrate v13 → v14: missions XP raised, mission streak', () => {
     useGameStore.setState({ dailyMissions: { date: '2026-11-10', ids: ['win_3', 'daily', 'moves_100'], counters: { levelWins: 3, moves: 100 }, rewarded: false } });
     useGameStore.getState().completeDailyChallenge('2026-11-10', 300, 3);
     expect(useGameStore.getState().missionStreak).toEqual({ count: 2, lastDate: '2026-11-10' });
-    expect(useGameStore.getState().consumeMissionReward()).toEqual({ freezeGranted: true, xp: missionsXp(true, 2), streak: 2, multiplier: 1.25 });
+    // A second day in a row: +5 % on the XP of the missions
+    expect(useGameStore.getState().consumeMissionReward()).toEqual({ freezeGranted: true, xp: Math.round(missionsXp(true) * 1.05) });
   });
 
   it('the older steps still credit what the missions gave then, the raise once', () => {

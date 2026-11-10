@@ -3,7 +3,7 @@ import type { ChallengeResult, Level, LevelProgress } from '../store/types';
 /**
  * Player level and XP: see docs/GAME_DESIGN.md (Niveau joueur et XP).
  * Every win gives XP, the curve is steep: the first levels come in a few days. The daily missions
- * done day after day are the fast lane: level 10 in about three weeks, level 20 in about three months.
+ * played day after day multiply all the XP earned: level 10 in about three weeks, level 20 in about three months.
  */
 
 /** XP needed to go from `level` to `level + 1` */
@@ -74,69 +74,57 @@ export function levelWinXp(minMoves: number, stars: number, firstWin: boolean): 
 /** Extra XP for the first win of a boss level of the map (data/bosses.ts) */
 export const BOSS_WIN_XP = 50;
 
-/** A multiplier reached at a number of days in a row */
+export const dailyWinXp = (stars: number): number => 60 + 20 * stars;
+export const weeklyWinXp = (stars: number): number => 150 + 50 * stars;
+/** A past daily replayed from the archives: XP of a replayed level, so years of archives can't be farmed */
+export const archiveWinXp = (minMoves: number, stars: number): number => levelWinXp(minMoves, stars, false);
+/** All 3 missions of the day done */
+export const MISSIONS_XP = 200;
+/** What the 3 missions gave before store v14: the XP credited by the older migrations */
+export const LEGACY_MISSIONS_XP = 100;
+/** Extra XP for the 3 missions when the freeze stock is full: the freeze that can't be given */
+export const MISSIONS_FULL_STOCK_XP = 50;
+/** XP of the 3 missions of the day, depending on whether their freeze could be given */
+export const missionsXp = (freezeGranted: boolean): number => MISSIONS_XP + (freezeGranted ? 0 : MISSIONS_FULL_STOCK_XP);
+export const ACHIEVEMENT_XP = 50;
+
+// ─── XP bonuses ───────────────────────────────────────────────────────────────
+
+/** A bonus on all the XP earned, reached at a number of days in a row */
 export interface BonusTier {
   days: number;
-  multiplier: number;
+  /** Percent added to the XP */
+  percent: number;
 }
 
 /** Days shown as milestones of a bonus: the end of the first week, then the two big steps */
 export const BONUS_MILESTONE_DAYS = [7, 30, 60];
 
-/** The first week of a bonus grows by `step` a day from ×1, then a big step at 30 days and another at 60 */
-const bonusTiers = (step: number, at30: number, at60: number): BonusTier[] => [
-  ...Array.from({ length: 7 }, (_, i) => ({ days: i + 1, multiplier: Math.round((1 + step * i) * 100) / 100 })),
-  { days: 30, multiplier: at30 },
-  { days: 60, multiplier: at60 },
+/**
+ * Tiers of each of the two bonuses (the mission streak and the daily streak): +5 % a day from the
+ * 2nd to the 7th day in a row (+30 %), then a big step at 30 days (+60 %) and another at 60 (+100 %)
+ */
+export const XP_BONUS_TIERS: BonusTier[] = [
+  ...Array.from({ length: 6 }, (_, i) => ({ days: i + 2, percent: 5 * (i + 1) })),
+  { days: 30, percent: 60 },
+  { days: 60, percent: 100 },
 ];
 
-/** Daily challenge XP by streak: ×1,6 after a week, ×2 at 30 days, ×3 at 60 */
-export const DAILY_STREAK_TIERS = bonusTiers(0.1, 2, 3);
-/** Missions XP by mission streak: ×2,5 after a week, ×4 at 30 days, ×5 at 60 */
-export const MISSION_STREAK_TIERS = bonusTiers(0.25, 4, 5);
-
-/** Multiplier of the last tier reached (×1 before the first) */
-export function bonusMultiplier(tiers: BonusTier[], days: number): number {
-  let multiplier = 1;
-  for (const tier of tiers) if ((days || 0) >= tier.days) multiplier = tier.multiplier;
-  return multiplier;
+/** Percent of XP a number of days in a row adds: the last tier reached */
+export function bonusPercent(days: number): number {
+  let percent = 0;
+  for (const tier of XP_BONUS_TIERS) if ((days || 0) >= tier.days) percent = tier.percent;
+  return percent;
 }
 
-/** The next tier that raises the multiplier, if any is left */
-export const nextBonusTier = (tiers: BonusTier[], days: number): BonusTier | null => tiers.find(tier => tier.days > (days || 0)) ?? null;
+/** The next tier that raises the bonus, if any is left */
+export const nextBonusTier = (days: number): BonusTier | null => XP_BONUS_TIERS.find(tier => tier.days > (days || 0)) ?? null;
 
-/** Highest multiplier of the daily challenge XP */
-export const STREAK_MAX_MULTIPLIER = DAILY_STREAK_TIERS[DAILY_STREAK_TIERS.length - 1].multiplier;
+/** What all the XP earned is multiplied by: the two bonuses add up */
+export const xpMultiplier = (missionDays: number, streakDays: number): number => 1 + (bonusPercent(missionDays) + bonusPercent(streakDays)) / 100;
 
-/** Multiplier of the daily challenge XP at this streak (the day just won included) */
-export const streakMultiplier = (streak: number): number => bonusMultiplier(DAILY_STREAK_TIERS, streak);
-
-/** XP of the daily challenge, multiplied by the streak it was won at (none for the saves from before the bonus) */
-export const dailyWinXp = (stars: number, streak = 0): number => Math.round((60 + 20 * stars) * streakMultiplier(streak));
-export const weeklyWinXp = (stars: number): number => 150 + 50 * stars;
-/** A past daily replayed from the archives: XP of a replayed level, so years of archives can't be farmed */
-export const archiveWinXp = (minMoves: number, stars: number): number => levelWinXp(minMoves, stars, false);
-/** All 3 missions of the day done, on the first day of a mission streak */
-export const MISSIONS_XP = 200;
-/** What the 3 missions gave before the mission streak (store v14): the XP credited by the older migrations */
-export const LEGACY_MISSIONS_XP = 100;
-/** Highest multiplier of the missions XP */
-export const MISSIONS_MAX_MULTIPLIER = MISSION_STREAK_TIERS[MISSION_STREAK_TIERS.length - 1].multiplier;
-/** Extra XP for the 3 missions when the freeze stock is full: the freeze that can't be given */
-export const MISSIONS_FULL_STOCK_XP = 50;
-
-/** Multiplier of the missions XP on the `streakDays`-th day in a row (1 = first day) */
-export const missionsMultiplier = (streakDays: number): number => bonusMultiplier(MISSION_STREAK_TIERS, streakDays);
-
-/**
- * XP of the 3 missions of the day: multiplied by the mission streak (this day included),
- * plus a fixed bonus when their freeze could not be given
- */
-export const missionsXp = (freezeGranted: boolean, streakDays = 1): number =>
-  Math.round(MISSIONS_XP * missionsMultiplier(streakDays)) + (freezeGranted ? 0 : MISSIONS_FULL_STOCK_XP);
-/** Most XP a day of missions can give */
-export const MAX_MISSIONS_XP = MISSIONS_XP * MISSIONS_MAX_MULTIPLIER + MISSIONS_FULL_STOCK_XP;
-export const ACHIEVEMENT_XP = 50;
+/** Highest multiplier: both bonuses at their last tier */
+export const MAX_XP_MULTIPLIER = 1 + (2 * XP_BONUS_TIERS[XP_BONUS_TIERS.length - 1].percent) / 100;
 
 // ─── Level-up rewards ─────────────────────────────────────────────────────────
 

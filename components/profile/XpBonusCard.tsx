@@ -3,11 +3,9 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useGameStore } from '@/store/gameStore';
-import { activeMissionStreak } from '@/data/missions';
-import {
-  BONUS_MILESTONE_DAYS, BonusTier, DAILY_STREAK_TIERS, MISSION_STREAK_TIERS, bonusMultiplier, nextBonusTier,
-} from '@/data/progression';
-import { formatMultiplier } from '@/components/progression/rewards';
+import { currentXpBonus } from '@/data/missions';
+import { BONUS_MILESTONE_DAYS, XP_BONUS_TIERS, nextBonusTier } from '@/data/progression';
+import { formatBonus } from '@/components/progression/rewards';
 import { getLocalDateString } from '@/utils/date';
 import { RFValue } from '@/utils/responsive';
 import type { IoniconName } from '@/utils/icons';
@@ -20,77 +18,78 @@ interface Props {
 interface RowProps extends Props {
   icon: IoniconName;
   title: string;
-  subtitle: string;
+  hint: string;
   days: number;
-  tiers: BonusTier[];
+  percent: number;
 }
 
-/** One bonus: its days in a row, its multiplier, its milestones and the next one to reach */
-function BonusRow({ colors, icon, title, subtitle, days, tiers }: RowProps) {
+const MILESTONES = XP_BONUS_TIERS.filter(tier => BONUS_MILESTONE_DAYS.includes(tier.days));
+
+/** One bonus: its days in a row, what it adds, its milestones and the next tier to reach */
+function BonusRow({ colors, icon, title, hint, days, percent }: RowProps) {
   const { t } = useTranslation();
-  const multiplier = formatMultiplier(t, bonusMultiplier(tiers, days));
-  const next = nextBonusTier(tiers, days);
-  const nextText = next ? t('bonus.next', { count: next.days, multiplier: formatMultiplier(t, next.multiplier) }) : t('bonus.max');
-  const milestones = tiers.filter(tier => BONUS_MILESTONE_DAYS.includes(tier.days));
+  const next = nextBonusTier(days);
+  const nextText = next ? t('bonus.next', { count: next.days, bonus: formatBonus(t, next.percent) }) : t('bonus.max');
+  const status = `${t('bonus.days', { count: days })} · ${t('bonus.xp', { bonus: formatBonus(t, percent) })}`;
   return (
-    <View
-      style={styles.row}
-      accessible
-      accessibilityLabel={`${title}, ${t('bonus.days', { count: days })}, ${subtitle} ×${multiplier}. ${nextText}`}
-    >
+    <View style={styles.row} accessible accessibilityLabel={`${title}, ${status}. ${hint} ${nextText}`}>
       <View style={styles.rowHeader}>
-        <Ionicons name={icon} size={RFValue(22)} color={days > 0 ? colors.warning : colors.textMuted} />
+        <Ionicons name={icon} size={RFValue(22)} color={percent > 0 ? colors.warning : colors.textMuted} />
         <View style={styles.rowBody}>
           <Text style={[styles.rowTitle, { color: colors.text }]}>{title}</Text>
-          <Text style={[styles.rowSub, { color: colors.textMuted }]}>{t('bonus.days', { count: days })} · {subtitle}</Text>
+          <Text style={[styles.rowSub, { color: percent > 0 ? colors.primaryText : colors.textMuted }]}>{status}</Text>
         </View>
-        <Text style={[styles.multiplier, { color: days > 0 ? colors.primaryText : colors.textMuted }]}>×{multiplier}</Text>
       </View>
       <View style={styles.milestones}>
-        {milestones.map((tier) => {
+        {MILESTONES.map((tier) => {
           const reached = days >= tier.days;
           return (
             <View
               key={tier.days}
               style={[styles.milestone, reached ? { backgroundColor: colors.primary } : { borderWidth: 1, borderColor: colors.border }]}
             >
-              <Text style={[styles.milestoneValue, { color: reached ? colors.onPrimary : colors.text }]}>×{formatMultiplier(t, tier.multiplier)}</Text>
+              <Text style={[styles.milestoneValue, { color: reached ? colors.onPrimary : colors.text }]}>{formatBonus(t, tier.percent)}</Text>
               <Text style={[styles.milestoneDays, { color: reached ? colors.onPrimary : colors.textMuted }]}>{t('bonus.milestone', { count: tier.days })}</Text>
             </View>
           );
         })}
       </View>
-      <Text style={[styles.next, { color: colors.textMuted }]}>{nextText}</Text>
+      <Text style={[styles.next, { color: colors.textMuted }]}>{hint} {nextText}</Text>
     </View>
   );
 }
 
-/** XP bonuses of the profile: what the mission streak and the daily streak multiply, and their next milestones */
+/** XP bonuses of the profile: what the mission streak and the daily streak add to all the XP earned */
 export default function XpBonusCard({ colors }: Props) {
   const { t } = useTranslation();
   const currentStreak = useGameStore((state) => state.currentStreak || 0);
   const missionStreak = useGameStore((state) => state.missionStreak);
-  const missionDays = activeMissionStreak(missionStreak, getLocalDateString(new Date()));
+  const bonus = currentXpBonus({ missionStreak, currentStreak }, getLocalDateString(new Date()));
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Text style={[styles.overline, { color: colors.textMuted }]} accessibilityRole="header">{t('bonus.title')}</Text>
+      <View style={styles.header} accessible>
+        <Text style={[styles.overline, { color: colors.textMuted }]} accessibilityRole="header">{t('bonus.title')}</Text>
+        <Text style={[styles.total, { color: colors.text }]}>
+          {bonus.total > 0 ? t('bonus.total', { bonus: formatBonus(t, bonus.total) }) : t('bonus.none')}
+        </Text>
+      </View>
       <BonusRow
         colors={colors}
         icon="flag"
         title={t('bonus.missions_title')}
-        subtitle={t('bonus.missions_sub')}
-        days={missionDays}
-        tiers={MISSION_STREAK_TIERS}
+        hint={t('bonus.missions_hint')}
+        days={bonus.missionDays}
+        percent={bonus.missions}
       />
       <View style={[styles.separator, { backgroundColor: colors.border }]} />
       <BonusRow
         colors={colors}
         icon="flame"
         title={t('bonus.streak_title')}
-        subtitle={t('bonus.streak_sub')}
+        hint={t('bonus.streak_hint')}
         days={currentStreak}
-        tiers={DAILY_STREAK_TIERS}
+        percent={bonus.streak}
       />
     </View>
   );
@@ -103,11 +102,18 @@ const styles = StyleSheet.create({
     padding: RFValue(16),
     gap: RFValue(14),
   },
+  header: {
+    gap: RFValue(4),
+  },
   overline: {
     fontSize: RFValue(12),
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  total: {
+    fontSize: RFValue(15),
+    fontWeight: '700',
   },
   separator: {
     height: StyleSheet.hairlineWidth,
@@ -128,11 +134,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   rowSub: {
-    fontSize: RFValue(12),
-  },
-  multiplier: {
-    fontSize: RFValue(26),
-    fontWeight: '800',
+    fontSize: RFValue(13),
+    fontWeight: '600',
   },
   milestones: {
     flexDirection: 'row',
@@ -153,5 +156,6 @@ const styles = StyleSheet.create({
   },
   next: {
     fontSize: RFValue(12),
+    lineHeight: RFValue(17),
   },
 });

@@ -23,12 +23,8 @@ export function getLevelRewardLines(t: TFunction, level: number, freezes?: numbe
 
 /** What completing the 3 missions of the day gave */
 export function missionRewardText(t: TFunction, reward: MissionReward): string {
-  const text = t(reward.freezeGranted ? 'missions.reward_freeze' : 'missions.reward_full', { xp: reward.xp });
-  if (reward.multiplier <= 1) return text;
-  return `${text} · ${t('missions.reward_streak', { count: reward.streak, multiplier: formatMultiplier(t, reward.multiplier) })}`;
+  return t(reward.freezeGranted ? 'missions.reward_freeze' : 'missions.reward_full', { xp: reward.xp });
 }
 
-/** A multiplier as the language writes it: 1,75 in French, 1.75 in English */
-export function formatMultiplier(t: TFunction, multiplier: number): string {
-  return String(Math.round(multiplier * 100) / 100).replace('.', t('missions.decimal_separator'));
-}
+/** An XP bonus as the language writes it: +30 % in French, +30% in English */
+export const formatBonus = (t: TFunction, percent: number): string => t('bonus.percent', { value: percent });

@@ -7,7 +7,7 @@ import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
 import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
 import {
   DailyMissionsState, FAST_WIN_MS, MissionCounter, MissionReward, MissionStreakState, MISSIONS_BY_ID,
-  advanceMissionStreak, getMissionsForDay, initialMissionStreak, isMissionDone,
+  advanceMissionStreak, currentXpBonus, getMissionsForDay, initialMissionStreak, isMissionDone,
 } from '../data/missions';
 import { getLocalDateString, daysBetween } from '../utils/date';
 import { diffMove, toMoveRecord } from '../utils/moveLog';
@@ -19,7 +19,7 @@ import type {
 } from './types';
 import { MAX_STREAK_FREEZES, settleStreak, advanceStreak } from './streak';
 import {
-  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsMultiplier, missionsXp, weeklyWinXp,
+  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp,
 } from '../data/progression';
 import { isArchiveDateAvailable } from '../utils/archives';
 import { isDailyWinnable, isWeeklyWinnable } from '../utils/challengeDates';
@@ -321,8 +321,8 @@ export const useGameStore = create<GameState>()(
       };
 
       /**
-       * Advances today's mission counters; completing them all grants XP (multiplied by the mission streak)
-       * and a streak freeze (more XP if the stock is full).
+       * Advances today's mission counters; completing them all grants XP and a streak freeze (more XP if the stock is full)
+       * and makes the mission streak a day longer.
        * `update` is applied in the same set: a move is written once, with its mission counters.
        */
       const bumpMissions = (increments: Partial<Record<MissionCounter, number>>, update: Partial<GameState> = {}) => {
@@ -349,26 +349,31 @@ export const useGameStore = create<GameState>()(
             stats: { ...state.stats, missionDaysCompleted: state.stats.missionDaysCompleted + 1 },
           });
           const freezeGranted = get().addStreakFreeze();
-          const xp = missionsXp(freezeGranted, missionStreak.count);
-          set({ pendingMissionReward: { freezeGranted, xp, streak: missionStreak.count, multiplier: missionsMultiplier(missionStreak.count) } });
-          addXp(xp);
+          // The streak this day just made already counts for its own XP
+          const xp = addXp(missionsXp(freezeGranted));
+          set({ pendingMissionReward: { freezeGranted, xp } });
           get().checkAchievements();
         });
       };
 
-      /** Adds XP; each level reached gives a streak freeze (if there is room) and is queued for display */
-      const addXp = (amount: number, options?: { silent?: boolean }) => {
-        if (amount <= 0) return;
+      /**
+       * Adds XP, raised by the XP bonuses (mission streak and daily streak), and returns what was added;
+       * each level reached gives a streak freeze (if there is room) and is queued for display
+       */
+      const addXp = (amount: number, options?: { silent?: boolean }): number => {
+        if (amount <= 0) return 0;
         const state = get();
+        const gained = Math.round(amount * (1 + currentXpBonus(state, getLocalDateString(new Date())).total / 100));
         const fromLevel = getPlayerLevel(state.xp);
-        const xp = state.xp + Math.round(amount);
+        const xp = state.xp + gained;
         const toLevel = getPlayerLevel(xp);
         set({ xp });
-        if (toLevel <= fromLevel) return;
+        if (toLevel <= fromLevel) return gained;
 
         const reached = Array.from({ length: toLevel - fromLevel }, (_, i) => fromLevel + i + 1);
         for (let i = 0; i < reached.length; i++) get().addStreakFreeze();
         if (!options?.silent) set({ levelUpQueue: [...get().levelUpQueue, ...reached] });
+        return gained;
       };
 
       /** Records the XP of a win (level, missions and achievements included) for the win screen */
@@ -674,8 +679,7 @@ export const useGameStore = create<GameState>()(
 
           // Update streak
           get().updateStreak(dateKey);
-          // The streak this win just made multiplies its XP
-          if (firstWin) addXp(dailyWinXp(stars, get().currentStreak));
+          if (firstWin) addXp(dailyWinXp(stars));
           if (dateKey === getLocalDateString(new Date())) {
             bumpMissions({ dailyDone: 1 });
           }
