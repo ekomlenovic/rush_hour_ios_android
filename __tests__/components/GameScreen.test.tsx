@@ -53,4 +53,10 @@ describe('game screen', () => {
     expect(progress).toMatchObject({ completed: true, stars });
     expect(useGameStore.getState().xp).toBeGreaterThan(0);
   }, 20_000);
+  it('a generation going on keeps running while a level is played, until Cancel', async () => {
+    useGameStore.getState().setGenerationState({ isRunning: true, current: 1, total: 10, shouldCancel: false });
+    await renderRouter({ _layout: require('@/app/_layout'), game: GameScreen }, { initialUrl: '/game?levelId=1' });
+    await waitFor(() => expect(screen.getByLabelText(i18n.t('a11y.target_car'))).toBeTruthy());
+    expect(useGameStore.getState().generationState).toMatchObject({ isRunning: true, shouldCancel: false });
+  }, 20_000);
 });

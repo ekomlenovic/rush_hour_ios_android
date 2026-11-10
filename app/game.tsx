@@ -64,7 +64,6 @@ export default function GameScreen() {
   const createdLevels = useGameStore(s => s.createdLevels);
   const importedLevels = useGameStore(s => s.importedLevels);
   const generatedLevels = useGameStore(s => s.generatedLevels);
-  const cancelGeneration = useGameStore(s => s.cancelGeneration);
   const dailyChallengeProgress = useGameStore(s => s.dailyChallengeProgress);
   const weeklyChallengeProgress = useGameStore(s => s.weeklyChallengeProgress);
   const recordHintUsed = useGameStore(s => s.recordHintUsed);
@@ -215,9 +214,6 @@ export default function GameScreen() {
     setLoading(true);
     setWon(false);
     setHintRemainingMoves(null);
-
-    // CRITICAL: Stop any background generation to free up main thread for gameplay
-    cancelGeneration();
 
     const timer = setTimeout(async () => {
       // A shared link (rush-hours://game?data=…): imported, then opened as an imported level

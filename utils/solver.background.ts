@@ -1,4 +1,4 @@
-import { runOnSolverRuntime } from './solverRuntime';
+import { runOnSolverRuntime, runOnGeneratorRuntime } from './solverRuntime';
 import { solvePuzzle, validateLevel, Move, SolverResult } from './solver';
 import { decodeSharedLevel, withOptimum } from './sharing';
 import type { Level, Vehicle } from '../store/types';
@@ -7,7 +7,7 @@ import type { Level, Vehicle } from '../store/types';
  * Background versions of the solver, on the solver runtime (utils/solverRuntime.ts): a thread
  * of its own, so a long search never freezes the screen.
  */
-export { runOnSolverRuntime };
+export { runOnSolverRuntime, runOnGeneratorRuntime };
 
 export function solvePuzzleAsync(
   vehicles: Vehicle[],

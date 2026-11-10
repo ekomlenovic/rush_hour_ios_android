@@ -1,6 +1,6 @@
 # Rush Hours 2.2.1 (versionCode 25)
 
-Mise à jour de la **2.2.0 (versionCode 24)** : le générateur de la carte devient bien plus rapide et ne fige plus l'app, sa feuille est plus claire, les plateaux denses sont plus variés sans jamais redonner un niveau déjà présent, et les véhicules dessinés regardent au hasard d'un côté ou de l'autre.
+Mise à jour de la **2.2.0 (versionCode 24)** : le générateur de la carte devient bien plus rapide, ne fige plus l'app et continue pendant qu'on joue, sa feuille est plus claire, les plateaux denses sont plus variés sans jamais redonner un niveau déjà présent, et les véhicules dessinés regardent au hasard d'un côté ou de l'autre.
 
 ## Play Store (500 caractères max par langue)
 
@@ -9,14 +9,16 @@ Mise à jour de la **2.2.0 (versionCode 24)** : le générateur de la carte devi
 ```
 <fr-FR>
 Nouveautés :
-• Générateur de niveaux bien plus rapide sur les grandes grilles et les difficultés élevées, et l'app reste utilisable pendant la génération
+• Générateur de niveaux bien plus rapide sur les grandes grilles et les difficultés élevées
+• La génération continue pendant que tu joues, jusqu'à ce que tu l'annules
 • Générateur plus clair : réglages en cartes, aide repliable
 • Plateaux plus variés, et jamais deux fois le même niveau
 • Les véhicules dessinés regardent au hasard d'un côté ou de l'autre
 </fr-FR>
 <en-US>
 What's new:
-• Much faster level generator on big grids and high difficulties, and the app stays usable while it runs
+• Much faster level generator on big grids and high difficulties
+• Generation keeps going while you play, until you cancel it
 • Clearer generator: settings in cards, foldable help
 • More varied boards, and never the same level twice
 • Drawn vehicles now face either way at random
@@ -28,7 +30,8 @@ What's new:
 ### Carte : générateur de niveaux plus rapide (#337)
 
 - **Une recette par difficulté et taille de grille** (`utils/mapGenerator.ts`) : tirage puis résolution pour Facile et Normal 6x6 ; pour les autres, exploration de toutes les positions d'un plateau et choix d'une position à la bonne distance de la sortie. Avant, un plateau était tiré au hasard, résolu en entier et jeté s'il n'avait pas le bon nombre de coups.
-- **Hors du thread de l'app** : la génération tourne sur le runtime du solveur (Web Worker sur le web), par appels courts. L'app reste utilisable et **Annuler** agit à tout moment, plus seulement entre deux niveaux.
+- **Hors du thread de l'app** : la génération tourne par appels courts sur un runtime à elle (un Web Worker à elle sur le web). L'app reste utilisable et **Annuler** agit à tout moment, plus seulement entre deux niveaux.
+- **La génération continue pendant qu'on joue** : ouvrir un niveau l'annulait (un reste de l'époque où elle tournait sur le thread de l'app). Elle va maintenant jusqu'au bout, jusqu'à **Annuler** (pastille de la carte) ou la fermeture de l'app. Elle a son propre runtime, séparé de celui du solveur : le chargement d'un niveau et les indices n'attendent pas derrière elle.
 - Temps par niveau mesurés sur Node (avant → après) : Normal 8x8 61 s → 1,8 s ; Difficile 7x7 9 s → 0,9 s ; Expert 6x6 3 s → 0,5 s ; Expert 7x7 plus de 60 s → 1,2 s ; Maître 6x6, 7x7, 8x8 : aucun niveau en 60 s → 17 s, 9 s, 80 s. **Pas encore mesuré sur téléphone.**
 - Table des temps estimés remesurée ; l'avertissement et la confirmation « génération longue » disent maintenant qu'on peut continuer à utiliser l'app.
 
@@ -59,6 +62,7 @@ What's new:
 
 - Pas de nouveau module natif ni de nouvelle permission : un build normal suffit.
 - **Mesurer le générateur sur un vrai téléphone** (Android et iOS) : Maître 8x8 et Expert 8x8 surtout, l'app doit rester fluide et Annuler répondre pendant la génération. Les temps n'ont été mesurés que sur Node.
+- **Jouer pendant une génération** sur téléphone (un Maître 8x8 par exemple) : le niveau doit se charger sans attendre, les indices répondre, les déplacements rester fluides (deux threads de calcul tournent alors en même temps), et la génération doit être encore en cours au retour sur la carte.
 - Vérifier la feuille du générateur sur téléphone : boutons d'aide, indicateur de défilement, lecture au lecteur d'écran.
 - Regarder quelques niveaux avec des skins dessinés : les véhicules ne doivent pas changer de sens en glissant.
 - Le serbe des nouveaux textes est à relire.

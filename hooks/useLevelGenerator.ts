@@ -1,7 +1,7 @@
 import { useGameStore } from '@/store/gameStore';
 import { sampleLevels } from '@/data/sampleLevels';
 import { generateMapLevelChunk } from '@/utils/mapGenerator';
-import { runOnSolverRuntime } from '@/utils/solver.background';
+import { runOnGeneratorRuntime } from '@/utils/solver.background';
 import { canonicalKey } from '@/utils/levelShape';
 import { haptics, Haptics } from '@/utils/haptics';
 import { formatTimeLeft } from '@/utils/date';
@@ -46,7 +46,9 @@ function nextLevelId(): number {
 
 /**
  * Generates map levels one by one, after the existing ones: the batches of the plan one after the
- * other (see utils/generationPlan.ts), on the solver runtime, so the app stays usable meanwhile.
+ * other (see utils/generationPlan.ts), on a runtime of their own, so the app stays usable meanwhile:
+ * it goes on while the player plays (a level's solver and hints run on the solver runtime, not
+ * behind it), until Cancel or the app is closed.
  * The generator works in short calls (generateMapLevelChunk), Cancel is read between two of them.
  * Progress and cancellation go through the store's generationState.
  * A call that made no level takes no id: it is tried again, MAX_EMPTY_CALLS times in a row at most.
@@ -99,7 +101,7 @@ export function startLevelGeneration(plan: GenerationBatch[]): void {
             if (cancelled()) break;
 
             const startTime = Date.now();
-            const newLevel = await runOnSolverRuntime(generateMapLevelChunk, nextLevelId(), difficulty, gridSize, minMoves);
+            const newLevel = await runOnGeneratorRuntime(generateMapLevelChunk, nextLevelId(), difficulty, gridSize, minMoves);
             sinceLastLevel += Date.now() - startTime;
 
             const key = newLevel && canonicalKey(newLevel);
