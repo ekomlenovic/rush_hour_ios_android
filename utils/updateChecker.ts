@@ -22,7 +22,12 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
   const currentVersion = Constants.expoConfig?.version || '0.0.0';
 
   try {
-    const response = await fetch(SOURCE_URL);
+    // GitHub's CDN and the system HTTP cache keep this file up to 5 minutes (max-age=300): right
+    // after a release, a stale copy said "already the latest version". Always ask for a fresh one.
+    const response = await fetch(`${SOURCE_URL}?t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+    });
     if (!response.ok) {
       throw new Error(`Failed to fetch update info: ${response.status}`);
     }
