@@ -20,6 +20,7 @@ import { pendingRecap, periodLabel, recapKind } from '@/utils/recap';
 import HomeHeader from '@/components/home/HomeHeader';
 import HomeTabBar from '@/components/home/HomeTabBar';
 import MissionsSheet from '@/components/home/MissionsSheet';
+import StreakSheet from '@/components/home/StreakSheet';
 import OptionsSheet from '@/components/settings/OptionsSheet';
 import PlayerLevelBadge from '@/components/progression/PlayerLevelBadge';
 import BoardPreview from '@/components/garage/BoardPreview';
@@ -68,6 +69,7 @@ export default function HomeScreen() {
 
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const [isMissionsVisible, setMissionsVisible] = useState(false);
+  const [isStreakVisible, setStreakVisible] = useState(false);
 
   // The screen stays mounted under the others: it follows the clock to show the new day
   // (the app open is recorded by the root layout, whatever the first screen: issue 188)
@@ -127,6 +129,7 @@ export default function HomeScreen() {
             missionsRewarded={todayMissions.rewarded}
             newAchievements={newAchievements.length}
             onProfile={() => router.push('/profile')}
+            onStreak={() => setStreakVisible(true)}
             onMissions={() => setMissionsVisible(true)}
             onSettings={() => setSettingsVisible(true)}
           />
@@ -238,6 +241,18 @@ export default function HomeScreen() {
           ]}
         />
       </Animated.View>
+
+      <StreakSheet
+        visible={isStreakVisible}
+        colors={colors}
+        isDark={isDark}
+        streak={currentStreak}
+        onSeeBonuses={() => {
+          setStreakVisible(false);
+          router.push('/profile?focus=bonus');
+        }}
+        onClose={() => setStreakVisible(false)}
+      />
 
       <MissionsSheet
         visible={isMissionsVisible}

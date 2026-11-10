@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { RFValue } from '@/utils/responsive';
 import { DailyMissionsState, MISSIONS_BY_ID, MissionDef, MissionStreakState, activeMissionStreak, getMissionProgress } from '@/data/missions';
-import { bonusPercent, missionsXp, nextBonusTier, xpMultiplier } from '@/data/progression';
-import { formatBonus } from '@/components/progression/rewards';
+import { missionsXp, xpMultiplier } from '@/data/progression';
 import BottomSheet from './BottomSheet';
+import BonusBox from './BonusBox';
 import type { UiColors } from '@/theme';
 
 function formatMissionProgress(mission: MissionDef, progress: number): string {
@@ -37,7 +37,6 @@ export default function MissionsSheet({ visible, colors, isDark, missions, missi
   const streak = activeMissionStreak(missionStreak, missions.date);
   // Finishing today's missions makes the streak a day longer, which already counts for their XP
   const rewardXp = Math.round(missionsXp(!freezeStockFull) * xpMultiplier(streak + 1, dailyStreak));
-  const nextTier = nextBonusTier(streak);
   return (
     <BottomSheet visible={visible} title={t('missions.title')} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose}>
       <Text style={[styles.settingSub, { color: missions.rewarded ? colors.success : colors.textMuted, marginBottom: 12 }]}>
@@ -45,20 +44,13 @@ export default function MissionsSheet({ visible, colors, isDark, missions, missi
           ? t('missions.all_done')
           : t(freezeStockFull ? 'missions.reward_hint_full' : 'missions.reward_hint', { xp: rewardXp })}
       </Text>
-      <View style={[styles.streakBox, { backgroundColor: colors.card }]} accessible>
-        <Ionicons name="flame" size={22} color={streak > 0 ? colors.warning : colors.textMuted} style={styles.missionIcon} />
-        <View style={styles.missionBody}>
-          <Text style={[styles.streakTitle, { color: colors.text }]}>
-            {streak > 0
-              ? `${t('missions.streak', { count: streak })} · ${t('bonus.xp', { bonus: formatBonus(t, bonusPercent(streak)) })}`
-              : t('missions.streak_none')}
-          </Text>
-          <Text style={[styles.streakRule, { color: colors.textMuted }]}>
-            {t('missions.streak_rule')}{' '}
-            {nextTier ? t('bonus.next', { count: nextTier.days, bonus: formatBonus(t, nextTier.percent) }) : t('bonus.max')}
-          </Text>
-        </View>
-      </View>
+      <BonusBox
+        colors={colors}
+        days={streak}
+        title={t('missions.streak', { count: streak })}
+        emptyTitle={t('missions.streak_none')}
+        rule={t('missions.streak_rule')}
+      />
       {missions.ids.map((id) => {
         const mission = MISSIONS_BY_ID[id];
         if (!mission) return null;
@@ -85,22 +77,6 @@ export default function MissionsSheet({ visible, colors, isDark, missions, missi
 const styles = StyleSheet.create({
   settingSub: {
     fontSize: RFValue(14),
-  },
-  streakBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 20,
-  },
-  streakTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  streakRule: {
-    fontSize: 12,
-    lineHeight: 16,
   },
   missionRow: {
     flexDirection: 'row',
