@@ -5,14 +5,27 @@ import { resolveLevel } from '../utils/levelResolver';
 import { resetStore } from './helpers';
 import { useGenerationTimes } from '../store/generationTimes';
 import { estimateLevelMs, sampleKey } from '../utils/generationEstimate';
+import { transformLevel } from '../utils/generator';
 
 // A generation of which one call out of three gives no level, instantly
 let mockCalls = 0;
+/** Levels the generator gives next, before its own */
+let mockNext: unknown[] = [];
 jest.mock('../utils/mapGenerator', () => ({
   ...jest.requireActual('../utils/mapGenerator'),
   generateMapLevelChunk: (id: number) => {
     mockCalls++;
-    return mockCalls % 3 === 2 ? null : { ...jest.requireActual('../data/sampleLevels').sampleLevels[0], id };
+    if (mockNext.length) return mockNext.shift();
+    if (mockCalls % 3 === 2) return null;
+    // A different board each time: two cars whose places count the calls
+    return {
+      id, gridSize: 6, exitRow: 2, exitCol: 6, minMoves: 1, updatedAt: 0,
+      vehicles: [
+        { id: 'target', row: 2, col: 0, length: 2, orientation: 'horizontal', isTarget: true, color: '#f00' },
+        { id: 'a', row: 0, col: mockCalls % 5, length: 2, orientation: 'horizontal', isTarget: false, color: '#0f0' },
+        { id: 'b', row: 5, col: Math.floor(mockCalls / 5) % 4, length: 3, orientation: 'horizontal', isTarget: false, color: '#00f' },
+      ],
+    };
   },
 }));
 
@@ -24,6 +37,7 @@ beforeEach(() => {
   resetStore();
   useGenerationTimes.setState({ samples: {} });
   mockCalls = 0;
+  mockNext = [];
 });
 
 afterEach(() => {
@@ -52,6 +66,22 @@ describe('map levels generation (issue 120)', () => {
     startLevelGeneration({ amount: 2, difficulty: 'NORMAL', gridSize: 6 });
     await jest.runAllTimersAsync();
     expect(state().generatedLevels.map(l => l.id)).toEqual([base + 1, base + 2]);
+  });
+
+  it('never adds a level the map already has, even rotated or mirrored', async () => {
+    startLevelGeneration({ amount: 2, difficulty: 'NORMAL', gridSize: 6 });
+    await jest.runAllTimersAsync();
+    const [first, second] = state().generatedLevels;
+    // The generator comes back to the first board, mirrored, then to a new one
+    const mirrored = transformLevel(first, 2);
+    const fresh = { ...second, vehicles: second.vehicles.map(v => (v.id === 'a' ? { ...v, row: 1 } : v)) };
+    mockNext = [mirrored, first, fresh];
+    const before = mockCalls;
+    startLevelGeneration({ amount: 1, difficulty: 'NORMAL', gridSize: 6 });
+    await jest.runAllTimersAsync();
+    expect(mockCalls - before).toBe(3);
+    expect(state().generatedLevels.map(l => l.id)).toEqual([base + 1, base + 2, base + 3]);
+    expect(state().generatedLevels[2].vehicles).toEqual(fresh.vehicles);
   });
 
   it('a link to a map level not generated yet opens nothing: never generated on the fly, with a hole before it', async () => {

@@ -8,7 +8,7 @@
 import { DIFFICULTY_LEVELS } from '../utils/generator.core';
 import { generateMapLevelChunk } from '../utils/mapGenerator';
 import { solvePuzzle } from '../utils/solver';
-import { canonicalKey } from './campaign/canonical';
+import { canonicalKey } from '../utils/levelShape';
 import type { Level } from '../store/types';
 
 const [difficultyArg = 'NORMAL', sizeArg = '6', seconds = '10'] = process.argv.slice(2);
@@ -36,12 +36,15 @@ for (const difficulty of difficulties) {
     }
     const moved = levels.map(l => new Set(solvePuzzle(l.vehicles, l.gridSize, l.exitRow, l.exitCol).moves.map(m => m.vehicleId)).size);
     const moves = levels.map(l => l.minMoves);
+    const trucks = levels.map(l => l.vehicles.filter(v => v.length === 3).length);
+    const free = levels.map(l => size * size - l.vehicles.reduce((cells, v) => cells + v.length, 0));
     const sides = [0, 0, 0, 0];
     for (const l of levels) sides[l.exitCol === size ? 0 : l.exitCol === 255 ? 1 : l.exitRow === size ? 2 : 3]++;
     console.log(
       `${difficulty} ${size}x${size}: ${(elapsed / levels.length).toFixed(2)} s per level (slowest ${(slowest / 1000).toFixed(1)} s, ${levels.length} levels)`
       + ` | moves ${Math.min(...moves)}-${Math.max(...moves)}, average ${average(moves)}`
       + ` | vehicles ${Math.min(...levels.map(l => l.vehicles.length))}-${Math.max(...levels.map(l => l.vehicles.length))}`
+      + ` | trucks ${Math.min(...trucks)}-${Math.max(...trucks)} | free cells ${Math.min(...free)}-${Math.max(...free)}`
       + ` | moved by the solution ${average(moved)}`
       + ` | exits right/left/bottom/top ${sides.join('/')}`
       + ` | distinct ${new Set(levels.map(canonicalKey)).size}/${levels.length}`,

@@ -54,7 +54,7 @@ describe('worklets', () => {
     const found = workletsOf(file);
     const plainValues = [
       'COLORS', 'TARGET_CAR_COLOR', 'GENERATOR_MAX_STATES', 'solvePuzzle',
-      'DIFFICULTY_LEVELS', 'MAP_RECIPES', 'FALLBACK_RECIPE', 'FALLBACK_BIG_RECIPE', 'CHUNK_STATES', 'BOARD_COST',
+      'DIFFICULTY_LEVELS', 'MAP_RECIPES', 'FALLBACK_RECIPE', 'FALLBACK_BIG_RECIPE', 'CHUNK_STATES', 'BOARD_COST', 'TRUCK_SHARE',
     ];
     found.forEach(({ name, closure }, i) => {
       const above = found.slice(0, i).map(w => w.name);

@@ -51,10 +51,10 @@ const MAX_SPEED_FACTOR = 10;
 const PHONE_FACTOR = 5;
 const NODE_LEVEL_MS: Record<string, Record<number, number>> = {
   EASY: { 6: 20, 7: 40, 8: 80 },
-  NORMAL: { 6: 80, 7: 700, 8: 1_400 },
+  NORMAL: { 6: 80, 7: 700, 8: 1_800 },
   HARD: { 6: 150, 7: 900, 8: 5_000 },
-  EXPERT: { 6: 600, 7: 1_200, 8: 8_000 },
-  MASTER: { 6: 15_000, 7: 8_000, 8: 45_000 },
+  EXPERT: { 6: 600, 7: 1_200, 8: 12_000 },
+  MASTER: { 6: 17_000, 7: 9_000, 8: 80_000 },
 };
 
 export const DEFAULT_LEVEL_MS: Record<string, Record<number, number>> = Object.fromEntries(

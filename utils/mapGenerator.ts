@@ -30,7 +30,18 @@ export interface MapRecipe {
   freeCells?: [number, number];
   /** 'reject' only: boards tried in one call of generateMapLevelChunk */
   attempts?: number;
+  /**
+   * One level out of `every` (by its id) is made with these free cells instead: slower, but the
+   * levels of the case do not all look as full
+   */
+  alternate?: { every: number; freeCells: [number, number] };
 }
+
+/**
+ * Share of 3-cell vehicles of a dense board, drawn for each board: as full with many trucks as
+ * with many cars, a 8x8 board has from under twenty vehicles to nearly thirty
+ */
+const TRUCK_SHARE: [number, number] = [0.1, 0.9];
 
 /** Positions looked at in one call of generateMapLevelChunk ('explore'): about a second on a phone */
 const CHUNK_STATES = 150_000;
@@ -46,7 +57,7 @@ export const MAP_RECIPES: Record<string, Record<number, MapRecipe>> = {
   NORMAL: {
     6: { method: 'reject', maxStates: 200_000, attempts: 100 },
     7: { method: 'explore', maxStates: 20_000 },
-    8: { method: 'explore', maxStates: 20_000, freeCells: [2, 6] },
+    8: { method: 'explore', maxStates: 20_000, freeCells: [2, 6], alternate: { every: 3, freeCells: [7, 12] } },
   },
   HARD: {
     6: { method: 'explore', maxStates: 20_000 },
@@ -189,13 +200,14 @@ function buildMapBoard(
   if (recipe.freeCells) {
     const [minFree, maxFree] = recipe.freeCells;
     const wantFree = minFree + Math.floor(random() * (maxFree - minFree + 1));
+    const truckShare = TRUCK_SHARE[0] + random() * (TRUCK_SHARE[1] - TRUCK_SHARE[0]);
     let free = 0;
     for (let i = 0; i < grid.length; i++) if (!grid[i]) free++;
     while (free > wantFree) {
       let placed = false;
       for (let p = 0; p < 40 && !placed; p++) {
         const horizontal = random() > 0.5;
-        const length = random() > 0.3 ? 2 : 3;
+        const length = random() < truckShare ? 3 : 2;
         const row = Math.floor(random() * gridSize);
         const col = Math.floor(random() * gridSize);
         if (allowed(row, col, horizontal) && fits(grid, gridSize, row, col, length, horizontal)) {
@@ -402,11 +414,13 @@ export function exploreCluster(
   return { n, count, positions, dist, maxDist: dist[queue[tail - 1]] };
 }
 
-/** The recipe of a difficulty and grid size */
-export function mapRecipe(difficulty: string, gridSize: number): MapRecipe {
+/** The recipe of a level, from its difficulty, its grid size and its id (alternate) */
+export function mapRecipe(difficulty: string, gridSize: number, id: number): MapRecipe {
   'worklet';
   const recipes = MAP_RECIPES[difficulty];
-  return (recipes && recipes[gridSize]) ?? (gridSize >= 8 ? FALLBACK_BIG_RECIPE : FALLBACK_RECIPE);
+  const recipe = (recipes && recipes[gridSize]) ?? (gridSize >= 8 ? FALLBACK_BIG_RECIPE : FALLBACK_RECIPE);
+  const { alternate } = recipe;
+  return alternate && id % alternate.every === 0 ? { ...recipe, freeCells: alternate.freeCells } : recipe;
 }
 
 /**
@@ -417,7 +431,7 @@ export function mapRecipe(difficulty: string, gridSize: number): MapRecipe {
 export function generateMapLevelWith(id: number, difficulty: string, gridSize: number, random: () => number): Level | null {
   'worklet';
   const config: DifficultyConfig = { ...(DIFFICULTY_LEVELS[difficulty] ?? DIFFICULTY_LEVELS.NORMAL), gridSize };
-  const recipe = mapRecipe(difficulty, gridSize);
+  const recipe = mapRecipe(difficulty, gridSize, id);
   const { minMovesRequired, maxMovesRequired } = config;
 
   if (recipe.method === 'reject') {

@@ -1,8 +1,8 @@
 import { DIFFICULTY_LEVELS, createPRNG } from '../utils/generator';
-import { MAP_RECIPES, exploreCluster, generateMapLevelChunk, generateMapLevelWith } from '../utils/mapGenerator';
+import { MAP_RECIPES, exploreCluster, generateMapLevelChunk, generateMapLevelWith, mapRecipe } from '../utils/mapGenerator';
 import { solvePuzzle } from '../utils/solver';
 import { sampleLevels } from '../data/sampleLevels';
-import { canonicalKey } from '../scripts/campaign/canonical';
+import { canonicalKey } from '../utils/levelShape';
 import type { Level } from '../store/types';
 
 /** A level of the generator, calling it until one comes out, as the app does */
@@ -107,6 +107,21 @@ describe('map generator', () => {
     expect(new Set(levels.map(l => `${l.exitRow === 255 || l.exitRow === 6}${l.exitRow === 255 || l.exitCol === 255}`)).size).toBe(4);
     expect(new Set(levels.map(l => l.vehicles.length)).size).toBeGreaterThanOrEqual(3);
     expect(new Set(levels.map(l => l.minMoves)).size).toBeGreaterThanOrEqual(4);
+  }, 120_000);
+
+  it('varies how full and how made of trucks the dense boards are (Normal 8x8)', () => {
+    // One level out of three, by its id, is made with more free cells
+    expect(mapRecipe('NORMAL', 8, 1002).freeCells).toEqual(MAP_RECIPES.NORMAL[8].alternate!.freeCells);
+    expect(mapRecipe('NORMAL', 8, 1001).freeCells).toEqual(MAP_RECIPES.NORMAL[8].freeCells);
+    expect(mapRecipe('HARD', 8, 1002)).toBe(MAP_RECIPES.HARD[8]);
+
+    const random = createPRNG('dense');
+    const levels = Array.from({ length: 9 }, (_, i) => generate('NORMAL', 8, random, 1000 + i));
+    const counts = levels.map(l => l.vehicles.length);
+    const trucks = levels.map(l => l.vehicles.filter(v => v.length === 3).length);
+    expect(Math.max(...counts) - Math.min(...counts)).toBeGreaterThanOrEqual(3);
+    expect(Math.max(...trucks) - Math.min(...trucks)).toBeGreaterThanOrEqual(4);
+    for (const level of levels) expect(solve(level).minMoves).toBe(level.minMoves);
   }, 120_000);
 
   it('draws with Math.random in the app: an unknown difficulty or size still gives a level or nothing, never an error', () => {

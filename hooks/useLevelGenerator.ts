@@ -3,6 +3,7 @@ import { sampleLevels } from '@/data/sampleLevels';
 import { DIFFICULTY_LEVELS } from '@/utils/generator';
 import { generateMapLevelChunk } from '@/utils/mapGenerator';
 import { runOnSolverRuntime } from '@/utils/solver.background';
+import { canonicalKey } from '@/utils/levelShape';
 import { haptics, Haptics } from '@/utils/haptics';
 import { formatTimeLeft } from '@/utils/date';
 import { estimateLevelMs } from '@/utils/generationEstimate';
@@ -72,6 +73,9 @@ export function startLevelGeneration({ amount, difficulty, gridSize }: Generatio
     let made = 0;
     // A difficulty that keeps giving nothing does not loop forever
     let emptyCalls = 0;
+    // The levels of the map so far, up to a rotation or a mirror: the same one is never added twice
+    // (Master 6x6 is so tight that the generator can come back to a board)
+    const known = new Set([...sampleLevels, ...useGameStore.getState().generatedLevels].map(canonicalKey));
 
     try {
       while (made < amount && emptyCalls < MAX_EMPTY_CALLS) {
@@ -83,10 +87,12 @@ export function startLevelGeneration({ amount, difficulty, gridSize }: Generatio
         const newLevel = await runOnSolverRuntime(generateMapLevelChunk, nextLevelId(), difficulty, gridSize);
         sinceLastLevel += Date.now() - startTime;
 
-        if (!newLevel) {
+        const key = newLevel && canonicalKey(newLevel);
+        if (!newLevel || !key || known.has(key)) {
           emptyCalls++;
           continue;
         }
+        known.add(key);
         emptyCalls = 0;
         // The id is taken when the level is ready: a call without a level leaves no hole
         useGameStore.getState().addGeneratedLevel({ ...newLevel, id: nextLevelId() });
