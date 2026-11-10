@@ -1,6 +1,6 @@
 import './setup';
 import { Alert } from 'react-native';
-import { renderRouter, screen, fireEvent, waitFor } from 'expo-router/testing-library';
+import { renderRouter, screen, fireEvent, waitFor, act } from 'expo-router/testing-library';
 import i18n from '@/utils/i18n';
 import MapScreen from '@/app/map';
 import { useGameStore } from '@/store/gameStore';
@@ -181,6 +181,30 @@ describe('world map', () => {
       expect(startLevelGeneration).not.toHaveBeenCalled();
       expect(jest.mocked(Alert.alert).mock.calls.at(-1)?.[0]).toBe(t('map.long_generation_title'));
       expect(jest.mocked(Alert.alert).mock.calls.at(-1)?.[1]).toContain(`${t('difficulty.MASTER')} 6x6`);
+    });
+  });
+  describe('generation going on', () => {
+    it('takes the new levels in at the end of the generation, not one at a time under the player', async () => {
+      const active = jest.spyOn(jest.requireMock('@/hooks/useLevelGenerator'), 'isGenerationActive').mockReturnValue(true);
+      try {
+        const campaign = sampleLevels.length;
+        const stars = 3 + 2 + 1 + 3 + 2;
+        const generated = (id: number) => ({ ...sampleLevels[0], id });
+        useGameStore.getState().setGenerationState({ isRunning: true, current: 0, total: 2, shouldCancel: false });
+        await openMap();
+        expect(screen.getByLabelText(t('a11y.map_progress', { stars, total: campaign * 3 }))).toBeTruthy();
+
+        // A level made: the map stays as it was
+        await act(async () => { useGameStore.setState({ generatedLevels: [generated(campaign + 1)] }); });
+        expect(screen.getByLabelText(t('a11y.map_progress', { stars, total: campaign * 3 }))).toBeTruthy();
+
+        // The generation over: both levels are on the map
+        useGameStore.setState({ generatedLevels: [generated(campaign + 1), generated(campaign + 2)] });
+        useGameStore.getState().setGenerationState({ isRunning: false, current: 2 });
+        await waitFor(() => expect(screen.getByLabelText(t('a11y.map_progress', { stars, total: (campaign + 2) * 3 }))).toBeTruthy());
+      } finally {
+        active.mockRestore();
+      }
     });
   });
 });

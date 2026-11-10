@@ -753,6 +753,8 @@
     "recap_image": "Preview of the image to share",
     "recap_page": "Card {{page}} of {{total}}",
     "recap_hint": "Swipe up or down to change card",
+    "generation_details": "Show or hide the details of the generation",
+    "cancel_generation": "Cancel the generation",
     "generation_share": "{{name}}: {{percent}} % of the levels, {{count}}",
     "help": "Help: {{name}}",
     "decrease": "Less: {{name}}",

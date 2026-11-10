@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useState, useMemo, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import type { ScrollViewInstance } from 'react-native';
 import { useNavigation, type NativeStackNavigationProp } from 'expo-router';
@@ -17,7 +17,6 @@ import Road from '@/components/map/Road';
 import ZoneLayer from '@/components/map/ZoneLayer';
 import MapHeader from '@/components/map/MapHeader';
 import JumpButton from '@/components/map/JumpButton';
-import GenerationPill from '@/components/map/GenerationPill';
 import MapTools from '@/components/map/MapTools';
 import FilterBar from '@/components/map/FilterBar';
 import FilterSheet from '@/components/map/FilterSheet';
@@ -44,8 +43,15 @@ export default function MapScreen() {
   const maxUnlockedLevel = useGameStore(s => s.maxUnlockedLevel);
   const lastPlayedLevelId = useGameStore(s => s.lastPlayedLevelId);
   const progress = useGameStore(s => s.progress);
-  const generatedLevels = useGameStore(s => s.generatedLevels);
+  const savedGeneratedLevels = useGameStore(s => s.generatedLevels);
   const isGenerating = useGameStore(s => s.generationState.isRunning);
+  // The map shows the generated levels as they were when a generation started, and takes the new
+  // ones in at its end: one level added at a time grew the map under the player every second
+  // (the map is drawn from the bottom), and holding the view still stopped a scroll going on
+  const [generatedLevels, setGeneratedLevels] = useState(savedGeneratedLevels);
+  useEffect(() => {
+    if (!isGenerating) setGeneratedLevels(savedGeneratedLevels);
+  }, [savedGeneratedLevels, isGenerating]);
   const setGenerationState = useGameStore(s => s.setGenerationState);
   const scrollViewRef = useRef<ScrollViewInstance>(null);
 
@@ -120,17 +126,38 @@ export default function MapScreen() {
     return Math.max(0, totalHeight - screenHeight);
   }, [pathPoints, focusLevel, screenHeight, totalHeight]);
 
-  // Set initial scroll state
+  // Exact offset of the map (scrollY is rounded), and whether the map was placed on its level
+  const offsetY = useRef(initialY);
+  const placed = useRef(false);
+
+  // Set initial scroll state, once: levels added later never bring the map back to its first level
   useEffect(() => {
+    if (placed.current) return;
     setScrollY(Math.round(initialY / SCROLL_STEP) * SCROLL_STEP);
+    offsetY.current = initialY;
     // Force scroll after a short delay once ready
     if (isReady) {
       const timer = setTimeout(() => {
         scrollViewRef.current?.scrollTo({ y: initialY, animated: false });
+        offsetY.current = initialY;
+        placed.current = true;
       }, 100);
       return () => clearTimeout(timer);
     }
   }, [initialY, isReady]);
+
+  // The map is drawn from the bottom: levels added (or deleted) at the top move everything down (or up)
+  // by the change of height. The view follows, so what the player looks at stays in place
+  const shownHeight = useRef(totalHeight);
+  useLayoutEffect(() => {
+    const added = totalHeight - shownHeight.current;
+    shownHeight.current = totalHeight;
+    if (added === 0 || !placed.current) return;
+    const y = Math.max(0, offsetY.current + added);
+    offsetY.current = y;
+    scrollViewRef.current?.scrollTo({ y, animated: false });
+    setScrollY(Math.round(y / SCROLL_STEP) * SCROLL_STEP);
+  }, [totalHeight]);
 
   useEffect(() => {
     // Sanitization: Fix corrupted maxUnlockedLevel if it's a legacy Daily ID (999999)
@@ -265,6 +292,7 @@ export default function MapScreen() {
         decelerationRate={0.9}
         contentOffset={{ x: 0, y: initialY }}
         onScroll={(e) => {
+          offsetY.current = e.nativeEvent.contentOffset.y;
           const rounded = Math.round(e.nativeEvent.contentOffset.y / SCROLL_STEP) * SCROLL_STEP;
           if (rounded !== scrollY) setScrollY(rounded);
         }}
@@ -327,7 +355,7 @@ export default function MapScreen() {
       {phase === 'drawing' && <LoadingIndicator size="large" fill style={StyleSheet.absoluteFill} />}
 
       {/* A search has its own bar, in place of the jump button and the tools */}
-      {isReady && !filter && (nextAbove || nextBelow) && !isGenerating && (
+      {isReady && !filter && (nextAbove || nextBelow) && (
         <JumpButton levelId={nextNode.id} isEnd={nextNode.id > levels.length} below={nextBelow} colors={colors} onPress={jumpToNext} />
       )}
 
@@ -370,7 +398,6 @@ export default function MapScreen() {
         onClose={() => setSettingsVisible(false)}
       />
 
-      {isGenerating && <GenerationPill colors={colors} />}
     </View>
   );
 }

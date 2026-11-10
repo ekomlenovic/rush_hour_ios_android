@@ -53,10 +53,33 @@ describe('game screen', () => {
     expect(progress).toMatchObject({ completed: true, stars });
     expect(useGameStore.getState().xp).toBeGreaterThan(0);
   }, 20_000);
-  it('a generation going on keeps running while a level is played, until Cancel', async () => {
-    useGameStore.getState().setGenerationState({ isRunning: true, current: 1, total: 10, shouldCancel: false });
+  it('a generation going on keeps running while a level is played, its bubble on screen until Cancel', async () => {
+    // A generation really going on (not a state left over by a closed app)
+    const active = jest.spyOn(require('@/hooks/useLevelGenerator'), 'isGenerationActive').mockReturnValue(true);
+    try {
+      useGameStore.getState().setGenerationState({ isRunning: true, current: 3, total: 10, shouldCancel: false });
+      await renderRouter({ _layout: require('@/app/_layout'), game: GameScreen }, { initialUrl: '/game?levelId=1' });
+      await waitFor(() => expect(screen.getByLabelText(i18n.t('a11y.target_car'))).toBeTruthy());
+      expect(useGameStore.getState().generationState).toMatchObject({ isRunning: true, shouldCancel: false });
+
+      // The bubble over the game: its progress, the details on a touch, and Cancel
+      const label = `${i18n.t('map.generating_levels')}, ${i18n.t('map.generation_progress', { current: 3, total: 10 })}`;
+      expect(screen.getByText('3/10')).toBeTruthy();
+      await fireEvent.press(screen.getByRole('button', { name: label }));
+      expect(screen.getByText(i18n.t('common.cancel'))).toBeTruthy();
+      await fireEvent.press(screen.getByRole('button', { name: i18n.t('a11y.cancel_generation') }));
+      expect(useGameStore.getState().generationState.shouldCancel).toBe(true);
+      expect(screen.getByText(i18n.t('map.canceling'))).toBeTruthy();
+    } finally {
+      active.mockRestore();
+    }
+  }, 20_000);
+
+  it('a generation left over by a closed app shows no bubble', async () => {
+    useGameStore.getState().setGenerationState({ isRunning: true, current: 3, total: 10, shouldCancel: false });
     await renderRouter({ _layout: require('@/app/_layout'), game: GameScreen }, { initialUrl: '/game?levelId=1' });
     await waitFor(() => expect(screen.getByLabelText(i18n.t('a11y.target_car'))).toBeTruthy());
-    expect(useGameStore.getState().generationState).toMatchObject({ isRunning: true, shouldCancel: false });
+    expect(useGameStore.getState().generationState.isRunning).toBe(false);
+    expect(screen.queryByText('3/10')).toBeNull();
   }, 20_000);
 });
