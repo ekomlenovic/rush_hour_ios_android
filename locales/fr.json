@@ -92,6 +92,7 @@
     "streak_rule": "Chaque jour d'affilée où tu réussis le défi du jour augmente toute l'XP que tu gagnes. Un gel protège ton streak, et son bonus, un jour manqué.",
     "streak_see_bonuses": "Voir tous mes bonus d'XP",
     "freeze_title": "Gels de streak",
+    "freeze_bonus": "Un gel garde aussi le bonus d'XP de ton streak.",
     "freeze_desc": "Un gel protège ton streak un jour où tu ne réussis pas le défi du jour. Tu en gagnes en terminant les 3 missions du jour, tous les 7 jours de streak et à chaque niveau joueur atteint. Tu en as {{count}} sur {{max}}.",
     "a11y_streak_one": "Streak de {{count}} jour",
     "a11y_streak_other": "Streak de {{count}} jours",

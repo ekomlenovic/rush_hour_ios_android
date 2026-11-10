@@ -92,6 +92,7 @@
     "streak_rule": "Each day in a row you win the daily challenge raises all the XP you earn. A freeze protects your streak, and its bonus, on a missed day.",
     "streak_see_bonuses": "See all my XP bonuses",
     "freeze_title": "Streak freezes",
+    "freeze_bonus": "A freeze also keeps the XP bonus of your streak.",
     "freeze_desc": "A freeze protects your streak on a day you miss the daily challenge. You earn one by finishing the 3 daily missions, every 7 days of streak and at each player level reached. You have {{count}} of {{max}}.",
     "a11y_streak_one": "{{count}} day streak",
     "a11y_streak_other": "{{count}} day streak",

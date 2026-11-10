@@ -21,6 +21,7 @@ import HomeHeader from '@/components/home/HomeHeader';
 import HomeTabBar from '@/components/home/HomeTabBar';
 import MissionsSheet from '@/components/home/MissionsSheet';
 import StreakSheet from '@/components/home/StreakSheet';
+import FreezeSheet from '@/components/home/FreezeSheet';
 import OptionsSheet from '@/components/settings/OptionsSheet';
 import PlayerLevelBadge from '@/components/progression/PlayerLevelBadge';
 import BoardPreview from '@/components/garage/BoardPreview';
@@ -70,6 +71,7 @@ export default function HomeScreen() {
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const [isMissionsVisible, setMissionsVisible] = useState(false);
   const [isStreakVisible, setStreakVisible] = useState(false);
+  const [isFreezesVisible, setFreezesVisible] = useState(false);
 
   // The screen stays mounted under the others: it follows the clock to show the new day
   // (the app open is recorded by the root layout, whatever the first screen: issue 188)
@@ -90,7 +92,8 @@ export default function HomeScreen() {
   // Both XP bonuses added up, for the XP the challenges announce
   const xpBonus = currentXpBonus({ missionStreak, currentStreak }, dateStr).total;
   const xpBonusFactor = 1 + xpBonus / 100;
-  const freezeCapacity = getFreezeCapacity(getPlayerLevel(xp));
+  const playerLevel = getPlayerLevel(xp);
+  const freezeCapacity = getFreezeCapacity(playerLevel);
 
   // The recap of the month (from the 1st) or of the year (from December 26th), until opened
   const recapKey = pendingRecap({
@@ -130,6 +133,7 @@ export default function HomeScreen() {
             newAchievements={newAchievements.length}
             onProfile={() => router.push('/profile')}
             onStreak={() => setStreakVisible(true)}
+            onFreezes={() => setFreezesVisible(true)}
             onMissions={() => setMissionsVisible(true)}
             onSettings={() => setSettingsVisible(true)}
           />
@@ -252,6 +256,16 @@ export default function HomeScreen() {
           router.push('/profile?focus=bonus');
         }}
         onClose={() => setStreakVisible(false)}
+      />
+
+      <FreezeSheet
+        visible={isFreezesVisible}
+        colors={colors}
+        isDark={isDark}
+        freezes={streakFreezes}
+        capacity={freezeCapacity}
+        playerLevel={playerLevel}
+        onClose={() => setFreezesVisible(false)}
       />
 
       <MissionsSheet
