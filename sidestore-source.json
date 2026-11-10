@@ -127,6 +127,16 @@
       },
       "versions": [
         {
+          "version": "2.2.2",
+          "buildVersion": "70",
+          "date": "2026-11-10",
+          "localizedDescription": "What's new:\n• The 3 daily missions now give 200 XP\n• XP bonuses: every day in a row with your missions done or the daily challenge won boosts all the XP you earn, up to ×3\n• An \"XP bonus\" card in your profile, and your bonus at the end of your XP bar\n• Your level has its own emblem, also next to your nickname in multiplayer\n• The streak flame and the freeze snowflake open their own screen",
+          "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.2.2-b70/rush-hours-unsigned.ipa",
+          "size": 19091977,
+          "sha256": "a5c80e3a17fc2b97a9de7e0666417edc219f79529dbf1ba200b99203bd5e18c5",
+          "minOSVersion": "16.4"
+        },
+        {
           "version": "2.2.1",
           "buildVersion": "68",
           "date": "2026-11-10",
@@ -197,12 +207,12 @@
           "minOSVersion": "16.4"
         }
       ],
-      "version": "2.2.1",
-      "buildVersion": "68",
+      "version": "2.2.2",
+      "buildVersion": "70",
       "versionDate": "2026-11-10",
-      "versionDescription": "What's new:\n• Much faster level generator on big grids and high difficulties\n• Generation keeps going while you play: a bubble follows it on every screen, to move around or minimize to an edge, and the map no longer moves by itself\n• Clearer generator: settings in cards, foldable help\n• More varied boards, and never the same level twice\n• Drawn vehicles now face either way at random",
-      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.2.1-b68/rush-hours-unsigned.ipa",
-      "size": 19074676
+      "versionDescription": "What's new:\n• The 3 daily missions now give 200 XP\n• XP bonuses: every day in a row with your missions done or the daily challenge won boosts all the XP you earn, up to ×3\n• An \"XP bonus\" card in your profile, and your bonus at the end of your XP bar\n• Your level has its own emblem, also next to your nickname in multiplayer\n• The streak flame and the freeze snowflake open their own screen",
+      "downloadURL": "https://github.com/ekomlenovic/rush_hour_ios_android/releases/download/v2.2.2-b70/rush-hours-unsigned.ipa",
+      "size": 19091977
     }
   ],
   "news": []
