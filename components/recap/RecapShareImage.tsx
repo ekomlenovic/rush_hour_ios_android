@@ -6,6 +6,7 @@ import { ArtGroup } from '@/components/art/ArtSvg';
 import { boardBackdrop } from '@/theme/art/boardDecor';
 import type { CosmeticSelection } from '@/data/cosmetics';
 import type { Vehicle } from '@/store/types';
+import { vehicleFacing } from '@/utils/facing';
 
 /** Size of the shared image: vertical, 9:16 like the stories */
 export const SHARE_IMAGE_WIDTH = 1080;
@@ -160,7 +161,7 @@ export default function RecapShareImage({
           const art = artOf(v.isTarget);
           if (art) {
             const color = v.isTarget ? board.targetCar : palette.get(v.id) ?? v.color;
-            return <ArtGroup key={v.id} drawing={drawVehicle(art, v.length, color)} x={x} y={y} width={w} height={h} facing={v.orientation === 'vertical' ? 'up' : 'right'} />;
+            return <ArtGroup key={v.id} drawing={drawVehicle(art, v.length, color)} x={x} y={y} width={w} height={h} facing={vehicleFacing(v, EXIT_ROW, GRID, GRID)} />;
           }
           return (
             <React.Fragment key={v.id}>

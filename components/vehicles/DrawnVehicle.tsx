@@ -9,7 +9,7 @@ interface Props {
   art: VehicleArt;
   length: number;
   orientation: 'horizontal' | 'vertical';
-  /** Where its front points (`vehicleFacing`, the target car toward its exit); right when horizontal, up when vertical if not set */
+  /** Where its front points (`vehicleFacing`: the target car toward its exit, the others either way along their axis); right when horizontal, up when vertical if not set */
   facing?: Facing;
   color: string;
   width: number;
