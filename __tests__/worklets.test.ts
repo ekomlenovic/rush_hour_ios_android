@@ -34,6 +34,10 @@ describe('worklets', () => {
       'createPRNG', 'generateSeededLevelSync', 'pickExitSide', 'generateScrambledLevel', 'scrambleOnce',
       'shuffle', 'clamp', 'canPlace', 'generateLevelWith',
     ]],
+    ['../utils/mapGenerator.ts', [
+      'shuffled', 'clampTo', 'occupancy', 'fits', 'mark', 'buildMapBoard', 'exploreCluster', 'mapRecipe',
+      'generateMapLevelWith', 'generateMapLevelChunk',
+    ]],
   ])('no default parameter of %s uses a variable from outside the worklet', (file, expected) => {
     const found = workletsOf(file);
     expect(found.map(w => w.name)).toEqual(expect.arrayContaining(expected));
@@ -44,11 +48,14 @@ describe('worklets', () => {
     }
   });
 
-  it('each worklet of the generator only calls worklets defined above it, or plain values', () => {
+  it.each(['../utils/generator.core.ts', '../utils/mapGenerator.ts'])('each worklet of %s only calls worklets defined above it, or plain values', (file) => {
     // A worklet becomes a constant that captures what it calls when it is created: a worklet
     // defined below is still undefined then, and a plain function does not exist on the runtime
-    const found = workletsOf('../utils/generator.core.ts');
-    const plainValues = ['COLORS', 'TARGET_CAR_COLOR', 'GENERATOR_MAX_STATES', 'solvePuzzle'];
+    const found = workletsOf(file);
+    const plainValues = [
+      'COLORS', 'TARGET_CAR_COLOR', 'GENERATOR_MAX_STATES', 'solvePuzzle',
+      'DIFFICULTY_LEVELS', 'MAP_RECIPES', 'FALLBACK_RECIPE', 'FALLBACK_BIG_RECIPE', 'CHUNK_STATES', 'BOARD_COST',
+    ];
     found.forEach(({ name, closure }, i) => {
       const above = found.slice(0, i).map(w => w.name);
       for (const outside of closure) {

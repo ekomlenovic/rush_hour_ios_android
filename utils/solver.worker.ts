@@ -1,11 +1,12 @@
 import { solvePuzzle, validateLevel } from './solver';
 import { generateSeededLevelSync } from './generator.core';
+import { generateMapLevelChunk } from './mapGenerator';
 
 /**
  * The Web Worker of the solver on the web (utils/solverRuntime.web.ts): runs the task named
  * in each message and sends back its result, one at a time, in order.
  */
-const TASKS: Record<string, (...args: any[]) => unknown> = { solvePuzzle, validateLevel, generateSeededLevelSync };
+const TASKS: Record<string, (...args: any[]) => unknown> = { solvePuzzle, validateLevel, generateSeededLevelSync, generateMapLevelChunk };
 
 self.onmessage = (event: MessageEvent<{ id: number; task: string; args: unknown[] }>) => {
   const { id, task, args } = event.data;

@@ -46,7 +46,7 @@ export default function MapLevelsSection({ colors, onClose }: Props) {
       startGeneration({ amount: genAmount, difficulty: genDifficulty, gridSize: genGridSize });
       onClose();
     };
-    // A level that blocks the app a minute or more (Expert, Master, big grids): never started without saying so
+    // A generation whose levels take a minute or more each (Master, big grids): never started without saying so
     if (!needsConfirmation(genDifficulty, genGridSize, samples)) return start();
     haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(

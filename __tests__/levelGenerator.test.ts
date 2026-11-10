@@ -6,11 +6,11 @@ import { resetStore } from './helpers';
 import { useGenerationTimes } from '../store/generationTimes';
 import { estimateLevelMs, sampleKey } from '../utils/generationEstimate';
 
-// A generation that fails one level out of three, instantly
+// A generation of which one call out of three gives no level, instantly
 let mockCalls = 0;
-jest.mock('../utils/generator', () => ({
-  ...jest.requireActual('../utils/generator'),
-  generateLevel: (id: number) => {
+jest.mock('../utils/mapGenerator', () => ({
+  ...jest.requireActual('../utils/mapGenerator'),
+  generateMapLevelChunk: (id: number) => {
     mockCalls++;
     return mockCalls % 3 === 2 ? null : { ...jest.requireActual('../data/sampleLevels').sampleLevels[0], id };
   },
@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 describe('map levels generation (issue 120)', () => {
-  it('numbers the levels after the pack without holes, a failed level taking no id', async () => {
+  it('numbers the levels after the pack without holes, a call without a level taking no id', async () => {
     startLevelGeneration({ amount: 4, difficulty: 'NORMAL', gridSize: 6 });
     expect(isGenerationActive()).toBe(true);
     await jest.runAllTimersAsync();
@@ -77,9 +77,18 @@ describe('generation times learnt on the phone (issue 162)', () => {
   it('starts the progress pill from the learnt estimate', () => {
     useGenerationTimes.setState({ samples: { [sampleKey('NORMAL', 8)]: { avgMs: 2000, count: 20, maxMs: 2500 } } });
     startLevelGeneration({ amount: 3, difficulty: 'NORMAL', gridSize: 8 });
-    const expected = Math.ceil((3 * (estimateLevelMs('NORMAL', 8, useGenerationTimes.getState().samples) + 150)) / 1000);
+    const expected = Math.ceil((3 * (estimateLevelMs('NORMAL', 8, useGenerationTimes.getState().samples))) / 1000);
     expect(state().generationState.estimatedRemainingSeconds).toBe(expected);
     expect(expected).toBeLessThan(60);
+  });
+});
+
+describe('generation times of the former generator', () => {
+  it('are dropped: the new generator is far faster, they would announce minutes and ask to confirm', () => {
+    const migrate = useGenerationTimes.persist.getOptions().migrate!;
+    const former = { samples: { [sampleKey('NORMAL', 8)]: { avgMs: 300_000, count: 5, maxMs: 400_000 } } };
+    expect(migrate(former, 1)).toEqual({ samples: {} });
+    expect(migrate(former, 2)).toEqual(former);
   });
 });
 
