@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { dateLocale, formatDuration } from '@/utils/date';
 import type { DuelHistoryItem, DuelRecordLine, MultiApi } from '@/utils/multi/api';
+import LevelEmblem from '@/components/progression/LevelEmblem';
 import type { UiColors } from '@/theme';
 import { multiErrorMessage } from './errors';
 
@@ -65,9 +66,12 @@ export default function DuelHistoryCard({ api, colors, myPlayerId, refreshKey, o
                 key={r.opponent.id}
                 style={[styles.record, { backgroundColor: colors.card }]}
                 accessible
-                accessibilityLabel={`${r.opponent.pseudo}, ${t('multi.duel.record_a11y', { wins: r.wins, losses: r.losses, draws: r.draws })}`}
+                accessibilityLabel={`${r.opponent.pseudo}, ${typeof r.opponent.level === 'number' ? `${t('progression.level', { level: r.opponent.level })}, ` : ''}${t('multi.duel.record_a11y', { wins: r.wins, losses: r.losses, draws: r.draws })}`}
               >
-                <Text style={[styles.recordName, { color: colors.textMuted }]} numberOfLines={1}>{t('multi.duel.against', { pseudo: r.opponent.pseudo })}</Text>
+                <View style={styles.recordWho}>
+                  <Text style={[styles.recordName, { color: colors.textMuted }]} numberOfLines={1}>{t('multi.duel.against', { pseudo: r.opponent.pseudo })}</Text>
+                  {typeof r.opponent.level === 'number' && <LevelEmblem level={r.opponent.level} size={RFValue(18)} />}
+                </View>
                 <Text style={[styles.recordScore, { color: ahead }]}>{r.wins} – {r.losses}</Text>
                 {r.draws > 0 && <Text style={[styles.recordDraws, { color: colors.textMuted }]}>{t('multi.duel.draws', { count: r.draws })}</Text>}
               </View>
@@ -119,6 +123,11 @@ export default function DuelHistoryCard({ api, colors, myPlayerId, refreshKey, o
 }
 
 const styles = StyleSheet.create({
+  recordWho: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(5),
+  },
   card: {
     borderRadius: 16,
     borderWidth: 1,

@@ -4,9 +4,12 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import type { UiColors } from '@/theme';
+import LevelEmblem from '@/components/progression/LevelEmblem';
 
 interface Props {
   name: string;
+  /** Their level in the app; null or absent: not known, no emblem */
+  level?: number | null;
   moves: number;
   colors: UiColors;
   width: number;
@@ -23,9 +26,9 @@ interface Props {
 }
 
 /** The bar above a board of a duel: who, connected or not, how many moves; for a spectator, who gets the reactions */
-export default function DuelPlayerBar({ name, moves, colors, width, isMe = false, away = false, winner = false, onSelect, selected = false }: Props) {
+export default function DuelPlayerBar({ name, level, moves, colors, width, isMe = false, away = false, winner = false, onSelect, selected = false }: Props) {
   const { t } = useTranslation();
-  const label = [name, away ? t('multi.duel.away') : null, winner ? t('multi.duel.winner') : null, t('multi.moves', { count: moves })].filter(Boolean).join(', ');
+  const label = [name, typeof level === 'number' ? t('progression.level', { level }) : null, away ? t('multi.duel.away') : null, winner ? t('multi.duel.winner') : null, t('multi.moves', { count: moves })].filter(Boolean).join(', ');
   const content = (
     <>
       {onSelect && <Ionicons name={selected ? 'radio-button-on' : 'radio-button-off'} size={16} color={selected ? colors.primaryText : colors.textMuted} />}
@@ -33,6 +36,7 @@ export default function DuelPlayerBar({ name, moves, colors, width, isMe = false
         ? <Ionicons name="trophy" size={14} color={colors.warning} />
         : <View style={[styles.dot, { backgroundColor: away ? colors.danger : colors.success }]} />}
       <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>{name}</Text>
+      {typeof level === 'number' && <LevelEmblem level={level} size={RFValue(22)} />}
       {away && <Text style={[styles.away, { color: colors.danger }]}>{t('multi.duel.away')}</Text>}
       <View style={styles.moves}>
         <Text style={[styles.movesLabel, { color: colors.textMuted }]}>{t('game.moves')}</Text>

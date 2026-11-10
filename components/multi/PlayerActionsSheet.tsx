@@ -9,6 +9,8 @@ import type { RowPlayer } from './Leaderboard';
 import { multiErrorMessage } from './errors';
 import { REPORT_REASONS, type ReportReason } from './verdict';
 import IconText, { type IconName } from '@/components/IconText';
+import LevelEmblem from '@/components/progression/LevelEmblem';
+import { getPlayerTitle } from '@/data/progression';
 
 interface Props {
   player: RowPlayer | null;
@@ -22,7 +24,7 @@ interface Props {
   onClose: () => void;
 }
 
-/** What can be done about a player of the leaderboard: watch their game, report or block them */
+/** A player of the leaderboard: their level, and what can be done about them (watch their game, report or block them) */
 export default function PlayerActionsSheet({ player, isMe, isBlocked, api, colors, isDark, onReplay, onToggleBlock, onClose }: Props) {
   const { t } = useTranslation();
   const [reporting, setReporting] = useState(false);
@@ -54,6 +56,15 @@ export default function PlayerActionsSheet({ player, isMe, isBlocked, api, color
     <BottomSheet visible={!!player} title={player?.pseudo ?? ''} colors={colors} isDark={isDark} onClose={close} onRequestClose={close}>
       {player && !reporting && (
         <View>
+          {typeof player.level === 'number' && (
+            <View style={styles.level} accessible accessibilityLabel={`${t('progression.level', { level: player.level })}, ${t(`progression.titles.${getPlayerTitle(player.level)}`)}`}>
+              <LevelEmblem level={player.level} size={RFValue(56)} />
+              <View style={styles.levelText}>
+                <Text style={[styles.levelTitle, { color: colors.text }]}>{t(`progression.titles.${getPlayerTitle(player.level)}`)}</Text>
+                <Text style={[styles.levelNumber, { color: colors.textMuted }]}>{t('progression.level', { level: player.level })}</Text>
+              </View>
+            </View>
+          )}
           {player.won && player.attemptId !== undefined && action(t('multi.watch_game'), () => { const id = player.attemptId!; close(); onReplay(id); }, colors.text, 'play')}
           {!isMe && action(t('multi.report'), () => setReporting(true), colors.warning, 'flag')}
           {!isMe && action(
@@ -76,6 +87,24 @@ export default function PlayerActionsSheet({ player, isMe, isBlocked, api, color
 }
 
 const styles = StyleSheet.create({
+  level: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(14),
+    marginBottom: RFValue(16),
+  },
+  levelText: {
+    flex: 1,
+  },
+  levelTitle: {
+    fontSize: RFValue(18),
+    fontWeight: '800',
+  },
+  levelNumber: {
+    fontSize: RFValue(14),
+    fontWeight: '600',
+    marginTop: 2,
+  },
   action: {
     borderWidth: 1.5,
     borderRadius: 14,

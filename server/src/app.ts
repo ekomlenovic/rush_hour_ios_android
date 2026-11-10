@@ -26,7 +26,7 @@ export const MAX_MOVES = 1000;
 /** What this server can do beyond the daily challenge: the app hides what an older server lacks */
 /** 'ranking_range': rankings between two dates chosen by the player (period=range&from=…&to=…) */
 /** 'reactions': the spectators of a duel react to its players (the duel says which reactions, DuelView.reactions) */
-export const FEATURES = ['duel', 'ranking_range', 'reactions'];
+export const FEATURES = ['duel', 'ranking_range', 'reactions', 'player_level'];
 /** A WebSocket that does not answer a ping in this time is closed (phone gone, network lost) */
 const PING_INTERVAL_MS = 25_000;
 /** Open duel WebSockets from one address at most */
@@ -68,7 +68,11 @@ export interface AppDeps {
   duelLimits?: { authTimeoutMs?: number; socketsPerIp?: number };
 }
 
-interface Player { id: number; pseudo: string; created_at: number; is_admin: number; banned: number }
+/** level: of the player in the app, as their app said it; null: not said yet */
+interface Player { id: number; pseudo: string; created_at: number; is_admin: number; banned: number; level: number | null }
+
+/** The highest level an app can say: far above what the XP curve allows in a lifetime */
+export const MAX_PLAYER_LEVEL = 999;
 
 interface AttemptRow {
   id: number;
@@ -167,7 +171,7 @@ export function buildApp(deps: AppDeps) {
 
   // ── Players ────────────────────────────────────────────────────────────────
 
-  const PLAYER_FIELDS = 'id, pseudo, created_at, is_admin, banned';
+  const PLAYER_FIELDS = 'id, pseudo, created_at, is_admin, banned, level';
   const findByToken = db.prepare(`SELECT ${PLAYER_FIELDS} FROM players WHERE token_hash = ?`);
 
   async function authenticate(request: FastifyRequest) {
@@ -205,7 +209,7 @@ export function buildApp(deps: AppDeps) {
     return rows.some(r => lookAlikeKey(r.pseudo) === key);
   };
 
-  const publicPlayer = (p: Player) => ({ id: p.id, pseudo: p.pseudo, createdAt: p.created_at, isAdmin: !!p.is_admin });
+  const publicPlayer = (p: Player) => ({ id: p.id, pseudo: p.pseudo, createdAt: p.created_at, isAdmin: !!p.is_admin, level: p.level });
 
   const playerById = (id: number) => db.prepare(`SELECT ${PLAYER_FIELDS} FROM players WHERE id = ?`).get(id) as Player | undefined;
 
@@ -220,7 +224,7 @@ export function buildApp(deps: AppDeps) {
     authenticate: (token) => {
       const player = token ? findByToken.get(sha256(token)) as Player | undefined : undefined;
       if (!player) return null;
-      return player.banned ? 'banned' : { id: player.id, pseudo: player.pseudo };
+      return player.banned ? 'banned' : { id: player.id, pseudo: player.pseudo, ...(player.level !== null && { level: player.level }) };
     },
   });
   const duelLimits = { authTimeoutMs: AUTH_TIMEOUT_MS, socketsPerIp: MAX_SOCKETS_PER_IP, ...deps.duelLimits };
@@ -251,14 +255,14 @@ export function buildApp(deps: AppDeps) {
   function resultsOf(from: string, to: string): GameResult[] {
     // Players excluded by the admin are out of the rankings
     const rows = db.prepare(`
-      SELECT a.*, p.pseudo FROM attempts a JOIN players p ON p.id = a.player_id
+      SELECT a.*, p.pseudo, p.level FROM attempts a JOIN players p ON p.id = a.player_id
       WHERE a.date BETWEEN ? AND ? AND p.banned = 0 ORDER BY a.date
-    `).all(from, to) as unknown as (AttemptRow & { pseudo: string })[];
+    `).all(from, to) as unknown as (AttemptRow & { pseudo: string; level: number | null })[];
     return rows.map(a => {
       const status = statusOf(a);
       const verdict = verdictOf(a);
       return {
-        playerId: a.player_id, pseudo: a.pseudo, date: a.date, status,
+        playerId: a.player_id, pseudo: a.pseudo, level: a.level, date: a.date, status,
         moves: status === 'won' ? a.move_count : null,
         timeMs: status === 'won' ? a.server_ms : null,
         attemptId: a.id,
@@ -425,6 +429,16 @@ export function buildApp(deps: AppDeps) {
       });
 
       // Every member can invite a friend, unless the admin keeps invitations to themselves
+      // The level of the player in the app (data/progression.ts), shown beside their nickname. The app
+      // says it, the server cannot check it: it is never used to rank or to score
+      auth.post<{ Body: { level: number } }>('/me/level', {
+        schema: { body: { type: 'object', required: ['level'], properties: { level: { type: 'integer', minimum: 1, maximum: MAX_PLAYER_LEVEL } } } },
+      }, async (request) => {
+        const { level } = request.body;
+        if (level !== request.player.level) db.prepare('UPDATE players SET level = ? WHERE id = ?').run(level, request.player.id);
+        return { level };
+      });
+
       auth.get('/invite', async (request) => {
         if (settings().invitesAdminOnly && !request.player.is_admin) throw new ApiError(403, 'invites_admin_only');
         return { inviteCode: inviteCode(db, config).code };

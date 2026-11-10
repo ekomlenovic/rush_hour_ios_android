@@ -18,6 +18,9 @@ import Board from '@/components/Board';
 import BoardBackdrop from '@/components/BoardBackdrop';
 import MultiHeader from '@/components/multi/MultiHeader';
 import DuelPlayerBar from '@/components/multi/DuelPlayerBar';
+import LevelEmblem from '@/components/progression/LevelEmblem';
+import { useMyLevel } from '@/hooks/useMyLevel';
+import { shownLevel } from '@/utils/multi/level';
 import {
   REACTION_PICKER_HEIGHT, REACTION_TRAY_HEIGHT, ReactionOverlay, ReactionPicker, ReactionTray, pauseSeconds, useReactionSender,
   type ReactionSender,
@@ -281,18 +284,32 @@ function Notice({ icon, text, colors, onBack, action }: {
 /** Me against the opponent (or an empty seat); for a spectator, the two players */
 function Versus({ me, opponent, colors, spectating = false }: { me: DuelSide; opponent: DuelSide | null; colors: UiColors; spectating?: boolean }) {
   const { t } = useTranslation();
+  const myLevel = useMyLevel();
+  // The emblem of their level in place of their initial, when the server knows it
+  const levelOf = (player: DuelSide | null, mine: boolean) => (player ? shownLevel(player.level, mine, myLevel) : null);
   const seat = (player: DuelSide | null, mine: boolean) => (
     <View style={styles.seat}>
-      <View style={[styles.avatar, { backgroundColor: mine ? colors.primary : player ? colors.neutralSoft : 'transparent', borderColor: colors.border }]}>
-        <Text style={[styles.avatarText, { color: mine ? colors.onPrimary : colors.text }]}>{player ? player.pseudo.slice(0, 1).toUpperCase() : '?'}</Text>
-      </View>
+      {levelOf(player, mine) !== null ? (
+        <LevelEmblem level={levelOf(player, mine)!} size={RFValue(60)} />
+      ) : (
+        <View style={[styles.avatar, { backgroundColor: mine ? colors.primary : player ? colors.neutralSoft : 'transparent', borderColor: colors.border }]}>
+          <Text style={[styles.avatarText, { color: mine ? colors.onPrimary : colors.text }]}>{player ? player.pseudo.slice(0, 1).toUpperCase() : '?'}</Text>
+        </View>
+      )}
       <Text style={[styles.seatName, { color: player ? colors.text : colors.textMuted }]} numberOfLines={1}>
         {mine ? t('multi.duel.me') : player?.pseudo ?? t('multi.duel.empty_seat')}
       </Text>
     </View>
   );
+  const named = (name: string, level: number | null) => (level === null ? name : `${name} (${t('progression.level', { level })})`);
   return (
-    <View style={styles.versus} accessible accessibilityLabel={opponent ? t('multi.duel.vs', { a: spectating ? me.pseudo : t('multi.duel.me'), b: opponent.pseudo }) : t('multi.duel.waiting')}>
+    <View
+      style={styles.versus}
+      accessible
+      accessibilityLabel={opponent
+        ? t('multi.duel.vs', { a: named(spectating ? me.pseudo : t('multi.duel.me'), levelOf(me, !spectating)), b: named(opponent.pseudo, levelOf(opponent, false)) })
+        : t('multi.duel.waiting')}
+    >
       {seat(me, !spectating)}
       <Animated.Text entering={ZoomIn.springify()} style={[styles.vs, { color: colors.primaryText }]}>VS</Animated.Text>
       {seat(opponent, false)}
@@ -380,6 +397,7 @@ interface ArenaProps {
 function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sender }: ArenaProps) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
+  const myLevel = useMyLevel();
   const insets = useSafeAreaInsets();
   const [height, setHeight] = useState(0);
   const onLayout = (e: LayoutChangeEvent) => setHeight(e.nativeEvent.layout.height);
@@ -455,6 +473,7 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
           <BoardBackdrop look={firstLook} style={[styles.half, { top: height / 2, height: height / 2 }]} />
           <DuelPlayerBar
             name={opponent.pseudo}
+            level={opponent.level}
             moves={opponent.moves.length}
             colors={colors}
             width={opponentSize}
@@ -541,6 +560,7 @@ function Arena({ duel, now, colors, offline, blocked, myId, onMove, onLeave, sen
 
           <DuelPlayerBar
             name={duel.spectating ? duel.me.pseudo : t('multi.duel.me')}
+            level={shownLevel(duel.me.level, !duel.spectating, myLevel)}
             moves={duel.me.moves.length + duel.pending.length}
             colors={colors}
             isMe={!duel.spectating}

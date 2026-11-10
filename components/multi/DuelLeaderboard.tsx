@@ -5,7 +5,10 @@ import { RFValue } from '@/utils/responsive';
 import { rankingParams, type DuelLeaderboard as Board, type MultiApi, type RankingQuery } from '@/utils/multi/api';
 import type { UiColors } from '@/theme';
 import { multiErrorMessage } from './errors';
-import { MEDALS, type RowPlayer } from './Leaderboard';
+import { MEDALS, ROW_EMBLEM_SIZE, type RowPlayer } from './Leaderboard';
+import LevelEmblem from '@/components/progression/LevelEmblem';
+import { useMyLevel } from '@/hooks/useMyLevel';
+import { shownLevel } from '@/utils/multi/level';
 
 interface Props {
   api: MultiApi;
@@ -33,6 +36,7 @@ export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, b
   const [board, setBoard] = useState<{ params: string; data: Board } | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
+  const myLevel = useMyLevel();
 
   const load = useCallback(async () => {
     if (!query) return setLoading(false);
@@ -83,21 +87,26 @@ export default function DuelLeaderboard({ api, colors, myPlayerId, refreshKey, b
 
       {!loading && !error && rows.map(row => {
         const mine = row.playerId === myPlayerId;
+        const level = shownLevel(row.level, mine, myLevel);
         return (
           <Pressable
             key={row.playerId}
-            onPress={() => onRowPress({ playerId: row.playerId, pseudo: row.pseudo, won: false })}
+            onPress={() => onRowPress({ playerId: row.playerId, pseudo: row.pseudo, won: false, level })}
             style={[styles.row, mine && { backgroundColor: colors.primarySoft }]}
             accessibilityRole="button"
             accessibilityLabel={[
               t('multi.rank_a11y', { rank: row.rank }), row.pseudo, mine ? t('multi.you') : null,
+              level === null ? null : t('progression.level', { level }),
               t('multi.duel.record_a11y', { wins: row.wins, losses: row.losses, draws: row.draws }),
             ].filter(Boolean).join(', ')}
           >
             <Text style={[styles.rank, { color: colors.textMuted }, final && row.rank <= MEDALS.length && styles.medal]}>
               {final ? MEDALS[row.rank - 1] ?? row.rank : row.rank}
             </Text>
-            <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{row.pseudo}</Text>
+            <View style={styles.who}>
+              <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{row.pseudo}</Text>
+              {level !== null && <LevelEmblem level={level} size={ROW_EMBLEM_SIZE} />}
+            </View>
             <Text style={[styles.cell, styles.wins, { color: colors.success }]}>{row.wins}</Text>
             <Text style={[styles.cell, { color: colors.danger }]}>{row.losses}</Text>
             <Text style={[styles.cell, { color: colors.textMuted }]}>{row.draws}</Text>
@@ -188,8 +197,14 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'center',
   },
-  pseudo: {
+  who: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(6),
+  },
+  pseudo: {
+    flexShrink: 1,
     fontSize: RFValue(15),
     fontWeight: '700',
   },

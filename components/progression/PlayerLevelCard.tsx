@@ -7,6 +7,7 @@ import { RFValue } from '@/utils/responsive';
 import type { UiColors } from '@/theme';
 import XpBar from './XpBar';
 import XpRing from './XpRing';
+import LevelEmblem from './LevelEmblem';
 import { getLevelRewardLines } from './rewards';
 
 interface Props {
@@ -59,8 +60,11 @@ export default function PlayerLevelCard({ colors, showNext = true, onSeeAll, rin
         <>
           <View accessible accessibilityLabel={a11yLabel}>
             <View style={styles.row}>
-              <Text style={[styles.level, { color: colors.primaryText }]}>{t('progression.level', { level: info.level })}</Text>
-              <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+              <LevelEmblem level={info.level} size={RFValue(44)} />
+              <View style={styles.rowText}>
+                <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+                <Text style={[styles.level, { color: colors.textMuted }]}>{t('progression.level', { level: info.level })}</Text>
+              </View>
             </View>
             <XpBar colors={colors} ratio={info.ratio} height={10} />
             {xpText}
@@ -94,9 +98,10 @@ export default function PlayerLevelCard({ colors, showNext = true, onSeeAll, rin
 
 const styles = StyleSheet.create({
   card: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 6 },
-  row: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 8 },
-  level: { fontSize: RFValue(20), fontWeight: '800' },
-  title: { fontSize: RFValue(16), fontWeight: '600' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
+  rowText: { flex: 1 },
+  level: { fontSize: RFValue(13), fontWeight: '600' },
+  title: { fontSize: RFValue(18), fontWeight: '800' },
   xp: { fontSize: RFValue(12), fontWeight: '600', marginTop: 6 },
   nextTitle: { fontSize: RFValue(12), marginTop: 2 },
   ringRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },

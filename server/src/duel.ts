@@ -53,7 +53,8 @@ export const MAX_SPECTATORS = 50;
 /** Reactions relayed in one duel in a second at most, whoever sends them: each one goes to everyone in it */
 export const MAX_DUEL_REACTIONS_PER_SECOND = 10;
 
-export interface DuelIdentity { id: number; pseudo: string }
+/** level: of the player in the app, as their app said it; absent: not said yet */
+export interface DuelIdentity { id: number; pseudo: string; level?: number }
 
 /** How a player's board looks in the app (ids of its cosmetics): the others see their board so */
 export interface DuelLook { board: string; skin: string; palette: string }

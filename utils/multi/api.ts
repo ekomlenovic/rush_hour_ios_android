@@ -17,7 +17,8 @@ export class MultiApiError extends Error {
 
 /** features: what the server can do beyond the daily challenge, e.g. 'duel' (absent on older servers) */
 export interface ServerInfo { name: string; apiVersion: number; minAppVersion: string; features?: string[] }
-export interface ApiPlayer { id: number; pseudo: string; createdAt: number; isAdmin?: boolean }
+/** level: in the app, as their app said it; null: not said yet, absent: a server older than the levels (same for every `level` below) */
+export interface ApiPlayer { id: number; pseudo: string; createdAt: number; isAdmin?: boolean; level?: number | null }
 export interface JoinResult { token: string; recoveryCode?: string; player: ApiPlayer; server: { name: string } }
 
 export type GameStatus = 'playing' | 'won' | 'abandoned' | 'unfinished';
@@ -31,6 +32,7 @@ export type Verdict = 'suspect' | 'cheater' | null;
 export interface DayRow {
   playerId: number;
   pseudo: string;
+  level?: number | null;
   date: string;
   status: GameStatus;
   rank: number | null;
@@ -43,7 +45,7 @@ export interface DayRow {
 }
 
 export interface PeriodRow {
-  playerId: number; pseudo: string; rank: number; points: number; wins: number; played: number;
+  playerId: number; pseudo: string; level?: number | null; rank: number; points: number; wins: number; played: number;
   /** The points of each day played, in order (absent on older servers) */
   days?: { date: string; points: number; status: GameStatus }[];
 }
@@ -227,7 +229,8 @@ export interface DuelListing {
   /** over: mine, its result waiting for me (I got out and left before the end) */
   status: 'waiting' | 'preparing' | 'playing' | 'over';
   private: boolean;
-  players: { id: number; pseudo: string }[];
+  /** level: absent for a player whose app has not said it, and on older servers */
+  players: { id: number; pseudo: string; level?: number }[];
   createdAt: number;
   startsAt: number | null;
   mine: boolean;
@@ -235,7 +238,7 @@ export interface DuelListing {
   spectators?: number;
 }
 
-export interface DuelRankRow { playerId: number; pseudo: string; rank: number; wins: number; losses: number; draws: number; played: number }
+export interface DuelRankRow { playerId: number; pseudo: string; level?: number | null; rank: number; wins: number; losses: number; draws: number; played: number }
 export interface DuelLeaderboard { period: Period | 'all' | 'range'; from: string; to: string; rows: DuelRankRow[] }
 
 export type DuelEndReason = 'won' | 'forfeit' | 'disconnected' | 'timeout';
@@ -247,7 +250,7 @@ export interface DuelHistoryItem {
   metric?: DuelMetric;
   reason: DuelEndReason;
   winnerId: number | null;
-  opponent: { id: number; pseudo: string };
+  opponent: { id: number; pseudo: string; level?: number | null };
   myMoves: number;
   theirMoves: number;
   timeMs: number | null;
@@ -255,7 +258,7 @@ export interface DuelHistoryItem {
 }
 
 /** My score against one opponent */
-export interface DuelRecordLine { opponent: { id: number; pseudo: string }; wins: number; losses: number; draws: number }
+export interface DuelRecordLine { opponent: { id: number; pseudo: string; level?: number | null }; wins: number; losses: number; draws: number }
 
 export interface DuelReplay {
   id: number;
@@ -333,6 +336,8 @@ export function multiApi(serverUrl: string, token?: string, fetchImpl: Fetch = f
     recover: (recoveryCode: string) => call<JoinResult>('POST', '/recover', { recoveryCode }),
     me: () => call<ApiPlayer>('GET', '/me'),
     rename: (pseudo: string) => call<ApiPlayer>('PATCH', '/me', { pseudo }),
+    /** My level in the app, shown beside my nickname: only on a server with 'player_level' */
+    setLevel: (level: number) => call<{ level: number }>('POST', '/me/level', { level }),
     renewRecoveryCode: () => call<{ recoveryCode: string }>('POST', '/me/recovery'),
     deleteAccount: () => call<void>('DELETE', '/me'),
     invite: () => call<{ inviteCode: string }>('GET', '/invite'),

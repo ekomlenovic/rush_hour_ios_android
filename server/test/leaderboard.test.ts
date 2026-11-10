@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { pointsForRank, rankDay, rankPeriod, type GameResult } from '../src/leaderboard';
 
 const win = (playerId: number, moves: number, timeMs: number, date = '2026-10-16', verdict: GameResult['verdict'] = null): GameResult =>
-  ({ playerId, pseudo: `p${playerId}`, date, status: 'won', moves, timeMs, attemptId: playerId, verdict, reasons: [] });
+  ({ playerId, pseudo: `p${playerId}`, level: null, date, status: 'won', moves, timeMs, attemptId: playerId, verdict, reasons: [] });
 const other = (playerId: number, status: GameResult['status'], date = '2026-10-16'): GameResult =>
-  ({ playerId, pseudo: `p${playerId}`, date, status, moves: null, timeMs: null, attemptId: playerId, verdict: null, reasons: [] });
+  ({ playerId, pseudo: `p${playerId}`, level: null, date, status, moves: null, timeMs: null, attemptId: playerId, verdict: null, reasons: [] });
 
 describe('ranking of a day', () => {
   it('moves first, then time', () => {

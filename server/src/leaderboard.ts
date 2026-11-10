@@ -16,6 +16,8 @@ export type Verdict = 'suspect' | 'cheater' | null;
 export interface GameResult {
   playerId: number;
   pseudo: string;
+  /** Their level in the app, as their app said it; null: not said yet */
+  level: number | null;
   date: string;
   status: GameStatus;
   moves: number | null;
@@ -64,6 +66,7 @@ export function rankDay(results: GameResult[]): DayRow[] {
 export interface PeriodRow {
   playerId: number;
   pseudo: string;
+  level: number | null;
   rank: number;
   points: number;
   wins: number;
@@ -80,7 +83,7 @@ export function rankPeriod(results: GameResult[]): PeriodRow[] {
   const totals = new Map<number, Omit<PeriodRow, 'rank'>>();
   for (const [date, day] of [...byDate].sort(([a], [b]) => a.localeCompare(b))) {
     for (const row of rankDay(day)) {
-      const total = totals.get(row.playerId) ?? { playerId: row.playerId, pseudo: row.pseudo, points: 0, wins: 0, played: 0, days: [] };
+      const total = totals.get(row.playerId) ?? { playerId: row.playerId, pseudo: row.pseudo, level: row.level, points: 0, wins: 0, played: 0, days: [] };
       total.points += row.points;
       total.days.push({ date, points: row.points, status: row.status });
       total.wins += row.status === 'won' && row.verdict !== 'cheater' ? 1 : 0;

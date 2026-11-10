@@ -796,8 +796,6 @@
   },
   "progression": {
     "level": "Level {{level}}",
-    "level_short": "Lv. {{level}}",
-    "ring_caption": "Lv.",
     "xp_progress": "{{xp}} / {{next}} XP",
     "xp_gain": "+{{xp}} XP",
     "level_up": "Level {{level}} reached!",

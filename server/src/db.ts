@@ -126,6 +126,11 @@ export const MIGRATIONS: string[] = [
   `
   ALTER TABLE challenges ADD COLUMN wanted_moves INTEGER;
   `,
+  // The level of the player in the app, as their app says it (shown beside their nickname, never
+  // used to rank): null until their app has said it (all the players before this step)
+  `
+  ALTER TABLE players ADD COLUMN level INTEGER;
+  `,
 ];
 
 export function openDatabase(path: string): Database {

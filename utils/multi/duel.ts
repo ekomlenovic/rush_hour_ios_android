@@ -41,7 +41,10 @@ export interface DuelResult {
 export interface DuelLook { board: string; skin: string; palette: string }
 
 interface PlayerView {
-  id: number; pseudo: string; connected: boolean; moves: MoveRecord[]; wantsRematch: boolean;
+  id: number; pseudo: string;
+  /** Their level in the app; absent: not said by their app, or a server older than the levels */
+  level?: number;
+  connected: boolean; moves: MoveRecord[]; wantsRematch: boolean;
   /** Absent from a server older than the looks, null for an app older than them */
   look?: DuelLook | null;
   /** Their app shows the reactions; absent from a server older than them */
@@ -117,6 +120,7 @@ export const MAX_KEPT_REACTIONS = 8;
 export interface DuelSide {
   id: number;
   pseudo: string;
+  level?: number;
   connected: boolean;
   /** Moves checked by the server */
   moves: MoveRecord[];

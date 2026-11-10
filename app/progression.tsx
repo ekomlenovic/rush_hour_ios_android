@@ -14,6 +14,7 @@ import { useCosmetics } from '@/hooks/useCosmetics';
 import { RFValue } from '@/utils/responsive';
 import { useTheme, type UiColors, type ColorScheme } from '@/theme';
 import PlayerLevelCard from '@/components/progression/PlayerLevelCard';
+import LevelEmblem from '@/components/progression/LevelEmblem';
 import ScreenHeader from '@/components/ScreenHeader';
 import XpBar from '@/components/progression/XpBar';
 import CosmeticThumb from '@/components/garage/CosmeticThumb';
@@ -122,6 +123,7 @@ export default function ProgressionScreen() {
                   })}
                 >
                   <View style={styles.levelHeader}>
+                    <LevelEmblem level={level} size={RFValue(30)} />
                     <Text style={[styles.levelName, { color: colors.text }]}>{t('progression.level', { level })}</Text>
                     <Text style={[styles.levelState, { color: reached ? colors.success : isNext ? colors.primaryText : colors.textMuted }]}>
                       {reached ? `✓ ${t('progression.reached')}` : isNext ? t('progression.next_in', { xp: Math.max(0, totalXpForLevel(level) - xp).toLocaleString() }) : t('progression.from_xp', { xp: totalXpForLevel(level).toLocaleString() })}
@@ -189,8 +191,8 @@ const styles = StyleSheet.create({
   line: { width: 2, flex: 1, marginVertical: 2 },
   levelCard: { flex: 1, borderRadius: 14, borderWidth: 1, padding: 12, gap: 4, marginBottom: 12 },
   future: { opacity: 0.75 },
-  levelHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 2 },
-  levelName: { fontSize: RFValue(15), fontWeight: '800' },
+  levelHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  levelName: { flex: 1, fontSize: RFValue(15), fontWeight: '800' },
   levelState: { fontSize: RFValue(11), fontWeight: '700', flexShrink: 1, textAlign: 'right' },
   titleBadge: { alignSelf: 'flex-start', fontSize: RFValue(12), fontWeight: '700', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, overflow: 'hidden', marginVertical: 2 },
   reward: { fontSize: RFValue(13) },

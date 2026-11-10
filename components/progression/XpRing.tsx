@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import type { UiColors } from '@/theme';
+import LevelEmblem from './LevelEmblem';
 
 interface Props {
   colors: UiColors;
@@ -15,9 +15,8 @@ interface Props {
 
 const STROKE = 8;
 
-/** Player level in an XP ring; the screen reader text is given by the parent */
+/** The emblem of the player level in an XP ring; the screen reader text is given by the parent */
 export default function XpRing({ colors, level, ratio, size = RFValue(84) }: Props) {
-  const { t } = useTranslation();
   const radius = (size - STROKE) / 2;
   const circumference = 2 * Math.PI * radius;
   const filled = Math.max(0, Math.min(1, ratio)) * circumference;
@@ -39,8 +38,7 @@ export default function XpRing({ colors, level, ratio, size = RFValue(84) }: Pro
         />
       </Svg>
       <View style={styles.center}>
-        <Text style={[styles.caption, { color: colors.textMuted }]}>{t('progression.ring_caption')}</Text>
-        <Text style={[styles.level, { color: colors.text }]}>{level}</Text>
+        <LevelEmblem level={level} size={size - 4 * STROKE} />
       </View>
     </View>
   );
@@ -51,16 +49,5 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  caption: {
-    fontSize: RFValue(10),
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  level: {
-    fontSize: RFValue(28),
-    fontWeight: '800',
-    lineHeight: RFValue(32),
   },
 });
