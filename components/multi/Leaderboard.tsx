@@ -9,9 +9,19 @@ import type { UiColors } from '@/theme';
 import { weekCells, type DayCell } from '@/utils/multi/week';
 import { multiErrorMessage } from './errors';
 import { reasonsText, verdictIcon } from './verdict';
+import LevelEmblem from '@/components/progression/LevelEmblem';
+import { useMyLevel } from '@/hooks/useMyLevel';
+import { shownLevel } from '@/utils/multi/level';
 
 /** The player of a row, for the actions on them (watch the game, report, block) */
-export interface RowPlayer { playerId: number; pseudo: string; attemptId?: number; won: boolean }
+export interface RowPlayer {
+  playerId: number; pseudo: string; attemptId?: number; won: boolean;
+  /** Their level in the app; null or absent: not known */
+  level?: number | null;
+}
+
+/** The emblem of a level in a row of a ranking */
+export const ROW_EMBLEM_SIZE = RFValue(24);
 
 /** The podium of a final ranking */
 export const MEDALS = ['🥇', '🥈', '🥉'];
@@ -47,6 +57,12 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
   const [board, setBoard] = useState<{ params: string; data: Board } | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
+  const myLevel = useMyLevel();
+  const levelOf = (row: { playerId: number; level?: number | null }) => shownLevel(row.level, row.playerId === myPlayerId, myLevel);
+  const levelLabel = (row: { playerId: number; level?: number | null }) => {
+    const level = levelOf(row);
+    return level === null ? null : t('progression.level', { level });
+  };
 
   const load = useCallback(async () => {
     if (!query) return setLoading(false);
@@ -71,6 +87,7 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
     row.rank ? t('multi.rank_a11y', { rank: row.rank }) : null,
     row.pseudo,
     row.playerId === myPlayerId ? t('multi.you') : null,
+    levelLabel(row),
     statusText(row),
     row.status === 'won' ? t('multi.points', { count: row.points }) : null,
     row.verdict === 'cheater' ? t('multi.cheater') : null,
@@ -93,7 +110,7 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
   };
 
   const periodLabel = (row: PeriodRow) => [
-    t('multi.rank_a11y', { rank: row.rank }), row.pseudo, row.playerId === myPlayerId ? t('multi.you') : null,
+    t('multi.rank_a11y', { rank: row.rank }), row.pseudo, row.playerId === myPlayerId ? t('multi.you') : null, levelLabel(row),
     t('multi.points', { count: row.points }), t('multi.wins', { count: row.wins }),
     ...(cellsOf(row)?.map(cellLabel) ?? []),
   ].filter(Boolean).join(', ');
@@ -128,7 +145,7 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
         return (
           <Pressable
             key={row.playerId}
-            onPress={() => onRowPress({ playerId: row.playerId, pseudo: row.pseudo, attemptId: row.attemptId, won: row.status === 'won' })}
+            onPress={() => onRowPress({ playerId: row.playerId, pseudo: row.pseudo, attemptId: row.attemptId, won: row.status === 'won', level: levelOf(row) })}
             style={[styles.rowWrap, mine && { backgroundColor: colors.primarySoft }]}
             accessibilityRole="button"
             accessibilityLabel={dayLabel(row)}
@@ -136,7 +153,10 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
             <View style={styles.row}>
               <Text style={[styles.rank, { color: colors.textMuted }]}>{row.rank ?? '–'}</Text>
               {row.verdict && <Ionicons name={verdictIcon(row.verdict)} size={RFValue(15)} color={cheater ? colors.danger : colors.warning} />}
-              <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{row.pseudo}</Text>
+              <View style={styles.who}>
+                <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{row.pseudo}</Text>
+                {levelOf(row) !== null && <LevelEmblem level={levelOf(row)!} size={ROW_EMBLEM_SIZE} />}
+              </View>
               <Text style={[styles.detail, { color: row.status === 'won' ? colors.text : colors.textMuted }, cheater && styles.struck]}>{statusText(row)}</Text>
               <Text style={[styles.score, { color: cheater ? colors.danger : colors.primaryText }]}>{row.status === 'won' ? `+${row.points}` : ''}</Text>
             </View>
@@ -154,7 +174,7 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
         return (
           <Pressable
             key={row.playerId}
-            onPress={() => onRowPress({ playerId: row.playerId, pseudo: row.pseudo, won: false })}
+            onPress={() => onRowPress({ playerId: row.playerId, pseudo: row.pseudo, won: false, level: levelOf(row) })}
             style={[styles.rowWrap, mine && { backgroundColor: colors.primarySoft }]}
             accessibilityRole="button"
             accessibilityLabel={periodLabel(row)}
@@ -163,7 +183,10 @@ export default function Leaderboard({ api, colors, myPlayerId, refreshKey, block
               <Text style={[styles.rank, { color: colors.textMuted }, final && row.rank <= MEDALS.length && styles.medal]}>
                 {final ? MEDALS[row.rank - 1] ?? row.rank : row.rank}
               </Text>
-              <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{row.pseudo}</Text>
+              <View style={styles.who}>
+                <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{row.pseudo}</Text>
+                {levelOf(row) !== null && <LevelEmblem level={levelOf(row)!} size={ROW_EMBLEM_SIZE} />}
+              </View>
               <Text style={[styles.detail, { color: colors.textMuted }]}>{t('multi.wins', { count: row.wins })}</Text>
               <Text style={[styles.score, { color: colors.primaryText }]}>{t('multi.points_short', { count: row.points })}</Text>
             </View>
@@ -285,8 +308,15 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'center',
   },
-  pseudo: {
+  // The nickname then the emblem of the level: the nickname keeps the rank and the level apart
+  who: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: RFValue(6),
+  },
+  pseudo: {
+    flexShrink: 1,
     fontSize: RFValue(15),
     fontWeight: '700',
   },

@@ -63,6 +63,24 @@ describe('schema migrations', () => {
     }
   });
 
+  it('the players before their level was kept: no level, their nickname shown without it', () => {
+    const before = MIGRATIONS.findIndex(step => step.includes('ADD COLUMN level'));
+    expect(before).toBeGreaterThan(0);
+    const { file, cleanup } = databaseAt(before, (db) => {
+      db.prepare(`INSERT INTO players (id, pseudo, pseudo_key, token_hash, recovery_hash, created_at, is_admin) VALUES (1, 'Léo', 'leo', 'a', 'b', 5, 1)`).run();
+    });
+    try {
+      const db = openDatabase(file);
+      expect((db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version).toBe(MIGRATIONS.length);
+      expect({ ...(db.prepare('SELECT * FROM players').get() as object) }).toEqual({
+        id: 1, pseudo: 'Léo', pseudo_key: 'leo', token_hash: 'a', recovery_hash: 'b', created_at: 5, is_admin: 1, banned: 0, level: null,
+      });
+      db.close();
+    } finally {
+      cleanup();
+    }
+  });
+
   it('the challenges before an optimum could be asked for: the usual one of their difficulty, never generated again', () => {
     const before = MIGRATIONS.findIndex(step => step.includes('ADD COLUMN wanted_moves'));
     expect(before).toBeGreaterThan(0);

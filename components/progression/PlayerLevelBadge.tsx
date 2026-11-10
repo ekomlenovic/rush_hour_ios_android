@@ -10,6 +10,7 @@ import { RFValue } from '@/utils/responsive';
 import type { UiColors } from '@/theme';
 import { formatBonus } from './rewards';
 import XpBar from './XpBar';
+import LevelEmblem from './LevelEmblem';
 
 interface Props {
   colors: UiColors;
@@ -18,7 +19,7 @@ interface Props {
   onBonusPress: () => void;
 }
 
-/** Player level, title, XP bonus and XP bar of the home screen */
+/** Emblem of the player level, title, XP bonus and XP bar of the home screen */
 export default function PlayerLevelBadge({ colors, onPress, onBonusPress }: Props) {
   const { t } = useTranslation();
   const xp = useGameStore(s => s.xp);
@@ -38,30 +39,34 @@ export default function PlayerLevelBadge({ colors, onPress, onBonusPress }: Prop
         accessibilityRole="button"
         accessibilityLabel={t('progression.a11y_badge', { level: info.level, title, xp: info.xpInLevel, next: info.xpForNext })}
       />
-      <View style={styles.row} pointerEvents="none" importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-        <Text style={[styles.level, { color: colors.primaryText }]}>{t('progression.level_short', { level: info.level })}</Text>
-        <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{title}</Text>
-        <Text style={[styles.xp, { color: colors.textMuted }]}>
-          {t('progression.xp_progress', { xp: info.xpInLevel, next: info.xpForNext })}
-        </Text>
+      <View pointerEvents="none">
+        <LevelEmblem level={info.level} size={RFValue(40)} />
       </View>
-      {/* The bonus sits at the end of the XP bar: the badge is as tall with it as without */}
-      <View style={styles.barRow} pointerEvents="box-none">
-        <View style={styles.bar} pointerEvents="none">
-          <XpBar colors={colors} ratio={info.ratio} height={6} />
+      <View style={[styles.main, bonus > 0 && styles.mainWithBonus]} pointerEvents="box-none">
+        <View style={styles.row} pointerEvents="none" importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{title}</Text>
+          <Text style={[styles.xp, { color: colors.textMuted }]}>
+            {t('progression.xp_progress', { xp: info.xpInLevel, next: info.xpForNext })}
+          </Text>
         </View>
-        {bonus > 0 && (
-          <Pressable
-            onPress={onBonusPress}
-            style={[styles.bonus, { backgroundColor: colors.surface }]}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel={t('bonus.a11y_pill', { bonus: formatBonus(t, bonus) })}
-          >
-            <Ionicons name="flame" size={11} color={colors.warning} />
-            <Text style={[styles.bonusText, { color: colors.text }]} allowFontScaling={false}>{formatBonus(t, bonus)}</Text>
-          </Pressable>
-        )}
+        {/* The bonus sits at the end of the XP bar: the badge is as tall with it as without */}
+        <View style={styles.barRow} pointerEvents="box-none">
+          <View style={styles.bar} pointerEvents="none">
+            <XpBar colors={colors} ratio={info.ratio} height={6} />
+          </View>
+          {bonus > 0 && (
+            <Pressable
+              onPress={onBonusPress}
+              style={[styles.bonus, { backgroundColor: colors.surface }]}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={t('bonus.a11y_pill', { bonus: formatBonus(t, bonus) })}
+            >
+              <Ionicons name="flame" size={11} color={colors.warning} />
+              <Text style={[styles.bonusText, { color: colors.text }]} allowFontScaling={false}>{formatBonus(t, bonus)}</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -73,13 +78,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 18,
-    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
+  main: { flex: 1, gap: 8 },
   // The bonus is taller than the bar: the padding and the gap make up for it
-  badgeWithBonus: { paddingVertical: 8, gap: 3 },
+  badgeWithBonus: { paddingVertical: 11 },
+  mainWithBonus: { gap: 3 },
   row: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  level: { fontSize: RFValue(15), fontWeight: '800' },
-  title: { flex: 1, fontSize: RFValue(14), fontWeight: '600' },
+  title: { flex: 1, fontSize: RFValue(15), fontWeight: '700' },
   xp: { fontSize: RFValue(12), fontWeight: '600' },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bar: { flex: 1 },

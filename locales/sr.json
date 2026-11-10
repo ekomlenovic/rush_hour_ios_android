@@ -868,8 +868,6 @@
   },
   "progression": {
     "level": "Nivo {{level}}",
-    "level_short": "Nv. {{level}}",
-    "ring_caption": "Nv.",
     "xp_progress": "{{xp}} / {{next}} XP",
     "xp_gain": "+{{xp}} XP",
     "level_up": "Dostignut nivo {{level}}!",

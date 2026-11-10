@@ -6,6 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { RFValue } from '@/utils/responsive';
 import { formatDuration } from '@/utils/date';
 import type { DuelListing } from '@/utils/multi/api';
+import LevelEmblem from '@/components/progression/LevelEmblem';
+import { useMyLevel } from '@/hooks/useMyLevel';
+import { shownLevel } from '@/utils/multi/level';
 import type { UiColors } from '@/theme';
 import LoadingIndicator from '@/components/LoadingIndicator';
 
@@ -106,7 +109,12 @@ export default function DuelsCard({ duels, loadedAt, colors, myPlayerId, clockOf
 }
 
 /** The initial of a player in a round */
-function Avatar({ pseudo, colors, mine = false }: { pseudo: string; colors: UiColors; mine?: boolean }) {
+function Avatar({ player, colors, mine = false }: { player: { pseudo: string; level?: number }; colors: UiColors; mine?: boolean }) {
+  const myLevel = useMyLevel();
+  const { pseudo } = player;
+  // The emblem of their level in place of their initial, when the server knows it
+  const level = shownLevel(player.level, mine, myLevel);
+  if (level !== null) return <LevelEmblem level={level} size={AVATAR} />;
   return (
     <View style={[styles.avatar, { backgroundColor: mine ? colors.primary : colors.neutralSoft }]}>
       <Text style={[styles.avatarText, { color: mine ? colors.onPrimary : colors.text }]}>{pseudo.slice(0, 1).toUpperCase()}</Text>
@@ -128,7 +136,7 @@ function OpenRow({ duel, colors, disabled, onOpen }: { duel: DuelListing; colors
       accessibilityRole="button"
       accessibilityLabel={`${label}, ${difficulty}${duel.private ? `, ${t('multi.duel.private')}` : ''}, ${action}`}
     >
-      <Avatar pseudo={creator.pseudo} colors={colors} mine={duel.mine} />
+      <Avatar player={creator} colors={colors} mine={duel.mine} />
       <View style={styles.rowMain}>
         <View style={styles.rowTitle}>
           {duel.private && <Ionicons name="lock-closed" size={13} color={colors.textMuted} />}
@@ -176,8 +184,8 @@ function PlayingRow({ duel, colors, myPlayerId, serverNow, disabled, onOpen, onW
       accessibilityLabel={`${versus}, ${difficulty}, ${over ? t('multi.duel.over_short') : t('multi.duel.playing_short')}${spectators > 0 ? `, ${t('multi.duel.spectators', { count: spectators })}` : ''}${action}`}
     >
       <View style={styles.pair}>
-        <Avatar pseudo={first.pseudo} colors={colors} mine={first.id === myPlayerId} />
-        {second && <View style={styles.pairSecond}><Avatar pseudo={second.pseudo} colors={colors} mine={second.id === myPlayerId} /></View>}
+        <Avatar player={first} colors={colors} mine={first.id === myPlayerId} />
+        {second && <View style={styles.pairSecond}><Avatar player={second} colors={colors} mine={second.id === myPlayerId} /></View>}
       </View>
       <View style={styles.rowMain}>
         <Text style={[styles.pseudo, { color: colors.text }]} numberOfLines={1}>{versus}</Text>

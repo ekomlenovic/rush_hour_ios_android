@@ -862,7 +862,7 @@ describe('duels over a WebSocket', () => {
 
   it('/info tells the app the server has duels', async () => {
     server = testServer();
-    expect((await server.request('GET', '/info')).body.features).toEqual(['duel', 'ranking_range', 'reactions']);
+    expect((await server.request('GET', '/info')).body.features).toEqual(['duel', 'ranking_range', 'reactions', 'player_level']);
   });
 
   it('two players of the server play a duel', async () => {

@@ -72,8 +72,8 @@ describe('finished duels', () => {
       myMoves: 2, theirMoves: 0, timeMs: 4000, hasReplay: true, difficulty: 'EASY',
     });
     expect(body.records).toEqual([
-      { opponent: { id: emma.player.id, pseudo: 'Emma' }, wins: 2, losses: 0, draws: 0 },
-      { opponent: { id: sam.player.id, pseudo: 'Sam' }, wins: 0, losses: 1, draws: 0 },
+      { opponent: { id: emma.player.id, pseudo: 'Emma', level: null }, wins: 2, losses: 0, draws: 0 },
+      { opponent: { id: sam.player.id, pseudo: 'Sam', level: null }, wins: 0, losses: 1, draws: 0 },
     ]);
   });
 
@@ -111,8 +111,29 @@ describe('finished duels', () => {
     expect(week.rows).toHaveLength(2);
   });
 
+  it('show the level each app said: in the duel itself, the rankings, the history and the scores', async () => {
+    server = testServer();
+    const { join, duels, clock, request } = server;
+    const [leo, emma] = [await join('Léo'), await join('Emma')];
+    await request('POST', '/me/level', emma.token, { level: 23 });
+    const [a, b] = [phone(duels, leo.token), phone(duels, emma.token)];
+    expect(a.last('ready')!.player).toEqual({ id: leo.player.id, pseudo: 'Léo' });
+    expect(b.last('ready')!.player).toEqual({ id: emma.player.id, pseudo: 'Emma', level: 23 });
+    a.send({ type: 'create', difficulty: 'EASY' });
+    b.send({ type: 'join', code: a.last('duel')!.duel.code });
+    await settle();
+    expect(a.last('duel')!.duel.opponent).toMatchObject({ pseudo: 'Emma', level: 23 });
+    clock.now += COUNTDOWN_MS + 4000;
+    b.send({ type: 'leave' });
+    const rows = (await request('GET', '/duels/leaderboard?period=all', leo.token)).body.rows;
+    expect(rows.map((r: { pseudo: string; level: number | null }) => [r.pseudo, r.level])).toEqual([['Léo', null], ['Emma', 23]]);
+    const history = (await request('GET', '/duels/history', leo.token)).body;
+    expect(history.duels[0].opponent).toEqual({ id: emma.player.id, pseudo: 'Emma', level: 23 });
+    expect(history.records[0].opponent).toEqual({ id: emma.player.id, pseudo: 'Emma', level: 23 });
+  });
+
   it('ties share a rank', () => {
-    const row = (pseudo: string, wins: number, losses: number) => ({ playerId: 0, pseudo, wins, losses, draws: 0, played: wins + losses });
+    const row = (pseudo: string, wins: number, losses: number) => ({ playerId: 0, pseudo, level: null, wins, losses, draws: 0, played: wins + losses });
     expect(rankDuels([row('B', 1, 0), row('A', 1, 0), row('C', 0, 1)]).map(r => [r.pseudo, r.rank])).toEqual([['A', 1], ['B', 1], ['C', 3]]);
   });
 

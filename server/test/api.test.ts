@@ -10,7 +10,7 @@ describe('joining a server', () => {
   it('/info is public and tells the API version', async () => {
     const { request } = open();
     expect(await request('GET', '/info')).toEqual({
-      status: 200, body: { name: 'Rush Hours', apiVersion: 1, minAppVersion: '1.1.6', features: ['duel', 'ranking_range', 'reactions'] },
+      status: 200, body: { name: 'Rush Hours', apiVersion: 1, minAppVersion: '1.1.6', features: ['duel', 'ranking_range', 'reactions', 'player_level'] },
     });
   });
 
@@ -210,6 +210,31 @@ describe('look-alike nickname (renames)', () => {
 });
 
 describe('my account', () => {
+  it('keeps the level the app says, shown in the rankings and never used to rank', async () => {
+    const { join, request, play } = open();
+    const [leo, mia] = await Promise.all(['Léo', 'Mia'].map(join));
+    expect((await request('GET', '/me', leo.token)).body.level).toBeNull();
+    expect(await request('POST', '/me/level', leo.token, { level: 12 })).toEqual({ status: 200, body: { level: 12 } });
+    expect((await request('GET', '/me', leo.token)).body.level).toBe(12);
+    // Mia wins with fewer moves: Léo's higher level changes nothing
+    await play(leo.token, LONG_SOLUTION, 20_000);
+    await play(mia.token, SOLUTION, 50_000);
+    const day = await request('GET', '/leaderboard?period=day', mia.token);
+    expect(day.body.rows.map((r: { pseudo: string; level: number | null; rank: number }) => [r.pseudo, r.level, r.rank])).toEqual([['Mia', null, 1], ['Léo', 12, 2]]);
+    const week = await request('GET', '/leaderboard?period=week', mia.token);
+    expect(week.body.rows.map((r: { pseudo: string; level: number | null }) => [r.pseudo, r.level])).toEqual([['Mia', null], ['Léo', 12]]);
+    // The level follows the player: the rankings show the one said last
+    await request('POST', '/me/level', leo.token, { level: 13 });
+    expect((await request('GET', '/leaderboard?period=day', mia.token)).body.rows[1].level).toBe(13);
+  });
+
+  it.each([0, -3, 1000, 2.5, 'douze', null])('refuses the level %j', async (level) => {
+    const { join, request } = open();
+    const { token } = await join('Léo');
+    expect((await request('POST', '/me/level', token, { level })).status).toBe(400);
+    expect((await request('GET', '/me', token)).body.level).toBeNull();
+  });
+
   it('changes the nickname', async () => {
     const { join, request } = open();
     const leo = await join('Léo');

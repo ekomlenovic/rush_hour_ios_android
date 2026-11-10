@@ -34,6 +34,9 @@ import { DuelCodeSheet, NewDuelSheet } from '@/components/multi/DuelSheets';
 import { errorCode, multiErrorMessage } from '@/components/multi/errors';
 import IconText from '@/components/IconText';
 import LoadingIndicator from '@/components/LoadingIndicator';
+import { useGameStore } from '@/store/gameStore';
+import { getPlayerLevel } from '@/data/progression';
+import { sayLevel } from '@/utils/multi/level';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 
@@ -142,6 +145,8 @@ function ServerScreen({ tab, setTab }: { tab: MultiTab; setTab: (tab: MultiTab) 
       const [info, day] = await Promise.all([api.info(), api.today()]);
       setCompat(checkCompatibility(info, APP_VERSION));
       setFeatures(info.features ?? []);
+      // My level, for the others to see beside my nickname (not awaited: the rankings show mine from this phone)
+      void sayLevel(api, url, info.features, getPlayerLevel(useGameStore.getState().xp));
       // The admin may have renamed the server in the app: the account of this server, never the active
       // one, which may be another server by now (issue 187)
       const current = useMultiStore.getState().accounts.find(a => a.url === url);

@@ -29,7 +29,8 @@ interface DuelRow {
   look2_json: string | null;
 }
 
-export interface DuelStats { playerId: number; pseudo: string; wins: number; losses: number; draws: number; played: number }
+/** level: of the player in the app, as their app said it; null: not said yet */
+export interface DuelStats { playerId: number; pseudo: string; level: number | null; wins: number; losses: number; draws: number; played: number }
 export interface DuelRankRow extends DuelStats { rank: number }
 
 /** Duel rankings: wins, then fewer losses; the same wins and losses share a rank */
@@ -51,14 +52,14 @@ export interface DuelHistoryItem {
   metric: DuelMetric;
   reason: EndReason;
   winnerId: number | null;
-  opponent: { id: number; pseudo: string };
+  opponent: { id: number; pseudo: string; level: number | null };
   myMoves: number;
   theirMoves: number;
   timeMs: number | null;
   hasReplay: boolean;
 }
 
-export interface DuelRecordLine { opponent: { id: number; pseudo: string }; wins: number; losses: number; draws: number }
+export interface DuelRecordLine { opponent: { id: number; pseudo: string; level: number | null }; wins: number; losses: number; draws: number }
 
 export interface DuelReplay {
   id: number;
@@ -105,7 +106,7 @@ export class DuelStore {
   /** Wins, losses and draws of each player between two days (players excluded by the admin are left out) */
   stats(from: string, to: string): DuelStats[] {
     const rows = this.db.prepare(`
-      SELECT p.id AS playerId, p.pseudo AS pseudo,
+      SELECT p.id AS playerId, p.pseudo AS pseudo, p.level AS level,
         SUM(d.winner_id = p.id) AS wins,
         SUM(d.winner_id IS NOT NULL AND d.winner_id != p.id) AS losses,
         SUM(d.winner_id IS NULL) AS draws,
@@ -121,11 +122,11 @@ export class DuelStore {
   history(playerId: number, limit = 20): DuelHistoryItem[] {
     const rows = this.db.prepare(`
       SELECT d.*, CASE WHEN d.player1_id = ? THEN d.player2_id ELSE d.player1_id END AS opponent_id,
-        p.pseudo AS opponent_pseudo
+        p.pseudo AS opponent_pseudo, p.level AS opponent_level
       FROM duels d JOIN players p ON p.id = CASE WHEN d.player1_id = ? THEN d.player2_id ELSE d.player1_id END
       WHERE ? IN (d.player1_id, d.player2_id)
       ORDER BY d.ended_at DESC, d.id DESC LIMIT ?
-    `).all(playerId, playerId, playerId, limit) as unknown as (DuelRow & { opponent_id: number; opponent_pseudo: string })[];
+    `).all(playerId, playerId, playerId, limit) as unknown as (DuelRow & { opponent_id: number; opponent_pseudo: string; opponent_level: number | null })[];
     return rows.map(d => {
       const first = d.player1_id === playerId;
       const winnerMoves = d.winner_id === d.player1_id ? d.moves1_json : d.winner_id === d.player2_id ? d.moves2_json : null;
@@ -136,7 +137,7 @@ export class DuelStore {
         metric: d.metric,
         reason: d.reason,
         winnerId: d.winner_id,
-        opponent: { id: d.opponent_id, pseudo: d.opponent_pseudo },
+        opponent: { id: d.opponent_id, pseudo: d.opponent_pseudo, level: d.opponent_level },
         myMoves: first ? d.moves1 : d.moves2,
         theirMoves: first ? d.moves2 : d.moves1,
         timeMs: d.reason === 'won' && winnerMoves ? lastTime(JSON.parse(winnerMoves) as MoveRecord[]) : null,
@@ -148,15 +149,15 @@ export class DuelStore {
   /** The score of a player against each of their opponents, the most played first */
   records(playerId: number): DuelRecordLine[] {
     const rows = this.db.prepare(`
-      SELECT p.id AS id, p.pseudo AS pseudo,
+      SELECT p.id AS id, p.pseudo AS pseudo, p.level AS level,
         SUM(d.winner_id = ?) AS wins,
         SUM(d.winner_id = p.id) AS losses,
         SUM(d.winner_id IS NULL) AS draws
       FROM duels d JOIN players p ON p.id = CASE WHEN d.player1_id = ? THEN d.player2_id ELSE d.player1_id END
       WHERE ? IN (d.player1_id, d.player2_id)
       GROUP BY p.id ORDER BY COUNT(*) DESC, p.pseudo
-    `).all(playerId, playerId, playerId) as { id: number; pseudo: string; wins: number; losses: number; draws: number }[];
-    return rows.map(r => ({ opponent: { id: r.id, pseudo: r.pseudo }, wins: Number(r.wins), losses: Number(r.losses), draws: Number(r.draws) }));
+    `).all(playerId, playerId, playerId) as { id: number; pseudo: string; level: number | null; wins: number; losses: number; draws: number }[];
+    return rows.map(r => ({ opponent: { id: r.id, pseudo: r.pseudo, level: r.level }, wins: Number(r.wins), losses: Number(r.losses), draws: Number(r.draws) }));
   }
 
   /** A duel with the moves of both players; null if unknown */
