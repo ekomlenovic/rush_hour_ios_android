@@ -27,7 +27,17 @@ On the Google Play Store: **[Rush Hours on Google Play](https://play.google.com/
 
 ### iPhone / iPad
 
-The game is **not on the App Store**. The `.ipa` file is published in the **[GitHub releases](https://github.com/ekomlenovic/rush_hour_ios_android/releases/latest)** (`rush-hours-unsigned.ipa`): you install it yourself with SideStore, on its own or with LiveContainer.
+The game is **not on the App Store**. The `.ipa` file is published in the **[GitHub releases](https://github.com/ekomlenovic/rush_hour_ios_android/releases/latest)** (`rush-hours-unsigned.ipa`): you install it yourself with SideStore, AltStore or LiveContainer.
+
+**On your iPhone, add the Rush Hours source in one tap** (the app must already be installed):
+
+<p>
+<a href="https://ekomlenovic.github.io/rush_hour_ios_android/add-source/?app=sidestore"><img src="https://img.shields.io/badge/SideStore-Add_source-8A4FFF?style=for-the-badge&logo=apple&logoColor=white" alt="SideStore" height="32"></a>
+<a href="https://ekomlenovic.github.io/rush_hour_ios_android/add-source/?app=altstore"><img src="https://img.shields.io/badge/AltStore-Add_source-018084?style=for-the-badge&logo=apple&logoColor=white" alt="AltStore" height="32"></a>
+<a href="https://ekomlenovic.github.io/rush_hour_ios_android/add-source/?app=livecontainer"><img src="https://img.shields.io/badge/LiveContainer-Add_source-E5A019?style=for-the-badge&logo=apple&logoColor=white" alt="LiveContainer" height="32"></a>
+</p>
+
+If nothing opens, add the source by hand (address below).
 
 #### With SideStore
 
@@ -124,7 +134,17 @@ Sur le Google Play Store : **[Rush Hours sur Google Play](https://play.google.co
 
 ### iPhone / iPad
 
-Le jeu **n'est pas sur l'App Store**. Le fichier `.ipa` est publié dans les **[releases GitHub](https://github.com/ekomlenovic/rush_hour_ios_android/releases/latest)** (`rush-hours-unsigned.ipa`) : tu l'installes toi-même avec SideStore, seul ou avec LiveContainer.
+Le jeu **n'est pas sur l'App Store**. Le fichier `.ipa` est publié dans les **[releases GitHub](https://github.com/ekomlenovic/rush_hour_ios_android/releases/latest)** (`rush-hours-unsigned.ipa`) : tu l'installes toi-même avec SideStore, AltStore ou LiveContainer.
+
+**Sur ton iPhone, ajoute la source Rush Hours en une touche** (l'app doit déjà être installée) :
+
+<p>
+<a href="https://ekomlenovic.github.io/rush_hour_ios_android/add-source/?app=sidestore"><img src="https://img.shields.io/badge/SideStore-Ajouter_la_source-8A4FFF?style=for-the-badge&logo=apple&logoColor=white" alt="SideStore" height="32"></a>
+<a href="https://ekomlenovic.github.io/rush_hour_ios_android/add-source/?app=altstore"><img src="https://img.shields.io/badge/AltStore-Ajouter_la_source-018084?style=for-the-badge&logo=apple&logoColor=white" alt="AltStore" height="32"></a>
+<a href="https://ekomlenovic.github.io/rush_hour_ios_android/add-source/?app=livecontainer"><img src="https://img.shields.io/badge/LiveContainer-Ajouter_la_source-E5A019?style=for-the-badge&logo=apple&logoColor=white" alt="LiveContainer" height="32"></a>
+</p>
+
+Si rien ne s'ouvre, ajoute la source à la main (adresse ci-dessous).
 
 #### Avec SideStore
 
