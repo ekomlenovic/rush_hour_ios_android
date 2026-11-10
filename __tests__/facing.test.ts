@@ -1,8 +1,9 @@
 import { facingTransform, isUpright, type ArtDrawing } from '../theme/art/art';
 import { vehicleFacing } from '../utils/facing';
 
-const target = (orientation: 'horizontal' | 'vertical') => ({ orientation, isTarget: true });
-const other = (orientation: 'horizontal' | 'vertical') => ({ orientation, isTarget: false });
+const target = (orientation: 'horizontal' | 'vertical') => ({ id: 'X', row: 2, col: 0, length: 2, orientation, isTarget: true });
+const other = (id: string, orientation: 'horizontal' | 'vertical', row = 1, col = 1) =>
+  ({ id, row, col, length: 2, orientation, isTarget: false });
 
 describe('vehicleFacing', () => {
   it('the target car faces its exit, on every side', () => {
@@ -14,10 +15,28 @@ describe('vehicleFacing', () => {
     expect(vehicleFacing(target('vertical'), 7, 4, 7)).toBe('down');
   });
 
-  it('the other vehicles face right or up, wherever the exit is', () => {
-    for (const [row, col] of [[2, 6], [2, 255], [255, 2], [6, 2]]) {
-      expect(vehicleFacing(other('horizontal'), row, col, 6)).toBe('right');
-      expect(vehicleFacing(other('vertical'), row, col, 6)).toBe('up');
+  it('the other vehicles face along their axis', () => {
+    for (let i = 0; i < 20; i++) {
+      expect(['right', 'left']).toContain(vehicleFacing(other(`h${i}`, 'horizontal'), 2, 6, 6));
+      expect(['up', 'down']).toContain(vehicleFacing(other(`v${i}`, 'vertical'), 2, 6, 6));
+    }
+  });
+
+  it('the other vehicles face both ways across a level', () => {
+    const horizontal = new Set(Array.from({ length: 20 }, (_, i) => vehicleFacing(other(`h${i}`, 'horizontal'), 2, 6, 6)));
+    const vertical = new Set(Array.from({ length: 20 }, (_, i) => vehicleFacing(other(`v${i}`, 'vertical'), 2, 6, 6)));
+    expect(horizontal).toEqual(new Set(['right', 'left']));
+    expect(vertical).toEqual(new Set(['up', 'down']));
+  });
+
+  it('a vehicle keeps its way while it slides along its lane', () => {
+    for (let i = 0; i < 20; i++) {
+      const h = vehicleFacing(other(`h${i}`, 'horizontal', 3, 0), 2, 6, 6);
+      const v = vehicleFacing(other(`v${i}`, 'vertical', 0, 4), 2, 6, 6);
+      for (let at = 0; at <= 4; at++) {
+        expect(vehicleFacing(other(`h${i}`, 'horizontal', 3, at), 2, 6, 6)).toBe(h);
+        expect(vehicleFacing(other(`v${i}`, 'vertical', at, 4), 2, 6, 6)).toBe(v);
+      }
     }
   });
 });
