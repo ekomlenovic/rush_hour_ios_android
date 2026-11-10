@@ -1,4 +1,5 @@
 import type { ChallengeResult, Level, LevelProgress, LevelSaveState, PeriodStats, ReviewPromptState } from './types';
+import type { DailyMissionsState, MissionStreakState } from '../data/missions';
 import { sampleLevels } from '../data/sampleLevels';
 import { recomputeStreak } from './streak';
 import { BOSS_WIN_XP, computeRetroactiveXp } from '../data/progression';
@@ -10,7 +11,7 @@ import { addToPeriod, keptMonths, monthKeyOf } from './periodStats';
 import { getLocalDateString, getWeekStart } from '../utils/date';
 
 /** Version of the persisted state: bump it and add a step to migrateState when its shape changes */
-export const STORE_VERSION = 13;
+export const STORE_VERSION = 14;
 
 /** Brings a state saved by an older version up to STORE_VERSION */
 export function migrateState(persistedState: unknown, version: number): Record<string, unknown> {
@@ -90,7 +91,28 @@ export function migrateState(persistedState: unknown, version: number): Record<s
     // is deduced from the dated data of the save: the oldest day for the first open, the days seen played
     state.reviewPrompt = seedReviewPrompt(state);
   }
+  if (version < 14) {
+    // v14: the 3 missions of the day give 200 XP instead of 100, multiplied by a mission streak (days in
+    // a row with the 3 missions done). The mission days already done are credited the difference, and
+    // the streak starts from the last day known: missions done today or yesterday count as its first day
+    const stats = state.stats && typeof state.stats === 'object' ? (state.stats as { missionDaysCompleted?: unknown }) : {};
+    const missionDays = typeof stats.missionDaysCompleted === 'number' && stats.missionDaysCompleted > 0 ? Math.floor(stats.missionDaysCompleted) : 0;
+    if (missionDays > 0) state.xp = (typeof state.xp === 'number' ? state.xp : 0) + missionDays * V14_MISSIONS_XP_RAISE;
+    state.missionStreak = seedMissionStreak(state);
+  }
   return state;
+}
+
+/** XP added in v14 to each day of missions done before it (100 XP then, 200 since) */
+const V14_MISSIONS_XP_RAISE = 100;
+
+/** Mission streak of a save from before v14: one day if the missions of its last day were done, none otherwise */
+function seedMissionStreak(state: Record<string, unknown>): MissionStreakState {
+  const missions = state.dailyMissions as Partial<DailyMissionsState> | null | undefined;
+  if (missions && typeof missions === 'object' && missions.rewarded === true && typeof missions.date === 'string' && DATE_KEY.test(missions.date)) {
+    return { count: 1, lastDate: missions.date };
+  }
+  return { count: 0, lastDate: null };
 }
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;

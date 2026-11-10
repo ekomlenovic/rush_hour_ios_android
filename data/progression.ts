@@ -2,8 +2,8 @@ import type { ChallengeResult, Level, LevelProgress } from '../store/types';
 
 /**
  * Player level and XP: see docs/GAME_DESIGN.md (Niveau joueur et XP).
- * Every win gives XP, the curve is steep: the first levels come in a few days,
- * level 10 takes about a month and a half of daily play, level 20 about a year.
+ * Every win gives XP, the curve is steep: the first levels come in a few days. The daily missions
+ * played day after day multiply all the XP earned: level 10 in about three weeks, level 20 in about three months.
  */
 
 /** XP needed to go from `level` to `level + 1` */
@@ -79,12 +79,52 @@ export const weeklyWinXp = (stars: number): number => 150 + 50 * stars;
 /** A past daily replayed from the archives: XP of a replayed level, so years of archives can't be farmed */
 export const archiveWinXp = (minMoves: number, stars: number): number => levelWinXp(minMoves, stars, false);
 /** All 3 missions of the day done */
-export const MISSIONS_XP = 100;
+export const MISSIONS_XP = 200;
+/** What the 3 missions gave before store v14: the XP credited by the older migrations */
+export const LEGACY_MISSIONS_XP = 100;
 /** Extra XP for the 3 missions when the freeze stock is full: the freeze that can't be given */
 export const MISSIONS_FULL_STOCK_XP = 50;
 /** XP of the 3 missions of the day, depending on whether their freeze could be given */
 export const missionsXp = (freezeGranted: boolean): number => MISSIONS_XP + (freezeGranted ? 0 : MISSIONS_FULL_STOCK_XP);
 export const ACHIEVEMENT_XP = 50;
+
+// ─── XP bonuses ───────────────────────────────────────────────────────────────
+
+/** A bonus on all the XP earned, reached at a number of days in a row */
+export interface BonusTier {
+  days: number;
+  /** Percent added to the XP */
+  percent: number;
+}
+
+/** Days shown as milestones of a bonus: the end of the first week, then the two big steps */
+export const BONUS_MILESTONE_DAYS = [7, 30, 60];
+
+/**
+ * Tiers of each of the two bonuses (the mission streak and the daily streak): +5 % a day from the
+ * 2nd to the 7th day in a row (+30 %), then a big step at 30 days (+60 %) and another at 60 (+100 %)
+ */
+export const XP_BONUS_TIERS: BonusTier[] = [
+  ...Array.from({ length: 6 }, (_, i) => ({ days: i + 2, percent: 5 * (i + 1) })),
+  { days: 30, percent: 60 },
+  { days: 60, percent: 100 },
+];
+
+/** Percent of XP a number of days in a row adds: the last tier reached */
+export function bonusPercent(days: number): number {
+  let percent = 0;
+  for (const tier of XP_BONUS_TIERS) if ((days || 0) >= tier.days) percent = tier.percent;
+  return percent;
+}
+
+/** The next tier that raises the bonus, if any is left */
+export const nextBonusTier = (days: number): BonusTier | null => XP_BONUS_TIERS.find(tier => tier.days > (days || 0)) ?? null;
+
+/** What all the XP earned is multiplied by: the two bonuses add up */
+export const xpMultiplier = (missionDays: number, streakDays: number): number => 1 + (bonusPercent(missionDays) + bonusPercent(streakDays)) / 100;
+
+/** Highest multiplier: both bonuses at their last tier */
+export const MAX_XP_MULTIPLIER = 1 + (2 * XP_BONUS_TIERS[XP_BONUS_TIERS.length - 1].percent) / 100;
 
 // ─── Level-up rewards ─────────────────────────────────────────────────────────
 
@@ -132,7 +172,7 @@ export function computeRetroactiveXp(state: XpSource, levels: Pick<Level, 'id' |
   for (const r of Object.values(state.weeklyChallengeProgress ?? {})) {
     if (r?.completed) xp += weeklyWinXp(r.stars || 1);
   }
-  xp += (state.stats?.missionDaysCompleted ?? 0) * MISSIONS_XP;
+  xp += (state.stats?.missionDaysCompleted ?? 0) * LEGACY_MISSIONS_XP;
   xp += (state.achievements?.length ?? 0) * ACHIEVEMENT_XP;
   return xp;
 }

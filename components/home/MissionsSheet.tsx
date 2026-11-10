@@ -3,9 +3,10 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { RFValue } from '@/utils/responsive';
-import { DailyMissionsState, MISSIONS_BY_ID, MissionDef, getMissionProgress } from '@/data/missions';
-import { missionsXp } from '@/data/progression';
+import { DailyMissionsState, MISSIONS_BY_ID, MissionDef, MissionStreakState, activeMissionStreak, getMissionProgress } from '@/data/missions';
+import { missionsXp, xpMultiplier } from '@/data/progression';
 import BottomSheet from './BottomSheet';
+import BonusBox from './BonusBox';
 import type { UiColors } from '@/theme';
 
 function formatMissionProgress(mission: MissionDef, progress: number): string {
@@ -20,21 +21,36 @@ interface Props {
   colors: UiColors;
   isDark: boolean;
   missions: DailyMissionsState;
+  /** Days in a row with the 3 missions done: multiplies their XP */
+  missionStreak: MissionStreakState;
+  /** Streak of the daily challenge: the other XP bonus, for the XP announced */
+  dailyStreak: number;
   /** The freeze stock is full: the missions give more XP instead of a freeze */
   freezeStockFull: boolean;
   onClose: () => void;
 }
 
 /** Today's 3 missions with their progress */
-export default function MissionsSheet({ visible, colors, isDark, missions, freezeStockFull, onClose }: Props) {
+export default function MissionsSheet({ visible, colors, isDark, missions, missionStreak, dailyStreak, freezeStockFull, onClose }: Props) {
   const { t } = useTranslation();
+  // Days in a row so far (today included once its missions are done)
+  const streak = activeMissionStreak(missionStreak, missions.date);
+  // Finishing today's missions makes the streak a day longer, which already counts for their XP
+  const rewardXp = Math.round(missionsXp(!freezeStockFull) * xpMultiplier(streak + 1, dailyStreak));
   return (
     <BottomSheet visible={visible} title={t('missions.title')} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose}>
-      <Text style={[styles.settingSub, { color: missions.rewarded ? colors.success : colors.textMuted, marginBottom: 20 }]}>
+      <Text style={[styles.settingSub, { color: missions.rewarded ? colors.success : colors.textMuted, marginBottom: 12 }]}>
         {missions.rewarded
           ? t('missions.all_done')
-          : t(freezeStockFull ? 'missions.reward_hint_full' : 'missions.reward_hint', { xp: missionsXp(!freezeStockFull) })}
+          : t(freezeStockFull ? 'missions.reward_hint_full' : 'missions.reward_hint', { xp: rewardXp })}
       </Text>
+      <BonusBox
+        colors={colors}
+        days={streak}
+        title={t('missions.streak', { count: streak })}
+        emptyTitle={t('missions.streak_none')}
+        rule={t('missions.streak_rule')}
+      />
       {missions.ids.map((id) => {
         const mission = MISSIONS_BY_ID[id];
         if (!mission) return null;

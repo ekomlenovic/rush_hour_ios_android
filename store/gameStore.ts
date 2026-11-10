@@ -5,7 +5,10 @@ import { sampleLevels } from '../data/sampleLevels';
 import { isBossLevel } from '../data/bosses';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
 import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
-import { DailyMissionsState, FAST_WIN_MS, MissionCounter, MissionReward, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
+import {
+  DailyMissionsState, FAST_WIN_MS, MissionCounter, MissionReward, MissionStreakState, MISSIONS_BY_ID,
+  advanceMissionStreak, currentXpBonus, getMissionsForDay, initialMissionStreak, isMissionDone,
+} from '../data/missions';
 import { getLocalDateString, daysBetween } from '../utils/date';
 import { diffMove, toMoveRecord } from '../utils/moveLog';
 import { checkWin, isLegalMove } from '../utils/collision';
@@ -146,6 +149,8 @@ interface GameState {
 
   /** Today's missions and their counters */
   dailyMissions: DailyMissionsState | null;
+  /** Days in a row with the 3 missions done: multiplies their XP */
+  missionStreak: MissionStreakState;
   /** All missions of the day just completed, not shown to the player yet (not persisted) */
   pendingMissionReward: MissionReward | null;
 
@@ -316,12 +321,14 @@ export const useGameStore = create<GameState>()(
       };
 
       /**
-       * Advances today's mission counters; completing them all grants XP and a streak freeze (more XP if the stock is full).
+       * Advances today's mission counters; completing them all grants XP and a streak freeze (more XP if the stock is full)
+       * and makes the mission streak a day longer.
        * `update` is applied in the same set: a move is written once, with its mission counters.
        */
       const bumpMissions = (increments: Partial<Record<MissionCounter, number>>, update: Partial<GameState> = {}) => {
         const state = { ...get(), ...update };
-        const missions = getMissionsForDay(state.dailyMissions, getLocalDateString(new Date()));
+        const today = getLocalDateString(new Date());
+        const missions = getMissionsForDay(state.dailyMissions, today);
         const counters = { ...missions.counters };
         for (const [counter, amount] of Object.entries(increments) as [MissionCounter, number][]) {
           if (amount) counters[counter] = (counters[counter] || 0) + amount;
@@ -334,32 +341,39 @@ export const useGameStore = create<GameState>()(
         }
 
         withCosmeticCount(() => {
+          const missionStreak = advanceMissionStreak(state.missionStreak, today);
           set({
             ...update,
             dailyMissions: { ...missions, counters, rewarded: true },
+            missionStreak,
             stats: { ...state.stats, missionDaysCompleted: state.stats.missionDaysCompleted + 1 },
           });
           const freezeGranted = get().addStreakFreeze();
-          const xp = missionsXp(freezeGranted);
+          // The streak this day just made already counts for its own XP
+          const xp = addXp(missionsXp(freezeGranted));
           set({ pendingMissionReward: { freezeGranted, xp } });
-          addXp(xp);
           get().checkAchievements();
         });
       };
 
-      /** Adds XP; each level reached gives a streak freeze (if there is room) and is queued for display */
-      const addXp = (amount: number, options?: { silent?: boolean }) => {
-        if (amount <= 0) return;
+      /**
+       * Adds XP, raised by the XP bonuses (mission streak and daily streak), and returns what was added;
+       * each level reached gives a streak freeze (if there is room) and is queued for display
+       */
+      const addXp = (amount: number, options?: { silent?: boolean }): number => {
+        if (amount <= 0) return 0;
         const state = get();
+        const gained = Math.round(amount * (1 + currentXpBonus(state, getLocalDateString(new Date())).total / 100));
         const fromLevel = getPlayerLevel(state.xp);
-        const xp = state.xp + Math.round(amount);
+        const xp = state.xp + gained;
         const toLevel = getPlayerLevel(xp);
         set({ xp });
-        if (toLevel <= fromLevel) return;
+        if (toLevel <= fromLevel) return gained;
 
         const reached = Array.from({ length: toLevel - fromLevel }, (_, i) => fromLevel + i + 1);
         for (let i = 0; i < reached.length; i++) get().addStreakFreeze();
         if (!options?.silent) set({ levelUpQueue: [...get().levelUpQueue, ...reached] });
+        return gained;
       };
 
       /** Records the XP of a win (level, missions and achievements included) for the win screen */
@@ -436,6 +450,7 @@ export const useGameStore = create<GameState>()(
       streakFreezes: 0,
       frozenDates: [],
       dailyMissions: null,
+      missionStreak: initialMissionStreak(),
       pendingMissionReward: null,
       lastOpenDate: null,
       totalHintsUsed: 0,
@@ -1033,6 +1048,7 @@ export const useGameStore = create<GameState>()(
           streakFreezes: 0,
           frozenDates: [],
           dailyMissions: null,
+          missionStreak: initialMissionStreak(),
           pendingMissionReward: null,
           lastOpenDate: null,
           totalHintsUsed: 0,
@@ -1127,6 +1143,7 @@ export const useGameStore = create<GameState>()(
         streakFreezes: state.streakFreezes,
         frozenDates: state.frozenDates,
         dailyMissions: state.dailyMissions,
+        missionStreak: state.missionStreak,
         lastOpenDate: state.lastOpenDate,
         totalHintsUsed: state.totalHintsUsed,
         xp: state.xp,

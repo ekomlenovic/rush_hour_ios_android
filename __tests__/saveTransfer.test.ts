@@ -409,6 +409,54 @@ describe('import recomputes rather than trusts', () => {
   });
 });
 
+describe('mission streak and streak bonus (store v14)', () => {
+  /** A long streak of dailies and of missions, all the XP raised by both bonuses */
+  function playWithMultipliers() {
+    for (let day = 1; day <= 20; day++) {
+      const date = `2026-10-${String(day).padStart(2, '0')}`;
+      setToday(date);
+      useGameStore.setState({ dailyMissions: { date, ids: ['win_3', 'daily', 'moves_100'], counters: { levelWins: 3, moves: 100 }, rewarded: false } });
+      winDaily(date);
+    }
+  }
+
+  it('keeps the XP earned with the multipliers and the mission streak', () => {
+    playWithMultipliers();
+    expect(store().missionStreak).toEqual({ count: 20, lastDate: '2026-10-20' });
+    const xp = store().xp;
+    // More than the same days without any multiplier
+    expect(xp).toBeGreaterThan(20 * (120 + 200) * 1.3);
+    const result = parseSave(exportProgress());
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state.xp).toBe(xp);
+    expect(result.state.missionStreak).toEqual({ count: 20, lastDate: '2026-10-20' });
+  });
+
+  it('caps a forged mission streak to the days of missions done, drops a broken one', () => {
+    playWithMultipliers();
+    const longer = parseSave(forge(s => { s.missionStreak = { count: 5000, lastDate: '2026-10-20' }; }));
+    if (!longer.ok) throw new Error(longer.error);
+    expect(longer.state.missionStreak).toEqual({ count: 20, lastDate: '2026-10-20' });
+    for (const broken of [{ count: 3, lastDate: '2027-01-01' }, { count: -1, lastDate: '2026-10-20' }, { count: 2, lastDate: 'x' }, 'x', null]) {
+      const result = parseSave(forge(s => { s.missionStreak = broken; }));
+      if (!result.ok) throw new Error(result.error);
+      expect(result.state.missionStreak).toEqual({ count: 0, lastDate: null });
+    }
+  });
+
+  it('a save from before the mission streak imports with the raise of its mission days', () => {
+    playWithMultipliers();
+    const save = decodeSave(exportProgress()) as Exclude<ReturnType<typeof decodeSave>, string>;
+    // As saved by v13: no mission streak, 100 XP a day of missions
+    delete save.state.missionStreak;
+    save.state.xp = 20 * (120 + 100);
+    const result = parseSave(encodeSave({ ...save, version: 13 }));
+    if (!result.ok) throw new Error(result.error);
+    expect(result.state.xp).toBe(20 * (120 + 100) + 20 * 100);
+    expect(result.state.missionStreak).toEqual({ count: 1, lastDate: '2026-10-20' });
+  });
+});
+
 describe('import after "Supprimer les niveaux générés" (issue 163)', () => {
   /** `count` generated levels of `minMoves` moves, won with 3 stars */
   function winGenerated(count: number, minMoves: number) {

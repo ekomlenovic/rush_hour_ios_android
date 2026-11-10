@@ -7,7 +7,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useGameStore } from '@/store/gameStore';
 import { useTranslation } from 'react-i18next';
 import { getLocalDateString, getWeekKey, getDaysLeftInWeek, formatTimeLeft } from '@/utils/date';
-import { getMissionsForDay, countMissionsDone } from '@/data/missions';
+import { getMissionsForDay, countMissionsDone, currentXpBonus } from '@/data/missions';
 import { getFreezeCapacity, getPlayerLevel, dailyWinXp, weeklyWinXp } from '@/data/progression';
 import { lockedEventCosmetics, seasonalEventsOf } from '@/data/cosmetics';
 import { sampleLevels } from '@/data/sampleLevels';
@@ -20,6 +20,8 @@ import { pendingRecap, periodLabel, recapKind } from '@/utils/recap';
 import HomeHeader from '@/components/home/HomeHeader';
 import HomeTabBar from '@/components/home/HomeTabBar';
 import MissionsSheet from '@/components/home/MissionsSheet';
+import StreakSheet from '@/components/home/StreakSheet';
+import FreezeSheet from '@/components/home/FreezeSheet';
 import OptionsSheet from '@/components/settings/OptionsSheet';
 import PlayerLevelBadge from '@/components/progression/PlayerLevelBadge';
 import BoardPreview from '@/components/garage/BoardPreview';
@@ -52,6 +54,7 @@ export default function HomeScreen() {
   const currentStreak = useGameStore(s => s.currentStreak);
   const streakFreezes = useGameStore(s => s.streakFreezes);
   const dailyMissions = useGameStore(s => s.dailyMissions);
+  const missionStreak = useGameStore(s => s.missionStreak);
   const xp = useGameStore(s => s.xp);
   const progress = useGameStore(s => s.progress);
   const maxUnlockedLevel = useGameStore(s => s.maxUnlockedLevel);
@@ -67,6 +70,8 @@ export default function HomeScreen() {
 
   const [isSettingsVisible, setSettingsVisible] = useState(false);
   const [isMissionsVisible, setMissionsVisible] = useState(false);
+  const [isStreakVisible, setStreakVisible] = useState(false);
+  const [isFreezesVisible, setFreezesVisible] = useState(false);
 
   // The screen stays mounted under the others: it follows the clock to show the new day
   // (the app open is recorded by the root layout, whatever the first screen: issue 188)
@@ -84,7 +89,11 @@ export default function HomeScreen() {
 
   const todayMissions = getMissionsForDay(dailyMissions, dateStr);
   const missionsDone = countMissionsDone(todayMissions);
-  const freezeCapacity = getFreezeCapacity(getPlayerLevel(xp));
+  // Both XP bonuses added up, for the XP the challenges announce
+  const xpBonus = currentXpBonus({ missionStreak, currentStreak }, dateStr).total;
+  const xpBonusFactor = 1 + xpBonus / 100;
+  const playerLevel = getPlayerLevel(xp);
+  const freezeCapacity = getFreezeCapacity(playerLevel);
 
   // The recap of the month (from the 1st) or of the year (from December 26th), until opened
   const recapKey = pendingRecap({
@@ -123,6 +132,8 @@ export default function HomeScreen() {
             missionsRewarded={todayMissions.rewarded}
             newAchievements={newAchievements.length}
             onProfile={() => router.push('/profile')}
+            onStreak={() => setStreakVisible(true)}
+            onFreezes={() => setFreezesVisible(true)}
             onMissions={() => setMissionsVisible(true)}
             onSettings={() => setSettingsVisible(true)}
           />
@@ -147,7 +158,7 @@ export default function HomeScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(250).springify()}>
-            <PlayerLevelBadge colors={colors} onPress={() => router.push('/profile')} />
+            <PlayerLevelBadge colors={colors} onPress={() => router.push('/profile')} onBonusPress={() => router.push('/profile?focus=bonus')} />
           </Animated.View>
 
           {/* 1. Main action */}
@@ -189,7 +200,7 @@ export default function HomeScreen() {
                 : seasonalEvent && eventCosmetics > 0
                   ? t(`home.daily_event.${seasonalEvent}`, { count: eventCosmetics })
                   : t('home.daily_desc')}
-              reward={t('home.reward_xp', { xp: dailyWinXp(MAX_STARS) })}
+              reward={t('home.reward_xp', { xp: Math.round(dailyWinXp(MAX_STARS) * xpBonusFactor) })}
               enteringDelay={450}
               onPress={() => router.push(`/game?levelId=daily&date=${dateStr}`)}
             />
@@ -201,7 +212,7 @@ export default function HomeScreen() {
               subtitle={weeklyStatus?.completed
                 ? `${t('home.won_stars', { count: weeklyStatus.stars })} · ${t('home.weekly_next', { count: daysLeftInWeek })}`
                 : t('home.weekly_days_left', { count: daysLeftInWeek })}
-              reward={t('home.reward_xp', { xp: weeklyWinXp(MAX_STARS) })}
+              reward={t('home.reward_xp', { xp: Math.round(weeklyWinXp(MAX_STARS) * xpBonusFactor) })}
               enteringDelay={500}
               onPress={() => router.push(`/game?levelId=weekly&week=${weekKey}`)}
             />
@@ -235,11 +246,35 @@ export default function HomeScreen() {
         />
       </Animated.View>
 
+      <StreakSheet
+        visible={isStreakVisible}
+        colors={colors}
+        isDark={isDark}
+        streak={currentStreak}
+        onSeeBonuses={() => {
+          setStreakVisible(false);
+          router.push('/profile?focus=bonus');
+        }}
+        onClose={() => setStreakVisible(false)}
+      />
+
+      <FreezeSheet
+        visible={isFreezesVisible}
+        colors={colors}
+        isDark={isDark}
+        freezes={streakFreezes}
+        capacity={freezeCapacity}
+        playerLevel={playerLevel}
+        onClose={() => setFreezesVisible(false)}
+      />
+
       <MissionsSheet
         visible={isMissionsVisible}
         colors={colors}
         isDark={isDark}
         missions={todayMissions}
+        missionStreak={missionStreak}
+        dailyStreak={currentStreak}
         freezeStockFull={streakFreezes >= freezeCapacity}
         onClose={() => setMissionsVisible(false)}
       />
