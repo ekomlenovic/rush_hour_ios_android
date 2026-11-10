@@ -4,6 +4,8 @@ import { transformSync } from '@babel/core';
 import * as worklets from 'react-native-worklets';
 import { DIFFICULTY_LEVELS, generateDailyLevel, generateSeededLevelSync } from '../utils/generator';
 import { DAILY_LEVEL_ID } from '../store/levelIds';
+import { validateLevel } from '../utils/solver';
+import { sampleLevels } from '../data/sampleLevels';
 
 /** The worklets of a file, as the worklet plugin compiles them: name, parameters, outside variables */
 const workletsOf = (relative: string) => {
@@ -84,4 +86,24 @@ describe('worklets', () => {
       spy.mockRestore();
     }
   }, 120_000);
+
+  it('runs the map generator on a runtime apart from the solver: a level played meanwhile never waits behind it', async () => {
+    const used: string[] = [];
+    let runtime!: typeof import('../utils/solverRuntime');
+    jest.isolateModules(() => {
+      // Fresh runtimes, each with its name, and the one each worklet goes to
+      const fresh = require('react-native-worklets') as typeof worklets;
+      jest.spyOn(fresh, 'createWorkletRuntime').mockImplementation(((config: { name: string }) => ({ name: config.name })) as never);
+      const run = fresh.runOnRuntimeAsync;
+      jest.spyOn(fresh, 'runOnRuntimeAsync').mockImplementation(((rt: { name: string }, ...rest: unknown[]) => {
+        used.push(rt.name);
+        return (run as (...args: unknown[]) => unknown)(rt, ...rest);
+      }) as never);
+      runtime = require('../utils/solverRuntime');
+    });
+    const { vehicles, gridSize, exitRow, exitCol, minMoves } = sampleLevels[0];
+    expect(await runtime.runOnSolverRuntime(validateLevel, vehicles, gridSize, exitRow, exitCol)).toBe(minMoves);
+    expect(await runtime.runOnGeneratorRuntime(validateLevel, vehicles, gridSize, exitRow, exitCol)).toBe(minMoves);
+    expect(used).toEqual(['solver', 'generator']);
+  });
 });

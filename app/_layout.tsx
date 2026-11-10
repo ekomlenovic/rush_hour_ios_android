@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AudioProvider } from '@/context/AudioProvider';
 import AchievementToast from '@/components/AchievementToast';
+import GenerationOverlay from '@/components/GenerationOverlay';
 import CrashScreen from '@/components/CrashScreen';
 // The web version: alerts and shares the browser does not have (before any alert), its install prompt
 import '@/utils/webDialogs';
@@ -89,6 +90,8 @@ export default function RootLayout() {
           }}
         />
         <AppOpenAlert />
+        {/* A map generation going on, on every screen: its progress and Cancel */}
+        <GenerationOverlay />
         <AchievementToast />
         <WebDialogHost />
         {/* The web version on a computer: the apps and the source code beside the game column */}
