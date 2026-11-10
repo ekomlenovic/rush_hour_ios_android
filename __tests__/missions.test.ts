@@ -168,10 +168,12 @@ describe('mission counters in the store', () => {
         return state().consumeMissionReward()?.xp;
       };
 
-      it('each day in a row multiplies the missions XP a bit more, up to ×3', () => {
-        const gains = Array.from({ length: 11 }, (_, i) => finishMissions(addDays(TODAY, i)));
-        expect(gains).toEqual([200, 250, 300, 350, 400, 450, 500, 550, 600, 600, 600]);
-        expect(state().missionStreak).toEqual({ count: 11, lastDate: addDays(TODAY, 10) });
+      it('each day in a row multiplies the missions XP a bit more the first week, then a big step at 30 and 60 days', () => {
+        const gains = Array.from({ length: 61 }, (_, i) => finishMissions(addDays(TODAY, i)));
+        expect(gains.slice(0, 9)).toEqual([200, 250, 300, 350, 400, 450, 500, 500, 500]);
+        expect(gains.slice(28, 31)).toEqual([500, 800, 800]);
+        expect(gains.slice(58)).toEqual([800, 1000, 1000]);
+        expect(state().missionStreak).toEqual({ count: 61, lastDate: addDays(TODAY, 60) });
       });
 
       it('a day without the 3 missions starts the streak again', () => {

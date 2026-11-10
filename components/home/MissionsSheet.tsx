@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { RFValue } from '@/utils/responsive';
 import { DailyMissionsState, MISSIONS_BY_ID, MissionDef, MissionStreakState, activeMissionStreak, getMissionProgress } from '@/data/missions';
-import { MISSIONS_MAX_MULTIPLIER, MISSIONS_STREAK_STEP, missionsMultiplier, missionsXp } from '@/data/progression';
+import { MISSION_STREAK_TIERS, missionsMultiplier, missionsXp, nextBonusTier } from '@/data/progression';
 import { formatMultiplier } from '@/components/progression/rewards';
 import BottomSheet from './BottomSheet';
 import type { UiColors } from '@/theme';
@@ -35,6 +35,7 @@ export default function MissionsSheet({ visible, colors, isDark, missions, missi
   const streak = activeMissionStreak(missionStreak, missions.date);
   const todayStreak = missions.rewarded ? Math.max(streak, 1) : streak + 1;
   const nextMultiplier = formatMultiplier(t, missionsMultiplier(missions.rewarded ? todayStreak + 1 : todayStreak));
+  const nextTier = nextBonusTier(MISSION_STREAK_TIERS, Math.max(streak, 1));
   return (
     <BottomSheet visible={visible} title={t('missions.title')} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose}>
       <Text style={[styles.settingSub, { color: missions.rewarded ? colors.success : colors.textMuted, marginBottom: 12 }]}>
@@ -51,7 +52,8 @@ export default function MissionsSheet({ visible, colors, isDark, missions, missi
               : t('missions.streak_none')}
           </Text>
           <Text style={[styles.streakRule, { color: colors.textMuted }]}>
-            {t('missions.streak_rule', { percent: MISSIONS_STREAK_STEP * 100, max: MISSIONS_MAX_MULTIPLIER })}
+            {t('missions.streak_rule')}{' '}
+            {nextTier ? t('bonus.next', { count: nextTier.days, multiplier: formatMultiplier(t, nextTier.multiplier) }) : t('bonus.max')}
           </Text>
         </View>
       </View>

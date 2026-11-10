@@ -376,7 +376,6 @@
     "streak_days_one": "jour",
     "streak_days_other": "jours",
     "streak_record": "Record : {{count}}",
-    "streak_bonus": "XP du défi du jour ×{{multiplier}} : +{{percent}} % tous les {{days}} jours de streak, jusqu'à ×{{max}}",
     "freeze_slots": "Gels : {{count}} sur {{capacity}} emplacements",
     "freeze_next_slot": "+1 emplacement de gel au niveau joueur {{level}}",
     "key_streak_one": "jour de streak",
@@ -599,6 +598,20 @@
     "streak_one": "Streak {{count}} jour",
     "streak_other": "Streak {{count}} jours"
   },
+  "bonus": {
+    "title": "Bonus d'XP",
+    "missions_title": "Série de missions",
+    "missions_sub": "XP des 3 missions",
+    "streak_title": "Streak",
+    "streak_sub": "XP du défi du jour",
+    "days_one": "{{count}} jour d'affilée",
+    "days_other": "{{count}} jours d'affilée",
+    "next_one": "Prochain palier : ×{{multiplier}} à {{count}} jour",
+    "next_other": "Prochain palier : ×{{multiplier}} à {{count}} jours",
+    "max": "Bonus maximum atteint",
+    "milestone_one": "{{count}} jour",
+    "milestone_other": "{{count}} jours"
+  },
   "missions": {
     "title": "Missions",
     "completed": "Missions du jour terminées !",
@@ -614,7 +627,7 @@
     "streak_today_other": "Série de missions : {{count}} jours · XP ×{{multiplier}} aujourd'hui",
     "streak_tomorrow_one": "Série de missions : {{count}} jour · XP ×{{multiplier}} demain",
     "streak_tomorrow_other": "Série de missions : {{count}} jours · XP ×{{multiplier}} demain",
-    "streak_rule": "Chaque jour d'affilée où tu termines les 3 missions ajoute {{percent}} % d'XP, jusqu'à ×{{max}}. Un jour manqué et la série repart de zéro.",
+    "streak_rule": "Chaque jour d'affilée où tu termines les 3 missions augmente leur XP. Un jour manqué et la série repart de zéro.",
     "decimal_separator": ",",
     "renew": "Nouvelles missions demain",
     "list": {

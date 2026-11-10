@@ -402,7 +402,6 @@
     "streak_days_few": "dana",
     "streak_days_other": "dana",
     "streak_record": "Rekord: {{count}}",
-    "streak_bonus": "XP dnevnog izazova ×{{multiplier}}: +{{percent}} % na svakih {{days}} dana niza, najviše do ×{{max}}",
     "freeze_slots": "Zamrzavanja: {{count}} od {{capacity}} mesta",
     "freeze_next_slot": "+1 mesto za zamrzavanje na nivou igrača {{level}}",
     "key_streak_one": "dan niza",
@@ -629,6 +628,23 @@
     "streak_few": "Niz od {{count}} dana",
     "streak_other": "Niz od {{count}} dana"
   },
+  "bonus": {
+    "title": "XP bonusi",
+    "missions_title": "Niz misija",
+    "missions_sub": "XP za 3 misije",
+    "streak_title": "Niz",
+    "streak_sub": "XP dnevnog izazova",
+    "days_one": "{{count}} dan zaredom",
+    "days_few": "{{count}} dana zaredom",
+    "days_other": "{{count}} dana zaredom",
+    "next_one": "Sledeći nivo bonusa: ×{{multiplier}} na {{count}} dan",
+    "next_few": "Sledeći nivo bonusa: ×{{multiplier}} na {{count}} dana",
+    "next_other": "Sledeći nivo bonusa: ×{{multiplier}} na {{count}} dana",
+    "max": "Dostignut je najveći bonus",
+    "milestone_one": "{{count}} dan",
+    "milestone_few": "{{count}} dana",
+    "milestone_other": "{{count}} dana"
+  },
   "missions": {
     "title": "Misije",
     "completed": "Dnevne misije završene!",
@@ -647,7 +663,7 @@
     "streak_tomorrow_one": "Niz misija: {{count}} dan · XP ×{{multiplier}} sutra",
     "streak_tomorrow_few": "Niz misija: {{count}} dana · XP ×{{multiplier}} sutra",
     "streak_tomorrow_other": "Niz misija: {{count}} dana · XP ×{{multiplier}} sutra",
-    "streak_rule": "Svaki uzastopni dan u kojem završiš sve 3 misije dodaje {{percent}} % XP-a, najviše do ×{{max}}. Propusti jedan dan i niz kreće ispočetka.",
+    "streak_rule": "Svaki uzastopni dan u kojem završiš sve 3 misije povećava njihov XP. Propusti jedan dan i niz kreće ispočetka.",
     "decimal_separator": ",",
     "renew": "Nove misije sutra",
     "list": {

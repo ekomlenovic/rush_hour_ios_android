@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameStore } from '@/store/gameStore';
 import PlayerLevelCard from '@/components/progression/PlayerLevelCard';
 import StreakCard from '@/components/profile/StreakCard';
+import XpBonusCard from '@/components/profile/XpBonusCard';
 import AchievementsSection from '@/components/profile/AchievementsSection';
 import AchievementSheet from '@/components/profile/AchievementSheet';
 import RecapPreviewCard from '@/components/profile/RecapPreviewCard';
@@ -130,6 +131,10 @@ export default function ProfileScreen() {
 
           <Animated.View entering={FadeInDown.delay(100).duration(400)}>
             <StreakCard colors={colors} />
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.delay(110).duration(400)}>
+            <XpBonusCard colors={colors} />
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(125).duration(400)}>

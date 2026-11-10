@@ -376,7 +376,6 @@
     "streak_days_one": "day",
     "streak_days_other": "days",
     "streak_record": "Best: {{count}}",
-    "streak_bonus": "Daily challenge XP ×{{multiplier}}: +{{percent}}% every {{days}} days of streak, up to ×{{max}}",
     "freeze_slots": "Freezes: {{count}} of {{capacity}} slots",
     "freeze_next_slot": "+1 freeze slot at player level {{level}}",
     "key_streak_one": "day streak",
@@ -599,6 +598,20 @@
     "streak_one": "{{count}}-day streak",
     "streak_other": "{{count}}-day streak"
   },
+  "bonus": {
+    "title": "XP bonuses",
+    "missions_title": "Mission streak",
+    "missions_sub": "XP of the 3 missions",
+    "streak_title": "Streak",
+    "streak_sub": "daily challenge XP",
+    "days_one": "{{count}} day in a row",
+    "days_other": "{{count}} days in a row",
+    "next_one": "Next tier: ×{{multiplier}} at {{count}} day",
+    "next_other": "Next tier: ×{{multiplier}} at {{count}} days",
+    "max": "Maximum bonus reached",
+    "milestone_one": "{{count}} day",
+    "milestone_other": "{{count}} days"
+  },
   "missions": {
     "title": "Missions",
     "completed": "Daily missions complete!",
@@ -614,7 +627,7 @@
     "streak_today_other": "Mission streak: {{count}} days · XP ×{{multiplier}} today",
     "streak_tomorrow_one": "Mission streak: {{count}} day · XP ×{{multiplier}} tomorrow",
     "streak_tomorrow_other": "Mission streak: {{count}} days · XP ×{{multiplier}} tomorrow",
-    "streak_rule": "Each day in a row you complete all 3 missions adds {{percent}}% XP, up to ×{{max}}. Miss a day and the streak starts over.",
+    "streak_rule": "Each day in a row you complete all 3 missions raises their XP. Miss a day and the streak starts over.",
     "decimal_separator": ".",
     "renew": "New missions tomorrow",
     "list": {

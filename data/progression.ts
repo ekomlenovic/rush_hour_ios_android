@@ -3,7 +3,7 @@ import type { ChallengeResult, Level, LevelProgress } from '../store/types';
 /**
  * Player level and XP: see docs/GAME_DESIGN.md (Niveau joueur et XP).
  * Every win gives XP, the curve is steep: the first levels come in a few days. The daily missions
- * done day after day are the fast lane: level 10 in about a month, level 20 in about five.
+ * done day after day are the fast lane: level 10 in about three weeks, level 20 in about three months.
  */
 
 /** XP needed to go from `level` to `level + 1` */
@@ -74,18 +74,42 @@ export function levelWinXp(minMoves: number, stars: number, firstWin: boolean): 
 /** Extra XP for the first win of a boss level of the map (data/bosses.ts) */
 export const BOSS_WIN_XP = 50;
 
-/** Every this many days of streak, the daily challenge gives more XP */
-export const STREAK_BONUS_DAYS = 7;
-/** What each of these weeks of streak adds to the multiplier of the daily challenge XP */
-export const STREAK_BONUS_STEP = 0.1;
-/** Highest multiplier of the daily challenge XP, reached at 70 days of streak */
-export const STREAK_MAX_MULTIPLIER = 2;
+/** A multiplier reached at a number of days in a row */
+export interface BonusTier {
+  days: number;
+  multiplier: number;
+}
+
+/** Days shown as milestones of a bonus: the end of the first week, then the two big steps */
+export const BONUS_MILESTONE_DAYS = [7, 30, 60];
+
+/** The first week of a bonus grows by `step` a day from ×1, then a big step at 30 days and another at 60 */
+const bonusTiers = (step: number, at30: number, at60: number): BonusTier[] => [
+  ...Array.from({ length: 7 }, (_, i) => ({ days: i + 1, multiplier: Math.round((1 + step * i) * 100) / 100 })),
+  { days: 30, multiplier: at30 },
+  { days: 60, multiplier: at60 },
+];
+
+/** Daily challenge XP by streak: ×1,6 after a week, ×2 at 30 days, ×3 at 60 */
+export const DAILY_STREAK_TIERS = bonusTiers(0.1, 2, 3);
+/** Missions XP by mission streak: ×2,5 after a week, ×4 at 30 days, ×5 at 60 */
+export const MISSION_STREAK_TIERS = bonusTiers(0.25, 4, 5);
+
+/** Multiplier of the last tier reached (×1 before the first) */
+export function bonusMultiplier(tiers: BonusTier[], days: number): number {
+  let multiplier = 1;
+  for (const tier of tiers) if ((days || 0) >= tier.days) multiplier = tier.multiplier;
+  return multiplier;
+}
+
+/** The next tier that raises the multiplier, if any is left */
+export const nextBonusTier = (tiers: BonusTier[], days: number): BonusTier | null => tiers.find(tier => tier.days > (days || 0)) ?? null;
+
+/** Highest multiplier of the daily challenge XP */
+export const STREAK_MAX_MULTIPLIER = DAILY_STREAK_TIERS[DAILY_STREAK_TIERS.length - 1].multiplier;
 
 /** Multiplier of the daily challenge XP at this streak (the day just won included) */
-export function streakMultiplier(streak: number): number {
-  const weeks = Math.floor(Math.max(0, streak || 0) / STREAK_BONUS_DAYS);
-  return Math.min(STREAK_MAX_MULTIPLIER, 1 + STREAK_BONUS_STEP * weeks);
-}
+export const streakMultiplier = (streak: number): number => bonusMultiplier(DAILY_STREAK_TIERS, streak);
 
 /** XP of the daily challenge, multiplied by the streak it was won at (none for the saves from before the bonus) */
 export const dailyWinXp = (stars: number, streak = 0): number => Math.round((60 + 20 * stars) * streakMultiplier(streak));
@@ -96,18 +120,13 @@ export const archiveWinXp = (minMoves: number, stars: number): number => levelWi
 export const MISSIONS_XP = 200;
 /** What the 3 missions gave before the mission streak (store v14): the XP credited by the older migrations */
 export const LEGACY_MISSIONS_XP = 100;
-/** Each day in a row with the 3 missions done adds this much to the multiplier of their XP */
-export const MISSIONS_STREAK_STEP = 0.25;
-/** Highest multiplier of the missions XP, reached on the 9th day in a row */
-export const MISSIONS_MAX_MULTIPLIER = 3;
+/** Highest multiplier of the missions XP */
+export const MISSIONS_MAX_MULTIPLIER = MISSION_STREAK_TIERS[MISSION_STREAK_TIERS.length - 1].multiplier;
 /** Extra XP for the 3 missions when the freeze stock is full: the freeze that can't be given */
 export const MISSIONS_FULL_STOCK_XP = 50;
 
 /** Multiplier of the missions XP on the `streakDays`-th day in a row (1 = first day) */
-export function missionsMultiplier(streakDays: number): number {
-  const days = Math.max(1, Math.floor(streakDays) || 1);
-  return Math.min(MISSIONS_MAX_MULTIPLIER, 1 + MISSIONS_STREAK_STEP * (days - 1));
-}
+export const missionsMultiplier = (streakDays: number): number => bonusMultiplier(MISSION_STREAK_TIERS, streakDays);
 
 /**
  * XP of the 3 missions of the day: multiplied by the mission streak (this day included),
