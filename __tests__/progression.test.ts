@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next';
 import {
-  ACHIEVEMENT_XP, BASE_FREEZE_SLOTS, BOSS_WIN_XP, MISSIONS_XP, REPLAY_XP_FACTOR, dailyWinXp, getFreezeCapacity, getLevelInfo,
+  ACHIEVEMENT_XP, BASE_FREEZE_SLOTS, BOSS_WIN_XP, MAX_XP_MULTIPLIER, MISSIONS_FULL_STOCK_XP, MISSIONS_XP, REPLAY_XP_FACTOR, XP_BONUS_TIERS,
+  bonusPercent, dailyWinXp, missionsXp, nextBonusTier, xpMultiplier, getFreezeCapacity, getLevelInfo,
   getPlayerLevel, getPlayerTitle, levelWinXp, totalXpForLevel, weeklyWinXp, xpToNextLevel,
 } from '../data/progression';
 import {
@@ -33,12 +34,57 @@ describe('level curve (rules in docs/GAME_DESIGN.md)', () => {
     for (let n = 1; n < 50; n++) expect(xpToNextLevel(n + 1)).toBeGreaterThan(xpToNextLevel(n));
   });
 
-  it('is not easy: about a month and a half of daily play for level 10, a year for level 20', () => {
-    // A very active day: 5 new 3-star levels of 15 moves, the daily (3 stars) and the 3 missions
-    const day = 5 * levelWinXp(15, 3, true) + dailyWinXp(3) + MISSIONS_XP;
-    expect(totalXpForLevel(10) / day).toBeGreaterThan(40);
-    expect(totalXpForLevel(20) / day).toBeGreaterThan(250);
-    expect(totalXpForLevel(5) / day).toBeLessThan(10);
+  /** Days to reach a player level: 5 new 3-star levels of 15 moves a day, and maybe the daily (3 stars) and the 3 missions */
+  const daysToLevel = (level: number, everyDay: boolean) => {
+    let xp = 0;
+    let day = 0;
+    while (xp < totalXpForLevel(level)) {
+      day++;
+      const levels = 5 * levelWinXp(15, 3, true);
+      // Both streaks are as long as the days played: they multiply all the XP of the day
+      xp += everyDay ? Math.round((levels + dailyWinXp(3) + missionsXp(true)) * xpMultiplier(day, day)) : levels;
+    }
+    return day;
+  };
+
+  it('is not easy: without the daily and the missions, level 20 is nearly two years of levels', () => {
+    expect(daysToLevel(20, false)).toBeGreaterThan(600);
+    expect(daysToLevel(5, false)).toBeLessThan(20);
+  });
+
+  it('rewards coming back every day: about three weeks for level 10, three to four months for level 20', () => {
+    expect(daysToLevel(10, true)).toBeGreaterThan(15);
+    expect(daysToLevel(10, true)).toBeLessThan(35);
+    expect(daysToLevel(20, true)).toBeGreaterThan(80);
+    expect(daysToLevel(20, true)).toBeLessThan(130);
+    // The last tiers stay a long way: over a year of days in a row for level 40
+    expect(daysToLevel(40, true)).toBeGreaterThan(365);
+  });
+
+  it('each bonus adds 5 % a day in a row the first week, then +60 % at 30 days and +100 % at 60', () => {
+    expect([0, 1, 2, 3, 6, 7, 8, 29, 30, 59, 60, 400].map(bonusPercent)).toEqual([0, 0, 5, 10, 25, 30, 30, 30, 60, 60, 100, 100]);
+    for (let i = 1; i < XP_BONUS_TIERS.length; i++) expect(XP_BONUS_TIERS[i].percent).toBeGreaterThan(XP_BONUS_TIERS[i - 1].percent);
+  });
+
+  it('the two bonuses add up into what all the XP is multiplied by', () => {
+    expect(xpMultiplier(0, 0)).toBe(1);
+    expect(xpMultiplier(7, 0)).toBe(1.3);
+    expect(xpMultiplier(7, 30)).toBe(1.9);
+    expect(xpMultiplier(60, 60)).toBe(3);
+    expect(MAX_XP_MULTIPLIER).toBe(xpMultiplier(5000, 5000));
+  });
+
+  it('tells the next tier of a bonus, none once at the top', () => {
+    expect(nextBonusTier(0)).toEqual({ days: 2, percent: 5 });
+    expect(nextBonusTier(3)).toEqual({ days: 4, percent: 15 });
+    expect(nextBonusTier(7)).toEqual({ days: 30, percent: 60 });
+    expect(nextBonusTier(45)).toEqual({ days: 60, percent: 100 });
+    expect(nextBonusTier(60)).toBeNull();
+  });
+
+  it('the 3 missions give 200 XP, 50 more when their freeze cannot be given', () => {
+    expect(missionsXp(true)).toBe(MISSIONS_XP);
+    expect(missionsXp(false)).toBe(MISSIONS_XP + MISSIONS_FULL_STOCK_XP);
   });
 
   it('gives a title by tier', () => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import type { UiColors } from '@/theme';
@@ -16,6 +16,8 @@ interface Props {
   /** New achievements, counted on the profile button */
   newAchievements: number;
   onProfile: () => void;
+  onStreak: () => void;
+  onFreezes: () => void;
   onMissions: () => void;
   onSettings: () => void;
 }
@@ -54,7 +56,7 @@ function Counter({ colors, icon, tint, value, accessibilityLabel, onPress }: Cou
  */
 export default function HomeHeader({
   colors, streak, freezes, freezeCapacity, missionsDone, missionsTotal, missionsRewarded, newAchievements,
-  onProfile, onMissions, onSettings,
+  onProfile, onStreak, onFreezes, onMissions, onSettings,
 }: Props) {
   const { t } = useTranslation();
 
@@ -94,10 +96,7 @@ export default function HomeHeader({
           tint={streak > 0 ? colors.warning : colors.textMuted}
           value={String(streak)}
           accessibilityLabel={t('home.a11y_streak', { count: streak })}
-          onPress={() => Alert.alert(
-            t('home.streak_title'),
-            streak > 0 ? t('home.streak_desc', { count: streak }) : t('home.streak_start'),
-          )}
+          onPress={onStreak}
         />
         <Counter
           colors={colors}
@@ -105,7 +104,7 @@ export default function HomeHeader({
           tint={freezes > 0 ? colors.frozen : colors.textMuted}
           value={`${freezes}/${freezeCapacity}`}
           accessibilityLabel={t('home.a11y_freezes', { count: freezes, max: freezeCapacity })}
-          onPress={() => Alert.alert(t('home.freeze_title'), t('home.freeze_desc', { count: freezes, max: freezeCapacity }))}
+          onPress={onFreezes}
         />
         <Counter
           colors={colors}

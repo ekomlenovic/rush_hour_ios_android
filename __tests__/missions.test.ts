@@ -1,8 +1,11 @@
-import { FAST_WIN_MS, MISSIONS, MISSIONS_BY_ID, MISSIONS_PER_DAY, getMissionsForDay, pickMissions, countMissionsDone } from '../data/missions';
+import {
+  FAST_WIN_MS, MISSIONS, MISSIONS_BY_ID, MISSIONS_PER_DAY, activeMissionStreak, advanceMissionStreak, currentXpBonus, getMissionsForDay, pickMissions, countMissionsDone,
+} from '../data/missions';
 import { useGameStore, MAX_STREAK_FREEZES } from '../store/gameStore';
-import { MISSIONS_FULL_STOCK_XP, MISSIONS_XP } from '../data/progression';
+import { MISSIONS_FULL_STOCK_XP, MISSIONS_XP, levelWinXp } from '../data/progression';
 import { sampleLevels } from '../data/sampleLevels';
 import { addDays } from '../utils/date';
+import { ACHIEVEMENTS } from '../data/achievements';
 import { resetStore, setToday, winMapLevel } from './helpers';
 
 // Level-up rewards also give freezes: tested in progression.test.ts, kept out of the streak rules here
@@ -125,6 +128,7 @@ describe('mission counters in the store', () => {
       expect(state().streakFreezes).toBe(1);
       expect(state().stats.missionDaysCompleted).toBe(1);
       expect(state().consumeMissionReward()).toEqual({ freezeGranted: true, xp: MISSIONS_XP });
+      expect(state().missionStreak).toEqual({ count: 1, lastDate: TODAY });
       expect(state().consumeMissionReward()).toBeNull();
 
       winMapLevel();
@@ -150,4 +154,84 @@ describe('mission counters in the store', () => {
       expect(state().stats.missionDaysCompleted).toBe(1);
     });
   });
+
+    describe('mission streak', () => {
+      /** All of the day's missions done, playing on that day; returns the XP they gave */
+      const finishMissions = (day: string) => {
+        setToday(day);
+        // Room for the freeze, so that only the streak changes the XP
+        useGameStore.setState({
+          streakFreezes: 0,
+          dailyMissions: { date: day, ids: ['win_3', 'moves_100', 'play_10min'], counters: { levelWins: 3, moves: 100 }, rewarded: false },
+        });
+        state().addPlayTime(10 * 60 * 1000);
+        // What the missions gave, without the achievements they may have unlocked
+        return state().consumeMissionReward()?.xp;
+      };
+
+      it('each day in a row adds 5 % to the XP the first week, then a big step at 30 and 60 days', () => {
+        const gains = Array.from({ length: 61 }, (_, i) => finishMissions(addDays(TODAY, i)));
+        expect(gains.slice(0, 9)).toEqual([200, 210, 220, 230, 240, 250, 260, 260, 260]);
+        expect(gains.slice(28, 31)).toEqual([260, 320, 320]);
+        expect(gains.slice(58)).toEqual([320, 400, 400]);
+        expect(state().missionStreak).toEqual({ count: 61, lastDate: addDays(TODAY, 60) });
+      });
+
+      it('raises all the XP earned, not only the missions', () => {
+        const level = sampleLevels[4];
+        const base = levelWinXp(level.minMoves, 3, true);
+        for (let i = 0; i < 7; i++) finishMissions(addDays(TODAY, i));
+        // The day after a week of missions: +30 % on a level, before today's missions are even done
+        setToday(addDays(TODAY, 7));
+        // Every achievement already unlocked: only the level gives XP
+        useGameStore.setState({ achievements: ACHIEVEMENTS.map(a => a.id) });
+        const before = state().xp;
+        state().loadLevel(level);
+        state().completeLevel(level.id, 300, 3, 5 * 60_000);
+        expect(state().xp - before).toBe(Math.round(base * 1.3));
+      });
+
+      it('adds up with the bonus of the daily streak', () => {
+        for (let i = 0; i < 7; i++) finishMissions(addDays(TODAY, i));
+        // 30 days of daily streak: +60 %, with the +30 % of a week of missions
+        useGameStore.setState({ currentStreak: 30, bestStreak: 30, lastStreakDate: addDays(TODAY, 6) });
+        expect(finishMissions(addDays(TODAY, 7))).toBe(Math.round(200 * 1.9));
+      });
+
+      it('a day without the 3 missions starts the streak again', () => {
+        finishMissions(TODAY);
+        finishMissions(addDays(TODAY, 1));
+        expect(finishMissions(addDays(TODAY, 3))).toBe(200);
+        expect(state().missionStreak).toEqual({ count: 1, lastDate: addDays(TODAY, 3) });
+      });
+
+      it('missions left unfinished do not count for the streak', () => {
+        finishMissions(TODAY);
+        finishMissions(addDays(TODAY, 1));
+        setToday(addDays(TODAY, 2));
+        winMapLevel();
+        expect(state().missionStreak).toEqual({ count: 2, lastDate: addDays(TODAY, 1) });
+        expect(finishMissions(addDays(TODAY, 3))).toBe(200);
+      });
+
+      it('a local date that went back neither adds a day nor loses the streak', () => {
+        finishMissions(TODAY);
+        finishMissions(addDays(TODAY, 1));
+        expect(finishMissions(TODAY)).toBe(210);
+        expect(state().missionStreak).toEqual({ count: 2, lastDate: addDays(TODAY, 1) });
+      });
+
+      it('is lost once a whole day went by, kept until then', () => {
+        const streak = { count: 4, lastDate: TODAY };
+        expect(activeMissionStreak(streak, TODAY)).toBe(4);
+        expect(activeMissionStreak(streak, addDays(TODAY, 1))).toBe(4);
+        expect(activeMissionStreak(streak, addDays(TODAY, 2))).toBe(0);
+        expect(activeMissionStreak(null, TODAY)).toBe(0);
+        expect(advanceMissionStreak(streak, addDays(TODAY, 1))).toEqual({ count: 5, lastDate: addDays(TODAY, 1) });
+        expect(advanceMissionStreak(streak, TODAY)).toEqual(streak);
+        expect(advanceMissionStreak(undefined, TODAY)).toEqual({ count: 1, lastDate: TODAY });
+        expect(currentXpBonus({ missionStreak: streak, currentStreak: 30 }, TODAY)).toEqual({ missionDays: 4, missions: 15, streak: 60, total: 75 });
+        expect(currentXpBonus({ missionStreak: streak, currentStreak: 0 }, addDays(TODAY, 2)).total).toBe(0);
+      });
+    });
 });

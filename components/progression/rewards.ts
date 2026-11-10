@@ -25,3 +25,6 @@ export function getLevelRewardLines(t: TFunction, level: number, freezes?: numbe
 export function missionRewardText(t: TFunction, reward: MissionReward): string {
   return t(reward.freezeGranted ? 'missions.reward_freeze' : 'missions.reward_full', { xp: reward.xp });
 }
+
+/** An XP bonus as the language writes it: +30 % in French, +30% in English */
+export const formatBonus = (t: TFunction, percent: number): string => t('bonus.percent', { value: percent });
