@@ -604,7 +604,6 @@
     "xp": "{{bonus}} XP",
     "total": "{{bonus}} on all the XP you earn",
     "none": "No bonus yet: play several days in a row to earn more XP",
-    "pill": "XP bonus {{bonus}}",
     "a11y_pill": "XP bonus of {{bonus}}, see the details",
     "missions_title": "Mission streak",
     "missions_hint": "Complete all 3 missions every day.",

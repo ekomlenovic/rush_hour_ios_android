@@ -604,7 +604,6 @@
     "xp": "{{bonus}} d'XP",
     "total": "{{bonus}} sur toute l'XP que tu gagnes",
     "none": "Pas encore de bonus : joue plusieurs jours d'affilée pour gagner plus d'XP",
-    "pill": "Bonus d'XP {{bonus}}",
     "a11y_pill": "Bonus d'XP de {{bonus}}, voir le détail",
     "missions_title": "Série de missions",
     "missions_hint": "Termine les 3 missions chaque jour.",

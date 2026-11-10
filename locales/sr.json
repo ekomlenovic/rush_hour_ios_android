@@ -634,7 +634,6 @@
     "xp": "{{bonus}} XP",
     "total": "{{bonus}} na sav XP koji osvojiš",
     "none": "Još nema bonusa: igraj više dana zaredom i osvajaj više XP-a",
-    "pill": "XP bonus {{bonus}}",
     "a11y_pill": "XP bonus od {{bonus}}, pogledaj detalje",
     "missions_title": "Niz misija",
     "missions_hint": "Završi sve 3 misije svakog dana.",

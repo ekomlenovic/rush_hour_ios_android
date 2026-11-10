@@ -8,7 +8,6 @@ import { useGameStore } from '@/store/gameStore';
 import { useTranslation } from 'react-i18next';
 import { getLocalDateString, getWeekKey, getDaysLeftInWeek, formatTimeLeft } from '@/utils/date';
 import { getMissionsForDay, countMissionsDone, currentXpBonus } from '@/data/missions';
-import { formatBonus } from '@/components/progression/rewards';
 import { getFreezeCapacity, getPlayerLevel, dailyWinXp, weeklyWinXp } from '@/data/progression';
 import { lockedEventCosmetics, seasonalEventsOf } from '@/data/cosmetics';
 import { sampleLevels } from '@/data/sampleLevels';
@@ -86,7 +85,7 @@ export default function HomeScreen() {
 
   const todayMissions = getMissionsForDay(dailyMissions, dateStr);
   const missionsDone = countMissionsDone(todayMissions);
-  // Both XP bonuses added up: shown under the player level when there is one, and in the XP of the challenges
+  // Both XP bonuses added up, for the XP the challenges announce
   const xpBonus = currentXpBonus({ missionStreak, currentStreak }, dateStr).total;
   const xpBonusFactor = 1 + xpBonus / 100;
   const freezeCapacity = getFreezeCapacity(getPlayerLevel(xp));
@@ -152,20 +151,7 @@ export default function HomeScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(250).springify()}>
-            <PlayerLevelBadge colors={colors} onPress={() => router.push('/profile')} />
-            {xpBonus > 0 && (
-              <Pressable
-                onPress={() => router.push('/profile?focus=bonus')}
-                style={[styles.bonusPill, { backgroundColor: colors.card }]}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel={t('bonus.a11y_pill', { bonus: formatBonus(t, xpBonus) })}
-              >
-                <Ionicons name="flame" size={16} color={colors.warning} />
-                <Text style={[styles.bonusPillText, { color: colors.text }]}>{t('bonus.pill', { bonus: formatBonus(t, xpBonus) })}</Text>
-                <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
-              </Pressable>
-            )}
+            <PlayerLevelBadge colors={colors} onPress={() => router.push('/profile')} onBonusPress={() => router.push('/profile?focus=bonus')} />
           </Animated.View>
 
           {/* 1. Main action */}
@@ -274,20 +260,6 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  bonusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    gap: 6,
-    marginTop: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  bonusPillText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
   screen: {
     flex: 1,
   },
