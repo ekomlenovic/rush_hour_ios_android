@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next';
 import {
-  ACHIEVEMENT_XP, BASE_FREEZE_SLOTS, BOSS_WIN_XP, MISSIONS_XP, REPLAY_XP_FACTOR, dailyWinXp, getFreezeCapacity, getLevelInfo,
+  ACHIEVEMENT_XP, BASE_FREEZE_SLOTS, BOSS_WIN_XP, MAX_MISSIONS_XP, MISSIONS_FULL_STOCK_XP, MISSIONS_XP, REPLAY_XP_FACTOR, STREAK_MAX_MULTIPLIER,
+  dailyWinXp, missionsMultiplier, missionsXp, streakMultiplier, getFreezeCapacity, getLevelInfo,
   getPlayerLevel, getPlayerTitle, levelWinXp, totalXpForLevel, weeklyWinXp, xpToNextLevel,
 } from '../data/progression';
 import {
@@ -33,12 +34,47 @@ describe('level curve (rules in docs/GAME_DESIGN.md)', () => {
     for (let n = 1; n < 50; n++) expect(xpToNextLevel(n + 1)).toBeGreaterThan(xpToNextLevel(n));
   });
 
-  it('is not easy: about a month and a half of daily play for level 10, a year for level 20', () => {
-    // A very active day: 5 new 3-star levels of 15 moves, the daily (3 stars) and the 3 missions
-    const day = 5 * levelWinXp(15, 3, true) + dailyWinXp(3) + MISSIONS_XP;
-    expect(totalXpForLevel(10) / day).toBeGreaterThan(40);
-    expect(totalXpForLevel(20) / day).toBeGreaterThan(250);
-    expect(totalXpForLevel(5) / day).toBeLessThan(10);
+  /** Days to reach a player level: 5 new 3-star levels of 15 moves a day, and maybe the daily (3 stars) and the 3 missions */
+  const daysToLevel = (level: number, everyDay: boolean) => {
+    let xp = 0;
+    let day = 0;
+    while (xp < totalXpForLevel(level)) {
+      day++;
+      xp += 5 * levelWinXp(15, 3, true);
+      if (everyDay) xp += dailyWinXp(3, day) + missionsXp(true, day);
+    }
+    return day;
+  };
+
+  it('is not easy: without the daily and the missions, level 20 is nearly two years of levels', () => {
+    expect(daysToLevel(20, false)).toBeGreaterThan(600);
+    expect(daysToLevel(5, false)).toBeLessThan(20);
+  });
+
+  it('rewards coming back every day: about three weeks for level 10, four months for level 20', () => {
+    expect(daysToLevel(10, true)).toBeGreaterThan(15);
+    expect(daysToLevel(10, true)).toBeLessThan(30);
+    expect(daysToLevel(20, true)).toBeGreaterThan(100);
+    expect(daysToLevel(20, true)).toBeLessThan(150);
+  });
+
+  it('multiplies the missions XP by the mission streak: +25 % a day in a row, up to ×3', () => {
+    expect([1, 2, 3, 5, 9, 10, 400].map(missionsMultiplier)).toEqual([1, 1.25, 1.5, 2, 3, 3, 3]);
+    expect(missionsMultiplier(0)).toBe(1);
+    expect(missionsXp(true)).toBe(MISSIONS_XP);
+    expect(missionsXp(true, 2)).toBe(250);
+    expect(missionsXp(true, 9)).toBe(600);
+    // The bonus of a full freeze stock is not multiplied
+    expect(missionsXp(false, 9)).toBe(600 + MISSIONS_FULL_STOCK_XP);
+    expect(MAX_MISSIONS_XP).toBe(missionsXp(false, 1000));
+  });
+
+  it('multiplies the daily challenge XP by the streak: +10 % every 7 days, up to ×2', () => {
+    expect([0, 1, 6, 7, 13, 14, 69, 70, 500].map(streakMultiplier)).toEqual([1, 1, 1, 1.1, 1.1, 1.2, 1.9, 2, 2]);
+    expect(dailyWinXp(3)).toBe(120);
+    expect(dailyWinXp(3, 7)).toBe(132);
+    expect(dailyWinXp(1, 70)).toBe(160);
+    expect(dailyWinXp(3, 500)).toBe(120 * STREAK_MAX_MULTIPLIER);
   });
 
   it('gives a title by tier', () => {

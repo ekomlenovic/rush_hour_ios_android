@@ -5,7 +5,10 @@ import { sampleLevels } from '../data/sampleLevels';
 import { isBossLevel } from '../data/bosses';
 import { ACHIEVEMENTS, buildAchievementContext } from '../data/achievements';
 import { DEFAULT_REMINDER_HOUR } from '../utils/reminders';
-import { DailyMissionsState, FAST_WIN_MS, MissionCounter, MissionReward, MISSIONS_BY_ID, getMissionsForDay, isMissionDone } from '../data/missions';
+import {
+  DailyMissionsState, FAST_WIN_MS, MissionCounter, MissionReward, MissionStreakState, MISSIONS_BY_ID,
+  advanceMissionStreak, getMissionsForDay, initialMissionStreak, isMissionDone,
+} from '../data/missions';
 import { getLocalDateString, daysBetween } from '../utils/date';
 import { diffMove, toMoveRecord } from '../utils/moveLog';
 import { checkWin, isLegalMove } from '../utils/collision';
@@ -16,7 +19,7 @@ import type {
 } from './types';
 import { MAX_STREAK_FREEZES, settleStreak, advanceStreak } from './streak';
 import {
-  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp,
+  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsMultiplier, missionsXp, weeklyWinXp,
 } from '../data/progression';
 import { isArchiveDateAvailable } from '../utils/archives';
 import { isDailyWinnable, isWeeklyWinnable } from '../utils/challengeDates';
@@ -146,6 +149,8 @@ interface GameState {
 
   /** Today's missions and their counters */
   dailyMissions: DailyMissionsState | null;
+  /** Days in a row with the 3 missions done: multiplies their XP */
+  missionStreak: MissionStreakState;
   /** All missions of the day just completed, not shown to the player yet (not persisted) */
   pendingMissionReward: MissionReward | null;
 
@@ -316,12 +321,14 @@ export const useGameStore = create<GameState>()(
       };
 
       /**
-       * Advances today's mission counters; completing them all grants XP and a streak freeze (more XP if the stock is full).
+       * Advances today's mission counters; completing them all grants XP (multiplied by the mission streak)
+       * and a streak freeze (more XP if the stock is full).
        * `update` is applied in the same set: a move is written once, with its mission counters.
        */
       const bumpMissions = (increments: Partial<Record<MissionCounter, number>>, update: Partial<GameState> = {}) => {
         const state = { ...get(), ...update };
-        const missions = getMissionsForDay(state.dailyMissions, getLocalDateString(new Date()));
+        const today = getLocalDateString(new Date());
+        const missions = getMissionsForDay(state.dailyMissions, today);
         const counters = { ...missions.counters };
         for (const [counter, amount] of Object.entries(increments) as [MissionCounter, number][]) {
           if (amount) counters[counter] = (counters[counter] || 0) + amount;
@@ -334,14 +341,16 @@ export const useGameStore = create<GameState>()(
         }
 
         withCosmeticCount(() => {
+          const missionStreak = advanceMissionStreak(state.missionStreak, today);
           set({
             ...update,
             dailyMissions: { ...missions, counters, rewarded: true },
+            missionStreak,
             stats: { ...state.stats, missionDaysCompleted: state.stats.missionDaysCompleted + 1 },
           });
           const freezeGranted = get().addStreakFreeze();
-          const xp = missionsXp(freezeGranted);
-          set({ pendingMissionReward: { freezeGranted, xp } });
+          const xp = missionsXp(freezeGranted, missionStreak.count);
+          set({ pendingMissionReward: { freezeGranted, xp, streak: missionStreak.count, multiplier: missionsMultiplier(missionStreak.count) } });
           addXp(xp);
           get().checkAchievements();
         });
@@ -436,6 +445,7 @@ export const useGameStore = create<GameState>()(
       streakFreezes: 0,
       frozenDates: [],
       dailyMissions: null,
+      missionStreak: initialMissionStreak(),
       pendingMissionReward: null,
       lastOpenDate: null,
       totalHintsUsed: 0,
@@ -664,7 +674,8 @@ export const useGameStore = create<GameState>()(
 
           // Update streak
           get().updateStreak(dateKey);
-          if (firstWin) addXp(dailyWinXp(stars));
+          // The streak this win just made multiplies its XP
+          if (firstWin) addXp(dailyWinXp(stars, get().currentStreak));
           if (dateKey === getLocalDateString(new Date())) {
             bumpMissions({ dailyDone: 1 });
           }
@@ -1033,6 +1044,7 @@ export const useGameStore = create<GameState>()(
           streakFreezes: 0,
           frozenDates: [],
           dailyMissions: null,
+          missionStreak: initialMissionStreak(),
           pendingMissionReward: null,
           lastOpenDate: null,
           totalHintsUsed: 0,
@@ -1127,6 +1139,7 @@ export const useGameStore = create<GameState>()(
         streakFreezes: state.streakFreezes,
         frozenDates: state.frozenDates,
         dailyMissions: state.dailyMissions,
+        missionStreak: state.missionStreak,
         lastOpenDate: state.lastOpenDate,
         totalHintsUsed: state.totalHintsUsed,
         xp: state.xp,

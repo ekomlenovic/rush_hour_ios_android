@@ -3,8 +3,9 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { RFValue } from '@/utils/responsive';
-import { DailyMissionsState, MISSIONS_BY_ID, MissionDef, getMissionProgress } from '@/data/missions';
-import { missionsXp } from '@/data/progression';
+import { DailyMissionsState, MISSIONS_BY_ID, MissionDef, MissionStreakState, activeMissionStreak, getMissionProgress } from '@/data/missions';
+import { MISSIONS_MAX_MULTIPLIER, MISSIONS_STREAK_STEP, missionsMultiplier, missionsXp } from '@/data/progression';
+import { formatMultiplier } from '@/components/progression/rewards';
 import BottomSheet from './BottomSheet';
 import type { UiColors } from '@/theme';
 
@@ -20,21 +21,40 @@ interface Props {
   colors: UiColors;
   isDark: boolean;
   missions: DailyMissionsState;
+  /** Days in a row with the 3 missions done: multiplies their XP */
+  missionStreak: MissionStreakState;
   /** The freeze stock is full: the missions give more XP instead of a freeze */
   freezeStockFull: boolean;
   onClose: () => void;
 }
 
 /** Today's 3 missions with their progress */
-export default function MissionsSheet({ visible, colors, isDark, missions, freezeStockFull, onClose }: Props) {
+export default function MissionsSheet({ visible, colors, isDark, missions, missionStreak, freezeStockFull, onClose }: Props) {
   const { t } = useTranslation();
+  // Days in a row so far (today included once its missions are done), and the day the next reward will be
+  const streak = activeMissionStreak(missionStreak, missions.date);
+  const todayStreak = missions.rewarded ? Math.max(streak, 1) : streak + 1;
+  const nextMultiplier = formatMultiplier(t, missionsMultiplier(missions.rewarded ? todayStreak + 1 : todayStreak));
   return (
     <BottomSheet visible={visible} title={t('missions.title')} colors={colors} isDark={isDark} onClose={onClose} onRequestClose={onClose}>
-      <Text style={[styles.settingSub, { color: missions.rewarded ? colors.success : colors.textMuted, marginBottom: 20 }]}>
+      <Text style={[styles.settingSub, { color: missions.rewarded ? colors.success : colors.textMuted, marginBottom: 12 }]}>
         {missions.rewarded
           ? t('missions.all_done')
-          : t(freezeStockFull ? 'missions.reward_hint_full' : 'missions.reward_hint', { xp: missionsXp(!freezeStockFull) })}
+          : t(freezeStockFull ? 'missions.reward_hint_full' : 'missions.reward_hint', { xp: missionsXp(!freezeStockFull, todayStreak) })}
       </Text>
+      <View style={[styles.streakBox, { backgroundColor: colors.card }]} accessible>
+        <Ionicons name="flame" size={22} color={streak > 0 ? colors.warning : colors.textMuted} style={styles.missionIcon} />
+        <View style={styles.missionBody}>
+          <Text style={[styles.streakTitle, { color: colors.text }]}>
+            {streak > 0
+              ? t(missions.rewarded ? 'missions.streak_tomorrow' : 'missions.streak_today', { count: streak, multiplier: nextMultiplier })
+              : t('missions.streak_none')}
+          </Text>
+          <Text style={[styles.streakRule, { color: colors.textMuted }]}>
+            {t('missions.streak_rule', { percent: MISSIONS_STREAK_STEP * 100, max: MISSIONS_MAX_MULTIPLIER })}
+          </Text>
+        </View>
+      </View>
       {missions.ids.map((id) => {
         const mission = MISSIONS_BY_ID[id];
         if (!mission) return null;
@@ -61,6 +81,22 @@ export default function MissionsSheet({ visible, colors, isDark, missions, freez
 const styles = StyleSheet.create({
   settingSub: {
     fontSize: RFValue(14),
+  },
+  streakBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 20,
+  },
+  streakTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  streakRule: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   missionRow: {
     flexDirection: 'row',

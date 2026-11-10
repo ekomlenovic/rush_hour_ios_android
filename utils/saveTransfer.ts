@@ -9,7 +9,7 @@ import { sampleLevels } from '../data/sampleLevels';
 import { isBossLevel } from '../data/bosses';
 import { ACHIEVEMENTS } from '../data/achievements';
 import {
-  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, missionsXp, weeklyWinXp,
+  ACHIEVEMENT_XP, BOSS_WIN_XP, archiveWinXp, dailyWinXp, getFreezeCapacity, getPlayerLevel, levelWinXp, MAX_MISSIONS_XP, STREAK_MAX_MULTIPLIER, weeklyWinXp,
 } from '../data/progression';
 import { getLocalDateString } from './date';
 import { starsFromScore } from './scoring';
@@ -377,6 +377,16 @@ function wellFormedRecap(state: Record<string, any>, now: Date): Record<string, 
   };
 }
 
+/** The mission streak, never longer than the days of missions done nor ending on a day to come; a broken one starts again */
+function wellFormedMissionStreak(state: Record<string, any>, now: Date): { count: number; lastDate: string | null } {
+  const streak = state.missionStreak;
+  const days = state.stats?.missionDaysCompleted ?? 0;
+  if (!isRecord(streak) || !isCount(streak.count) || typeof streak.lastDate !== 'string' || !DATE_KEY.test(streak.lastDate)) return { count: 0, lastDate: null };
+  if (streak.lastDate > latestSavedDate(now) || streak.count === 0) return { count: 0, lastDate: null };
+  const count = Math.min(streak.count, isCount(days) ? days : 0);
+  return count > 0 ? { count, lastDate: streak.lastDate } : { count: 0, lastDate: null };
+}
+
 /**
  * Most XP the save's wins can have given: first wins at their best stars, every other win as the
  * first win of a level as hard as can be. A win missing from the progress is not always a replay:
@@ -391,7 +401,8 @@ export function maxPlausibleXp(state: Record<string, any>): number {
   const otherWins = Math.max(0, (state.stats?.totalWins ?? 0) - completed.length);
   xp += otherWins * levelWinXp(60, 3, true);
   for (const r of Object.values((state.dailyChallengeProgress ?? {}) as Record<string, ChallengeResult>)) {
-    if (r.completed) xp += dailyWinXp(r.stars || 1);
+    // Each daily as if won at the top of the streak bonus
+    if (r.completed) xp += dailyWinXp(r.stars || 1) * STREAK_MAX_MULTIPLIER;
   }
   for (const r of Object.values((state.weeklyChallengeProgress ?? {}) as Record<string, ChallengeResult>)) {
     if (r.completed) xp += weeklyWinXp(r.stars || 1);
@@ -399,7 +410,8 @@ export function maxPlausibleXp(state: Record<string, any>): number {
   for (const r of Object.values((state.archiveProgress ?? {}) as Record<string, ChallengeResult>)) {
     if (r.completed) xp += archiveWinXp(r.minMoves ?? 60, r.stars || 1);
   }
-  xp += (state.stats?.missionDaysCompleted ?? 0) * missionsXp(false);
+  // Each day of missions at the top of the mission streak, its freeze not given
+  xp += (state.stats?.missionDaysCompleted ?? 0) * MAX_MISSIONS_XP;
   xp += (state.achievements?.length ?? 0) * ACHIEVEMENT_XP;
   return Math.ceil(xp);
 }
@@ -432,6 +444,7 @@ export function parseSave(code: string, now: Date = new Date()): ImportResult {
   if (state.stats !== undefined) state.stats = wellFormedStats(state.stats);
 
   const knownAchievements = new Set(ACHIEVEMENTS.map(a => a.id));
+  state.missionStreak = wellFormedMissionStreak(state, now);
   state.achievements = [...new Set((state.achievements ?? []) as string[])].filter(id => knownAchievements.has(id));
   state.xp = Math.min(state.xp ?? 0, maxPlausibleXp(state));
   state.streakFreezes = Math.min(state.streakFreezes ?? 0, getFreezeCapacity(getPlayerLevel(state.xp)));

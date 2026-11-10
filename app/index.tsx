@@ -52,6 +52,7 @@ export default function HomeScreen() {
   const currentStreak = useGameStore(s => s.currentStreak);
   const streakFreezes = useGameStore(s => s.streakFreezes);
   const dailyMissions = useGameStore(s => s.dailyMissions);
+  const missionStreak = useGameStore(s => s.missionStreak);
   const xp = useGameStore(s => s.xp);
   const progress = useGameStore(s => s.progress);
   const maxUnlockedLevel = useGameStore(s => s.maxUnlockedLevel);
@@ -189,7 +190,7 @@ export default function HomeScreen() {
                 : seasonalEvent && eventCosmetics > 0
                   ? t(`home.daily_event.${seasonalEvent}`, { count: eventCosmetics })
                   : t('home.daily_desc')}
-              reward={t('home.reward_xp', { xp: dailyWinXp(MAX_STARS) })}
+              reward={t('home.reward_xp', { xp: dailyWinXp(MAX_STARS, dailyStatus?.completed ? currentStreak : currentStreak + 1) })}
               enteringDelay={450}
               onPress={() => router.push(`/game?levelId=daily&date=${dateStr}`)}
             />
@@ -240,6 +241,7 @@ export default function HomeScreen() {
         colors={colors}
         isDark={isDark}
         missions={todayMissions}
+        missionStreak={missionStreak}
         freezeStockFull={streakFreezes >= freezeCapacity}
         onClose={() => setMissionsVisible(false)}
       />

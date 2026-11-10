@@ -139,7 +139,10 @@ Le streak compte les jours consécutifs avec le défi du jour réussi.
 | Les missions « niveau » ne comptent que **la carte et les niveaux personnalisés**, jamais les défis. Seule la mission « Réussis le défi du jour » porte sur un défi | `bumpMissions` (`store/gameStore.ts`) |
 | Toutes les missions sont **réalisables dès le début** du jeu (le niveau 1 est déjà en 7×7) | |
 | Une mission « rapide » compte les victoires en **moins d'une minute** ; une mission « nouveau niveau » compte les niveaux réussis pour la première fois | `FAST_WIN_MS`, `bumpMissions` |
-| Récompense : finir les 3 missions donne **100 XP et 1 gel de streak**, une fois par jour. Si le stock de gels est plein, le gel est remplacé par **50 XP de plus** (150 XP au total), pour que les missions rapportent toujours quelque chose | `missionsXp` (`data/progression.ts`), `addStreakFreeze` |
+| Récompense : finir les 3 missions donne **200 XP et 1 gel de streak**, une fois par jour. Si le stock de gels est plein, le gel est remplacé par **50 XP de plus**, pour que les missions rapportent toujours quelque chose | `missionsXp` (`data/progression.ts`), `addStreakFreeze` |
+| **Série de missions** : chaque jour d'affilée où les 3 missions sont terminées ajoute **25 %** à leurs 200 XP (250 le 2ᵉ jour, 300 le 3ᵉ…), jusqu'à **×3** (600 XP) à partir du 9ᵉ jour. Les 50 XP du stock plein ne sont pas multipliés. Un jour entier sans finir les 3 missions remet la série à zéro : les gels de streak ne la protègent pas (elle est distincte du streak du défi du jour). Une date locale qui recule ne l'allonge ni ne la casse | `missionStreak`, `advanceMissionStreak`, `activeMissionStreak` (`data/missions.ts`), `missionsMultiplier` |
+| L'écran des missions montre la série en cours, le multiplicateur du jour (ou du lendemain une fois les missions faites) et la règle ; la récompense annoncée (victoire, toast) rappelle la série quand elle multiplie | `MissionsSheet`, `missionRewardText` |
+| Les joueurs d'avant la série (v14) reçoivent **100 XP par jour de missions déjà terminé** (l'écart entre l'ancienne et la nouvelle récompense) ; leur série commence à 1 jour si les missions de leur dernier jour étaient faites | migration v14 (`store/migrations.ts`) |
 | L'écran des missions annonce la récompense (XP et gel, ou XP seule si le stock est plein) | `MissionsSheet` |
 | Les identifiants de mission sont sauvegardés pour la journée : ne jamais en renommer, seulement en ajouter | |
 
@@ -190,7 +193,7 @@ Le défi hebdo reprend les règles du défi du jour (pas d'indice, pas d'annuler
 
 ## Niveau joueur et XP
 
-Chaque victoire fait avancer une barre d'XP : la progression se voit même sur une partie courte. La courbe est **volontairement exigeante** : les premiers niveaux viennent en quelques jours, le niveau 10 demande environ un mois et demi de jeu quotidien, le niveau 20 environ un an.
+Chaque victoire fait avancer une barre d'XP : la progression se voit même sur une partie courte. La courbe reste **exigeante**, et c'est la **régularité** qui la raccourcit : avec le défi du jour et les 3 missions chaque jour (et leurs multiplicateurs), le niveau 10 vient en trois à quatre semaines, le niveau 20 en quatre à cinq mois, le niveau 30 en un an environ, le niveau 40 en un peu plus de deux ans. Sans eux, les seuls niveaux de la carte demandent près de deux ans pour le niveau 20.
 
 | Règle | Implémentation |
 |---|---|
@@ -199,7 +202,8 @@ Chaque victoire fait avancer une barre d'XP : la progression se voit même sur u
 | Un niveau **déjà réussi** ne rapporte que **25 %** : rejouer fait progresser, sans permettre de farmer | `REPLAY_XP_FACTOR` |
 | Première victoire d'un **boss** de la carte : **50 XP** en plus ; les boss déjà gagnés ont été crédités (migration v9) | `BOSS_WIN_XP`, `isBossLevel` (`data/bosses.ts`) |
 | Défi du jour : `60 + 20 × étoiles` ; défi hebdo : `150 + 50 × étoiles`, **une seule fois** par défi | `dailyWinXp`, `weeklyWinXp` |
-| 3 missions du jour terminées : **100 XP** (**150 XP** si le stock de gels est plein) ; chaque succès débloqué : **50 XP** | `MISSIONS_XP`, `ACHIEVEMENT_XP` |
+| **Bonus de streak** : l'XP du défi du jour est multipliée par le streak atteint avec cette victoire, **+10 % tous les 7 jours** de streak, jusqu'à **×2** à 70 jours (un jour gelé garde le streak, donc le bonus). Le défi hebdo et les archives n'en profitent pas. La carte du défi sur l'accueil annonce l'XP avec le bonus, le profil rappelle le multiplicateur et la règle | `streakMultiplier`, `completeDailyChallenge`, `StreakCard` |
+| 3 missions du jour terminées : **200 XP**, multipliées par la série de missions (jusqu'à ×3), **+50 XP** si le stock de gels est plein ; chaque succès débloqué : **50 XP** | `MISSIONS_XP`, `missionsXp`, `ACHIEVEMENT_XP` |
 | Le tutoriel ne rapporte rien | `completeLevel` (niveau non chargé) |
 | Titre par palier : Apprenti, Chauffeur (5), Pilote (10), Navigateur (15), As de la route (20), Maître du trafic (30), Légende (40) | `PLAYER_TITLES` |
 | Récompenses d'un niveau atteint : **1 gel**, un **emplacement de gel** aux niveaux 5, 10, 20 et 30, un **cosmétique** tous les 5 niveaux jusqu'au 35 | `getLevelRewardLines` (`components/progression/rewards.ts`) |

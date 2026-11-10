@@ -2,8 +2,8 @@ import type { ChallengeResult, Level, LevelProgress } from '../store/types';
 
 /**
  * Player level and XP: see docs/GAME_DESIGN.md (Niveau joueur et XP).
- * Every win gives XP, the curve is steep: the first levels come in a few days,
- * level 10 takes about a month and a half of daily play, level 20 about a year.
+ * Every win gives XP, the curve is steep: the first levels come in a few days. The daily missions
+ * done day after day are the fast lane: level 10 in about a month, level 20 in about five.
  */
 
 /** XP needed to go from `level` to `level + 1` */
@@ -74,16 +74,49 @@ export function levelWinXp(minMoves: number, stars: number, firstWin: boolean): 
 /** Extra XP for the first win of a boss level of the map (data/bosses.ts) */
 export const BOSS_WIN_XP = 50;
 
-export const dailyWinXp = (stars: number): number => 60 + 20 * stars;
+/** Every this many days of streak, the daily challenge gives more XP */
+export const STREAK_BONUS_DAYS = 7;
+/** What each of these weeks of streak adds to the multiplier of the daily challenge XP */
+export const STREAK_BONUS_STEP = 0.1;
+/** Highest multiplier of the daily challenge XP, reached at 70 days of streak */
+export const STREAK_MAX_MULTIPLIER = 2;
+
+/** Multiplier of the daily challenge XP at this streak (the day just won included) */
+export function streakMultiplier(streak: number): number {
+  const weeks = Math.floor(Math.max(0, streak || 0) / STREAK_BONUS_DAYS);
+  return Math.min(STREAK_MAX_MULTIPLIER, 1 + STREAK_BONUS_STEP * weeks);
+}
+
+/** XP of the daily challenge, multiplied by the streak it was won at (none for the saves from before the bonus) */
+export const dailyWinXp = (stars: number, streak = 0): number => Math.round((60 + 20 * stars) * streakMultiplier(streak));
 export const weeklyWinXp = (stars: number): number => 150 + 50 * stars;
 /** A past daily replayed from the archives: XP of a replayed level, so years of archives can't be farmed */
 export const archiveWinXp = (minMoves: number, stars: number): number => levelWinXp(minMoves, stars, false);
-/** All 3 missions of the day done */
-export const MISSIONS_XP = 100;
+/** All 3 missions of the day done, on the first day of a mission streak */
+export const MISSIONS_XP = 200;
+/** What the 3 missions gave before the mission streak (store v14): the XP credited by the older migrations */
+export const LEGACY_MISSIONS_XP = 100;
+/** Each day in a row with the 3 missions done adds this much to the multiplier of their XP */
+export const MISSIONS_STREAK_STEP = 0.25;
+/** Highest multiplier of the missions XP, reached on the 9th day in a row */
+export const MISSIONS_MAX_MULTIPLIER = 3;
 /** Extra XP for the 3 missions when the freeze stock is full: the freeze that can't be given */
 export const MISSIONS_FULL_STOCK_XP = 50;
-/** XP of the 3 missions of the day, depending on whether their freeze could be given */
-export const missionsXp = (freezeGranted: boolean): number => MISSIONS_XP + (freezeGranted ? 0 : MISSIONS_FULL_STOCK_XP);
+
+/** Multiplier of the missions XP on the `streakDays`-th day in a row (1 = first day) */
+export function missionsMultiplier(streakDays: number): number {
+  const days = Math.max(1, Math.floor(streakDays) || 1);
+  return Math.min(MISSIONS_MAX_MULTIPLIER, 1 + MISSIONS_STREAK_STEP * (days - 1));
+}
+
+/**
+ * XP of the 3 missions of the day: multiplied by the mission streak (this day included),
+ * plus a fixed bonus when their freeze could not be given
+ */
+export const missionsXp = (freezeGranted: boolean, streakDays = 1): number =>
+  Math.round(MISSIONS_XP * missionsMultiplier(streakDays)) + (freezeGranted ? 0 : MISSIONS_FULL_STOCK_XP);
+/** Most XP a day of missions can give */
+export const MAX_MISSIONS_XP = MISSIONS_XP * MISSIONS_MAX_MULTIPLIER + MISSIONS_FULL_STOCK_XP;
 export const ACHIEVEMENT_XP = 50;
 
 // ─── Level-up rewards ─────────────────────────────────────────────────────────
@@ -132,7 +165,7 @@ export function computeRetroactiveXp(state: XpSource, levels: Pick<Level, 'id' |
   for (const r of Object.values(state.weeklyChallengeProgress ?? {})) {
     if (r?.completed) xp += weeklyWinXp(r.stars || 1);
   }
-  xp += (state.stats?.missionDaysCompleted ?? 0) * MISSIONS_XP;
+  xp += (state.stats?.missionDaysCompleted ?? 0) * LEGACY_MISSIONS_XP;
   xp += (state.achievements?.length ?? 0) * ACHIEVEMENT_XP;
   return xp;
 }

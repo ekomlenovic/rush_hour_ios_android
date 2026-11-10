@@ -3,7 +3,10 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useGameStore } from '@/store/gameStore';
-import { FREEZE_SLOT_LEVELS, getFreezeCapacity, getPlayerLevel } from '@/data/progression';
+import {
+  FREEZE_SLOT_LEVELS, STREAK_BONUS_DAYS, STREAK_BONUS_STEP, STREAK_MAX_MULTIPLIER, getFreezeCapacity, getPlayerLevel, streakMultiplier,
+} from '@/data/progression';
+import { formatMultiplier } from '@/components/progression/rewards';
 import { RFValue } from '@/utils/responsive';
 import type { UiColors } from '@/theme';
 import StreakCalendar from './StreakCalendar';
@@ -35,6 +38,15 @@ export default function StreakCard({ colors }: Props) {
         <Text style={[styles.record, { color: colors.textMuted }]}>{t('profile.streak_record', { count: bestStreak })}</Text>
       </View>
 
+      <Text style={[styles.bonus, { color: colors.textMuted }]}>
+        {t('profile.streak_bonus', {
+          multiplier: formatMultiplier(t, streakMultiplier(currentStreak)),
+          percent: Math.round(STREAK_BONUS_STEP * 100),
+          days: STREAK_BONUS_DAYS,
+          max: STREAK_MAX_MULTIPLIER,
+        })}
+      </Text>
+
       <View style={styles.freezes}>
         <Text style={[styles.freezeText, { color: colors.textMuted }]}>
           {t('profile.freeze_slots', { count: streakFreezes, capacity })}
@@ -62,6 +74,11 @@ export default function StreakCard({ colors }: Props) {
 }
 
 const styles = StyleSheet.create({
+  bonus: {
+    fontSize: RFValue(12),
+    lineHeight: RFValue(17),
+    marginBottom: 12,
+  },
   card: {
     borderRadius: RFValue(20),
     borderWidth: 1,

@@ -3,7 +3,7 @@ import { sampleLevels } from '../data/sampleLevels';
 import { resetStore, setToday } from './helpers';
 import { calculateScore } from '../utils/scoring';
 import { MAX_SAVED_UNDOS, MAX_UNDO_STEPS, RECENT_SAVES_WITH_UNDOS, undoStackOf } from '../store/savedStates';
-import { ACHIEVEMENT_XP, BOSS_WIN_XP, MISSIONS_XP, dailyWinXp, levelWinXp, weeklyWinXp } from '../data/progression';
+import { ACHIEVEMENT_XP, BOSS_WIN_XP, MISSIONS_XP, dailyWinXp, levelWinXp, missionsXp, weeklyWinXp } from '../data/progression';
 import { STORE_VERSION } from '../store/migrations';
 
 const options = useGameStore.persist.getOptions();
@@ -11,9 +11,14 @@ const migrate = (state: Record<string, unknown>, version: number) =>
   options.migrate!(structuredClone(state), version) as unknown as Record<string, unknown>;
 /** Id a level of the pack had before the 5 levels inserted after level 5 in v5 */
 const idBeforeV5 = (id: number) => (id > 10 ? id - 5 : id);
-/** The state without the review prompt that v13 adds to every save, to check the steps before it */
+/** The state without the mission streak that v14 adds to every save, to check the steps before it */
+const withoutMissionStreak = (state: Record<string, unknown>) => {
+  const { missionStreak: _streak, ...rest } = state;
+  return rest;
+};
+/** The state without the review prompt that v13 (and the mission streak that v14) adds to every save, to check the steps before it */
 const withoutReview = (state: Record<string, unknown>) => {
-  const { reviewPrompt: _review, ...rest } = state;
+  const { reviewPrompt: _review, ...rest } = withoutMissionStreak(state);
   return rest;
 };
 /** The state without the recap fields that v12 and the review prompt that v13 add to every save, to check the steps before them */
@@ -30,14 +35,14 @@ const withBoards = (save: any) => {
 };
 
 describe('persisted state', () => {
-  it('is at version 13', () => {
-    expect(options.version).toBe(13);
+  it('is at version 14', () => {
+    expect(options.version).toBe(14);
     expect(STORE_VERSION).toBe(options.version);
   });
 
   it('keeps the player data and leaves the in-game state out', () => {
     resetStore();
-    useGameStore.setState({ unlockQueue: ['first_win'], pendingMissionReward: { freezeGranted: true, xp: 100 } });
+    useGameStore.setState({ unlockQueue: ['first_win'], pendingMissionReward: { freezeGranted: true, xp: 200, streak: 1, multiplier: 1 } });
     const saved = options.partialize!(useGameStore.getState()) as Record<string, unknown>;
     for (const key of ['progress', 'dailyChallengeProgress', 'stats', 'currentStreak', 'streakFreezes', 'frozenDates', 'dailyMissions', 'achievements', 'savedStates', 'xp', 'cosmetics', 'seenCosmetics']) {
       expect(saved).toHaveProperty(key);
@@ -67,6 +72,14 @@ const PERSISTED_KEYS: Record<number, string[]> = {
     'dailyLevelDate', 'dailyMissions', 'frozenDates', 'generatedLevels', 'generationState', 'importedLevels',
     'isHapticsEnabled', 'isMusicEnabled', 'lastOpenDate', 'lastPlayedLevelId', 'lastStreakDate',
     'maxUnlockedLevel', 'monthlyStats', 'notificationsEnabled', 'notificationsPrompted', 'progress',
+    'recapSince', 'recapsSeen', 'reminderHour', 'reviewPrompt', 'savedStates', 'seenAchievements', 'seenCosmetics',
+    'showVehicleLetters', 'stats', 'streakFreezes', 'themeMode', 'totalHintsUsed',
+    'weeklyChallengeProgress', 'weeklyLevelKey', 'xp', 'yearlyStats'],
+  14: ['achievementMonths', 'achievements', 'archiveLevels', 'archiveProgress', 'bestStreak', 'cosmetics',
+    'createdLevels', 'currentDailyLevel', 'currentStreak', 'currentWeeklyLevel', 'dailyChallengeProgress',
+    'dailyLevelDate', 'dailyMissions', 'frozenDates', 'generatedLevels', 'generationState', 'importedLevels',
+    'isHapticsEnabled', 'isMusicEnabled', 'lastOpenDate', 'lastPlayedLevelId', 'lastStreakDate',
+    'maxUnlockedLevel', 'missionStreak', 'monthlyStats', 'notificationsEnabled', 'notificationsPrompted', 'progress',
     'recapSince', 'recapsSeen', 'reminderHour', 'reviewPrompt', 'savedStates', 'seenAchievements', 'seenCosmetics',
     'showVehicleLetters', 'stats', 'streakFreezes', 'themeMode', 'totalHintsUsed',
     'weeklyChallengeProgress', 'weeklyLevelKey', 'xp', 'yearlyStats'],
@@ -458,7 +471,7 @@ describe('migrate v12 → v13: review prompt (issue 318)', () => {
     const state = migrate(v12, 12);
     expect(state.reviewPrompt).toEqual({ firstOpenDate: '2026-08-31', playDays: 6, askCount: 0, lastAskDate: null });
     // Nothing else changes
-    expect(withoutReview(state)).toEqual(v12);
+    expect(withoutMissionStreak(withoutReview(state))).toEqual(v12);
   });
 
   it('a save without any date: the first open is today', () => {
@@ -482,6 +495,64 @@ describe('migrate v12 → v13: review prompt (issue 318)', () => {
     useGameStore.getState().recordAppOpen();
     useGameStore.getState().recordAppOpen();
     expect(useGameStore.getState().reviewPrompt).toMatchObject({ firstOpenDate: '2026-10-20', playDays: 2 });
+  });
+});
+
+describe('migrate v13 → v14: missions XP raised, mission streak', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    resetStore();
+    setToday('2026-11-10');
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('credits 100 XP for each day of missions already done and starts the streak from the last day done', () => {
+    // Saved by v13: 12 days of missions done (100 XP each then), the last one yesterday
+    const v13 = {
+      xp: 5000,
+      stats: { missionDaysCompleted: 12, totalWins: 80 },
+      dailyMissions: { date: '2026-11-09', ids: ['win_3', 'daily', 'moves_100'], counters: { levelWins: 3, dailyDone: 1, moves: 100 }, rewarded: true },
+      currentStreak: 4,
+      bestStreak: 9,
+      streakFreezes: 2,
+      progress: [{ levelId: 1, completed: true, bestScore: 600, stars: 3 }],
+    };
+    const state = migrate(v13, 13);
+    expect(state.xp).toBe(5000 + 12 * 100);
+    expect(state.missionStreak).toEqual({ count: 1, lastDate: '2026-11-09' });
+    // Nothing else changes
+    expect({ ...withoutMissionStreak(state), xp: 5000 }).toEqual(v13);
+  });
+
+  it('missions not finished on their last day, or none yet: no streak, nothing lost', () => {
+    const unfinished = { xp: 300, stats: { missionDaysCompleted: 0 }, dailyMissions: { date: '2026-11-09', ids: ['win_3', 'daily', 'moves_100'], counters: { levelWins: 1 }, rewarded: false } };
+    expect(migrate(unfinished, 13)).toEqual({ ...unfinished, missionStreak: { count: 0, lastDate: null } });
+    expect(migrate({ xp: 40 }, 13)).toEqual({ xp: 40, missionStreak: { count: 0, lastDate: null } });
+    expect(migrate({ xp: 40, dailyMissions: null, stats: { missionDaysCompleted: 'x' } }, 13).xp).toBe(40);
+  });
+
+  it('a save of the previous version still loads in the store, and the streak goes on the next day', () => {
+    const merged = merge(migrate({
+      xp: 0,
+      stats: { missionDaysCompleted: 1 },
+      dailyMissions: { date: '2026-11-09', ids: ['win_3', 'daily', 'moves_100'], counters: { levelWins: 3, dailyDone: 1, moves: 100 }, rewarded: true },
+    }, 13));
+    useGameStore.setState(merged, true);
+    expect(useGameStore.getState().xp).toBe(100);
+    // Today's missions, all done but the daily
+    useGameStore.setState({ dailyMissions: { date: '2026-11-10', ids: ['win_3', 'daily', 'moves_100'], counters: { levelWins: 3, moves: 100 }, rewarded: false } });
+    useGameStore.getState().completeDailyChallenge('2026-11-10', 300, 3);
+    expect(useGameStore.getState().missionStreak).toEqual({ count: 2, lastDate: '2026-11-10' });
+    expect(useGameStore.getState().consumeMissionReward()).toEqual({ freezeGranted: true, xp: missionsXp(true, 2), streak: 2, multiplier: 1.25 });
+  });
+
+  it('the older steps still credit what the missions gave then, the raise once', () => {
+    // Saved before XP existed (v2): 2 days of missions
+    const state = migrate({ stats: { missionDaysCompleted: 2 } }, 2);
+    expect(state.xp).toBe(2 * 100 + 2 * 100);
   });
 });
 

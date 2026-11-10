@@ -5,6 +5,7 @@
  */
 
 import type { IoniconName } from '../utils/icons';
+import { addDays } from '../utils/date';
 
 export type MissionCounter =
   | 'levelWins'
@@ -40,6 +41,34 @@ export interface MissionReward {
   /** False when the freeze stock was full */
   freezeGranted: boolean;
   xp: number;
+  /** Days in a row with the 3 missions done, this one included */
+  streak: number;
+  /** What the mission streak multiplied the XP by */
+  multiplier: number;
+}
+
+/** Days in a row with the 3 missions done: each one raises the XP of the next (see docs/GAME_DESIGN.md) */
+export interface MissionStreakState {
+  count: number;
+  /** YYYY-MM-DD of the last day the 3 missions were done */
+  lastDate: string | null;
+}
+
+export const initialMissionStreak = (): MissionStreakState => ({ count: 0, lastDate: null });
+
+/** The mission streak as it stands today: lost once a whole day went by without the 3 missions */
+export function activeMissionStreak(streak: MissionStreakState | null | undefined, today: string): number {
+  if (!streak?.lastDate || streak.count <= 0) return 0;
+  // A last day after today (the local date went back: flight, time zone) keeps the streak
+  return streak.lastDate >= addDays(today, -1) ? streak.count : 0;
+}
+
+/** The mission streak once today's 3 missions are done */
+export function advanceMissionStreak(streak: MissionStreakState | null | undefined, today: string): MissionStreakState {
+  const active = activeMissionStreak(streak, today);
+  // Already counted today, or on a day after it (the local date went back): nothing more, nothing lost
+  if (active > 0 && streak!.lastDate! >= today) return { count: active, lastDate: streak!.lastDate };
+  return { count: active + 1, lastDate: today };
 }
 
 export const MISSIONS_PER_DAY = 3;
