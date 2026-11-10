@@ -427,18 +427,28 @@ export function mapRecipe(difficulty: string, gridSize: number, id: number): Map
  * Tries to make one map level of a difficulty and grid size, for a bounded amount of work
  * (about a second on a phone): null when none came out, the caller tries again. Short calls
  * leave room for Cancel, and for the progress to move.
+ * `minMoves` over 0: the minimum of moves chosen by the player (utils/generationPlan.ts) instead
+ * of the one of the difficulty; a level found up to 10 moves longer than the difficulty usually
+ * goes is then kept. The boards drawn are the same.
  */
-export function generateMapLevelWith(id: number, difficulty: string, gridSize: number, random: () => number): Level | null {
+export function generateMapLevelWith(
+  id: number,
+  difficulty: string,
+  gridSize: number,
+  minMoves: number,
+  random: () => number,
+): Level | null {
   'worklet';
   const config: DifficultyConfig = { ...(DIFFICULTY_LEVELS[difficulty] ?? DIFFICULTY_LEVELS.NORMAL), gridSize };
   const recipe = mapRecipe(difficulty, gridSize, id);
-  const { minMovesRequired, maxMovesRequired } = config;
+  const minMovesRequired = minMoves > 0 ? minMoves : config.minMovesRequired;
+  const maxMovesRequired = minMoves > 0 ? config.maxMovesRequired + 10 : config.maxMovesRequired;
 
   if (recipe.method === 'reject') {
     const attempts = recipe.attempts ?? 50;
     for (let attempt = 0; attempt < attempts; attempt++) {
       const { vehicles, exitRow, exitCol } = buildMapBoard(config, recipe, random);
-      const moves = solvePuzzle(vehicles, gridSize, exitRow, exitCol, maxMovesRequired + 10, recipe.maxStates).minMoves;
+      const moves = solvePuzzle(vehicles, gridSize, exitRow, exitCol, config.maxMovesRequired + 10, recipe.maxStates).minMoves;
       if (moves >= minMovesRequired && moves <= maxMovesRequired) {
         return { id, gridSize, vehicles, exitRow, exitCol, minMoves: moves, updatedAt: Date.now() };
       }
@@ -477,7 +487,7 @@ export function generateMapLevelWith(id: number, difficulty: string, gridSize: n
 }
 
 /** generateMapLevelWith drawing with Math.random: what the app runs on the solver runtime (hooks/useLevelGenerator.ts) */
-export function generateMapLevelChunk(id: number, difficulty: string, gridSize: number): Level | null {
+export function generateMapLevelChunk(id: number, difficulty: string, gridSize: number, minMoves: number): Level | null {
   'worklet';
-  return generateMapLevelWith(id, difficulty, gridSize, Math.random);
+  return generateMapLevelWith(id, difficulty, gridSize, minMoves, Math.random);
 }

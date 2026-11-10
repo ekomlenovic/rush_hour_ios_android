@@ -114,3 +114,25 @@ describe('nextMapLevel', () => {
     expect(nextMapLevel(999999, 734)).toBeNull();
   });
 });
+
+describe('getMapFocusLevel on the generated levels', () => {
+  // A campaign of 100 levels, generated levels 101 to 104, the campaign at level 12
+  const range = { campaignSize: 100, mapLevelCount: 104 };
+
+  it('stays on the generated levels after one is won: the first one after it not won yet', () => {
+    const won = new Set([101, 102]);
+    expect(getMapFocusLevel(101, 12, id => won.has(id), range)).toBe(103);
+    expect(getMapFocusLevel(104, 12, id => id === 104, range)).toBe(12);
+  });
+
+  it('goes back to the campaign once every generated level after it is won', () => {
+    expect(getMapFocusLevel(103, 12, id => id >= 103, range)).toBe(12);
+  });
+
+  it('changes nothing for the campaign, nor once the campaign is done', () => {
+    expect(getMapFocusLevel(11, 12, id => id === 11, range)).toBe(12);
+    expect(getMapFocusLevel(101, 103, id => id === 101, range)).toBe(103);
+    // A generated game to finish comes first, as any game
+    expect(getMapFocusLevel(102, 12, () => false, range)).toBe(102);
+  });
+});

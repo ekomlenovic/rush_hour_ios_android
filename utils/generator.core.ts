@@ -8,6 +8,11 @@ export interface DifficultyConfig {
   maxVehicles: number;
   minMovesRequired: number;
   maxMovesRequired: number;
+  /**
+   * Map generator, when the player chose the minimum of moves: a level found longer than
+   * maxMovesRequired is kept (as far as the solver counts: 10 moves past it). The boards drawn are the same.
+   */
+  keepLonger?: boolean;
 }
 
 export const DIFFICULTY_LEVELS: Record<string, DifficultyConfig> = {
@@ -214,6 +219,7 @@ function generateLevelWith(id: number, config: DifficultyConfig, random: () => n
   const { gridSize, minVehicles, maxVehicles, minMovesRequired, maxMovesRequired } = config;
 
   const bfsLimit = maxMovesRequired + 10;
+  const mostMoves = config.keepLonger ? bfsLimit : maxMovesRequired;
   const maxAttempts = minMovesRequired >= 20 ? 3000 : 1500;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -304,7 +310,7 @@ function generateLevelWith(id: number, config: DifficultyConfig, random: () => n
     // ── 4. optimized solver – exact minimum move count ─────────────────────────────
     const moves = solvePuzzle(vehicles, gridSize, exitRow, exitCol, bfsLimit, GENERATOR_MAX_STATES).minMoves;
 
-    if (moves >= minMovesRequired && moves <= maxMovesRequired) {
+    if (moves >= minMovesRequired && moves <= mostMoves) {
       return {
         id,
         gridSize,

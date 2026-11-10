@@ -318,6 +318,57 @@ describe('a move after the win (issue 168)', () => {
   });
 });
 
+describe('a generated level and the campaign', () => {
+  const base = sampleLevels.length;
+  const generated = [1, 2, 3].map(i => ({ ...level, id: base + i }));
+  const win = (id: number) => {
+    state().loadLevel(id <= base ? sampleLevels[id - 1] : generated[id - base - 1]);
+    state().completeLevel(id, 300, 3, 5_000);
+  };
+
+  beforeEach(() => {
+    resetStore();
+    useGameStore.setState({ generatedLevels: generated });
+  });
+
+  it('does not unlock the campaign: the next level to play stays where the campaign is', () => {
+    win(1);
+    win(2);
+    expect(state().maxUnlockedLevel).toBe(3);
+    win(base + 2);
+    expect(state().maxUnlockedLevel).toBe(3);
+    // The win itself counts as any other
+    expect(state().progress.find(p => p.levelId === base + 2)).toMatchObject({ completed: true, stars: 3 });
+    expect(state().xp).toBeGreaterThan(0);
+    // The campaign goes on as before
+    win(3);
+    expect(state().maxUnlockedLevel).toBe(4);
+  });
+
+  it('advances the map once the campaign is done', () => {
+    useGameStore.setState({ maxUnlockedLevel: base });
+    win(base);
+    expect(state().maxUnlockedLevel).toBe(base + 1);
+    win(base + 1);
+    expect(state().maxUnlockedLevel).toBe(base + 2);
+  });
+
+  it('the options still unlock every level, and the generated levels then advance the map', () => {
+    state().unlockAllLevels();
+    expect(state().maxUnlockedLevel).toBe(base + 3);
+    win(base + 3);
+    expect(state().maxUnlockedLevel).toBe(base + 4);
+  });
+
+  it('a campaign already unlocked by a generated level (before this rule) stays unlocked', () => {
+    useGameStore.setState({ maxUnlockedLevel: base + 2, progress: [{ levelId: base + 1, completed: true, bestScore: 300, stars: 3 }] });
+    win(5);
+    expect(state().maxUnlockedLevel).toBe(base + 2);
+    win(base + 2);
+    expect(state().maxUnlockedLevel).toBe(base + 3);
+  });
+});
+
 describe('resetting the generated levels', () => {
   it('takes their progress, games in progress and map focus with them, nothing else', () => {
     resetStore();

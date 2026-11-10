@@ -496,6 +496,14 @@ describe('the map, the archive days and the challenge results, in their own entr
     version: 6,
   };
   const entry = async (key: string) => JSON.parse((await AsyncStorage.getItem(key))!);
+  /** The map as written on the device: its chunks of packed levels, as many as the manifest says */
+  const MANIFEST_KEY = `${GENERATED_KEY}:packed`;
+  const mapOnDevice = async () => {
+    const { unpackLevel } = require('../data/packedLevels');
+    const { chunks } = await entry(MANIFEST_KEY);
+    const texts: string[][] = await Promise.all(Array.from({ length: chunks }, (_, i) => entry(`${MANIFEST_KEY}:${i}`)));
+    return texts.flat().map(unpackLevel);
+  };
   const writtenKeys = () => (AsyncStorage.multiSet as jest.Mock).mock.calls.map(([pairs]) => pairs.map(([key]: [string]) => key));
   async function launched() {
     const store = launch();
@@ -521,7 +529,7 @@ describe('the map, the archive days and the challenge results, in their own entr
     expect(main.state).not.toHaveProperty('archiveLevels');
     for (const field of ['dailyChallengeProgress', 'weeklyChallengeProgress', 'archiveProgress']) expect(main.state).not.toHaveProperty(field);
     expect(main.state.progress).toEqual(oneEntry.state.progress);
-    expect(await entry(GENERATED_KEY)).toEqual(generatedLevels);
+    expect(await mapOnDevice()).toEqual(generatedLevels);
     expect(await entry(ARCHIVES_KEY)).toEqual(archiveLevels);
     expect(await entry(DAILIES_KEY)).toEqual(oneEntry.state.dailyChallengeProgress);
     expect(await entry(ARCHIVE_RESULTS_KEY)).toEqual(oneEntry.state.archiveProgress);
@@ -588,8 +596,8 @@ describe('the map, the archive days and the challenge results, in their own entr
     const level = { ...sampleLevels[32], id: sampleLevels.length + 3 };
     store.getState().addGeneratedLevel(level);
     await settle();
-    expect(writtenKeys()).toEqual([[GENERATED_KEY, KEY]]);
-    expect(await entry(GENERATED_KEY)).toEqual([...generatedLevels, level]);
+    expect(writtenKeys()).toEqual([[`${MANIFEST_KEY}:0`, MANIFEST_KEY, KEY]]);
+    expect(await mapOnDevice()).toEqual([...generatedLevels, level]);
 
     const relaunched = await launched();
     expect(relaunched.getState().generatedLevels).toEqual([...generatedLevels, level]);
@@ -606,7 +614,7 @@ describe('the map, the archive days and the challenge results, in their own entr
     expect(store.getState().generatedLevels).toEqual(generatedLevels);
     expect(store.getState().archiveLevels).toEqual({ ...archiveLevels, ...otherDay });
     expect(store.getState().xp).toBeGreaterThanOrEqual(650);
-    expect(await entry(GENERATED_KEY)).toEqual(generatedLevels);
+    expect(await mapOnDevice()).toEqual(generatedLevels);
     expect(await entry(ARCHIVES_KEY)).toEqual({ ...archiveLevels, ...otherDay });
     expect((await entry(KEY)).state).not.toHaveProperty('generatedLevels');
   });
@@ -617,7 +625,110 @@ describe('the map, the archive days and the challenge results, in their own entr
     await AsyncStorage.setItem(KEY, JSON.stringify({ ...oneEntry, state: { ...oneEntry.state, generatedLevels: longer } }));
     const store = await launched();
     expect(store.getState().generatedLevels).toEqual(longer);
-    expect(await entry(GENERATED_KEY)).toEqual(longer);
+    expect(await mapOnDevice()).toEqual(longer);
+  });
+
+  describe('the map, in chunks of packed levels', () => {
+    const { MAP_LEVELS_PER_CHUNK } = require('../store/gameStore');
+    const mapOf = (count: number, from = sampleLevels.length + 1) => Array.from({ length: count }, (_, i) => ({
+      ...sampleLevels[(30 + i) % sampleLevels.length], id: from + i, updatedAt: 1731190000000 + i,
+    }));
+    // Written by 2.0.3 to 2.1.0: the main entry, and the map whole in its own entry
+    async function savedBy210(map: unknown[]) {
+      await AsyncStorage.clear();
+      const { generatedLevels: _, ...rest } = oneEntry.state;
+      await AsyncStorage.setItem(KEY, JSON.stringify({ ...oneEntry, state: { ...rest, maxUnlockedLevel: sampleLevels.length + map.length } }));
+      await AsyncStorage.setItem(GENERATED_KEY, JSON.stringify(map));
+      jest.clearAllMocks();
+    }
+
+    it('a map in its former entry (2.1.0) loads whole, moves to the chunks, and the former entry is left as it was', async () => {
+      const map = mapOf(MAP_LEVELS_PER_CHUNK + 20);
+      await savedBy210(map);
+      let store = await launched();
+      expect(store.getState().generatedLevels).toEqual(map);
+      expect(await entry(MANIFEST_KEY)).toEqual({ chunks: 2, legacyLength: map.length });
+      expect(await mapOnDevice()).toEqual(map);
+      expect(await entry(GENERATED_KEY)).toEqual(map);
+
+      store = await launched();
+      expect(store.getState().generatedLevels).toEqual(map);
+      expect(store.getState().maxUnlockedLevel).toBe(sampleLevels.length + map.length);
+    });
+
+    it('a new level writes only the last chunk and the manifest', async () => {
+      await savedBy210(mapOf(MAP_LEVELS_PER_CHUNK + 20));
+      const store = await launched();
+      (AsyncStorage.multiSet as jest.Mock).mockClear();
+      store.getState().addGeneratedLevel(mapOf(1, sampleLevels.length + MAP_LEVELS_PER_CHUNK + 21)[0]);
+      await settle();
+      expect(writtenKeys()).toEqual([[`${MANIFEST_KEY}:1`, MANIFEST_KEY, KEY]]);
+      expect((await launched()).getState().generatedLevels).toHaveLength(MAP_LEVELS_PER_CHUNK + 21);
+    });
+
+    it('holds a map far past what one entry holds on Android (2 MB)', async () => {
+      const map = mapOf(5000);
+      expect(JSON.stringify(map).length).toBeGreaterThan(2 * 1024 * 1024);
+      await savedBy210(map);
+      const store = await launched();
+      const chunks = (await entry(MANIFEST_KEY)).chunks;
+      expect(chunks).toBe(5000 / MAP_LEVELS_PER_CHUNK);
+      for (let i = 0; i < chunks; i++) {
+        expect((await AsyncStorage.getItem(`${MANIFEST_KEY}:${i}`))!.length).toBeLessThan(100 * 1024);
+      }
+      // Up to then, the map has always been written whole in one entry
+      await AsyncStorage.removeItem(GENERATED_KEY);
+      expect((await launched()).getState().generatedLevels).toEqual(store.getState().generatedLevels);
+    });
+
+    it('deleting the generated levels does not bring back the former entry, and frees the chunks', async () => {
+      await savedBy210(mapOf(MAP_LEVELS_PER_CHUNK + 20));
+      let store = await launched();
+      store.getState().purgeCustomLevels(sampleLevels.length);
+      await settle();
+      await flush();
+      expect(await entry(MANIFEST_KEY)).toEqual({ chunks: 0, legacyLength: MAP_LEVELS_PER_CHUNK + 20 });
+      expect(await AsyncStorage.getItem(`${MANIFEST_KEY}:0`)).toBeNull();
+      expect(await AsyncStorage.getItem(`${MANIFEST_KEY}:1`)).toBeNull();
+      store = await launched();
+      expect(store.getState().generatedLevels).toEqual([]);
+    });
+
+    it('an older version installed back, which extended the map in its former entry, keeps the longer map', async () => {
+      const map = mapOf(30);
+      await savedBy210(map);
+      await launched();
+      // 2.1.0 reinstalled: it reads and extends the former entry
+      const longer = mapOf(32);
+      await AsyncStorage.setItem(GENERATED_KEY, JSON.stringify(longer));
+      let store = await launched();
+      expect(store.getState().generatedLevels).toEqual(longer);
+      expect(await mapOnDevice()).toEqual(longer);
+      expect(await entry(MANIFEST_KEY)).toEqual({ chunks: 1, legacyLength: 32 });
+      // And it is not taken again after a deletion
+      store.getState().purgeCustomLevels(sampleLevels.length);
+      await settle();
+      store = await launched();
+      expect(store.getState().generatedLevels).toEqual([]);
+    });
+
+    it('a missing chunk fails the load: nothing is written over the save', async () => {
+      await savedBy210(mapOf(MAP_LEVELS_PER_CHUNK + 20));
+      await launched();
+      await AsyncStorage.removeItem(`${MANIFEST_KEY}:1`);
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const before = await AsyncStorage.getItem(KEY);
+      (AsyncStorage.multiSet as jest.Mock).mockClear();
+      (AsyncStorage.setItem as jest.Mock).mockClear();
+      const store = launch();
+      await flush();
+      await settle();
+      expect(store.getState().saveLoadFailed).toBe(true);
+      expect(AsyncStorage.multiSet).not.toHaveBeenCalled();
+      expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+      expect(await AsyncStorage.getItem(KEY)).toBe(before);
+      warn.mockRestore();
+    });
   });
 
   it('are emptied by a reset, and still in the export', async () => {
@@ -637,7 +748,8 @@ describe('the map, the archive days and the challenge results, in their own entr
 
     store.getState().hardReset();
     await settle();
-    expect(await entry(GENERATED_KEY)).toEqual([]);
+    expect(await mapOnDevice()).toEqual([]);
+    expect(await AsyncStorage.getItem(`${MANIFEST_KEY}:0`)).toBeNull();
     expect(await entry(ARCHIVES_KEY)).toEqual({});
     for (const key of RESULTS_KEYS) expect(await entry(key)).toEqual({});
   });

@@ -28,6 +28,10 @@ interface LevelNodeProps {
   isPadlockNode: boolean;
   isTutorial: boolean;
   stars: number;
+  /** A search is going on and this level does not match: faded behind the matches */
+  dimmed?: boolean;
+  /** The match the search is on */
+  highlighted?: boolean;
   onPress: (id: number, unlocked: boolean, custom: boolean) => void;
   colors: UiColors;
   board: BoardColors;
@@ -67,6 +71,8 @@ const LevelNode = React.memo(({
   isPadlockNode,
   isTutorial,
   stars,
+  dimmed = false,
+  highlighted = false,
   onPress,
   colors,
   board,
@@ -110,15 +116,15 @@ const LevelNode = React.memo(({
   const darkLabel = labelColor === fixedColors.onLightFill;
 
   return (
-    <View style={[styles.nodeContainer, { left: point.x - 45, top: point.y - TOKEN / 2 - 4 }]}>
+    <View style={[styles.nodeContainer, { left: point.x - 45, top: point.y - TOKEN / 2 - 4 }, dimmed && styles.dimmed]}>
       {isCurrent && (
         <View style={[styles.nextPill, { backgroundColor: colors.primary }]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
           <Text style={styles.nextText}>{t('map.next')}</Text>
         </View>
       )}
 
-      <View style={[styles.tokenSlot, isCurrent && styles.tokenCurrent]}>
-        {isCurrent && <Halo color={colors.mapHalo} />}
+      <View style={[styles.tokenSlot, (isCurrent || highlighted) && styles.tokenCurrent]}>
+        {isCurrent ? <Halo color={colors.mapHalo} /> : highlighted ? <Halo color={colors.star} /> : null}
         <Pressable
           onPress={() => onPress(point.id, isUnlocked, isCustom)}
           accessibilityRole="button"
@@ -185,6 +191,9 @@ const styles = StyleSheet.create({
     width: 90,
     alignItems: 'center',
     zIndex: 10,
+  },
+  dimmed: {
+    opacity: 0.3,
   },
   tokenSlot: {
     width: TOKEN,

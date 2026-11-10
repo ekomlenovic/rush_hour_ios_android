@@ -1,7 +1,7 @@
 /**
  * Benchmark of the map generator, out of CI: time of a level per difficulty and grid size, and how
  * varied the levels are (moves, vehicles, vehicles moved by the solution, exit sides, duplicates).
- * Usage: npx tsx scripts/benchGenerator.ts [DIFFICULTY|ALL] [GRID_SIZE|ALL] [SECONDS]
+ * Usage: npx tsx scripts/benchGenerator.ts [DIFFICULTY|ALL] [GRID_SIZE|ALL] [SECONDS] [MIN_MOVES]
  * Node has a JIT, Hermes on a phone does not: the phone is slower (see utils/generationEstimate.ts).
  * The recipes (utils/mapGenerator.ts) were chosen with it: change one, measure again.
  */
@@ -11,7 +11,7 @@ import { solvePuzzle } from '../utils/solver';
 import { canonicalKey } from '../utils/levelShape';
 import type { Level } from '../store/types';
 
-const [difficultyArg = 'NORMAL', sizeArg = '6', seconds = '10'] = process.argv.slice(2);
+const [difficultyArg = 'NORMAL', sizeArg = '6', seconds = '10', minMoves = '0'] = process.argv.slice(2);
 const difficulties = difficultyArg === 'ALL' ? Object.keys(DIFFICULTY_LEVELS) : [difficultyArg];
 const sizes = sizeArg === 'ALL' ? [6, 7, 8] : [Number(sizeArg)];
 const average = (values: number[]) => (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
@@ -23,7 +23,7 @@ for (const difficulty of difficulties) {
     let since = performance.now();
     const start = since;
     while (performance.now() - start < Number(seconds) * 1000) {
-      const level = generateMapLevelChunk(1000 + levels.length, difficulty, size);
+      const level = generateMapLevelChunk(1000 + levels.length, difficulty, size, Number(minMoves));
       if (!level) continue;
       levels.push(level);
       slowest = Math.max(slowest, performance.now() - since);

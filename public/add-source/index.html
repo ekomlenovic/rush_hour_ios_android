@@ -1,0 +1,63 @@
+<!doctype html>
+<!-- Opens SideStore, AltStore or LiveContainer on the Rush Hours source: the buttons of the README.
+     GitHub removes the links whose scheme is not http(s) from a README, so they point here
+     (?app=sidestore|altstore|livecontainer), and this page opens <app>://source?url=<source>,
+     like the install page of the portfolio. Only these three apps and this source: not a redirect
+     to anywhere. See docs/GAME_DESIGN.md, Version web. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Rush Hours — add the source</title>
+    <link rel="apple-touch-icon" href="/rush_hour_ios_android/icons/apple-touch-icon.png" />
+    <style>
+      :root { color-scheme: light dark; --bg: #f5f5fa; --fg: #1a1a2e; --muted: #5c5c70; --card: #fff; --accent: #e5a019; }
+      @media (prefers-color-scheme: dark) { :root { --bg: #0f0f1a; --fg: #f0f0f5; --muted: #a0a0b4; --card: #1a1a2e; } }
+      body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); color: var(--fg); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      main { max-width: 440px; margin: 16px; padding: 24px; border-radius: 20px; background: var(--card); text-align: center; }
+      img { border-radius: 22%; }
+      h1 { font-size: 1.3rem; margin: 12px 0 8px; }
+      p { color: var(--muted); margin: 8px 0; }
+      a.button { display: inline-block; margin: 12px 0; padding: 12px 24px; border-radius: 999px; background: var(--accent); color: #1a1a2e; font-weight: 600; text-decoration: none; }
+      code { display: block; margin-top: 8px; padding: 8px; border-radius: 8px; background: var(--bg); font-size: 0.75rem; word-break: break-all; user-select: all; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/rush_hour_ios_android/icons/icon-192.png" alt="" width="72" height="72" />
+      <h1 id="title">Rush Hours</h1>
+      <p id="text"></p>
+      <a id="open" class="button" hidden></a>
+      <p id="manual"></p>
+      <code id="source"></code>
+    </main>
+    <script>
+      (function () {
+        var SOURCE = 'https://raw.githubusercontent.com/ekomlenovic/rush_hour_ios_android/refs/heads/main/sidestore-source.json';
+        var APPS = { sidestore: 'SideStore', altstore: 'AltStore', livecontainer: 'LiveContainer' };
+        var fr = /^fr\b/i.test(navigator.language || '');
+        var key = (new URLSearchParams(location.search).get('app') || '').toLowerCase();
+        var name = APPS.hasOwnProperty(key) ? APPS[key] : null;
+        var $ = function (id) { return document.getElementById(id); };
+        document.documentElement.lang = fr ? 'fr' : 'en';
+        $('source').textContent = SOURCE;
+        $('manual').textContent = fr
+          ? 'Rien ne s’ouvre ? Copie cette adresse et ajoute-la dans l’onglet Sources de ton app :'
+          : 'Nothing opens? Copy this address and add it in the Sources tab of your app:';
+        if (!name) {
+          $('text').textContent = fr
+            ? 'Ajoute la source Rush Hours à SideStore, AltStore ou LiveContainer :'
+            : 'Add the Rush Hours source to SideStore, AltStore or LiveContainer:';
+          return;
+        }
+        var link = key + '://source?url=' + encodeURIComponent(SOURCE);
+        $('text').textContent = fr ? 'Ouverture de ' + name + '…' : 'Opening ' + name + '…';
+        $('open').href = link;
+        $('open').textContent = fr ? 'Ouvrir ' + name : 'Open ' + name;
+        $('open').hidden = false;
+        location.href = link;
+      })();
+    </script>
+  </body>
+</html>

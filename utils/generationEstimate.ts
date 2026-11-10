@@ -102,9 +102,15 @@ export function estimateLevelMs(difficulty: string, gridSize: number, samples: G
  * A level of this combination can take a minute or more: never started without saying so.
  * Levels vary a lot: an average of half a minute, or one level measured over a minute, is enough.
  */
-export function needsConfirmation(difficulty: string, gridSize: number, samples: GenerationSamples): boolean {
+export function needsConfirmation(
+  difficulty: string,
+  gridSize: number,
+  samples: GenerationSamples,
+  /** How many times longer a level takes with the minimum of moves chosen by the player (utils/generationPlan.ts) */
+  slowdown = 1,
+): boolean {
   const sample = samples[sampleKey(difficulty, gridSize)];
-  return estimateLevelMs(difficulty, gridSize, samples) * SLOW_LEVEL_FACTOR >= LONG_LEVEL_MS
+  return estimateLevelMs(difficulty, gridSize, samples) * slowdown * SLOW_LEVEL_FACTOR >= LONG_LEVEL_MS
     || (sample?.maxMs ?? 0) >= LONG_LEVEL_MS;
 }
 

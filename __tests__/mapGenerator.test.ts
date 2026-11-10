@@ -6,9 +6,9 @@ import { canonicalKey } from '../utils/levelShape';
 import type { Level } from '../store/types';
 
 /** A level of the generator, calling it until one comes out, as the app does */
-function generate(difficulty: string, gridSize: number, random: () => number, id = 1): Level {
+function generate(difficulty: string, gridSize: number, random: () => number, id = 1, minMoves = 0): Level {
   for (let call = 0; call < 2000; call++) {
-    const level = generateMapLevelWith(id, difficulty, gridSize, random);
+    const level = generateMapLevelWith(id, difficulty, gridSize, minMoves, random);
     if (level) return level;
   }
   throw new Error(`no ${difficulty} ${gridSize}x${gridSize} level`);
@@ -124,9 +124,24 @@ describe('map generator', () => {
     for (const level of levels) expect(solve(level).minMoves).toBe(level.minMoves);
   }, 120_000);
 
+  it.each([['EASY', 6, 10], ['HARD', 6, 20], ['NORMAL', 7, 6]] as const)(
+    'follows a minimum of moves chosen by the player (%s %dx%d from %d moves), longer levels kept',
+    (difficulty, size, minMoves) => {
+      const random = createPRNG(`min-${difficulty}`);
+      for (let i = 0; i < 3; i++) {
+        const level = generate(difficulty, size, random, 700 + i, minMoves);
+        expectValidBoard(level);
+        expect(level.minMoves).toBeGreaterThanOrEqual(minMoves);
+        expect(level.minMoves).toBeLessThanOrEqual(DIFFICULTY_LEVELS[difficulty].maxMovesRequired + 10);
+        expect(solve(level).minMoves).toBe(level.minMoves);
+      }
+    },
+    120_000,
+  );
+
   it('draws with Math.random in the app: an unknown difficulty or size still gives a level or nothing, never an error', () => {
-    const level = generateMapLevelChunk(7, 'EASY', 6);
+    const level = generateMapLevelChunk(7, 'EASY', 6, 0);
     if (level) expectValidBoard(level);
-    expect(() => generateMapLevelChunk(7, 'UNKNOWN', 9)).not.toThrow();
+    expect(() => generateMapLevelChunk(7, 'UNKNOWN', 9, 0)).not.toThrow();
   });
 });
