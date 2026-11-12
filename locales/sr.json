@@ -660,6 +660,7 @@
   "missions": {
     "title": "Misije",
     "completed": "Dnevne misije završene!",
+    "open": "Pogledaj misije",
     "done_one": "Misija završena!",
     "done_few": "Misije završene!",
     "done_other": "Misije završene!",

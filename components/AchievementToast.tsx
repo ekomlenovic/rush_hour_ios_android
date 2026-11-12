@@ -10,6 +10,7 @@ import { MISSIONS_BY_ID, countMissionsDone, type MissionReward } from '@/data/mi
 import { missionRewardText } from '@/components/progression/rewards';
 import { fixedColors, useTheme } from '@/theme';
 import type { IoniconName } from '@/utils/icons';
+import { canOpenMissionsSheet, openMissionsSheet } from '@/utils/missionsSheet';
 
 const DISPLAY_MS = 3000;
 
@@ -50,8 +51,10 @@ export function WinAchievementToasts({ ids }: { ids: string[] }) {
 }
 
 /** One toast at the top of the screen */
-function ToastCard({ itemKey, icon, iconCount, label, name, onPress }: {
-  itemKey: string; icon: IoniconName; iconCount?: 1 | 2 | 3; label: string; name: string; onPress: () => void;
+function ToastCard({ itemKey, icon, iconCount, label, name, hint, onPress }: {
+  itemKey: string; icon: IoniconName; iconCount?: 1 | 2 | 3; label: string; name: string;
+  /** What touching it does, when it is not just closing it */
+  hint?: string; onPress: () => void;
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -63,7 +66,7 @@ function ToastCard({ itemKey, icon, iconCount, label, name, onPress }: {
           onPress={onPress}
           accessibilityRole="button"
           accessibilityLabel={`${label} ${name}`}
-          accessibilityHint={t('a11y.close')}
+          accessibilityHint={hint ?? t('a11y.close')}
           style={[styles.toast, { backgroundColor: colors.surface, borderColor: colors.warning }]}
         >
           <AchievementIcon icon={icon} count={iconCount} size={30} color={colors.warning} style={styles.icon} />
@@ -162,7 +165,12 @@ export default function AchievementToast() {
       iconCount={achievement?.iconCount}
       label={label}
       name={name}
-      onPress={() => setCurrent(null)}
+      hint={current.kind === 'mission' && canOpenMissionsSheet() ? t('missions.open') : undefined}
+      onPress={() => {
+        // On the game screen, a completed mission opens the missions; elsewhere the toast just closes
+        if (current.kind === 'mission') openMissionsSheet();
+        setCurrent(null);
+      }}
     />
   );
 }

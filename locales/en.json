@@ -626,6 +626,7 @@
   "missions": {
     "title": "Missions",
     "completed": "Daily missions complete!",
+    "open": "See the missions",
     "done_one": "Mission complete!",
     "done_other": "Missions complete!",
     "done_progress": "Mission complete · {{done}}/{{total}}",
