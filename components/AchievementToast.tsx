@@ -6,14 +6,19 @@ import { useTranslation } from 'react-i18next';
 import AchievementIcon from '@/components/profile/AchievementIcon';
 import { useGameStore } from '@/store/gameStore';
 import { ACHIEVEMENTS_BY_ID } from '@/data/achievements';
-import type { MissionReward } from '@/data/missions';
+import { MISSIONS_BY_ID, countMissionsDone, type MissionReward } from '@/data/missions';
 import { missionRewardText } from '@/components/progression/rewards';
 import { fixedColors, useTheme } from '@/theme';
 import type { IoniconName } from '@/utils/icons';
 
 const DISPLAY_MS = 3000;
 
-type ToastItem = { kind: 'achievement'; id: string } | ({ kind: 'missions' } & MissionReward) | { kind: 'levelUp'; level: number };
+type ToastItem =
+  | { kind: 'achievement'; id: string }
+  | ({ kind: 'missions' } & MissionReward)
+  /** One mission completed, with how many of the day are done */
+  | { kind: 'mission'; id: string; done: number; total: number }
+  | { kind: 'levelUp'; level: number };
 
 /** Achievements shown one after the other at the top of the win screen, a modal the global toast can't cover */
 export function WinAchievementToasts({ ids }: { ids: string[] }) {
@@ -73,8 +78,8 @@ function ToastCard({ itemKey, icon, iconCount, label, name, onPress }: {
 }
 
 /**
- * Shows unlocked achievements and completed daily missions one at a time at the top of the screen.
- * The win screen consumes both queues itself (its achievements as toasts over it, WinAchievementToasts),
+ * Shows unlocked achievements and completed daily missions (each one, then the reward of the 3) one at a time
+ * at the top of the screen. The win screen consumes these queues itself (its achievements as toasts over it, WinAchievementToasts),
  * so this covers what happens elsewhere (comeback, level creation, sharing, import, moves or play time missions...).
  */
 export default function AchievementToast() {
@@ -82,11 +87,24 @@ export default function AchievementToast() {
   const unlockQueue = useGameStore(s => s.unlockQueue);
   const pendingMissionReward = useGameStore(s => s.pendingMissionReward);
   const levelUpQueue = useGameStore(s => s.levelUpQueue);
+  const missionDoneQueue = useGameStore(s => s.missionDoneQueue);
   const [current, setCurrent] = useState<ToastItem | null>(null);
 
   // Take the next item once the previous one is gone: missions first, then level ups, then achievements
   useEffect(() => {
     if (current) return;
+    const nextMission = missionDoneQueue.find(id => MISSIONS_BY_ID[id]);
+    if (nextMission) {
+      const { dailyMissions } = useGameStore.getState();
+      useGameStore.setState({ missionDoneQueue: missionDoneQueue.slice(missionDoneQueue.indexOf(nextMission) + 1) });
+      setCurrent({
+        kind: 'mission',
+        id: nextMission,
+        done: dailyMissions ? countMissionsDone(dailyMissions) : 1,
+        total: dailyMissions ? dailyMissions.ids.length : 1,
+      });
+      return;
+    }
     const reward = useGameStore.getState().consumeMissionReward();
     if (reward) {
       setCurrent({ kind: 'missions', ...reward });
@@ -102,7 +120,7 @@ export default function AchievementToast() {
     const [next, ...rest] = unlockQueue;
     useGameStore.setState({ unlockQueue: rest });
     setCurrent({ kind: 'achievement', id: next });
-  }, [unlockQueue, pendingMissionReward, levelUpQueue, current]);
+  }, [unlockQueue, pendingMissionReward, levelUpQueue, missionDoneQueue, current]);
 
   useEffect(() => {
     if (!current) return;
@@ -111,7 +129,9 @@ export default function AchievementToast() {
       ? `${t('achievements.unlocked')} ${t(`achievements.${current.id}`)}`
       : current.kind === 'levelUp'
         ? t('progression.level_up', { level: current.level })
-        : `${t('missions.completed')} ${missionRewardText(t, current)}`;
+        : current.kind === 'mission'
+          ? `${t('missions.done_progress', { done: current.done, total: current.total })} ${t(`missions.list.${current.id}`)}`
+          : `${t('missions.completed')} ${missionRewardText(t, current)}`;
     AccessibilityInfo.announceForAccessibility(announced);
     const timer = setTimeout(() => setCurrent(null), DISPLAY_MS);
     return () => clearTimeout(timer);
@@ -121,18 +141,23 @@ export default function AchievementToast() {
   const achievement = current.kind === 'achievement' ? ACHIEVEMENTS_BY_ID[current.id] : null;
   if (current.kind === 'achievement' && !achievement) return null;
 
-  const icon = achievement ? achievement.icon : current.kind === 'levelUp' ? 'trending-up' : 'flag';
+  const icon = achievement ? achievement.icon
+    : current.kind === 'levelUp' ? 'trending-up'
+    : current.kind === 'mission' ? MISSIONS_BY_ID[current.id].icon
+    : 'flag';
   const label = achievement ? t('achievements.unlocked')
     : current.kind === 'levelUp' ? t('progression.level_up_label')
+    : current.kind === 'mission' ? t('missions.done_progress', { done: current.done, total: current.total })
     : t('missions.completed');
   const name = achievement
     ? t(`achievements.${achievement.id}`)
     : current.kind === 'levelUp' ? t('progression.level', { level: current.level })
+    : current.kind === 'mission' ? t(`missions.list.${current.id}`)
     : current.kind === 'missions' ? missionRewardText(t, current) : '';
 
   return (
     <ToastCard
-      itemKey={achievement ? achievement.id : current.kind === 'levelUp' ? `level-${current.level}` : 'missions'}
+      itemKey={achievement ? achievement.id : current.kind === 'levelUp' ? `level-${current.level}` : current.kind === 'mission' ? `mission-${current.id}` : 'missions'}
       icon={icon}
       iconCount={achievement?.iconCount}
       label={label}

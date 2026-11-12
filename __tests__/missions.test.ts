@@ -114,6 +114,64 @@ describe('mission counters in the store', () => {
     expect(counters().levelWins).toBe(1);
   });
 
+  describe('each mission completed is announced', () => {
+    const start = (counters: Record<string, number> = {}) => useGameStore.setState({
+      dailyMissions: { date: TODAY, ids: ['win_3', 'perfect_2', 'moves_100'], counters, rewarded: false },
+    });
+
+    it('once, when its target is reached, not before and not again after', () => {
+      start({ levelWins: 1 });
+      winMapLevel(sampleLevels[0], { stars: 2 });
+      expect(state().consumeMissionsDone()).toEqual([]);
+      winMapLevel(sampleLevels[1], { stars: 2 });
+      expect(state().consumeMissionsDone()).toEqual(['win_3']);
+      expect(state().consumeMissionsDone()).toEqual([]);
+      winMapLevel(sampleLevels[2], { stars: 2 });
+      expect(state().consumeMissionsDone()).toEqual([]);
+    });
+
+    it('two missions completed by the same win are announced together', () => {
+      start({ levelWins: 2, perfectWins: 1 });
+      winMapLevel(sampleLevels[0], { stars: 3 });
+      expect(state().consumeMissionsDone()).toEqual(['win_3', 'perfect_2']);
+      expect(state().consumeMissionReward()).toBeNull();
+    });
+
+    it('a mission completed while playing (moves) is announced too', () => {
+      start({ moves: 99 });
+      const level = sampleLevels[0];
+      state().loadLevel(level);
+      const v = level.vehicles[1];
+      state().moveVehicle(v.id, v.row, v.col);
+      expect(state().missionDoneQueue).toEqual(['moves_100']);
+    });
+
+    it('the last mission of the day is announced by the reward only, never twice', () => {
+      start({ levelWins: 2, perfectWins: 2, moves: 100 });
+      winMapLevel(sampleLevels[0], { stars: 2 });
+      expect(state().consumeMissionReward()).not.toBeNull();
+      expect(state().consumeMissionsDone()).toEqual([]);
+
+      // A mission waiting for its toast when the last one is completed: the reward says it all
+      resetStore();
+      start({ levelWins: 2, perfectWins: 2, moves: 99 });
+      const level = sampleLevels[0];
+      state().loadLevel(level);
+      const v = level.vehicles[1];
+      state().moveVehicle(v.id, v.row, v.col);
+      state().completeLevel(level.id, 200, 2, 20_000);
+      expect(state().consumeMissionReward()).not.toBeNull();
+      expect(state().consumeMissionsDone()).toEqual([]);
+    });
+
+    it('is not saved: nothing to announce again at the next launch', () => {
+      start({ levelWins: 2 });
+      winMapLevel(sampleLevels[0], { stars: 2 });
+      const saved = useGameStore.persist.getOptions().partialize!(state()) as Record<string, unknown>;
+      expect(saved).not.toHaveProperty('missionDoneQueue');
+    });
+  });
+
   describe('reward', () => {
     beforeEach(() => {
       // All missions but the daily one already done

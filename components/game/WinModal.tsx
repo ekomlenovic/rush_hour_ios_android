@@ -30,6 +30,10 @@ interface Props {
   cosmeticUnlocks: string[];
   onOpenGarage: () => void;
   missionReward: MissionReward | null;
+  /** Missions this win completed (ids), when they were not the last of the day (then it is `missionReward`) */
+  missionsDone?: string[];
+  /** Today's missions still to complete (ids), listed under the ones just completed */
+  missionsLeft?: string[];
   /** XP before and after this win (level, missions and achievements included) */
   xpGain: { from: number; to: number } | null;
   /** Player levels reached with this win */
@@ -50,7 +54,7 @@ interface Props {
 }
 
 export default function WinModal({
-  visible, colors, stars, moveCount, minMoves, score, timeMs, unlocks, cosmeticUnlocks, onOpenGarage, missionReward, xpGain, levelUps, effect, effectColors,
+  visible, colors, stars, moveCount, minMoves, score, timeMs, unlocks, cosmeticUnlocks, onOpenGarage, missionReward, missionsDone = [], missionsLeft = [], xpGain, levelUps, effect, effectColors,
   canShareResult, onShareResult, onShowSolution, onRetry, onNextLevel, onContinue, onRequestClose,
 }: Props) {
   const isOptimal = moveCount <= minMoves;
@@ -82,6 +86,11 @@ export default function WinModal({
       stats: movesLine,
     }));
     for (const level of levelUps) AccessibilityInfo.announceForAccessibility(t('progression.level_up', { level }));
+    if (missionsDone.length > 0) {
+      AccessibilityInfo.announceForAccessibility(
+        `${t('missions.done', { count: missionsDone.length })} ${missionsDone.map(id => t(`missions.list.${id}`)).join(', ')}`,
+      );
+    }
   }, [visible]);
 
   return (
@@ -178,6 +187,19 @@ export default function WinModal({
               <Text style={[styles.winUnlockItem, { color: colors.text }]}>
                 {missionRewardText(t, missionReward)}
               </Text>
+            </View>
+          )}
+          {missionsDone.length > 0 && (
+            <View style={[styles.winUnlocks, { backgroundColor: colors.card }]}>
+              <IconText icon="flag" color={colors.warning} textStyle={styles.winUnlocksTitle}>{t('missions.done', { count: missionsDone.length })}</IconText>
+              {missionsDone.map(id => (
+                <Text key={id} style={[styles.winUnlockItem, { color: colors.text }]}>{t(`missions.list.${id}`)}</Text>
+              ))}
+              {missionsLeft.length > 0 && (
+                <Text style={[styles.winMissionsLeft, { color: colors.textMuted }]}>
+                  {t('missions.left', { count: missionsLeft.length })} {missionsLeft.map(id => t(`missions.list.${id}`)).join(', ')}
+                </Text>
+              )}
             </View>
           )}
           <View style={styles.solutionRow}>
@@ -363,6 +385,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     marginVertical: 2,
+  },
+  winMissionsLeft: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 6,
   },
   cosmeticRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', gap: 10, marginTop: 4 },
   cosmeticText: { flex: 1 },

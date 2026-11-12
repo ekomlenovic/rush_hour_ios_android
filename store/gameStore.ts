@@ -153,6 +153,8 @@ interface GameState {
   missionStreak: MissionStreakState;
   /** All missions of the day just completed, not shown to the player yet (not persisted) */
   pendingMissionReward: MissionReward | null;
+  /** Missions completed one by one, not shown to the player yet (not persisted); the last of the day is the reward above */
+  missionDoneQueue: string[];
 
   /** Last time the app was opened (ISO date YYYY-MM-DD) for comeback detection */
   lastOpenDate: string | null;
@@ -229,6 +231,7 @@ interface GameState {
   setOpenDailyDate: (date: string | null) => void;
   addStreakFreeze: () => boolean;
   consumeMissionReward: () => MissionReward | null;
+  consumeMissionsDone: () => string[];
   consumeLevelUps: () => number[];
   selectCosmetic: (kind: CosmeticKind, id: string) => boolean;
   markCosmeticsSeen: (keys: string[]) => void;
@@ -336,7 +339,16 @@ export const useGameStore = create<GameState>()(
 
         const allDone = missions.ids.every(id => MISSIONS_BY_ID[id] && isMissionDone(MISSIONS_BY_ID[id], counters));
         if (!allDone || missions.rewarded) {
-          set({ ...update, dailyMissions: { ...missions, counters } });
+          // Each mission is announced when it is completed (toast or win screen)
+          const justDone = missions.ids.filter((id) => {
+            const mission = MISSIONS_BY_ID[id];
+            return mission && !isMissionDone(mission, missions.counters) && isMissionDone(mission, counters);
+          });
+          set({
+            ...update,
+            dailyMissions: { ...missions, counters },
+            ...(justDone.length > 0 ? { missionDoneQueue: [...state.missionDoneQueue, ...justDone] } : {}),
+          });
           return;
         }
 
@@ -351,7 +363,8 @@ export const useGameStore = create<GameState>()(
           const freezeGranted = get().addStreakFreeze();
           // The streak this day just made already counts for its own XP
           const xp = addXp(missionsXp(freezeGranted));
-          set({ pendingMissionReward: { freezeGranted, xp } });
+          // One announcement for the last mission: the reward, not the mission and then the reward
+          set({ pendingMissionReward: { freezeGranted, xp }, missionDoneQueue: [] });
           get().checkAchievements();
         });
       };
@@ -452,6 +465,7 @@ export const useGameStore = create<GameState>()(
       dailyMissions: null,
       missionStreak: initialMissionStreak(),
       pendingMissionReward: null,
+      missionDoneQueue: [],
       lastOpenDate: null,
       totalHintsUsed: 0,
       xp: 0,
@@ -777,6 +791,12 @@ export const useGameStore = create<GameState>()(
         return pendingMissionReward;
       },
 
+      consumeMissionsDone: () => {
+        const { missionDoneQueue } = get();
+        if (missionDoneQueue.length > 0) set({ missionDoneQueue: [] });
+        return missionDoneQueue;
+      },
+
       consumeLevelUps: () => {
         const { levelUpQueue } = get();
         if (levelUpQueue.length > 0) set({ levelUpQueue: [] });
@@ -1050,6 +1070,7 @@ export const useGameStore = create<GameState>()(
           dailyMissions: null,
           missionStreak: initialMissionStreak(),
           pendingMissionReward: null,
+          missionDoneQueue: [],
           lastOpenDate: null,
           totalHintsUsed: 0,
           xp: 0,

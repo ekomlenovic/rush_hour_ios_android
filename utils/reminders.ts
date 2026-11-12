@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next';
 import { addDays, addMonths, dateLocale, getLocalDateString, getWeekKey, parseLocalDateString } from './date';
 import { DAILY_HREF, WEEKLY_HREF } from './challengeDates';
+import { MISSIONS_PER_DAY } from '../data/missions';
 
 export const DEFAULT_REMINDER_HOUR = 19;
 /** "Streak in danger" comes this many hours after the daily reminder */
@@ -23,6 +24,8 @@ export interface ReminderInput {
   /** YYYY-Www keys of the completed weeklies */
   completedWeeklies: Set<string>;
   currentStreak: number;
+  /** Today's missions still to complete, 0 once the 3 are done (none started when left out) */
+  missionsLeftToday?: number;
   /** Something played this month / this year: its recap will be announced */
   playedThisMonth?: boolean;
   playedThisYear?: boolean;
@@ -35,8 +38,8 @@ export interface PlannedReminder {
   date: Date;
   title: string;
   body: string;
-  /** Screen opened by touching it: the challenges without a date, dated when opened (issue 191) */
-  url: string;
+  /** Screen opened by touching it: the challenges without a date, dated when opened (issue 191). None: the app as it was left */
+  url?: string;
 }
 
 function at(dateKey: string, hour: number): Date {
@@ -54,17 +57,23 @@ export function planReminders(t: TFunction, input: ReminderInput): PlannedRemind
   const today = getLocalDateString(now);
   const reminders: PlannedReminder[] = [];
 
-  // Daily challenge, every day not done yet
+  // One reminder a day for what is still to do: the daily challenge, the missions, or both
   for (let i = 0; i < DAYS_AHEAD; i++) {
     const day = addDays(today, i);
-    if (completedDailies.has(day)) continue;
-    reminders.push({
-      id: `daily-${day}`,
-      date: at(day, reminderHour),
-      title: t('reminders.daily_title'),
-      body: t('reminders.daily_body'),
-      url: DAILY_HREF,
-    });
+    const dailyLeft = !completedDailies.has(day);
+    // The days ahead: nothing is started yet
+    const missionsLeft = i === 0 ? input.missionsLeftToday ?? MISSIONS_PER_DAY : MISSIONS_PER_DAY;
+    if (!dailyLeft && missionsLeft <= 0) continue;
+    const id = `daily-${day}`;
+    const date = at(day, reminderHour);
+    if (!dailyLeft) {
+      // The missions are played on the map: the app opens where it was left
+      reminders.push({ id, date, title: t('reminders.missions_title'), body: t('reminders.missions_body', { count: missionsLeft }) });
+    } else if (missionsLeft > 0) {
+      reminders.push({ id, date, title: t('reminders.daily_missions_title'), body: t('reminders.daily_missions_body'), url: DAILY_HREF });
+    } else {
+      reminders.push({ id, date, title: t('reminders.daily_title'), body: t('reminders.daily_body'), url: DAILY_HREF });
+    }
   }
 
   // Streak in danger, on the first day the daily is still to do

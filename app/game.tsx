@@ -8,7 +8,7 @@ import { haptics, Haptics } from '@/utils/haptics';
 import Board from '@/components/Board';
 import BoardBackdrop from '@/components/BoardBackdrop';
 import { useGameStore } from '@/store/gameStore';
-import type { MissionReward } from '@/data/missions';
+import { MISSIONS_BY_ID, isMissionDone, type MissionReward } from '@/data/missions';
 import { newlyUnlockedCosmetics } from '@/data/cosmetics';
 import { checkWin } from '@/utils/collision';
 import { solvePuzzleAsync } from '@/utils/solver.background';
@@ -78,6 +78,7 @@ export default function GameScreen() {
   const [winUnlocks, setWinUnlocks] = useState<string[]>([]);
   const [winCosmetics, setWinCosmetics] = useState<string[]>([]);
   const [winMissionReward, setWinMissionReward] = useState<MissionReward | null>(null);
+  const [winMissions, setWinMissions] = useState<{ done: string[]; left: string[] }>({ done: [], left: [] });
   const [winXpGain, setWinXpGain] = useState<{ from: number; to: number } | null>(null);
   const [winLevelUps, setWinLevelUps] = useState<number[]>([]);
 
@@ -138,7 +139,7 @@ export default function GameScreen() {
    */
   const askReviewIfDue = () => {
     if (challengeKind || isArchive || customKind || stars !== 3) return;
-    if (winUnlocks.length > 0 || winCosmetics.length > 0 || winMissionReward || winLevelUps.length > 0) return;
+    if (winUnlocks.length > 0 || winCosmetics.length > 0 || winMissionReward || winMissions.done.length > 0 || winLevelUps.length > 0) return;
     if (!isPlayStoreInstall()) return;
     const levelsWon = (state: ReturnType<typeof useGameStore.getState>) => state.progress.filter(p => p.completed).length;
     const isDue = () => {
@@ -301,6 +302,15 @@ export default function GameScreen() {
       setWinUnlocks(useGameStore.getState().consumeUnlockQueue());
       setWinCosmetics(newlyUnlockedCosmetics(before, useGameStore.getState()));
       setWinMissionReward(useGameStore.getState().consumeMissionReward());
+      // A mission completed by this win is shown in the win modal too, with the ones still to do
+      const missionsDone = useGameStore.getState().consumeMissionsDone();
+      const todayMissions = useGameStore.getState().dailyMissions;
+      setWinMissions({
+        done: missionsDone,
+        left: missionsDone.length > 0 && todayMissions
+          ? todayMissions.ids.filter(id => MISSIONS_BY_ID[id] && !isMissionDone(MISSIONS_BY_ID[id], todayMissions.counters))
+          : [],
+      });
       setWinXpGain(useGameStore.getState().lastXpGain);
       setWinLevelUps(useGameStore.getState().consumeLevelUps());
       setWinTimeMs(timeMs);
@@ -486,6 +496,8 @@ export default function GameScreen() {
         cosmeticUnlocks={winCosmetics}
         onOpenGarage={handleOpenGarage}
         missionReward={winMissionReward}
+        missionsDone={winMissions.done}
+        missionsLeft={winMissions.left}
         xpGain={winXpGain}
         levelUps={winLevelUps}
         effect={winEffect}
