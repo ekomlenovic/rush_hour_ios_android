@@ -7,6 +7,7 @@ import { sampleLevels } from '@/data/sampleLevels';
 import { useGameStore } from '@/store/gameStore';
 import { getStars } from '@/utils/scoring';
 import { describeVehicle, getVehicleLetters } from '@/utils/accessibility';
+import { getLocalDateString } from '@/utils/date';
 import { resetStore } from '../helpers';
 
 /** Level 1 solved one cell at a time, as with VoiceOver / TalkBack: [vehicle, action, cells] */
@@ -53,6 +54,35 @@ describe('game screen', () => {
     expect(progress).toMatchObject({ completed: true, stars });
     expect(useGameStore.getState().xp).toBeGreaterThan(0);
   }, 20_000);
+  it('the missions of the day can be read while playing: the pill of the header opens them, the toast of a completed mission too', async () => {
+    const today = getLocalDateString(new Date());
+    useGameStore.setState({
+      dailyMissions: { date: today, ids: ['win_3', 'perfect_2', 'moves_100'], counters: { levelWins: 3, moves: 99 }, rewarded: false },
+    });
+    await renderRouter({ _layout: require('@/app/_layout'), game: GameScreen }, { initialUrl: '/game?levelId=1' });
+    await waitFor(() => expect(screen.getByLabelText(i18n.t('a11y.target_car'))).toBeTruthy());
+
+    // The pill of the home header, in the header of the game
+    const pill = (done: number) => screen.getByRole('button', { name: i18n.t('a11y.missions_progress', { done, total: 3 }) });
+    expect(screen.queryByText(i18n.t('missions.list.perfect_2'))).toBeNull();
+    await fireEvent.press(pill(1));
+    await waitFor(() => expect(screen.getByText(i18n.t('missions.list.perfect_2'))).toBeTruthy());
+    expect(screen.getByText('99/100')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: i18n.t('a11y.close') }));
+    await waitFor(() => expect(screen.queryByText('99/100')).toBeNull());
+
+    // One more move completes « Play 100 moves »: the pill follows, and the toast opens the missions
+    const level = sampleLevels[0];
+    const [id, action] = SOLUTION[0];
+    const before = useGameStore.getState().vehicles.find(v => v.id === id)!;
+    await fireEvent(screen.getByLabelText(describeVehicle(i18n.t, before, getVehicleLetters(level.vehicles)[id])), 'accessibilityAction', { nativeEvent: { actionName: action } });
+    await waitFor(() => expect(pill(2)).toBeTruthy());
+    const toast = `${i18n.t('missions.done_progress', { done: 2, total: 3 })} ${i18n.t('missions.list.moves_100')}`;
+    await waitFor(() => expect(screen.getByRole('button', { name: toast })).toBeTruthy());
+    await fireEvent.press(screen.getByRole('button', { name: toast }));
+    await waitFor(() => expect(screen.getByText('100/100')).toBeTruthy());
+  }, 20_000);
+
   it('a generation going on keeps running while a level is played, its bubble on screen until Cancel', async () => {
     // A generation really going on (not a state left over by a closed app)
     const active = jest.spyOn(require('@/hooks/useLevelGenerator'), 'isGenerationActive').mockReturnValue(true);

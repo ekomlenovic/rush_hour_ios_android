@@ -8,7 +8,7 @@ import { haptics, Haptics } from '@/utils/haptics';
 import Board from '@/components/Board';
 import BoardBackdrop from '@/components/BoardBackdrop';
 import { useGameStore } from '@/store/gameStore';
-import type { MissionReward } from '@/data/missions';
+import { MISSIONS_BY_ID, isMissionDone, type MissionReward } from '@/data/missions';
 import { newlyUnlockedCosmetics } from '@/data/cosmetics';
 import { checkWin } from '@/utils/collision';
 import { solvePuzzleAsync } from '@/utils/solver.background';
@@ -40,6 +40,8 @@ import ShareIcon from '@/components/share/ShareIcon';
 import ChallengeDoneBanner from '@/components/game/ChallengeDoneBanner';
 import type { SolutionSource } from '@/components/game/SolutionPlayer';
 import IconText from '@/components/IconText';
+import GameMissions from '@/components/game/GameMissions';
+import { registerMissionsSheet } from '@/utils/missionsSheet';
 import HintLoadingPill from '@/components/game/HintLoadingPill';
 import SolutionPlayer from '@/components/game/SolutionPlayer';
 import { MAX_UI_FONT_SCALE } from '@/utils/boardSize';
@@ -78,10 +80,12 @@ export default function GameScreen() {
   const [winUnlocks, setWinUnlocks] = useState<string[]>([]);
   const [winCosmetics, setWinCosmetics] = useState<string[]>([]);
   const [winMissionReward, setWinMissionReward] = useState<MissionReward | null>(null);
+  const [winMissions, setWinMissions] = useState<{ done: string[]; left: string[] }>({ done: [], left: [] });
   const [winXpGain, setWinXpGain] = useState<{ from: number; to: number } | null>(null);
   const [winLevelUps, setWinLevelUps] = useState<number[]>([]);
 
   const [isShareVisible, setShareVisible] = useState(false);
+  const [isMissionsVisible, setMissionsVisible] = useState(false);
   const [isSolutionVisible, setSolutionVisible] = useState(false);
   const [solutionStart, setSolutionStart] = useState<SolutionSource>('optimal');
 
@@ -138,7 +142,7 @@ export default function GameScreen() {
    */
   const askReviewIfDue = () => {
     if (challengeKind || isArchive || customKind || stars !== 3) return;
-    if (winUnlocks.length > 0 || winCosmetics.length > 0 || winMissionReward || winLevelUps.length > 0) return;
+    if (winUnlocks.length > 0 || winCosmetics.length > 0 || winMissionReward || winMissions.done.length > 0 || winLevelUps.length > 0) return;
     if (!isPlayStoreInstall()) return;
     const levelsWon = (state: ReturnType<typeof useGameStore.getState>) => state.progress.filter(p => p.completed).length;
     const isDue = () => {
@@ -261,6 +265,14 @@ export default function GameScreen() {
 
   const playTime = useActivePlayTime(!isLoading && !!currentLevel && !won && !isChallengeCompleted);
 
+  // The missions sheet shows the play time so far: recorded when it opens, the clock keeps running under it
+  const openMissions = useCallback(() => {
+    playTime.flush();
+    setMissionsVisible(true);
+  }, [playTime.flush]);
+  // Touching the "mission completed" toast opens the sheet here
+  useEffect(() => registerMissionsSheet(openMissions), [openMissions]);
+
   // A daily left open past midnight can still be won: while it is open, its day is not missed (see docs/GAME_DESIGN.md)
   useOpenDaily(challengeKind === 'daily' && !isLoading && !isChallengeCompleted ? params.date! : null);
 
@@ -301,6 +313,15 @@ export default function GameScreen() {
       setWinUnlocks(useGameStore.getState().consumeUnlockQueue());
       setWinCosmetics(newlyUnlockedCosmetics(before, useGameStore.getState()));
       setWinMissionReward(useGameStore.getState().consumeMissionReward());
+      // A mission completed by this win is shown in the win modal too, with the ones still to do
+      const missionsDone = useGameStore.getState().consumeMissionsDone();
+      const todayMissions = useGameStore.getState().dailyMissions;
+      setWinMissions({
+        done: missionsDone,
+        left: missionsDone.length > 0 && todayMissions
+          ? todayMissions.ids.filter(id => MISSIONS_BY_ID[id] && !isMissionDone(MISSIONS_BY_ID[id], todayMissions.counters))
+          : [],
+      });
       setWinXpGain(useGameStore.getState().lastXpGain);
       setWinLevelUps(useGameStore.getState().consumeLevelUps());
       setWinTimeMs(timeMs);
@@ -443,9 +464,12 @@ export default function GameScreen() {
         <Text maxFontSizeMultiplier={MAX_UI_FONT_SCALE} style={[styles.levelTitle, { color: colors.text }]} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
           {levelTitle}
         </Text>
-        <Pressable onPress={() => setShareVisible(true)} style={styles.shareHeaderBtn} accessibilityRole="button" accessibilityLabel={t('a11y.share_level')}>
-          <ShareIcon size={24} color={colors.primaryText} />
-        </Pressable>
+        <View style={styles.headerRight}>
+          <GameMissions colors={colors} isDark={isDark} visible={isMissionsVisible} onOpen={openMissions} onClose={() => setMissionsVisible(false)} />
+          <Pressable onPress={() => setShareVisible(true)} style={styles.shareHeaderBtn} accessibilityRole="button" accessibilityLabel={t('a11y.share_level')} hitSlop={8}>
+            <ShareIcon size={24} color={colors.primaryText} />
+          </Pressable>
+        </View>
       </Animated.View>
 
       <GameStatsBar
@@ -486,6 +510,8 @@ export default function GameScreen() {
         cosmeticUnlocks={winCosmetics}
         onOpenGarage={handleOpenGarage}
         missionReward={winMissionReward}
+        missionsDone={winMissions.done}
+        missionsLeft={winMissions.left}
         xpGain={winXpGain}
         levelUps={winLevelUps}
         effect={winEffect}
@@ -567,6 +593,9 @@ export default function GameScreen() {
   );
 }
 
+/** Each side of the header: the back link, or the missions pill and the share button */
+const HEADER_SIDE_WIDTH = 96;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -578,9 +607,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  // Same width as the share button: the title stays centered
+  // Same width as the missions pill and the share button: the title stays centered
   backButton: {
-    width: 76,
+    width: HEADER_SIDE_WIDTH,
+  },
+  headerRight: {
+    width: HEADER_SIDE_WIDTH,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
   },
   backText: {
     fontSize: 16,
@@ -604,7 +640,6 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   shareHeaderBtn: {
-    width: 76,
     height: 44,
     justifyContent: 'center',
     alignItems: 'flex-end',

@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../store/gameStore';
 import { planReminders } from './reminders';
 import { monthKeyOf, yearKeyOf } from '../store/periodStats';
+import { MISSIONS_PER_DAY, countMissionsDone } from '../data/missions';
+import { getLocalDateString } from './date';
 
 const CHANNEL_ID = 'reminders';
 
@@ -137,6 +139,12 @@ export function useReminderSync() {
   // Booleans: they change once a month, not at every move
   const playedThisMonth = useGameStore(s => !!s.monthlyStats[monthKeyOf(new Date())]);
   const playedThisYear = useGameStore(s => !!s.yearlyStats[yearKeyOf(new Date())]);
+  // A number: it changes when a mission is completed, not at every move
+  const missionsLeftToday = useGameStore((s) => {
+    const missions = s.dailyMissions;
+    if (!missions || missions.date !== getLocalDateString(new Date())) return MISSIONS_PER_DAY;
+    return missions.rewarded ? 0 : missions.ids.length - countMissionsDone(missions);
+  });
   const [foregroundCount, setForegroundCount] = useState(0);
 
   useEffect(() => {
@@ -165,6 +173,7 @@ export function useReminderSync() {
         completedDailies: completed(dailyChallengeProgress),
         completedWeeklies: completed(weeklyChallengeProgress),
         currentStreak,
+        missionsLeftToday,
         playedThisMonth,
         playedThisYear,
         language: i18n.language,
@@ -173,7 +182,7 @@ export function useReminderSync() {
         if (outdated) return;
         await Notifications.scheduleNotificationAsync({
           identifier: reminder.id,
-          content: { title: reminder.title, body: reminder.body, data: { url: reminder.url } },
+          content: { title: reminder.title, body: reminder.body, data: reminder.url ? { url: reminder.url } : {} },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DATE,
             date: reminder.date,
@@ -188,5 +197,5 @@ export function useReminderSync() {
     return () => {
       outdated = true;
     };
-  }, [enabled, reminderHour, dailyChallengeProgress, weeklyChallengeProgress, currentStreak, playedThisMonth, playedThisYear, foregroundCount, i18n.language]);
+  }, [enabled, reminderHour, dailyChallengeProgress, weeklyChallengeProgress, currentStreak, missionsLeftToday, playedThisMonth, playedThisYear, foregroundCount, i18n.language]);
 }

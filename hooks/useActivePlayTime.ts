@@ -5,9 +5,10 @@ import { useGameStore } from '@/store/gameStore';
 /**
  * Active play time: counted while `isTracking` (game screen open, level unsolved)
  * and the app is in the foreground. Returns `stop`, which records the time
- * played so far and stops the clock (e.g. right before recording a win).
+ * played so far and stops the clock (e.g. right before recording a win), and `flush`,
+ * which records it and keeps counting (the missions sheet shows the play time so far).
  */
-export function useActivePlayTime(isTracking: boolean): { stop: () => void } {
+export function useActivePlayTime(isTracking: boolean): { stop: () => void; flush: () => void } {
   const segmentStartRef = useRef<number | null>(null);
 
   const flushPlayTime = useCallback(() => {
@@ -40,5 +41,5 @@ export function useActivePlayTime(isTracking: boolean): { stop: () => void } {
     segmentStartRef.current = null;
   }, [flushPlayTime]);
 
-  return { stop };
+  return { stop, flush: flushPlayTime };
 }

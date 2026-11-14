@@ -117,4 +117,21 @@ describe('WinModal', () => {
     await fireEvent.press(screen.getByRole('link', { name: `${i18n.t('cosmetics.open_garage')} →` }));
     expect(onOpenGarage).toHaveBeenCalledTimes(1);
   });
+
+  it('a mission completed by the win is shown and announced, with the ones still to do', async () => {
+    await renderWin({ missionsDone: ['win_3'], missionsLeft: ['perfect_2', 'moves_100'] });
+    expect(screen.getByText(i18n.t('missions.done', { count: 1 }))).toBeTruthy();
+    expect(screen.getByText(i18n.t('missions.list.win_3'))).toBeTruthy();
+    expect(screen.getByText(
+      `${i18n.t('missions.left', { count: 2 })} ${i18n.t('missions.list.perfect_2')}, ${i18n.t('missions.list.moves_100')}`,
+    )).toBeTruthy();
+    expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(
+      `${i18n.t('missions.done', { count: 1 })} ${i18n.t('missions.list.win_3')}`,
+    );
+  });
+
+  it('no mission completed: no missions block', async () => {
+    await renderWin();
+    expect(screen.queryByText(i18n.t('missions.done', { count: 1 }))).toBeNull();
+  });
 });
