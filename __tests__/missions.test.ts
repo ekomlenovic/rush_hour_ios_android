@@ -164,6 +164,14 @@ describe('mission counters in the store', () => {
       expect(state().consumeMissionsDone()).toEqual([]);
     });
 
+    it('nothing is announced once the day is rewarded, whatever the counters say', () => {
+      useGameStore.setState({
+        dailyMissions: { date: TODAY, ids: ['win_3', 'perfect_2', 'moves_100'], counters: { levelWins: 2 }, rewarded: true },
+      });
+      winMapLevel(sampleLevels[0], { stars: 2 });
+      expect(state().consumeMissionsDone()).toEqual([]);
+    });
+
     it('is not saved: nothing to announce again at the next launch', () => {
       start({ levelWins: 2 });
       winMapLevel(sampleLevels[0], { stars: 2 });

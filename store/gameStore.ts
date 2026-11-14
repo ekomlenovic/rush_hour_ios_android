@@ -339,8 +339,8 @@ export const useGameStore = create<GameState>()(
 
         const allDone = missions.ids.every(id => MISSIONS_BY_ID[id] && isMissionDone(MISSIONS_BY_ID[id], counters));
         if (!allDone || missions.rewarded) {
-          // Each mission is announced when it is completed (toast or win screen)
-          const justDone = missions.ids.filter((id) => {
+          // Each mission is announced when it is completed (toast or win screen); nothing more once the day is rewarded
+          const justDone = missions.rewarded ? [] : missions.ids.filter((id) => {
             const mission = MISSIONS_BY_ID[id];
             return mission && !isMissionDone(mission, missions.counters) && isMissionDone(mission, counters);
           });
